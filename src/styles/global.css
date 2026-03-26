@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Tailwind v4 + class-based dark mode */
+@custom-variant dark (&:where(.dark, .dark *));
+
 html {
   background-color: #ffffff;
   color: #111827;
@@ -7,5 +10,11 @@ html {
 
 body {
   margin: 0;
+}
+
+/* Mejor base de tipografía (simple) */
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans",
+    "Apple Color Emoji", "Segoe UI Emoji";
 }
 

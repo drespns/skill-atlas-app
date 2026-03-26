@@ -1,43 +1,104 @@
-# Astro Starter Kit: Minimal
+# SkillAtlas
 
-```sh
-npm create astro@latest -- --template minimal
-```
+![Astro](https://img.shields.io/badge/Astro-6.0-FF5D01?logo=astro&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.2-06B6D4?logo=tailwindcss&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-Ready-3178C6?logo=typescript&logoColor=white)
+![Status](https://img.shields.io/badge/Status-MVP-blue)
+![Data Source](https://img.shields.io/badge/Data-Mock_(Supabase_next)-6E56CF)
+![License](https://img.shields.io/badge/License-Private-lightgrey)
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Aplicación web para **gestionar y mostrar conocimiento técnico**:
+tecnologías, conceptos, progreso de aprendizaje y proyectos de portfolio.
 
-## 🚀 Project Structure
+---
 
-Inside of your Astro project, you'll see the following folders and files:
+## ✨ MVP actual
+
+- Flujo principal: **Tecnologías → Conceptos → Proyectos → Portfolio**
+- UI en Astro con Tailwind (modo claro/oscuro)
+- Selector de idioma ES/EN (base ya montada)
+- Embeds de proyectos (Tableau/GitHub links mock)
+- Capa de datos desacoplada para migrar a Supabase sin romper la UI
+
+---
+
+## 🧱 Stack
+
+- **Frontend:** Astro
+- **Estilos:** Tailwind CSS v4
+- **Lógica cliente:** TypeScript
+- **Backend (próximo):** Supabase (PostgreSQL)
+
+---
+
+## 📁 Estructura del proyecto
 
 ```text
 /
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+├─ public/
+│  ├─ icons/                # SVGs de tecnologías y marcas
+│  └─ favicon.svg
+├─ src/
+│  ├─ components/           # UI reutilizable (cards, badges, embeds...)
+│  ├─ config/               # Configuración compartida (icon mapping)
+│  ├─ data/                 # Capa de datos (mock hoy, supabase mañana)
+│  ├─ layouts/              # AppShell (header/nav/theme)
+│  ├─ pages/                # Rutas Astro
+│  ├─ scripts/              # Lógica cliente (theme + i18n)
+│  └─ styles/               # CSS global + Tailwind
+├─ astro.config.mjs
+└─ package.json
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+---
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+## 🗺️ Rutas actuales
 
-Any static assets, like images, can be placed in the `public/` directory.
+- `/` Landing
+- `/app` Dashboard
+- `/technologies` Lista de tecnologías
+- `/technologies/:techId` Detalle de tecnología + conceptos
+- `/projects` Lista de proyectos
+- `/projects/:projectId` Detalle de proyecto + embeds + conceptos
+- `/portfolio` Portfolio público
+- `/settings` Ajustes
 
-## 🧞 Commands
+---
 
-All commands are run from the root of the project, from a terminal:
+## 🚀 Scripts
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+```bash
+npm install
+npm run dev
+npm run build
+npm run preview
+```
 
-## 👀 Want to learn more?
+---
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+## 🧠 Arquitectura de datos (importante)
+
+El proyecto **no importa `mock.ts` directamente** desde la UI.
+Se usa `src/data/index.ts` como facade:
+
+- Hoy: reexporta datos/funciones del mock
+- Mañana: podrá cambiar a provider Supabase con el mismo contrato
+
+Esto evita reescribir páginas/componentes al migrar backend.
+
+---
+
+## 🔜 Próximos pasos recomendados
+
+1. Definir contrato final de `src/data/index.ts` (providers)
+2. Crear `supabaseProvider` (lectura inicial)
+3. Sustituir mocks por queries reales
+4. Completar i18n en toda la UI
+5. Añadir CRUD mínimo (tecnologías, conceptos, proyectos)
+
+---
+
+## 📌 Nota
+
+Este repositorio está en fase MVP y prioriza claridad del código,
+iteración rápida y preparación para migración a Supabase.
