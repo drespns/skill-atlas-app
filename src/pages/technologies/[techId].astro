@@ -1,0 +1,108 @@
+---
+import AppShell from "../../layouts/AppShell.astro";
+import ProgressBadge from "../../components/ProgressBadge.astro";
+import ProjectCard from "../../components/ProjectCard.astro";
+
+import {
+  technologies,
+  getConceptsByTechnology,
+  getProjectsByTechnology,
+  getTechnologyById,
+} from "../../data/mock";
+
+export async function getStaticPaths() {
+  return technologies.map((t) => ({
+    params: { techId: t.id },
+  }));
+}
+
+const { techId } = Astro.params;
+const title = "Tecnología";
+
+const technology = getTechnologyById(String(techId));
+const techConcepts = technology ? getConceptsByTechnology(technology.id) : [];
+const relatedProjects = technology ? getProjectsByTechnology(technology.id) : [];
+
+const technologyTitle = technology?.name ?? "Tecnología no encontrada";
+---
+
+<AppShell title={technologyTitle}>
+  {technology ? (
+    <section class="space-y-6">
+      <header class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+        <div>
+          <h1 class="m-0 text-2xl font-semibold">{technology.name}</h1>
+          <p class="mt-2 text-sm text-gray-600">
+            {techConcepts.length} conceptos · {relatedProjects.length} proyectos
+          </p>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-900 whitespace-nowrap">
+            {techConcepts.filter((c) => c.progress === "aprendido").length} aprend.
+          </span>
+          <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-900 whitespace-nowrap">
+            {techConcepts.filter((c) => c.progress === "practicado").length} pract.
+          </span>
+          <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-900 whitespace-nowrap">
+            {techConcepts.filter((c) => c.progress === "mastered").length} dom.
+          </span>
+        </div>
+      </header>
+
+      <section class="space-y-3">
+        <h2 class="m-0 text-base font-semibold">Conceptos</h2>
+        {techConcepts.length > 0 ? (
+          <div class="space-y-2">
+            {techConcepts.map((concept) => (
+              <div
+                class="flex items-start justify-between gap-4 border border-gray-200 rounded-xl p-3"
+              >
+                <div class="min-w-0">
+                  <p class="m-0 font-semibold">{concept.title}</p>
+                  <p class="mt-1 text-sm text-gray-600">{concept.notes}</p>
+                </div>
+                <ProgressBadge progress={concept.progress} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div class="border border-gray-200 rounded-xl p-5 bg-gray-50">
+            <p class="m-0 font-semibold">Aún no tienes conceptos en esta tecnología.</p>
+            <p class="mt-2 text-sm text-gray-600">
+              En el MVP, los conceptos se crean desde aquí.
+            </p>
+          </div>
+        )}
+      </section>
+
+      <section class="space-y-3">
+        <h2 class="m-0 text-base font-semibold">Proyectos con esta tecnología</h2>
+        {relatedProjects.length > 0 ? (
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {relatedProjects.map((project) => {
+              const technologyNames = project.technologyIds
+                .map((id) => getTechnologyById(id)?.name)
+                .filter((x): x is string => Boolean(x));
+
+              return <ProjectCard project={project} technologyNames={technologyNames} />;
+            })}
+          </div>
+        ) : (
+          <div class="border border-gray-200 rounded-xl p-5 bg-gray-50">
+            <p class="m-0 font-semibold">Todavía no hay proyectos usando {technology.name}.</p>
+            <p class="mt-2 text-sm text-gray-600">
+              Ve a Proyectos para empezar a relacionar conceptos.
+            </p>
+          </div>
+        )}
+      </section>
+    </section>
+  ) : (
+    <section class="space-y-3">
+      <h1 class="m-0 text-2xl font-semibold">{technologyTitle}</h1>
+      <p class="text-sm text-gray-600">Comprueba la URL.</p>
+    </section>
+  )}
+</AppShell>
+

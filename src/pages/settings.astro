@@ -1,0 +1,39 @@
+---
+import AppShell from "../layouts/AppShell.astro";
+import { profile } from "../data/mock";
+
+const title = "Ajustes";
+---
+
+<AppShell title={title}>
+  <section class="max-w-2xl space-y-6">
+    <header class="space-y-2">
+      <h1 class="m-0 text-2xl font-semibold">{title}</h1>
+      <p class="text-sm text-gray-600">
+        En el MVP, estos datos son de ejemplo (read-only).
+      </p>
+    </header>
+
+    <div class="space-y-4">
+      <div class="space-y-2">
+        <label class="text-sm font-semibold">Nombre público</label>
+        <input
+          disabled
+          value={profile.publicName}
+          class="w-full border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-900"
+        />
+      </div>
+
+      <div class="space-y-2">
+        <label class="text-sm font-semibold">Bio pública</label>
+        <textarea
+          disabled
+          rows={4}
+          value={profile.bio}
+          class="w-full border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-900"
+        />
+      </div>
+    </div>
+  </section>
+</AppShell>
+

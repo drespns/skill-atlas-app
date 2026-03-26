@@ -1,0 +1,28 @@
+---
+import type { ProjectEmbed } from "../data/mock";
+
+const { embed } = Astro.props as { embed: ProjectEmbed };
+---
+
+<article class="border border-gray-200 rounded-xl p-4 flex flex-col gap-3">
+  <h3 class="m-0 text-sm font-semibold">{embed.title}</h3>
+
+  {embed.kind === "iframe" ? (
+    <iframe
+      class="w-full h-72 rounded-lg border border-gray-200"
+      src={embed.url}
+      loading="lazy"
+      referrerpolicy="no-referrer"
+    />
+  ) : (
+    <a
+      class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 no-underline"
+      href={embed.url}
+      target="_blank"
+      rel="noreferrer"
+    >
+      Abrir enlace
+    </a>
+  )}
+</article>
+

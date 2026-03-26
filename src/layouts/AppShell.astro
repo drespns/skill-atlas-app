@@ -1,0 +1,33 @@
+---
+import "../styles/global.css";
+
+const { title = "SkillAtlas" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="border-b border-gray-200 px-5 py-4 flex items-center justify-between gap-4">
+      <a href="/app" class="font-bold text-lg no-underline hover:underline">
+        SkillAtlas
+      </a>
+
+      <nav class="flex flex-wrap gap-4">
+        <a href="/technologies" class="hover:underline">Tecnologías</a>
+        <a href="/projects" class="hover:underline">Proyectos</a>
+        <a href="/portfolio" class="hover:underline">Portfolio</a>
+        <a href="/settings" class="hover:underline">Ajustes</a>
+      </nav>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-5 py-6">
+      <slot />
+    </main>
+  </body>
+</html>
+

@@ -1,0 +1,47 @@
+---
+import AppShell from "../layouts/AppShell.astro";
+import ProjectCard from "../components/ProjectCard.astro";
+import { projects, technologies, getTechnologyById } from "../data/mock";
+
+const title = "Proyectos";
+
+const projectCards = projects.map((project) => ({
+  project,
+  technologyNames: project.technologyIds
+    .map((id) => getTechnologyById(id)?.name)
+    .filter((x): x is string => Boolean(x)),
+}));
+---
+
+<AppShell title={title}>
+  <section class="space-y-5">
+    <header class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <div>
+        <h1 class="m-0 text-2xl font-semibold">{title}</h1>
+        <p class="mt-2 text-sm text-gray-600">
+          Proyectos conectados con tecnologías y conceptos.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-900 whitespace-nowrap">
+          {projects.length} proyectos
+        </span>
+      </div>
+    </header>
+
+    {projectCards.length > 0 ? (
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {projectCards.map(({ project, technologyNames }) => (
+          <ProjectCard project={project} technologyNames={technologyNames} />
+        ))}
+      </div>
+    ) : (
+      <div class="border border-gray-200 rounded-xl p-5 bg-gray-50">
+        <p class="m-0 font-semibold">Aún no tienes proyectos.</p>
+        <p class="mt-2 text-sm text-gray-600">En el MVP puedes empezar desde aquí.</p>
+      </div>
+    )}
+  </section>
+</AppShell>
+

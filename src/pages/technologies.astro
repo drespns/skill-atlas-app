@@ -1,0 +1,32 @@
+---
+import AppShell from "../layouts/AppShell.astro";
+import TechnologyCard from "../components/TechnologyCard.astro";
+
+import { concepts, technologies as mockTechnologies } from "../data/mock";
+
+const title = "Tecnologías";
+
+const technologies = mockTechnologies.map((t) => ({
+  id: t.id,
+  name: t.name,
+  conceptsCount: concepts.filter((c) => c.technologyId === t.id).length,
+}));
+---
+
+<AppShell title={title}>
+  <header class="flex items-center justify-between gap-4 mb-5">
+    <h1 class="m-0 text-2xl font-semibold">{title}</h1>
+    <button
+      type="button"
+      class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 opacity-60 cursor-not-allowed"
+      aria-disabled="true"
+    >
+      Nueva tecnología
+    </button>
+  </header>
+
+  <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {technologies.map((tech) => <TechnologyCard technology={tech} />)}
+  </section>
+</AppShell>
+
