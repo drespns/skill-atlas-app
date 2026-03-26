@@ -1,3 +1,10 @@
+/**
+ * Mock data source for the MVP.
+ *
+ * This file simulates what later will live in Supabase tables.
+ * Keep it simple and deterministic to unblock UI development.
+ */
+
 export type ProgressState = "aprendido" | "practicado" | "mastered";
 
 export type Technology = {
@@ -37,18 +44,27 @@ export type Project = {
   updatedAtISO: string;
 };
 
+// Public profile shown in `/portfolio` and `/settings`
 export const profile = {
   publicName: "Skill Atlas (MVP)",
   bio: "Portfolio de ejemplo: tecnologías, conceptos y proyectos conectados.",
 };
 
+// Root repo link used in the header shortcut
+export const repoUrl = "https://github.com/drespns/skill-atlas-app";
+
+// Master list of technologies (parent entities)
 export const technologies: Technology[] = [
   { id: "sql", name: "SQL" },
   { id: "pyspark", name: "PySpark" },
-  { id: "dax", name: "DAX" },
   { id: "python", name: "Python" },
+  { id: "javascript", name: "JavaScript" },
+  { id: "tailwind", name: "Tailwind" },
+  { id: "astro", name: "Astro" },
+  { id: "docker", name: "Docker" },
 ];
 
+// Concepts belong to one technology (1:N)
 export const concepts: Concept[] = [
   {
     id: "sql-joins",
@@ -87,6 +103,7 @@ export const concepts: Concept[] = [
   },
 ];
 
+// Projects can reference many technologies and many concepts (N:N)
 export const projects: Project[] = [
   {
     id: "proj-analytics",
@@ -99,13 +116,14 @@ export const projects: Project[] = [
         id: "embed-tableau-1",
         kind: "iframe",
         title: "Tableau Public (mock)",
-        url: "https://public.tableau.com/views/RegionalSampleWorkbook/Stocks",
+        url: "https://public.tableau.com/views/volumen_agua_captacion/Informe?:language=es-ES&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link",
+        // url: "https://public.tableau.com/views/volumen_agua_captacion/Informe?:language=es-ES",
       },
       {
         id: "embed-github-1",
         kind: "link",
         title: "Repositorio (mock)",
-        url: "https://github.com/",
+        url: "https://github.com/drespns/skill-atlas-app",
       },
     ],
     updatedAtISO: "2026-03-20T10:00:00.000Z",
@@ -128,6 +146,10 @@ export const projects: Project[] = [
   },
 ];
 
+/**
+ * Simple in-memory "queries"
+ * (later replaced by Supabase SQL queries).
+ */
 export function getTechnologyById(id: string) {
   return technologies.find((t) => t.id === id);
 }
