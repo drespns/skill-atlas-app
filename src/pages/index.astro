@@ -7,26 +7,40 @@ import AppShell from "../layouts/AppShell.astro";
   <section class="space-y-6">
     <div class="max-w-2xl">
       <h1 class="text-3xl md:text-4xl font-semibold m-0">
-        SkillAtlas
+        <span data-i18n="landing.title">SkillAtlas</span>
       </h1>
       <p class="mt-3 text-gray-600">
-        Gestiona tu conocimiento técnico: tecnologías, conceptos, progreso y proyectos
-        que se convierten en tu portfolio.
+        <span data-i18n="landing.subtitle">
+          Gestiona tu conocimiento técnico: tecnologías, conceptos, progreso y proyectos que se
+          convierten en tu portfolio.
+        </span>
       </p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="border border-gray-200 rounded-xl p-4">
-        <h2 class="font-semibold text-sm m-0">1. Tecnologías</h2>
-        <p class="mt-2 text-sm text-gray-600">Crea categorías como SQL, PySpark o DAX.</p>
+        <h2 class="font-semibold text-sm m-0">
+          <span data-i18n="landing.step1Title">1. Tecnologías</span>
+        </h2>
+        <p class="mt-2 text-sm text-gray-600">
+          <span data-i18n="landing.step1Body">Crea categorías como SQL, PySpark o DAX.</span>
+        </p>
       </div>
       <div class="border border-gray-200 rounded-xl p-4">
-        <h2 class="font-semibold text-sm m-0">2. Conceptos</h2>
-        <p class="mt-2 text-sm text-gray-600">Registra conceptos dentro de cada tecnología.</p>
+        <h2 class="font-semibold text-sm m-0">
+          <span data-i18n="landing.step2Title">2. Conceptos</span>
+        </h2>
+        <p class="mt-2 text-sm text-gray-600">
+          <span data-i18n="landing.step2Body">Registra conceptos dentro de cada tecnología.</span>
+        </p>
       </div>
       <div class="border border-gray-200 rounded-xl p-4">
-        <h2 class="font-semibold text-sm m-0">3. Proyectos</h2>
-        <p class="mt-2 text-sm text-gray-600">Relaciona conceptos y publica tu portfolio.</p>
+        <h2 class="font-semibold text-sm m-0">
+          <span data-i18n="landing.step3Title">3. Proyectos</span>
+        </h2>
+        <p class="mt-2 text-sm text-gray-600">
+          <span data-i18n="landing.step3Body">Relaciona conceptos y publica tu portfolio.</span>
+        </p>
       </div>
     </div>
 
@@ -35,13 +49,13 @@ import AppShell from "../layouts/AppShell.astro";
         href="/app"
         class="inline-flex items-center justify-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 no-underline"
       >
-        Abrir app
+        <span data-i18n="common.openApp">Abrir app</span>
       </a>
       <a
         href="/portfolio"
         class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 no-underline"
       >
-        Ver portfolio
+        <span data-i18n="common.viewPortfolio">Ver portfolio</span>
       </a>
     </div>
   </section>

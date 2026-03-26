@@ -1,6 +1,6 @@
 ---
 import AppShell from "../layouts/AppShell.astro";
-import { concepts, projects } from "../data/mock";
+import { concepts, projects } from "../data";
 
 const title = "Dashboard";
 
@@ -12,9 +12,13 @@ const projectsCount = projects.length;
   <section class="space-y-6">
     <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
       <div>
-        <h1 class="m-0 text-2xl font-semibold">{title}</h1>
+        <h1 class="m-0 text-2xl font-semibold">
+          <span data-i18n="dashboard.title">{title}</span>
+        </h1>
         <p class="mt-2 text-sm text-gray-600">
-          Tu flujo principal: tecnologías → conceptos → proyectos → portfolio.
+          <span data-i18n="dashboard.subtitle">
+            Tu flujo principal: tecnologías → conceptos → proyectos → portfolio.
+          </span>
         </p>
       </div>
 
@@ -33,16 +37,28 @@ const projectsCount = projects.length;
         href="/technologies"
         class="border border-gray-200 rounded-xl p-5 hover:bg-gray-50 transition-colors"
       >
-        <h2 class="m-0 font-semibold">Ir a Tecnologías</h2>
-        <p class="mt-2 text-sm text-gray-600">Crea conceptos dentro de cada tecnología.</p>
+        <h2 class="m-0 font-semibold">
+          <span data-i18n="dashboard.goTechnologies">Ir a Tecnologías</span>
+        </h2>
+        <p class="mt-2 text-sm text-gray-600">
+          <span data-i18n="dashboard.goTechnologiesBody">
+            Crea conceptos dentro de cada tecnología.
+          </span>
+        </p>
       </a>
 
       <a
         href="/projects"
         class="border border-gray-200 rounded-xl p-5 hover:bg-gray-50 transition-colors"
       >
-        <h2 class="m-0 font-semibold">Ir a Proyectos</h2>
-        <p class="mt-2 text-sm text-gray-600">Relaciona conceptos y publica tu portfolio.</p>
+        <h2 class="m-0 font-semibold">
+          <span data-i18n="dashboard.goProjects">Ir a Proyectos</span>
+        </h2>
+        <p class="mt-2 text-sm text-gray-600">
+          <span data-i18n="dashboard.goProjectsBody">
+            Relaciona conceptos y publica tu portfolio.
+          </span>
+        </p>
       </a>
     </div>
 
@@ -50,7 +66,7 @@ const projectsCount = projects.length;
       href="/portfolio"
       class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 no-underline"
     >
-      Ver portfolio público
+      <span data-i18n="common.publicPortfolio">Ver portfolio público</span>
     </a>
   </section>
 </AppShell>

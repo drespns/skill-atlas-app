@@ -1,7 +1,14 @@
 ---
 import "../styles/global.css";
+import { repoUrl } from "../data";
+import clientScriptUrl from "../scripts/client.ts?url";
 
 const { title = "SkillAtlas" } = Astro.props;
+
+const pathname = Astro.url.pathname;
+const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+
+const APP_LOGO_SRC = "/favicon.svg";
 ---
 
 <!doctype html>
@@ -10,24 +17,147 @@ const { title = "SkillAtlas" } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>{title}</title>
-  </head>
-  <body>
-    <header class="border-b border-gray-200 px-5 py-4 flex items-center justify-between gap-4">
-      <a href="/app" class="font-bold text-lg no-underline hover:underline">
-        SkillAtlas
-      </a>
 
-      <nav class="flex flex-wrap gap-4">
-        <a href="/technologies" class="hover:underline">Tecnologías</a>
-        <a href="/projects" class="hover:underline">Proyectos</a>
-        <a href="/portfolio" class="hover:underline">Portfolio</a>
-        <a href="/settings" class="hover:underline">Ajustes</a>
-      </nav>
+    <script is:inline>
+      (() => {
+        const key = "theme";
+        const saved = localStorage.getItem(key); // "dark" | "light" | null
+        const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;
+        const shouldUseDark = saved ? saved === "dark" : Boolean(prefersDark);
+        document.documentElement.classList.toggle("dark", shouldUseDark);
+        document.documentElement.dataset.theme = shouldUseDark ? "dark" : "light";
+        // Helps native controls match theme
+        document.documentElement.style.colorScheme = shouldUseDark ? "dark" : "light";
+      })();
+    </script>
+  </head>
+  <body class="bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+    <header class="border-b border-gray-200/80 dark:border-gray-800 px-5 py-4">
+      <div class="max-w-4xl mx-auto flex items-center justify-between gap-4">
+        <a href="/app" class="flex items-center gap-3 no-underline">
+          <img src={APP_LOGO_SRC} alt="SkillAtlas" class="h-8 w-8 rounded-md" />
+          <span class="font-bold text-lg hover:underline">SkillAtlas</span>
+        </a>
+
+        <nav class="hidden md:flex flex-wrap gap-4 text-sm" data-i18n-scope="nav">
+          <a
+            href="/technologies"
+            class={`hover:underline ${isActive("/technologies") ? "font-semibold" : ""}`}
+          >
+            <span data-i18n="nav.technologies">Tecnologías</span>
+          </a>
+          <a
+            href="/projects"
+            class={`hover:underline ${isActive("/projects") ? "font-semibold" : ""}`}
+          >
+            <span data-i18n="nav.projects">Proyectos</span>
+          </a>
+          <a
+            href="/portfolio"
+            class={`hover:underline ${isActive("/portfolio") ? "font-semibold" : ""}`}
+          >
+            <span data-i18n="nav.portfolio">Portfolio</span>
+          </a>
+        </nav>
+
+        <div class="flex items-center gap-2">
+          <select
+            data-lang-select
+            class="hidden sm:block rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+            aria-label="Idioma"
+            title="Idioma"
+          >
+            <option value="es">ES</option>
+            <option value="en">EN</option>
+          </select>
+
+          <a
+            href="/settings"
+            class={`inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors ${isActive("/settings") ? "ring-1 ring-gray-300 dark:ring-gray-700" : ""}`}
+            aria-label="Ajustes"
+            title="Ajustes"
+          >
+            <svg
+              class="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
+              ></path>
+              <path
+                d="M19.4 15a7.97 7.97 0 0 0 .1-1 7.97 7.97 0 0 0-.1-1l2-1.5-2-3.5-2.4 1a7.8 7.8 0 0 0-1.7-1L15 4h-6l-.3 2.5a7.8 7.8 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a7.97 7.97 0 0 0-.1 1c0 .34.03.67.1 1l-2 1.5 2 3.5 2.4-1c.53.42 1.1.77 1.7 1L9 20h6l.3-2.5c.6-.23 1.17-.58 1.7-1l2.4 1 2-3.5-2-1.5Z"
+              ></path>
+            </svg>
+          </a>
+
+          <a
+            href={repoUrl}
+            target="_blank"
+            rel="noreferrer"
+            class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+            aria-label="Ver repositorio en GitHub"
+            title="GitHub"
+          >
+            <img src="/icons/GitHub.svg" alt="" class="h-5 w-5" />
+          </a>
+
+          <button
+            type="button"
+            data-theme-toggle
+            class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+            aria-label="Cambiar tema"
+            title="Tema"
+            aria-pressed="false"
+          >
+            <span class="sr-only">Cambiar tema</span>
+            <svg
+              data-icon-sun
+              class="h-5 w-5 hidden dark:block"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2v2"></path>
+              <path d="M12 20v2"></path>
+              <path d="M4.93 4.93l1.41 1.41"></path>
+              <path d="M17.66 17.66l1.41 1.41"></path>
+              <path d="M2 12h2"></path>
+              <path d="M20 12h2"></path>
+              <path d="M6.34 17.66l-1.41 1.41"></path>
+              <path d="M19.07 4.93l-1.41 1.41"></path>
+            </svg>
+            <svg
+              data-icon-moon
+              class="h-5 w-5 block dark:hidden"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
     </header>
 
-    <main class="max-w-4xl mx-auto px-5 py-6">
+    <main class="max-w-4xl mx-auto px-5 py-6 min-h-screen">
       <slot />
     </main>
+
+    <script type="module" src={clientScriptUrl}></script>
   </body>
 </html>
 

@@ -1,6 +1,6 @@
 ---
 import AppShell from "../layouts/AppShell.astro";
-import { profile } from "../data/mock";
+import { profile } from "../data";
 
 const title = "Ajustes";
 ---
@@ -8,15 +8,17 @@ const title = "Ajustes";
 <AppShell title={title}>
   <section class="max-w-2xl space-y-6">
     <header class="space-y-2">
-      <h1 class="m-0 text-2xl font-semibold">{title}</h1>
+      <h1 class="m-0 text-2xl font-semibold">
+        <span data-i18n="settings.title">{title}</span>
+      </h1>
       <p class="text-sm text-gray-600">
-        En el MVP, estos datos son de ejemplo (read-only).
+        <span data-i18n="settings.subtitle">En el MVP, estos datos son de ejemplo (read-only).</span>
       </p>
     </header>
 
     <div class="space-y-4">
       <div class="space-y-2">
-        <label class="text-sm font-semibold">Nombre público</label>
+        <label class="text-sm font-semibold" data-i18n="settings.publicName">Nombre público</label>
         <input
           disabled
           value={profile.publicName}
@@ -25,7 +27,7 @@ const title = "Ajustes";
       </div>
 
       <div class="space-y-2">
-        <label class="text-sm font-semibold">Bio pública</label>
+        <label class="text-sm font-semibold" data-i18n="settings.publicBio">Bio pública</label>
         <textarea
           disabled
           rows={4}

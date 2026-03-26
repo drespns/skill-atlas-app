@@ -2,7 +2,7 @@
 import AppShell from "../../layouts/AppShell.astro";
 import ProgressBadge from "../../components/ProgressBadge.astro";
 import EmbedCard from "../../components/EmbedCard.astro";
-import { getConceptById, getProjectById, getTechnologyById, projects } from "../../data/mock";
+import { getConceptById, getProjectById, getTechnologyById, projects } from "../../data";
 
 export async function getStaticPaths() {
   return projects.map((p) => ({
