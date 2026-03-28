@@ -2,23 +2,48 @@
 import AppShell from "../../layouts/AppShell.astro";
 import ProgressBadge from "../../components/ProgressBadge.astro";
 import EmbedCard from "../../components/EmbedCard.astro";
-import { getConceptById, getProjectById, getTechnologyById, projects } from "../../data";
+import projectDetailScriptUrl from "../../scripts/project-detail.ts?url";
+import {
+  dataSource,
+  getConceptById,
+  getProjectById,
+  getTechnologyById,
+  getProjects,
+  getConcepts,
+  getTechnologies,
+} from "../../data";
 
 export async function getStaticPaths() {
+  const projects = await getProjects();
   return projects.map((p) => ({
     params: { projectId: p.id },
   }));
 }
 
 const { projectId } = Astro.params;
-const project = getProjectById(String(projectId));
+const project = await getProjectById(String(projectId));
 
 const title = project?.title ?? "Proyecto";
+const allConcepts = await getConcepts();
+const allTechnologies = await getTechnologies();
+const availableProjectConcepts = project
+  ? allConcepts.filter(
+      (c) => project.technologyIds.includes(c.technologyId) && !project.conceptIds.includes(c.id),
+    )
+  : [];
+const availableProjectTechnologies = project
+  ? allTechnologies.filter((t) => !project.technologyIds.includes(t.id))
+  : [];
 ---
 
 <AppShell title={title}>
   {project ? (
-    <section class="space-y-6">
+    <section
+      class="space-y-6"
+      data-project-id={project.id}
+      data-project-title={project.title}
+      data-project-description={project.description ?? ""}
+    >
       <header class="space-y-3">
         <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div>
@@ -27,16 +52,29 @@ const title = project?.title ?? "Proyecto";
           </div>
 
           <div class="flex flex-wrap gap-2">
-            {project.technologyIds.map((id) => {
-              const name = getTechnologyById(id)?.name ?? id;
+            {await Promise.all(project.technologyIds.map(async (id) => {
+              const name = (await getTechnologyById(id))?.name ?? id;
               return (
-                <span
-                  class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-900 whitespace-nowrap"
-                >
-                  {name}
-                </span>
+                <div class="inline-flex items-center gap-1">
+                  <span
+                    class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-900 whitespace-nowrap"
+                  >
+                    {name}
+                  </span>
+                  {dataSource === "supabase" ? (
+                    <button
+                      type="button"
+                      data-project-tech-remove
+                      data-tech-id={id}
+                      class="text-xs rounded-full border border-gray-200 px-2 py-0.5 hover:bg-gray-50"
+                      title={`Quitar ${name}`}
+                    >
+                      ×
+                    </button>
+                  ) : null}
+                </div>
               );
-            })}
+            }))}
           </div>
         </div>
 
@@ -44,28 +82,184 @@ const title = project?.title ?? "Proyecto";
           href="/projects"
           class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 no-underline"
         >
-          Volver a Proyectos
+          <span data-i18n="common.backToProjects">Volver a Proyectos</span>
         </a>
+
+        {dataSource === "supabase" ? (
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              data-project-edit-open
+              class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50"
+            >
+              <span data-i18n="projectDetail.editProject">Editar proyecto</span>
+            </button>
+            <button
+              type="button"
+              data-project-delete
+              class="inline-flex items-center justify-center rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
+            >
+              <span data-i18n="projectDetail.deleteProject">Eliminar proyecto</span>
+            </button>
+            <p data-project-edit-feedback class="text-sm text-gray-600 m-0 w-full md:w-auto md:self-center"></p>
+          </div>
+        ) : null}
       </header>
 
+      {dataSource === "supabase" ? (
+        <section class="space-y-3">
+          <h2 class="m-0 text-base font-semibold">
+            <span data-i18n="projectDetail.projectTechnologies">Tecnologías del proyecto</span>
+          </h2>
+          <form
+            data-project-tech-form
+            class="border border-gray-200 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 space-y-3"
+          >
+            <div class="flex flex-col md:flex-row gap-2">
+              <select
+                name="technologyId"
+                class="flex-1 border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950"
+                required
+              >
+                {availableProjectTechnologies.length > 0 ? (
+                  availableProjectTechnologies.map((tech) => (
+                    <option value={tech.id}>{tech.name}</option>
+                  ))
+                ) : (
+                  <option value="" data-i18n="projectDetail.noTechnologiesAvailable">No hay tecnologías disponibles</option>
+                )}
+              </select>
+              <button
+                type="submit"
+                class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 disabled:opacity-60"
+                disabled={availableProjectTechnologies.length === 0}
+              >
+                <span data-i18n="projectDetail.associateTechnology">Asociar tecnología</span>
+              </button>
+            </div>
+            <p data-project-tech-feedback class="text-sm text-gray-600 m-0"></p>
+          </form>
+        </section>
+      ) : null}
+
       <section class="space-y-3">
-        <h2 class="m-0 text-base font-semibold">Embeds</h2>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <h2 class="m-0 text-base font-semibold">Embeds</h2>
+          {dataSource === "supabase" ? (
+            <div class="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                data-project-embed-add
+                class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200"
+              >
+                <span data-i18n="projectDetail.addEmbed">Añadir embed</span>
+              </button>
+              <p data-project-embed-feedback class="text-sm text-gray-600 m-0"></p>
+            </div>
+          ) : null}
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           {project.embeds.map((embed) => (
-            <EmbedCard embed={embed} />
+            <div class="space-y-2">
+              <EmbedCard embed={embed} />
+              {dataSource === "supabase" ? (
+                <div class="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    data-project-embed-edit
+                    data-embed-id={embed.id}
+                    data-embed-kind={embed.kind}
+                    data-embed-title={embed.title}
+                    data-embed-url={embed.url}
+                    class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold hover:bg-gray-50"
+                  >
+                    <span data-i18n="projectDetail.editEmbed">Editar embed</span>
+                  </button>
+                  <button
+                    type="button"
+                    data-project-embed-remove
+                    data-embed-id={embed.id}
+                    class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold hover:bg-gray-50"
+                  >
+                    <span data-i18n="projectDetail.deleteEmbed">Eliminar embed</span>
+                  </button>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    data-project-embed-move
+                    data-embed-id={embed.id}
+                    data-direction="up"
+                    class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold hover:bg-gray-50 disabled:opacity-50"
+                    disabled={project.embeds.indexOf(embed) === 0}
+                  >
+                    <span data-i18n="projectDetail.moveUp">Subir</span>
+                  </button>
+                  <button
+                    type="button"
+                    data-project-embed-move
+                    data-embed-id={embed.id}
+                    data-direction="down"
+                    class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold hover:bg-gray-50 disabled:opacity-50"
+                    disabled={project.embeds.indexOf(embed) === project.embeds.length - 1}
+                  >
+                    <span data-i18n="projectDetail.moveDown">Bajar</span>
+                  </button>
+                </div>
+              ) : null}
+            </div>
           ))}
         </div>
       </section>
 
       <section class="space-y-3">
-        <h2 class="m-0 text-base font-semibold">Conceptos relacionados</h2>
+        <h2 class="m-0 text-base font-semibold">
+          <span data-i18n="projectDetail.linkConceptsTitle">Conceptos relacionados</span>
+        </h2>
+        {dataSource === "supabase" ? (
+          <form
+            data-project-concept-form
+            data-project-id={project.id}
+            class="border border-gray-200 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 space-y-3"
+          >
+            <p class="m-0 text-sm font-semibold">Añadir concepto (filtrado por tecnologías del proyecto)</p>
+            <div class="flex flex-col md:flex-row gap-2">
+              <select
+                name="conceptId"
+                class="flex-1 border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950"
+                required
+              >
+                {availableProjectConcepts.length > 0 ? (
+                  availableProjectConcepts.map((concept) => (
+                    <option value={concept.id}>
+                      {concept.title}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" data-i18n="projectDetail.noConceptsAvailable">No hay conceptos disponibles</option>
+                )}
+              </select>
+
+              <button
+                type="submit"
+                class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 disabled:opacity-60"
+                disabled={availableProjectConcepts.length === 0}
+              >
+                Asociar
+              </button>
+            </div>
+            <p data-project-concept-feedback class="text-sm text-gray-600 m-0"></p>
+          </form>
+        ) : null}
+
         <div class="space-y-2">
-          {project.conceptIds.map((id) => {
-            const concept = getConceptById(id);
+          {await Promise.all(project.conceptIds.map(async (id) => {
+            const concept = await getConceptById(id);
             if (!concept) return null;
 
             const techName =
-              getTechnologyById(concept.technologyId)?.name ?? concept.technologyId;
+              (await getTechnologyById(concept.technologyId))?.name ?? concept.technologyId;
 
             return (
               <div
@@ -78,21 +272,35 @@ const title = project?.title ?? "Proyecto";
                 <ProgressBadge progress={concept.progress} />
               </div>
             );
-          })}
+          }))}
         </div>
       </section>
     </section>
   ) : (
     <section class="space-y-3">
       <h1 class="m-0 text-2xl font-semibold">{title}</h1>
-      <p class="text-sm text-gray-600">No se encontró el proyecto.</p>
-      <a
-        href="/projects"
-        class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 no-underline"
-      >
-        Volver a Proyectos
-      </a>
+      <p class="text-sm text-gray-600">
+        <span data-i18n="projectDetail.projectNotFound">No se encontró el proyecto.</span>
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <a
+          href="/projects"
+          class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 no-underline"
+        >
+          <span data-i18n="common.backToProjects">Volver a Proyectos</span>
+        </a>
+        <a
+          href="/technologies"
+          class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 no-underline"
+        >
+          <span data-i18n="nav.technologies">Tecnologías</span>
+        </a>
+      </div>
     </section>
   )}
+
+  {dataSource === "supabase" ? (
+    <script type="module" src={projectDetailScriptUrl}></script>
+  ) : null}
 </AppShell>
 

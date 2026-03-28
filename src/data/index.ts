@@ -1,4 +1,6 @@
 import * as mock from "./mock";
+import * as mockProvider from "./providers/mockProvider";
+import * as supabaseProvider from "./providers/supabaseProvider";
 
 /**
  * This file is the ONLY public entry point for app data.
@@ -9,11 +11,11 @@ import * as mock from "./mock";
  * - When we migrate backend, we swap implementation here
  */
 
-export type ProgressState = mock.ProgressState;
-export type Technology = mock.Technology;
-export type Concept = mock.Concept;
-export type Project = mock.Project;
-export type ProjectEmbed = mock.ProjectEmbed;
+export type ProgressState = mockProvider.ProgressState;
+export type Technology = mockProvider.Technology;
+export type Concept = mockProvider.Concept;
+export type Project = mockProvider.Project;
+export type ProjectEmbed = mockProvider.ProjectEmbed;
 
 /**
  * Data facade for the app.
@@ -21,21 +23,22 @@ export type ProjectEmbed = mock.ProjectEmbed;
  * Today: uses local mock data.
  * Next step: swap to a Supabase-backed implementation with the same API.
  */
-export const dataSource: "mock" | "supabase" = "mock";
+export const dataSource: "mock" | "supabase" =
+  import.meta.env.PUBLIC_DATA_SOURCE === "supabase" ? "supabase" : "mock";
+
+const provider = dataSource === "supabase" ? supabaseProvider : mockProvider;
 
 // Global app metadata
 export const profile = mock.profile;
 export const repoUrl = mock.repoUrl;
 
-// Collections used by current pages
-export const technologies = mock.technologies;
-export const concepts = mock.concepts;
-export const projects = mock.projects;
-
-// Query helpers (replaceable with DB queries later)
-export const getTechnologyById = mock.getTechnologyById;
-export const getConceptsByTechnology = mock.getConceptsByTechnology;
-export const getProjectsByTechnology = mock.getProjectsByTechnology;
-export const getConceptById = mock.getConceptById;
-export const getProjectById = mock.getProjectById;
+// Query helpers (now async to support real database providers)
+export const getTechnologies = provider.getTechnologies;
+export const getConcepts = provider.getConcepts;
+export const getProjects = provider.getProjects;
+export const getTechnologyById = provider.getTechnologyById;
+export const getConceptsByTechnology = provider.getConceptsByTechnology;
+export const getProjectsByTechnology = provider.getProjectsByTechnology;
+export const getConceptById = provider.getConceptById;
+export const getProjectById = provider.getProjectById;
 

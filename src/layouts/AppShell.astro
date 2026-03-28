@@ -66,6 +66,8 @@ const APP_LOGO_SRC = "/favicon.svg";
             class="hidden sm:block rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
             aria-label="Idioma"
             title="Idioma"
+            data-i18n="common.language"
+            data-i18n-attr="aria-label,title"
           >
             <option value="es">ES</option>
             <option value="en">EN</option>
@@ -76,6 +78,8 @@ const APP_LOGO_SRC = "/favicon.svg";
             class={`inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors ${isActive("/settings") ? "ring-1 ring-gray-300 dark:ring-gray-700" : ""}`}
             aria-label="Ajustes"
             title="Ajustes"
+            data-i18n="nav.settings"
+            data-i18n-attr="aria-label,title"
           >
             <svg
               class="h-5 w-5"
@@ -103,6 +107,8 @@ const APP_LOGO_SRC = "/favicon.svg";
             class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
             aria-label="Ver repositorio en GitHub"
             title="GitHub"
+            data-i18n="common.githubRepo"
+            data-i18n-attr="aria-label"
           >
             <img src="/icons/GitHub.svg" alt="" class="h-5 w-5" />
           </a>
@@ -114,8 +120,10 @@ const APP_LOGO_SRC = "/favicon.svg";
             aria-label="Cambiar tema"
             title="Tema"
             aria-pressed="false"
+            data-i18n="common.toggleTheme"
+            data-i18n-attr="aria-label,title"
           >
-            <span class="sr-only">Cambiar tema</span>
+            <span class="sr-only" data-i18n="common.toggleTheme">Cambiar tema</span>
             <svg
               data-icon-sun
               class="h-5 w-5 hidden dark:block"

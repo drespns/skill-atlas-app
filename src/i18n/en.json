@@ -1,0 +1,109 @@
+{
+  "common": {
+    "view": "View",
+    "backToProjects": "Back to Projects",
+    "embeds": "Embeds",
+    "relatedConcepts": "Related concepts",
+    "viewProject": "View project",
+    "viewDetail": "View details",
+    "newTechnology": "New technology",
+    "openApp": "Open app",
+    "viewPortfolio": "View portfolio",
+    "publicPortfolio": "View public portfolio",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "add": "Add",
+    "cancel": "Cancel",
+    "language": "Language",
+    "githubRepo": "View GitHub repository",
+    "toggleTheme": "Toggle theme"
+  },
+  "nav": {
+    "technologies": "Technologies",
+    "projects": "Projects",
+    "portfolio": "Portfolio",
+    "settings": "Settings"
+  },
+  "landing": {
+    "title": "SkillAtlas",
+    "subtitle": "Manage your technical knowledge: technologies, concepts, progress and projects that become your portfolio.",
+    "step1Title": "1. Technologies",
+    "step1Body": "Create categories like SQL, PySpark or DAX.",
+    "step2Title": "2. Concepts",
+    "step2Body": "Register concepts inside each technology.",
+    "step3Title": "3. Projects",
+    "step3Body": "Link concepts and publish your portfolio."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Main flow: technologies → concepts → projects → portfolio.",
+    "goTechnologies": "Go to Technologies",
+    "goTechnologiesBody": "Create concepts inside each technology.",
+    "goProjects": "Go to Projects",
+    "goProjectsBody": "Link concepts and publish your portfolio."
+  },
+  "technologies": {
+    "title": "Technologies",
+    "concepts": "concepts",
+    "newPlaceholder": "e.g. SQL, Python, DAX..."
+  },
+  "projects": {
+    "title": "Projects",
+    "subtitle": "Projects connected to technologies and concepts.",
+    "newProject": "New project",
+    "projectTitlePlaceholder": "Project title",
+    "projectDescPlaceholder": "Short description",
+    "saveProject": "Save project",
+    "emptyTitle": "You don't have any projects yet.",
+    "emptyBody": "In the MVP you can start from here."
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "noEmbedsMock": "No embeds in mock.",
+    "filterByTechnology": "Technology",
+    "allTechnologies": "All",
+    "filter": "Filter"
+  },
+  "projectDetail": {
+    "editProject": "Edit project",
+    "deleteProject": "Delete project",
+    "projectTechnologies": "Project technologies",
+    "linkConceptsTitle": "Related concepts",
+    "associateTechnology": "Link technology",
+    "addEmbed": "Add embed",
+    "editEmbed": "Edit embed",
+    "deleteEmbed": "Delete embed",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "projectNotFound": "Project not found.",
+    "noTechnologiesAvailable": "No technologies available",
+    "noConceptsAvailable": "No concepts available"
+  },
+  "technologyDetail": {
+    "conceptsTitle": "Concepts",
+    "newConceptIn": "New concept in {{name}}",
+    "conceptTitlePlaceholder": "Concept title",
+    "conceptNotesPlaceholder": "Concept notes",
+    "saveConcept": "Save concept",
+    "progressLearned": "Learned",
+    "progressPracticed": "Practiced",
+    "progressMastered": "Mastered",
+    "emptyConceptsTitle": "You don't have concepts in this technology yet.",
+    "emptyConceptsBody": "In the MVP, concepts are created from here.",
+    "projectsWithTechnology": "Projects using this technology",
+    "emptyProjectsTitle": "There are no projects using {{name}} yet.",
+    "emptyProjectsBody": "Go to Projects to start linking concepts.",
+    "checkUrl": "Check the URL.",
+    "backToTechnologies": "Back to Technologies",
+    "goProjects": "Go to Projects",
+    "viewProjects": "View Projects"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "In the MVP, this data is example (read-only).",
+    "publicName": "Public name",
+    "publicBio": "Public bio"
+  }
+}
+

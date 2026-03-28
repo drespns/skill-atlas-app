@@ -2,15 +2,18 @@
 import AppShell from "../../layouts/AppShell.astro";
 import ProgressBadge from "../../components/ProgressBadge.astro";
 import ProjectCard from "../../components/ProjectCard.astro";
+import technologyDetailScriptUrl from "../../scripts/technology-detail.ts?url";
 
 import {
-  technologies,
+  dataSource,
+  getTechnologies,
   getConceptsByTechnology,
   getProjectsByTechnology,
   getTechnologyById,
 } from "../../data";
 
 export async function getStaticPaths() {
+  const technologies = await getTechnologies();
   return technologies.map((t) => ({
     params: { techId: t.id },
   }));
@@ -19,9 +22,9 @@ export async function getStaticPaths() {
 const { techId } = Astro.params;
 const title = "Tecnología";
 
-const technology = getTechnologyById(String(techId));
-const techConcepts = technology ? getConceptsByTechnology(technology.id) : [];
-const relatedProjects = technology ? getProjectsByTechnology(technology.id) : [];
+const technology = await getTechnologyById(String(techId));
+const techConcepts = technology ? await getConceptsByTechnology(technology.id) : [];
+const relatedProjects = technology ? await getProjectsByTechnology(technology.id) : [];
 
 const technologyTitle = technology?.name ?? "Tecnología no encontrada";
 ---
@@ -51,7 +54,62 @@ const technologyTitle = technology?.name ?? "Tecnología no encontrada";
       </header>
 
       <section class="space-y-3">
-        <h2 class="m-0 text-base font-semibold">Conceptos</h2>
+        <h2 class="m-0 text-base font-semibold">
+          <span data-i18n="technologyDetail.conceptsTitle">Conceptos</span>
+        </h2>
+        {dataSource === "supabase" ? (
+          <form
+            data-concept-form
+            data-tech-id={technology.id}
+            class="border border-gray-200 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 space-y-3"
+          >
+            <p class="m-0 text-sm font-semibold">
+              <span
+                data-i18n="technologyDetail.newConceptIn"
+                data-i18n-args={JSON.stringify({ name: technology.name })}
+              >
+                Nuevo concepto en {technology.name}
+              </span>
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <input
+                name="title"
+                type="text"
+                placeholder="Título del concepto"
+                data-i18n="technologyDetail.conceptTitlePlaceholder"
+                data-i18n-attr="placeholder"
+                class="border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950"
+                required
+              />
+              <select
+                name="progress"
+                class="border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950"
+              >
+                <option value="aprendido" data-i18n="technologyDetail.progressLearned">Aprendido</option>
+                <option value="practicado" data-i18n="technologyDetail.progressPracticed">Practicado</option>
+                <option value="mastered" data-i18n="technologyDetail.progressMastered">Dominado</option>
+              </select>
+            </div>
+            <textarea
+              name="notes"
+              rows={3}
+              placeholder="Notas del concepto"
+              data-i18n="technologyDetail.conceptNotesPlaceholder"
+              data-i18n-attr="placeholder"
+              class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950"
+            />
+            <div class="flex items-center gap-3">
+              <button
+                type="submit"
+                class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200"
+              >
+                <span data-i18n="technologyDetail.saveConcept">Guardar concepto</span>
+              </button>
+              <p data-concept-feedback class="text-sm text-gray-600 m-0"></p>
+            </div>
+          </form>
+        ) : null}
+
         {techConcepts.length > 0 ? (
           <div class="space-y-2">
             {techConcepts.map((concept) => (
@@ -62,38 +120,87 @@ const technologyTitle = technology?.name ?? "Tecnología no encontrada";
                   <p class="m-0 font-semibold">{concept.title}</p>
                   <p class="mt-1 text-sm text-gray-600">{concept.notes}</p>
                 </div>
-                <ProgressBadge progress={concept.progress} />
+                <div class="flex items-center gap-2">
+                  <ProgressBadge progress={concept.progress} />
+                  {dataSource === "supabase" ? (
+                    <>
+                      <button
+                        type="button"
+                        data-concept-edit
+                        data-concept-id={concept.id}
+                        data-concept-title={concept.title}
+                        data-concept-notes={concept.notes}
+                        data-concept-progress={concept.progress}
+                        class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-2 py-1 text-xs font-semibold hover:bg-gray-50"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        data-concept-delete
+                        data-concept-id={concept.id}
+                        data-concept-title={concept.title}
+                        class="inline-flex items-center justify-center rounded-lg border border-red-200 text-red-700 px-2 py-1 text-xs font-semibold hover:bg-red-50"
+                      >
+                        Eliminar
+                      </button>
+                    </>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>
         ) : (
           <div class="border border-gray-200 rounded-xl p-5 bg-gray-50">
-            <p class="m-0 font-semibold">Aún no tienes conceptos en esta tecnología.</p>
-            <p class="mt-2 text-sm text-gray-600">
-              En el MVP, los conceptos se crean desde aquí.
+            <p class="m-0 font-semibold">
+              <span data-i18n="technologyDetail.emptyConceptsTitle">Aún no tienes conceptos en esta tecnología.</span>
             </p>
+            <p class="mt-2 text-sm text-gray-600">
+              <span data-i18n="technologyDetail.emptyConceptsBody">En el MVP, los conceptos se crean desde aquí.</span>
+            </p>
+            <a
+              href="/projects"
+              class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 no-underline mt-3"
+            >
+              <span data-i18n="technologyDetail.viewProjects">Ver Proyectos</span>
+            </a>
           </div>
         )}
       </section>
 
       <section class="space-y-3">
-        <h2 class="m-0 text-base font-semibold">Proyectos con esta tecnología</h2>
+        <h2 class="m-0 text-base font-semibold">
+          <span data-i18n="technologyDetail.projectsWithTechnology">Proyectos con esta tecnología</span>
+        </h2>
         {relatedProjects.length > 0 ? (
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {relatedProjects.map((project) => {
-              const technologyNames = project.technologyIds
-                .map((id) => getTechnologyById(id)?.name)
-                .filter((x): x is string => Boolean(x));
+            {await Promise.all(relatedProjects.map(async (project) => {
+              const technologyNames = (
+                await Promise.all(project.technologyIds.map(async (id) => (await getTechnologyById(id))?.name))
+              ).filter((x): x is string => Boolean(x));
 
               return <ProjectCard project={project} technologyNames={technologyNames} />;
-            })}
+            }))}
           </div>
         ) : (
           <div class="border border-gray-200 rounded-xl p-5 bg-gray-50">
-            <p class="m-0 font-semibold">Todavía no hay proyectos usando {technology.name}.</p>
-            <p class="mt-2 text-sm text-gray-600">
-              Ve a Proyectos para empezar a relacionar conceptos.
+            <p class="m-0 font-semibold">
+              <span
+                data-i18n="technologyDetail.emptyProjectsTitle"
+                data-i18n-args={JSON.stringify({ name: technology.name })}
+              >
+                Todavía no hay proyectos usando {technology.name}.
+              </span>
             </p>
+            <p class="mt-2 text-sm text-gray-600">
+              <span data-i18n="technologyDetail.emptyProjectsBody">Ve a Proyectos para empezar a relacionar conceptos.</span>
+            </p>
+            <a
+              href="/projects"
+              class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 no-underline mt-3"
+            >
+              <span data-i18n="technologyDetail.goProjects">Ir a Proyectos</span>
+            </a>
           </div>
         )}
       </section>
@@ -101,8 +208,28 @@ const technologyTitle = technology?.name ?? "Tecnología no encontrada";
   ) : (
     <section class="space-y-3">
       <h1 class="m-0 text-2xl font-semibold">{technologyTitle}</h1>
-      <p class="text-sm text-gray-600">Comprueba la URL.</p>
+      <p class="text-sm text-gray-600">
+        <span data-i18n="technologyDetail.checkUrl">Comprueba la URL.</span>
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <a
+          href="/technologies"
+          class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 no-underline"
+        >
+          <span data-i18n="technologyDetail.backToTechnologies">Volver a Tecnologías</span>
+        </a>
+        <a
+          href="/projects"
+          class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 no-underline"
+        >
+          <span data-i18n="technologyDetail.viewProjects">Ver Proyectos</span>
+        </a>
+      </div>
     </section>
   )}
+
+  {dataSource === "supabase" ? (
+    <script type="module" src={technologyDetailScriptUrl}></script>
+  ) : null}
 </AppShell>
 

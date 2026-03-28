@@ -50,6 +50,8 @@ tecnologías, conceptos, progreso de aprendizaje y proyectos de portfolio.
 └─ package.json
 ```
 
+![Supabase DB](/public/db/supabase-db.png)
+
 ---
 
 ## 🗺️ Rutas actuales

@@ -1,10 +1,13 @@
 ---
 import AppShell from "../layouts/AppShell.astro";
 import TechnologyCard from "../components/TechnologyCard.astro";
+import technologiesScriptUrl from "../scripts/technologies.ts?url";
 
-import { concepts, technologies as mockTechnologies } from "../data";
+import { dataSource, getConcepts, getTechnologies } from "../data";
 
 const title = "Tecnologías";
+
+const [concepts, mockTechnologies] = await Promise.all([getConcepts(), getTechnologies()]);
 
 const technologies = mockTechnologies.map((t) => ({
   id: t.id,
@@ -15,18 +18,75 @@ const technologies = mockTechnologies.map((t) => ({
 
 <AppShell title={title}>
   <header class="flex items-center justify-between gap-4 mb-5">
-    <h1 class="m-0 text-2xl font-semibold">{title}</h1>
-    <button
-      type="button"
-      class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 opacity-60 cursor-not-allowed"
-      aria-disabled="true"
-    >
-      Nueva tecnología
-    </button>
+    <h1 class="m-0 text-2xl font-semibold">
+      <span data-i18n="technologies.title">{title}</span>
+    </h1>
+    <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-900">
+      {technologies.length} total
+    </span>
   </header>
 
+  {dataSource === "supabase" ? (
+    <form
+      data-tech-form
+      class="mb-6 border border-gray-200 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 space-y-3"
+    >
+      <p class="m-0 text-sm font-semibold">
+        <span data-i18n="common.newTechnology">Nueva tecnología</span>
+      </p>
+      <div class="flex flex-col md:flex-row gap-2">
+        <input
+          name="name"
+          type="text"
+          placeholder="Ej. SQL, Python, DAX..."
+          data-i18n="technologies.newPlaceholder"
+          data-i18n-attr="placeholder"
+          class="flex-1 border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950"
+          required
+        />
+        <button
+          type="submit"
+          class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200"
+        >
+          <span data-i18n="common.save">Guardar</span>
+        </button>
+      </div>
+      <p data-tech-feedback class="text-sm text-gray-600 m-0"></p>
+    </form>
+  ) : null}
+
   <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    {technologies.map((tech) => <TechnologyCard technology={tech} />)}
+    {technologies.map((tech) => (
+      <div class="space-y-2">
+        <TechnologyCard technology={tech} />
+        {dataSource === "supabase" ? (
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              data-tech-edit
+              data-tech-id={tech.id}
+              data-tech-name={tech.name}
+              class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold hover:bg-gray-50"
+            >
+              <span data-i18n="common.edit">Editar</span>
+            </button>
+            <button
+              type="button"
+              data-tech-delete
+              data-tech-id={tech.id}
+              data-tech-name={tech.name}
+              class="inline-flex items-center justify-center rounded-lg border border-red-200 text-red-700 px-3 py-2 text-xs font-semibold hover:bg-red-50"
+            >
+              <span data-i18n="common.delete">Eliminar</span>
+            </button>
+          </div>
+        ) : null}
+      </div>
+    ))}
   </section>
+
+  {dataSource === "supabase" ? (
+    <script type="module" src={technologiesScriptUrl}></script>
+  ) : null}
 </AppShell>
 

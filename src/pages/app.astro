@@ -1,9 +1,10 @@
 ---
 import AppShell from "../layouts/AppShell.astro";
-import { concepts, projects } from "../data";
+import { getConcepts, getProjects } from "../data";
 
 const title = "Dashboard";
 
+const [concepts, projects] = await Promise.all([getConcepts(), getProjects()]);
 const conceptsCount = concepts.length;
 const projectsCount = projects.length;
 ---
