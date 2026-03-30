@@ -2,6 +2,7 @@
 import AppShell from "../layouts/AppShell.astro";
 import { profile } from "../data";
 import settingsAuthScriptUrl from "../scripts/settings-auth.ts?url";
+import settingsPrefsScriptUrl from "../scripts/settings-prefs.ts?url";
 
 const title = "Ajustes";
 ---
@@ -18,6 +19,151 @@ const title = "Ajustes";
     </header>
 
     <div class="space-y-4">
+      <section
+        class="rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-5 shadow-sm space-y-4"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="m-0 text-base font-semibold">
+            <span data-i18n="settings.prefs.sectionTitle">Preferencias</span>
+          </h2>
+          <button
+            type="button"
+            data-pref-reset
+            class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 app-accent-ring"
+          >
+            <span data-i18n="settings.prefs.reset">Restablecer</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label class="space-y-1">
+            <span class="text-sm font-semibold" data-i18n="settings.prefs.theme">Tema</span>
+            <select
+              data-pref-theme
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+            >
+              <option value="auto" data-i18n="settings.prefs.themeAuto">Auto (sistema)</option>
+              <option value="light" data-i18n="settings.prefs.themeLight">Claro</option>
+              <option value="dark" data-i18n="settings.prefs.themeDark">Oscuro</option>
+            </select>
+          </label>
+
+          <label class="space-y-1">
+            <span class="text-sm font-semibold" data-i18n="settings.prefs.density">Densidad</span>
+            <select
+              data-pref-density
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+            >
+              <option value="comfortable" data-i18n="settings.prefs.densityComfortable">Cómoda</option>
+              <option value="compact" data-i18n="settings.prefs.densityCompact">Compacta</option>
+            </select>
+          </label>
+
+          <label class="space-y-1">
+            <span class="text-sm font-semibold" data-i18n="settings.prefs.font">Fuente</span>
+            <select
+              data-pref-font
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+            >
+              <option value="system" data-i18n="settings.prefs.fontSystem">Sistema</option>
+              <option value="inter" data-i18n="settings.prefs.fontInter">Inter</option>
+              <option value="mono" data-i18n="settings.prefs.fontMono">Mono</option>
+            </select>
+          </label>
+
+          <label class="space-y-1">
+            <span class="text-sm font-semibold" data-i18n="settings.prefs.accent">Acento</span>
+            <select
+              data-pref-accent
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+            >
+              <option value="indigo" data-i18n="settings.prefs.accentIndigo">Índigo</option>
+              <option value="emerald" data-i18n="settings.prefs.accentEmerald">Esmeralda</option>
+              <option value="rose" data-i18n="settings.prefs.accentRose">Rosa</option>
+              <option value="amber" data-i18n="settings.prefs.accentAmber">Ámbar</option>
+              <option value="sky" data-i18n="settings.prefs.accentSky">Cielo</option>
+              <option value="violet" data-i18n="settings.prefs.accentViolet">Violeta</option>
+            </select>
+          </label>
+
+          <label class="space-y-1">
+            <span class="text-sm font-semibold" data-i18n="settings.prefs.motion">Movimiento</span>
+            <select
+              data-pref-motion
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+            >
+              <option value="normal" data-i18n="settings.prefs.motionNormal">Normal</option>
+              <option value="reduced" data-i18n="settings.prefs.motionReduced">Reducido</option>
+            </select>
+          </label>
+
+          <label class="space-y-1">
+            <span class="text-sm font-semibold" data-i18n="settings.prefs.technologiesView"
+              >Vista (Tecnologías)</span
+            >
+            <select
+              data-pref-technologies-view
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+            >
+              <option value="cards" data-i18n="settings.prefs.viewCards">Cards</option>
+              <option value="list" data-i18n="settings.prefs.viewList">Lista</option>
+            </select>
+          </label>
+
+          <label class="space-y-1">
+            <span class="text-sm font-semibold" data-i18n="settings.prefs.projectsView">Vista (Proyectos)</span>
+            <select
+              data-pref-projects-view
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+            >
+              <option value="cards" data-i18n="settings.prefs.viewCards">Cards</option>
+              <option value="list" data-i18n="settings.prefs.viewList">Lista</option>
+            </select>
+          </label>
+
+          <label class="space-y-1">
+            <span class="text-sm font-semibold" data-i18n="settings.prefs.language">Idioma</span>
+            <select
+              data-pref-lang
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+            >
+              <option value="es">ES</option>
+              <option value="en">EN</option>
+            </select>
+          </label>
+
+          <label class="space-y-1">
+            <span class="text-sm font-semibold" data-i18n="settings.prefs.showHeaderIcons">Iconos del header</span>
+            <select
+              data-pref-show-header-icons
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+            >
+              <option value="yes" data-i18n="settings.prefs.show">Mostrar</option>
+              <option value="no" data-i18n="settings.prefs.hide">Ocultar</option>
+            </select>
+          </label>
+
+          <label class="space-y-1">
+            <span class="text-sm font-semibold" data-i18n="settings.prefs.showLangSelector"
+              >Selector de idioma (header)</span
+            >
+            <select
+              data-pref-show-lang-selector
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+            >
+              <option value="yes" data-i18n="settings.prefs.show">Mostrar</option>
+              <option value="no" data-i18n="settings.prefs.hide">Ocultar</option>
+            </select>
+          </label>
+        </div>
+
+        <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
+          <span data-i18n="settings.prefs.localFirstHint">
+            Se guardan en este navegador (local-first). Más adelante podremos sincronizarlas.
+          </span>
+        </p>
+      </section>
+
       <section
         class="rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-5 shadow-sm space-y-4"
       >
@@ -93,4 +239,5 @@ const title = "Ajustes";
   </section>
 
   <script type="module" src={settingsAuthScriptUrl}></script>
+  <script type="module" src={settingsPrefsScriptUrl}></script>
 </AppShell>

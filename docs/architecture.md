@@ -90,6 +90,22 @@ Scripts principales:
 
 Plan detallado para **multiusuario + portfolio por enlace compartido**: `docs/plan-saas-multi-tenant-portfolio.md`. Decision actual para la app interna: **CSR** (sin adapter SSR); el portfolio publico por token ira contra **RPC** (`docs/sql/saas-003-fn-portfolio-share.sql`) cuando se cablee la UI.
 
+## Decisiones UX (local-first)
+
+- Preferencias globales (fuente/tema/densidad/etc.) empiezan en **localStorage** (sin sync multi-dispositivo en la primera iteración).
+- Import semiautomático por tecnología: fuentes **URL + texto**, con preview y revisión antes de crear conceptos.
+- Documentación: **1 Tech Note por tecnología** (markdown) además de conceptos.
+
+Implementación (Sprint A):
+- Preferencias guardadas en `localStorage` (`skillatlas_prefs_v1`) y aplicadas en `AppShell.astro` (script inline en `<head>`) + `src/scripts/client.ts`.
+- UI en `/settings` con `src/scripts/settings-prefs.ts`.
+- Cache de navegación ligera para CSR lists en `sessionStorage` (TTL 2 min) en `src/scripts/{projects,technologies}.ts`.
+
+Mejoras UX (Sprint A+):
+- Botón visible para Command Palette en header (además de `Ctrl+K`).
+- Toggle Cards/Lista en páginas (sin pasar por Ajustes) y persistencia en prefs.
+- Preferencias de UI: mostrar/ocultar iconos del header y preferencia de idioma (con opción de ocultar el selector del header).
+
 ## Assets 3D del login (Earth)
 
 - Shaders: `src/shaders/{earth,atmosphere}/*.glsl`

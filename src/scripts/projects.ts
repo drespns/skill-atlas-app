@@ -1,6 +1,16 @@
 import { getSupabaseBrowserClient } from "./client-supabase";
 import { getSessionUserId } from "./auth-session";
 import { showToast } from "./ui-feedback";
+import { loadPrefs } from "./prefs";
+
+declare global {
+  interface Window {
+    skillatlas?: {
+      bootstrapProjectsList?: () => Promise<void>;
+      clearProjectsCache?: () => void;
+    };
+  }
+}
 
 function escHtml(s: string) {
   return s
@@ -46,6 +56,17 @@ async function initProjectForm() {
     return;
   }
 
+  // Helpful when coming from Command Palette actions (create=1)
+  try {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("create") === "1") {
+      titleInput.focus();
+      titleInput.select();
+    }
+  } catch {
+    // ignore
+  }
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const title = titleInput.value.trim();
@@ -89,7 +110,15 @@ async function initProjectForm() {
     feedback.textContent = "Proyecto creado correctamente.";
     feedback.className = "text-sm text-green-600";
     showToast("Proyecto creado correctamente.", "success");
-    window.location.reload();
+    titleInput.value = "";
+    descInput.value = "";
+    submitBtn.disabled = false;
+    if (window.skillatlas?.clearProjectsCache) window.skillatlas.clearProjectsCache();
+    if (window.skillatlas?.bootstrapProjectsList) {
+      await window.skillatlas.bootstrapProjectsList();
+    } else {
+      window.location.reload();
+    }
   });
 }
 
@@ -98,6 +127,35 @@ async function bootstrapProjectsList() {
   if (!mount) return;
 
   const countEl = document.querySelector<HTMLElement>("[data-projects-count]");
+
+  const cacheKey = (userId: string) => `skillatlas_cache_projects_list_v1:${userId}`;
+  const readCache = (userId: string) => {
+    try {
+      const raw = sessionStorage.getItem(cacheKey(userId));
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { ts: number; html: string; countText: string };
+      if (!parsed?.ts || typeof parsed.html !== "string") return null;
+      // 2 min TTL (enough to avoid flicker while navigating)
+      if (Date.now() - parsed.ts > 2 * 60 * 1000) return null;
+      return parsed;
+    } catch {
+      return null;
+    }
+  };
+  const writeCache = (userId: string, html: string, countText: string) => {
+    try {
+      sessionStorage.setItem(cacheKey(userId), JSON.stringify({ ts: Date.now(), html, countText }));
+    } catch {
+      // ignore
+    }
+  };
+  const clearCache = (userId: string) => {
+    try {
+      sessionStorage.removeItem(cacheKey(userId));
+    } catch {
+      // ignore
+    }
+  };
 
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
@@ -112,6 +170,25 @@ async function bootstrapProjectsList() {
       <a href="/settings" class="inline-flex mt-3 rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Ir a Ajustes</a>
     </div>`;
     if (countEl) countEl.textContent = "0 proyectos";
+    return;
+  }
+
+  const prefs = loadPrefs();
+  const view = prefs.projectsView;
+
+  const cached = readCache(userId);
+  if (cached) {
+    if (view === "list") {
+      mount.className = "w-full space-y-2";
+    } else {
+      mount.className = "w-full grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[8rem]";
+    }
+    mount.innerHTML = cached.html;
+    if (countEl) countEl.textContent = cached.countText;
+    // Refresh in background
+    setTimeout(() => {
+      void bootstrapProjectsList();
+    }, 0);
     return;
   }
 
@@ -152,42 +229,108 @@ async function bootstrapProjectsList() {
     conceptCountByProject.set(pid, (conceptCountByProject.get(pid) ?? 0) + 1);
   }
 
-  if (countEl) {
-    countEl.textContent = `${projects.length} proyectos`;
-  }
+  const countText = `${projects.length} proyectos`;
+  if (countEl) countEl.textContent = countText;
 
   if (projects.length === 0) {
-    mount.innerHTML = `<div class="border border-gray-200 rounded-xl p-5 bg-gray-50 col-span-full">
+    const html = `<div class="border border-gray-200 rounded-xl p-5 bg-gray-50 col-span-full">
       <p class="m-0 font-semibold">Aún no tienes proyectos.</p>
       <p class="mt-2 text-sm text-gray-600">En el MVP puedes empezar desde aquí.</p>
     </div>`;
+    mount.innerHTML = html;
+    writeCache(userId, html, countText);
     return;
   }
 
-  mount.innerHTML = projects
-    .map((project) => {
-      const technologyNames = techSlugsByProject.get(project.id) ?? [];
-      const pills = technologyNames
-        .map(
-          (name) =>
-            `<span class="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 whitespace-nowrap">${escHtml(name)}</span>`,
-        )
-        .join("");
-      const nConcepts = conceptCountByProject.get(project.id) ?? 0;
-      const href = `/projects/view?project=${encodeURIComponent(project.slug)}`;
-      return `<article class="border border-gray-200/80 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 flex flex-col gap-3 shadow-sm">
-        <div class="flex items-start justify-between gap-3"><div>
-          <h3 class="m-0 text-base font-semibold">${escHtml(project.title)}</h3>
-          <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">${escHtml(project.description ?? "")}</p></div></div>
-        <div class="flex flex-wrap gap-2">${pills}</div>
-        <div class="flex items-center justify-between gap-3">
-          <span class="text-xs text-gray-500 dark:text-gray-400">${nConcepts} conceptos</span>
-          <a class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 no-underline" href="${href}">Ver proyecto</a>
-        </div>
-      </article>`;
-    })
-    .join("");
+  if (view === "list") {
+    mount.className = "w-full space-y-2";
+  } else {
+    mount.className = "w-full grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[8rem]";
+  }
+
+  const html =
+    view === "list"
+      ? `<div class="w-full rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm overflow-hidden">
+          ${(projects ?? [])
+            .map((project) => {
+              const technologyNames = techSlugsByProject.get(project.id) ?? [];
+              const nConcepts = conceptCountByProject.get(project.id) ?? 0;
+              const href = `/projects/view?project=${encodeURIComponent(project.slug)}`;
+              const techLabel = technologyNames.slice(0, 3).map(escHtml).join(" · ");
+              const more = Math.max(0, technologyNames.length - 3);
+              const techSummary = techLabel ? `${techLabel}${more ? ` · +${more}` : ""}` : "";
+              return `<a href="${href}" class="block no-underline px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-900/40 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="min-w-0">
+                    <p class="m-0 font-semibold truncate">${escHtml(project.title)}</p>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-300 truncate">${escHtml(project.description ?? "")}</p>
+                    ${
+                      techSummary
+                        ? `<p class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">${techSummary}</p>`
+                        : ""
+                    }
+                  </div>
+                  <div class="shrink-0 text-right">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">${nConcepts} conceptos</span>
+                  </div>
+                </div>
+              </a>`;
+            })
+            .join("")}
+        </div>`
+      : projects
+          .map((project) => {
+            const technologyNames = techSlugsByProject.get(project.id) ?? [];
+            const pills = technologyNames
+              .map(
+                (name) =>
+                  `<span class="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 whitespace-nowrap">${escHtml(name)}</span>`,
+              )
+              .join("");
+            const nConcepts = conceptCountByProject.get(project.id) ?? 0;
+            const href = `/projects/view?project=${encodeURIComponent(project.slug)}`;
+            return `<article class="border border-gray-200/80 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 flex flex-col gap-3 shadow-sm">
+              <div class="flex items-start justify-between gap-3"><div>
+                <h3 class="m-0 text-base font-semibold">${escHtml(project.title)}</h3>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">${escHtml(project.description ?? "")}</p></div></div>
+              <div class="flex flex-wrap gap-2">${pills}</div>
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-xs text-gray-500 dark:text-gray-400">${nConcepts} conceptos</span>
+                <a class="btn-primary no-underline" href="${href}">Ver proyecto</a>
+              </div>
+            </article>`;
+          })
+          .join("");
+  mount.innerHTML = html;
+  writeCache(userId, html, countText);
 }
+
+window.skillatlas = window.skillatlas ?? {};
+window.skillatlas.bootstrapProjectsList = async () => {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return;
+  const userId = await getSessionUserId(supabase);
+  if (!userId) return;
+  try {
+    sessionStorage.removeItem(`skillatlas_cache_projects_list_v1:${userId}`);
+  } catch {
+    // ignore
+  }
+  await bootstrapProjectsList();
+};
+window.skillatlas.clearProjectsCache = () => {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return;
+  void (async () => {
+    const userId = await getSessionUserId(supabase);
+    if (!userId) return;
+    try {
+      sessionStorage.removeItem(`skillatlas_cache_projects_list_v1:${userId}`);
+    } catch {
+      // ignore
+    }
+  })();
+};
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {

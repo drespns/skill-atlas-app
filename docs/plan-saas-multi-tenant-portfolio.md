@@ -194,13 +194,14 @@ Cuando el SaaS + portfolio por enlace este estable:
 
 ### 7.1 Import semiautomatico por tecnologia
 
-- Fuente de verdad: CSV, pegado de lista, API de documentacion, u “assistant” que sugiera conceptos.
-- Flujo UX: preview diff → confirmar altas en bloque.
+- Fuente de verdad (prioridad): **URL + texto** (pegado) para máxima flexibilidad.
+- Flujo UX: sugerencias (editable) → preview/diff → confirmar altas en bloque.
 - DB: posible tabla `concept_import_jobs` o solo transaccion cliente.
 
 ### 7.2 Secciones de documentacion y referencias externas
 
-- Modelo: entidades `technology_doc_section` (titulo, body markdown, orden) y `technology_reference` (url, titulo, tipo).
+- Modelo (MVP): **1 Tech Note por tecnología** (markdown) + referencias externas.
+- Evolución: entidades `technology_doc_section` (titulo, body markdown, orden) y `technology_reference` (url, titulo, tipo).
 - UI: pestañas en `/technologies/[techId]` (Conceptos | Docs | Enlaces).
 - RLS: mismo `user_id` que la tecnologia.
 

@@ -12,9 +12,87 @@ body {
   margin: 0;
 }
 
-/* Mejor base de tipografía (simple) */
-body {
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans",
+/* Preferencias globales (local-first) */
+:root {
+  --app-font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans",
     "Apple Color Emoji", "Segoe UI Emoji";
+  --app-accent-hsl: 239 84% 67%;
+  --app-motion: normal;
+}
+
+body {
+  font-family: var(--app-font-family);
+}
+
+/* Accent: helpers sutiles (no dependemos de Tailwind config) */
+a {
+  text-decoration-color: hsl(var(--app-accent-hsl) / 0.5);
+}
+
+::selection {
+  background: hsl(var(--app-accent-hsl) / 0.25);
+}
+
+.app-accent-ring:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-hsl) / 0.65);
+  outline-offset: 2px;
+}
+
+/* Motion */
+html[data-motion="reduced"],
+html:has(body[data-motion="reduced"]) {
+  scroll-behavior: auto;
+}
+
+html[data-motion="reduced"] *,
+html[data-motion="reduced"] *::before,
+html[data-motion="reduced"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* Buttons (accented) */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: white;
+  background: hsl(var(--app-accent-hsl) / 0.95);
+  border: 1px solid hsl(var(--app-accent-hsl) / 0.35);
+}
+
+.btn-primary:hover {
+  background: hsl(var(--app-accent-hsl) / 0.85);
+}
+
+.btn-primary:active {
+  background: hsl(var(--app-accent-hsl) / 0.78);
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-hsl) / 0.65);
+  outline-offset: 2px;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+  background: transparent;
+  color: inherit;
+  border: 1px solid hsl(var(--app-accent-hsl) / 0.35);
+}
+
+.btn-secondary:hover {
+  background: hsl(var(--app-accent-hsl) / 0.08);
 }
 

@@ -2,6 +2,7 @@
 import AppShell from "../layouts/AppShell.astro";
 import ProjectCard from "../components/ProjectCard.astro";
 import projectsScriptUrl from "../scripts/projects.ts?url";
+import viewToggleScriptUrl from "../scripts/view-toggle.ts?url";
 import { dataSource, getProjects, getTechnologyById } from "../data";
 
 const title = "Proyectos";
@@ -31,6 +32,33 @@ const projectCards = await Promise.all(
       </div>
 
       <div class="flex flex-wrap gap-2">
+        {dataSource === "supabase" ? (
+          <div
+            data-view-toggle
+            data-scope="projects"
+            class="hidden sm:inline-flex items-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 p-1"
+          >
+            <button
+              type="button"
+              data-view="cards"
+              aria-pressed="true"
+              class="px-2 py-1 rounded-md text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 app-accent-ring"
+              data-i18n="settings.prefs.viewCards"
+            >
+              Cards
+            </button>
+            <button
+              type="button"
+              data-view="list"
+              aria-pressed="false"
+              class="px-2 py-1 rounded-md text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 app-accent-ring"
+              data-i18n="settings.prefs.viewList"
+            >
+              Lista
+            </button>
+          </div>
+        ) : null}
+
         <span
           class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-900 whitespace-nowrap"
           data-projects-count
@@ -82,7 +110,7 @@ const projectCards = await Promise.all(
     {dataSource === "supabase" ? (
       <div
         data-projects-csr-mount
-        class="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[8rem]"
+        class="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-32"
       >
         <p class="text-sm text-gray-600 col-span-full m-0">Cargando proyectos…</p>
       </div>
@@ -107,5 +135,6 @@ const projectCards = await Promise.all(
   {dataSource === "supabase" ? (
     <script type="module" src={projectsScriptUrl}></script>
   ) : null}
+  {dataSource === "supabase" ? <script type="module" src={viewToggleScriptUrl}></script> : null}
 </AppShell>
 

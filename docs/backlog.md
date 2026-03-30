@@ -61,8 +61,11 @@ El bloque "single-account" y el script `rls-mvp-authenticated.sql` quedan como *
 ## Prioridad siguiente (tras SaaS + portfolio)
 
 1. Catalogo de conceptos asistido
-- import semiautomatico por tecnologia
-- secciones de documentacion y referencias externas (ver seccion 7 en `docs/plan-saas-multi-tenant-portfolio.md`)
+- import semiautomatico por tecnologia (fuentes: **URL + texto**; flujo: sugerencias → revisión → crear)
+- secciones de documentacion y referencias externas:
+  - **1 Tech Note por tecnología** (markdown) + links
+  - conceptos siguen siendo “átomos” (RDD, Lazy, Shuffle, etc.)
+  - ver seccion 7 en `docs/plan-saas-multi-tenant-portfolio.md`
 
 ## Prioridad baja / futura
 
@@ -73,3 +76,6 @@ El bloque "single-account" y el script `rls-mvp-authenticated.sql` quedan como *
 2. Performance / UX de navegación (pendiente)
 - reducir “re-carga completa” al cambiar entre pantallas (cache en memoria + skeletons consistentes)
 - opcional: conservar datos en client scripts (prefetch / sessionStorage) para listas CSR
+
+3. Ajustes (UX “daily driver”)
+- preferencias globales **local-first** (sin sync al inicio): tipografía, tema/acentos, densidad UI, vistas por defecto

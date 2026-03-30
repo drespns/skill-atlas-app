@@ -3,51 +3,62 @@ import es from "../i18n/es.json";
 import en from "../i18n/en.json";
 import { getSupabaseBrowserClient } from "./client-supabase";
 import { showToast } from "./ui-feedback";
+import { applyPrefs, loadPrefs, updatePrefs } from "./prefs";
+import "./command-palette";
 
 /**
  * Client bootstrap script.
  *
  * Responsibilities:
- * 1) Theme toggle (light/dark) + persistence
+ * 1) Global prefs (theme/font/density/accent) + persistence
  * 2) ES/EN language switch + text replacement using data-i18n attributes
  */
 
-function initTheme() {
-  // Key used in localStorage to remember user preference.
-  const themeKey = "theme";
+function initPrefs() {
+  // Apply stored prefs (head inline script already applies early; this keeps it in sync and sets listeners)
+  applyPrefs(loadPrefs());
 
-  // Button is rendered in AppShell header.
   const themeBtn = document.querySelector<HTMLElement>("[data-theme-toggle]");
 
-  /**
-   * Applies visual theme to the root document.
-   *
-   * We use:
-   * - `.dark` class for Tailwind dark variants
-   * - `data-theme` for debugging/inspection
-   * - `colorScheme` so native controls follow the selected theme
-   */
-  const applyTheme = (isDark: boolean) => {
-    document.documentElement.classList.toggle("dark", isDark);
-    document.documentElement.dataset.theme = isDark ? "dark" : "light";
-    document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-    themeBtn?.setAttribute("aria-pressed", String(isDark));
-  };
-
-  // Toggle theme on button click and persist selection.
+  // Toggle theme button forces explicit light/dark (leaves auto only via Settings)
   themeBtn?.addEventListener("click", () => {
     const isDark = !document.documentElement.classList.contains("dark");
-    applyTheme(isDark);
-    localStorage.setItem(themeKey, isDark ? "dark" : "light");
+    updatePrefs({ themeMode: isDark ? "dark" : "light" });
+    themeBtn.setAttribute("aria-pressed", String(isDark));
+    // Back-compat: keep legacy key updated so older code paths remain consistent
+    localStorage.setItem("theme", isDark ? "dark" : "light");
   });
 
-  // Sync button state with initial theme set in <head>
-  applyTheme(document.documentElement.classList.contains("dark"));
+  const mq = window.matchMedia?.("(prefers-color-scheme: dark)");
+  mq?.addEventListener?.("change", () => {
+    const prefs = loadPrefs();
+    if (prefs.themeMode === "auto") applyPrefs(prefs);
+  });
+}
+
+function initCommandPaletteTrigger() {
+  const btn = document.querySelector<HTMLButtonElement>("[data-command-palette-trigger]");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    window.dispatchEvent(new Event("skillatlas:open-palette"));
+  });
+}
+
+function initHeaderIconVisibility() {
+  const wrap = document.querySelector<HTMLElement>("[data-header-icons]");
+  if (!wrap) return;
+  try {
+    const prefsRaw = localStorage.getItem("skillatlas_prefs_v1");
+    const prefs = prefsRaw ? (JSON.parse(prefsRaw) as any) : null;
+    const show = prefs?.showHeaderIcons ?? true;
+    wrap.classList.toggle("hidden", !show);
+    wrap.classList.toggle("flex", Boolean(show));
+  } catch {
+    // ignore
+  }
 }
 
 async function initI18n() {
-  // Key used in localStorage for current language.
-  const langKey = "lang";
   const langSelect = document.querySelector<HTMLSelectElement>("[data-lang-select]");
 
   /**
@@ -55,7 +66,7 @@ async function initI18n() {
    * For MVP we keep translations inline to avoid extra files.
    */
   await i18next.init({
-    lng: localStorage.getItem(langKey) || "es",
+    lng: loadPrefs().lang,
     fallbackLng: "es",
     resources: {
       es: { translation: es as any },
@@ -76,6 +87,12 @@ async function initI18n() {
   const render = () => {
     setLangAttr(i18next.language);
     if (langSelect) langSelect.value = i18next.language.startsWith("en") ? "en" : "es";
+    // Header selector visibility (pref)
+    const show = loadPrefs().showLangSelector;
+    if (langSelect) {
+      langSelect.classList.toggle("hidden", !show);
+      langSelect.classList.toggle("sm:block", Boolean(show));
+    }
     document.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
       const key = el.getAttribute("data-i18n");
       if (!key) return;
@@ -103,7 +120,7 @@ async function initI18n() {
   langSelect?.addEventListener("change", async (e) => {
     const next = (e.target as HTMLSelectElement).value === "en" ? "en" : "es";
     await i18next.changeLanguage(next);
-    localStorage.setItem(langKey, next);
+    updatePrefs({ lang: next });
     render();
   });
 }
@@ -208,13 +225,17 @@ function initLayoutVars() {
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {
     initLayoutVars();
-    initTheme();
+    initPrefs();
+    initHeaderIconVisibility();
+    initCommandPaletteTrigger();
     void initI18n();
     void initAuthHeader();
   });
 } else {
   initLayoutVars();
-  initTheme();
+  initPrefs();
+  initHeaderIconVisibility();
+  initCommandPaletteTrigger();
   void initI18n();
   void initAuthHeader();
 }

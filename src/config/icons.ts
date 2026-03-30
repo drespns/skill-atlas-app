@@ -71,7 +71,6 @@ export function getIconSrc(input?: string | null) {
  * Resolution order:
  * 1) `tech.id`
  * 2) `tech.name`
- * 3) file-name fallback: `/icons/${tech.name}.svg`
  */
 export function getTechnologyIconSrc(tech: { id?: string; name?: string }) {
   const byId = getIconSrc(tech.id);
@@ -80,7 +79,8 @@ export function getTechnologyIconSrc(tech: { id?: string; name?: string }) {
   const byName = getIconSrc(tech.name);
   if (byName) return byName;
 
-  // Fallback: coincide exactamente con el nombre del archivo (ej: Python.svg)
-  return tech.name ? `/icons/${tech.name}.svg` : "";
+  // Important: do NOT guess a file name under /icons.
+  // Missing files trigger repeated 404s and visual flicker in CSR lists.
+  return "";
 }
 
