@@ -92,10 +92,13 @@ Dos enfoques seguros (elegir uno):
 
 ### 3.3 Scripts SQL en repo
 
-- Nuevo archivo: `docs/sql/rls-multi-tenant.sql` (o migraciones numeradas) que:
-  - deshabilita/elimina policies del script `rls-mvp-authenticated.sql` no compatibles,
-  - crea policies por `user_id`,
-  - crea tabla perfil + funcion RPC de portfolio.
+Migraciones numeradas (sustituyen la idea de un solo `rls-multi-tenant.sql`):
+
+- `docs/sql/saas-001-user-id-profiles.sql` — columnas `user_id`, tabla `portfolio_profiles`, indices `(user_id, slug)`.
+- `docs/sql/saas-002-rls-multi-tenant.sql` — elimina policies existentes en tablas listadas, activa RLS por `user_id`, junctions via `EXISTS` al proyecto.
+- `docs/sql/saas-003-fn-portfolio-share.sql` — RPC `skillatlas_portfolio_by_share_token`, `GRANT` a `anon`.
+
+Orden de ejecucion y checklist operativo: `docs/db.md`.
 
 ---
 
@@ -156,29 +159,26 @@ Recomendacion pragmatica para **SaaS con datos privados**: **B o C** a medio pla
 
 ### Fase 0 — Preparacion (1 iteracion corta)
 
-- [ ] Decidir estrategia Astro: **CSR interno** vs **SSR** (afecta despliegue).
-- [ ] Documentar variable `PUBLIC_SITE_URL` o equivalente para redirects.
+- [x] Decidir estrategia Astro: **CSR interno** para app autenticada (SSG + datos en cliente); SSR aplazado.
+- [ ] Documentar variable `PUBLIC_SITE_URL` o equivalente para redirects (auth magic link).
 
 ### Fase 1 — Esquema + migracion
 
-- [ ] SQL: `user_id` en tablas + backfill + NOT NULL.
-- [ ] Tabla `profiles` (o `portfolio_settings`) + `share_token` + `share_enabled`.
-- [ ] Indices unicos compuestos `(user_id, slug)` donde toque.
-- [ ] Aplicar `mvp-constraints.sql` si aun no, tras limpiar duplicados **por usuario**.
+- [x] SQL en repo: `user_id` + `portfolio_profiles` + indices `(user_id, slug)` → `saas-001` (ejecutar y backfill en Supabase).
+- [ ] Backfill + `NOT NULL` en tu base real cuando no queden filas sin propietario.
+- [ ] Aplicar `mvp-constraints.sql` si aun no, tras limpiar duplicados.
 
 ### Fase 2 — RLS multi-tenant
 
-- [ ] Policies `auth.uid() = user_id` (y puentes via proyecto).
-- [ ] Quitar lectura `anon` amplia en tablas de contenido.
-- [ ] RPC `get_portfolio_by_share_token` + `GRANT EXECUTE` a `anon`.
-- [ ] Probar con dos usuarios reales en Supabase.
+- [x] SQL en repo: policies + quitar anon directo + RPC → `saas-002`, `saas-003` (ejecutar en Supabase).
+- [ ] Probar con dos usuarios reales en Supabase tras aplicar scripts.
 
 ### Fase 3 — Aplicacion
 
-- [ ] Provider + facade: todas las queries filtradas por usuario (o CSR desde cliente).
-- [ ] Inserts/updates: `user_id` consistente (columna o default).
-- [ ] Pagina `/p/[token]` + UI en Settings.
-- [ ] Retirar o adaptar `/portfolio` estatico global.
+- [x] CSR listas (`projects`, `technologies`) y detalle (`/projects/view`, `/technologies/view`); inserts con `user_id` en cliente; provider tolerante a build sin sesion.
+- [ ] Pagina `/p/[token]` + UI en Settings (toggle, copiar enlace, regenerar token).
+- [ ] Crear/upsert fila `portfolio_profiles` al registrar o primer login.
+- [ ] Retirar o adaptar `/portfolio` estatico global (preview autenticado o solo RPC publica).
 
 ### Fase 4 — Endurecimiento
 
@@ -208,10 +208,12 @@ Cuando el SaaS + portfolio por enlace este estable:
 
 ## 8. Referencias cruzadas en el repo
 
-- RLS actual (transicion): `docs/sql/rls-mvp-authenticated.sql`
+- RLS transicion (single-tenant / anon lee): `docs/sql/rls-mvp-authenticated.sql`
+- SaaS: `docs/sql/saas-001-user-id-profiles.sql`, `saas-002-rls-multi-tenant.sql`, `saas-003-fn-portfolio-share.sql`, `saas-004-drop-global-slug-constraints.sql` (si slug unico global impide multi-tenant)
 - Constraints: `docs/sql/mvp-constraints.sql`
 - Backlog vivo: `docs/backlog.md`
-- Arquitectura: actualizar `docs/architecture.md` cuando se elija SSR vs CSR definitivo.
+- Arquitectura (CSR, rutas mock vs Supabase): `docs/architecture.md`
+- Operaciones en Supabase (orden, backfill): `docs/db.md`
 
 ---
 

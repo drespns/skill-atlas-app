@@ -6,76 +6,59 @@ function setFeedback(node: HTMLElement | null, message: string, kind: "ok" | "er
   node.textContent = message;
   node.className =
     kind === "ok"
-      ? "text-sm text-green-600 m-0"
+      ? "text-sm text-green-600 dark:text-green-400 m-0"
       : kind === "error"
-        ? "text-sm text-red-600 m-0"
-        : "text-sm text-gray-600 m-0";
+        ? "text-sm text-red-600 dark:text-red-400 m-0"
+        : "text-sm text-gray-600 dark:text-gray-400 m-0";
 }
 
 async function initSettingsAuth() {
-  const form = document.querySelector<HTMLFormElement>("[data-auth-login-form]");
-  const emailInput = document.querySelector<HTMLInputElement>("[data-auth-email]");
   const feedback = document.querySelector<HTMLElement>("[data-auth-feedback]");
   const userEmail = document.querySelector<HTMLElement>("[data-auth-user-email]");
-  const status = document.querySelector<HTMLElement>("[data-auth-status]");
+  const statusWrap = document.querySelector<HTMLElement>("[data-auth-status]");
+  const statusActive = document.querySelector<HTMLElement>("[data-auth-status-active]");
+  const statusInactive = document.querySelector<HTMLElement>("[data-auth-status-inactive]");
+  const noSessionEl = document.querySelector<HTMLElement>("[data-auth-no-session]");
   const logoutBtn = document.querySelector<HTMLButtonElement>("[data-auth-logout]");
   const refreshBtn = document.querySelector<HTMLButtonElement>("[data-auth-refresh]");
-  if (!form || !emailInput || !userEmail || !status || !logoutBtn || !refreshBtn) return;
 
-  const supabase = getSupabaseBrowserClient();
-  if (!supabase) {
-    setFeedback(feedback, "Faltan variables de entorno de Supabase.", "error");
-    form.querySelectorAll("input,button").forEach((el) => ((el as HTMLInputElement).disabled = true));
-    logoutBtn.disabled = true;
-    refreshBtn.disabled = true;
+  if (!feedback || !userEmail || !statusWrap || !statusActive || !statusInactive || !logoutBtn || !refreshBtn) {
     return;
   }
 
+  const supabase = getSupabaseBrowserClient();
+
   const renderAuthState = async () => {
+    if (!supabase) return;
     const { data } = await supabase.auth.getSession();
     const session = data.session;
     if (session?.user?.email) {
-      status.textContent = "Sesión activa";
-      status.className = "text-xs px-2 py-1 rounded-full bg-green-100 text-green-800";
+      if (statusActive) statusActive.classList.remove("hidden");
+      if (statusInactive) statusInactive.classList.add("hidden");
+      statusWrap.className =
+        "text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-950/50 dark:text-green-200";
       userEmail.textContent = session.user.email;
       logoutBtn.disabled = false;
+      if (noSessionEl) noSessionEl.hidden = true;
     } else {
-      status.textContent = "Sin sesión";
-      status.className = "text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-800";
+      if (statusActive) statusActive.classList.add("hidden");
+      if (statusInactive) statusInactive.classList.remove("hidden");
+      statusWrap.className =
+        "text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200";
       userEmail.textContent = "-";
       logoutBtn.disabled = true;
+      if (noSessionEl) noSessionEl.hidden = false;
     }
   };
 
+  if (!supabase) {
+    logoutBtn.disabled = true;
+    refreshBtn.disabled = true;
+    setFeedback(feedback, "Faltan variables de entorno de Supabase.", "error");
+    return;
+  }
+
   await renderAuthState();
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const email = emailInput.value.trim();
-    if (!email) return;
-
-    setFeedback(feedback, "Enviando magic link...", "info");
-    const submit = form.querySelector<HTMLButtonElement>("[type='submit']");
-    if (submit) submit.disabled = true;
-
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/settings`,
-      },
-    });
-
-    if (submit) submit.disabled = false;
-
-    if (error) {
-      setFeedback(feedback, `Error de login: ${error.message}`, "error");
-      showToast("No se pudo enviar el magic link.", "error");
-      return;
-    }
-
-    setFeedback(feedback, "Revisa tu correo y abre el enlace para iniciar sesión.", "ok");
-    showToast("Magic link enviado.", "success");
-  });
 
   logoutBtn.addEventListener("click", async () => {
     logoutBtn.disabled = true;
@@ -108,4 +91,3 @@ if (document.readyState === "loading") {
 } else {
   void initSettingsAuth();
 }
-

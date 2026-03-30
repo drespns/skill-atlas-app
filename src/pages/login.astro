@@ -1,0 +1,141 @@
+---
+import AppShell from "../layouts/AppShell.astro";
+import loginAuthScriptUrl from "../scripts/login-auth.ts?url";
+import loginEarthScriptUrl from "../scripts/login-earth.ts?url";
+
+const title = "Login";
+---
+
+<AppShell title={title}>
+  <style is:global>
+    /* Login page uses full-bleed layout (no main padding) */
+    :root {
+      --app-main-px: 0px;
+      --app-main-py: 0px;
+    }
+  </style>
+
+  <section
+    class="w-full overflow-hidden"
+    style="height: calc(100svh - var(--app-header-h, 0px));"
+  >
+    <div class="grid md:grid-cols-2 h-full">
+      <div class="flex items-center justify-center px-5 py-6 md:px-10">
+        <div class="w-full max-w-md rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/95 dark:bg-gray-950/90 backdrop-blur p-6 shadow-sm flex flex-col">
+        <div class="space-y-2">
+          <h1 class="m-0 text-2xl font-semibold text-gray-900 dark:text-gray-100">Unlock the code</h1>
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            Inicia sesión para gestionar tecnologías, conceptos y proyectos.
+          </p>
+        </div>
+
+        <form data-auth-password-form class="mt-6 space-y-4 flex-1">
+          <div class="space-y-2">
+            <label for="login-email" class="text-sm font-medium text-gray-800 dark:text-gray-200">
+              Correo
+            </label>
+            <input
+              id="login-email"
+              data-auth-email
+              type="email"
+              autocomplete="username"
+              placeholder="tu-email@dominio.com"
+              required
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-gray-400/30 dark:focus:ring-gray-600/40"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <label for="login-password" class="text-sm font-medium text-gray-800 dark:text-gray-200">
+              Contraseña
+            </label>
+            <input
+              id="login-password"
+              data-auth-password
+              type="password"
+              autocomplete="current-password"
+              minlength={6}
+              required
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-gray-400/30 dark:focus:ring-gray-600/40"
+            />
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-2 pt-1">
+            <button
+              type="submit"
+              data-auth-sign-in
+              class="inline-flex flex-1 items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200"
+            >
+              Iniciar sesión
+            </button>
+            <button
+              type="button"
+              data-auth-sign-up
+              class="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900"
+            >
+              Crear cuenta
+            </button>
+          </div>
+
+          <p data-auth-feedback class="text-sm text-gray-600 dark:text-gray-400 m-0 pt-1"></p>
+        </form>
+
+        <div class="pt-2">
+          <div class="flex items-center gap-3">
+            <div class="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
+            <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">o continúa con</span>
+            <div class="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <!-- TODO: activar cuando se configure Google OAuth -->
+            <!-- <button
+              type="button"
+              data-auth-oauth-provider="google"
+              class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900"
+            >
+              <img src="/icons/login/google-icon.svg" alt="" class="h-4 w-4" />
+              Google
+            </button> -->
+            <button
+              type="button"
+              data-auth-oauth-provider="github"
+              class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900"
+            >
+              <img src="/icons/login/github-icon-light.svg" alt="" class="h-4 w-4" />
+              GitHub
+            </button>
+            <button
+              type="button"
+              data-auth-oauth-provider="linkedin_oidc"
+              class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900"
+            >
+              <img src="/icons/login/linkedin-icon.svg" alt="" class="h-4 w-4" />
+              LinkedIn
+            </button>
+            <!-- TODO: activar cuando se configure Notion OAuth -->
+            <!-- <button
+              type="button"
+              data-auth-oauth-provider="notion"
+              class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900"
+            >
+              <img src="/icons/login/notion-icon.svg" alt="" class="h-4 w-4" />
+              Notion
+            </button> -->
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <div class="hidden md:block relative">
+        <div data-login-earth class="absolute inset-0 bg-black"></div>
+        <!-- Soft gradient to blend into the form column -->
+        <div class="absolute inset-0 pointer-events-none bg-linear-to-l from-black/0 via-black/0 to-gray-950/90"></div>
+      </div>
+    </div>
+  </section>
+
+  <script type="module" src={loginAuthScriptUrl}></script>
+  <script type="module" src={loginEarthScriptUrl}></script>
+</AppShell>
+

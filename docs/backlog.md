@@ -6,13 +6,23 @@ Plan detallado (fases, DB, RLS, rutas, riesgos): **`docs/plan-saas-multi-tenant-
 
 Resumen:
 
-1. Multiusuario real: `user_id` en tablas + RLS por `auth.uid()`.
-2. Portfolio no catalogo publico: tabla perfil + `share_token` + ruta `/p/...` y RPC (o edge) para lectura por token.
-3. Ajustar Astro: SSG global incompatible con datos privados por usuario -> CSR en app interna y/o SSR (decision en el plan).
+1. Multiusuario real: `user_id` en tablas + RLS por `auth.uid()` (SQL en repo: `docs/sql/saas-001*.sql`, `saas-002*.sql`).
+2. Portfolio no catalogo publico: `portfolio_profiles` + `share_token` + ruta `/p/...` y RPC `skillatlas_portfolio_by_share_token` (`docs/sql/saas-003*.sql`).
+3. App interna con **CSR** en Supabase: listas y detalles cargan en cliente (`/projects/view`, `/technologies/view`, bootstraps en `src/scripts/*-view-bootstrap.ts`). Ver `docs/architecture.md`.
 
-El bloque "single-account" y el script `rls-mvp-authenticated.sql` quedan como **paso previo / transicion**; la meta actual es sustituirlo por politicas multi-tenant del plan.
+**Hecho en codigo (pendiente de aplicar SQL en tu proyecto Supabase si aun no):** inserts con `user_id`, rutas CSR, `supabaseProvider` tolerante a build sin datos, duplicados de proyecto por `(user_id, slug)`.
+
+**Siguiente vertical sugerido:** fila en `portfolio_profiles` al registrar o primer login; pagina publica `/p/[token]` que llame a la RPC; ajustes UI (toggle compartir, copiar enlace). `/portfolio` estatico seguira vacio en build con RLS estricta hasta usar la RPC o CSR de preview autenticado.
+
+El bloque "single-account" y el script `rls-mvp-authenticated.sql` quedan como **paso previo**; en produccion SaaS deben sustituirse por `saas-002` cuando el esquema y backfill esten listos.
 
 ## Prioridad alta (siguiente iteracion)
+
+0. Auth UX (iteración actual, hecho)
+- `/login` como pantalla principal (email+password + OAuth)
+- providers activos: GitHub + LinkedIn OIDC (`linkedin_oidc`)
+- header: avatar + Sign out + ocultar Login con sesión
+- login con escena 3D (Three.js Earth) full-bleed a la derecha
 
 1. ~~Mejorar UX de edicion de entidades~~ (hecho)
 - ~~modal unico para editar tecnologia~~ (`technologyEditModal` en `ui-feedback.ts`)
@@ -59,3 +69,7 @@ El bloque "single-account" y el script `rls-mvp-authenticated.sql` quedan como *
 1. Observabilidad y QA
 - pruebas e2e basicas del flujo CRUD
 - snapshots visuales
+
+2. Performance / UX de navegación (pendiente)
+- reducir “re-carga completa” al cambiar entre pantallas (cache en memoria + skeletons consistentes)
+- opcional: conservar datos en client scripts (prefetch / sessionStorage) para listas CSR

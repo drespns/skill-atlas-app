@@ -103,7 +103,23 @@
     "title": "Settings",
     "subtitle": "In the MVP, this data is example (read-only).",
     "publicName": "Public name",
-    "publicBio": "Public bio"
+    "publicBio": "Public bio",
+    "auth": {
+      "sectionTitle": "Account",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "passwordHint": "At least 6 characters (Supabase).",
+      "signIn": "Sign in",
+      "signUp": "Create account",
+      "magicToggle": "Email magic link (counts toward hourly email cap)",
+      "magicHelp": "Useful if you prefer no password; free tier limits outbound emails per hour.",
+      "sendMagicLink": "Send magic link",
+      "sessionActive": "Signed in",
+      "noSession": "No session",
+      "currentUser": "Current user",
+      "refresh": "Refresh status",
+      "logout": "Log out"
+    }
   }
 }
 

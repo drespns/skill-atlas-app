@@ -1,0 +1,29 @@
+---
+import AppShell from "../../layouts/AppShell.astro";
+import technologyViewBootstrapUrl from "../../scripts/technology-view-bootstrap.ts?url";
+import { dataSource } from "../../data";
+
+const title = "Tecnología";
+---
+
+<AppShell title={title}>
+  <div class="space-y-4">
+    {dataSource === "supabase" ? (
+      <>
+        <div data-technology-csr-mount class="min-h-[12rem] text-sm text-gray-600">
+          Cargando tecnología…
+        </div>
+        <script type="module" src={technologyViewBootstrapUrl}></script>
+      </>
+    ) : (
+      <section class="space-y-3">
+        <p class="text-sm text-gray-600">
+          Esta vista solo aplica con <code class="text-xs">PUBLIC_DATA_SOURCE=supabase</code>. Usa la ruta clásica en modo mock.
+        </p>
+        <a href="/technologies" class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline">
+          Volver a Tecnologías
+        </a>
+      </section>
+    )}
+  </div>
+</AppShell>

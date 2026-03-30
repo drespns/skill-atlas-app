@@ -2,14 +2,14 @@
 
 ## Vista general
 
-La app sigue arquitectura de frontend server-rendered con scripts cliente para acciones CRUD.
+Astro genera sitio **estatico** (`output: static`). Las paginas se prerenderizan en build; la **app autenticada con Supabase** carga listas y detalles **en el cliente (CSR)** cuando RLS no permite leer todo el dataset con la anon key sin sesion.
 
 - Render: Astro pages (`src/pages`)
 - UI reusable: `src/components`
 - Shell global: `src/layouts/AppShell.astro`
 - Data access facade: `src/data/index.ts`
 - Providers: mock y supabase
-- Scripts cliente por pagina: `src/scripts/*.ts`
+- Scripts cliente por pantalla: `src/scripts/*.ts` y subcarpetas (`project-detail/`, `technology-detail/`)
 
 ## Capa de datos
 
@@ -41,16 +41,42 @@ La app sigue arquitectura de frontend server-rendered con scripts cliente para a
   - `project_concepts`
 - embeds desde `project_embeds` ordenados por `sort_order`
 
+En **build estatico**, las lecturas usan el cliente server-side de Supabase (sin cookie de usuario). Si fallan (p. ej. RLS sin filas visibles para `anon`), las funciones de carga devuelven **arrays vacios** para no romper `astro build`. El contenido real del usuario se obtiene en el navegador tras iniciar sesion.
+
+## Rutas: mock vs Supabase (`PUBLIC_DATA_SOURCE`)
+
+| Pantalla | `mock` | `supabase` |
+|----------|--------|------------|
+| Lista proyectos | `/projects` (datos en HTML del build) | `/projects` + CSR en `[data-projects-csr-mount]` |
+| Detalle proyecto | `/projects/[projectId]` (`projectId` = id mock) | `/projects/view?project=<slug>` + `project-view-bootstrap.ts` |
+| Lista tecnologias | `/technologies` | `/technologies` + CSR en `[data-technologies-csr-mount]` |
+| Detalle tecnologia | `/technologies/[techId]` (`techId` = slug) | `/technologies/view?tech=<slug>` + `technology-view-bootstrap.ts` |
+| Login | `/login` | `/login` (email/password + OAuth en cliente) |
+| Ajustes | `/settings` | `/settings` (estado de sesión + logout; auth se hace en `/login`) |
+
+Los componentes `ProjectCard.astro` y `TechnologyCard.astro` enlazan a las rutas CSR cuando el data source es Supabase. `project-detail.ts` no inicializa formularios si existe `[data-project-csr-mount]` (evita doble enganche).
+
+El header usa un chequeo de sesión en cliente (sin SSR) para:
+
+- mostrar `/login` cuando no hay sesión
+- mostrar `Ajustes` + botón **Sign out** cuando hay sesión
+- pintar avatar de usuario si `user_metadata.avatar_url` o `user_metadata.picture` existe
+
 ## UI Actions (cliente)
 
 Scripts principales:
 
-- `technologies.ts` -> CRUD tecnologia (lista)
-- `technology-detail.ts` -> CRUD concepto (detalle tecnologia)
-- `projects.ts` -> crear proyecto
-- `project-detail.ts` + `project-detail/*` -> CRUD avanzado proyecto
+- `technologies.ts` -> formulario nueva tecnologia + CSR de la rejilla + editar/eliminar
+- `technology-detail.ts` -> entrypoint detalle tecnologia (SSR mock); delega en `technology-detail/runner.ts`
+- `technology-view-bootstrap.ts` -> montaje CSR del detalle tecnologia (Supabase)
+- `projects.ts` -> crear proyecto + CSR lista proyectos (Supabase)
+- `project-detail.ts` -> entrypoint detalle proyecto en paginas Astro con DOM estatico; delega en `project-detail/runner.ts`
+- `project-view-bootstrap.ts` -> montaje CSR del detalle proyecto (Supabase)
+- `auth-session.ts` -> `getSessionUserId()` para adjuntar `user_id` en inserts
 - `client-supabase.ts` -> `getSupabaseBrowserClient()` para scripts en navegador
 - `ui-feedback.ts` -> modales y toasts
+- `login-auth.ts` -> login/signup email+password + OAuth en `/login`
+- `login-earth.ts` -> escena Three.js (Earth) en background del login
 
 ## Tradeoffs actuales
 
@@ -62,5 +88,11 @@ Scripts principales:
 
 ## Roadmap (producto prioritario)
 
-Plan detallado para **multiusuario + portfolio por enlace compartido**: `docs/plan-saas-multi-tenant-portfolio.md` (incluye decision CSR vs SSR y fases de migracion).
+Plan detallado para **multiusuario + portfolio por enlace compartido**: `docs/plan-saas-multi-tenant-portfolio.md`. Decision actual para la app interna: **CSR** (sin adapter SSR); el portfolio publico por token ira contra **RPC** (`docs/sql/saas-003-fn-portfolio-share.sql`) cuando se cablee la UI.
+
+## Assets 3D del login (Earth)
+
+- Shaders: `src/shaders/{earth,atmosphere}/*.glsl`
+- Texturas: `public/static/earth/{day,night,specularClouds}.jpg`
+- Script: `src/scripts/login-earth.ts` (usa `three` + `OrbitControls`)
 

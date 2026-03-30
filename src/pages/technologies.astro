@@ -21,8 +21,8 @@ const technologies = mockTechnologies.map((t) => ({
     <h1 class="m-0 text-2xl font-semibold">
       <span data-i18n="technologies.title">{title}</span>
     </h1>
-    <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-900">
-      {technologies.length} total
+    <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-900" data-technologies-count>
+      {dataSource === "supabase" ? "…" : `${technologies.length} total`}
     </span>
   </header>
 
@@ -55,35 +55,22 @@ const technologies = mockTechnologies.map((t) => ({
     </form>
   ) : null}
 
-  <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    {technologies.map((tech) => (
-      <div class="space-y-2">
-        <TechnologyCard technology={tech} />
-        {dataSource === "supabase" ? (
-          <div class="flex items-center gap-2">
-            <button
-              type="button"
-              data-tech-edit
-              data-tech-id={tech.id}
-              data-tech-name={tech.name}
-              class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold hover:bg-gray-50"
-            >
-              <span data-i18n="common.edit">Editar</span>
-            </button>
-            <button
-              type="button"
-              data-tech-delete
-              data-tech-id={tech.id}
-              data-tech-name={tech.name}
-              class="inline-flex items-center justify-center rounded-lg border border-red-200 text-red-700 px-3 py-2 text-xs font-semibold hover:bg-red-50"
-            >
-              <span data-i18n="common.delete">Eliminar</span>
-            </button>
-          </div>
-        ) : null}
-      </div>
-    ))}
-  </section>
+  {dataSource === "supabase" ? (
+    <section
+      data-technologies-csr-mount
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 min-h-[6rem]"
+    >
+      <p class="text-sm text-gray-600 col-span-full m-0">Cargando tecnologías…</p>
+    </section>
+  ) : (
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {technologies.map((tech) => (
+        <div class="space-y-2">
+          <TechnologyCard technology={tech} />
+        </div>
+      ))}
+    </section>
+  )}
 
   {dataSource === "supabase" ? (
     <script type="module" src={technologiesScriptUrl}></script>

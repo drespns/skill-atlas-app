@@ -1,6 +1,8 @@
 import i18next from "i18next";
 import es from "../i18n/es.json";
 import en from "../i18n/en.json";
+import { getSupabaseBrowserClient } from "./client-supabase";
+import { showToast } from "./ui-feedback";
 
 /**
  * Client bootstrap script.
@@ -106,14 +108,114 @@ async function initI18n() {
   });
 }
 
+async function initAuthHeader() {
+  const loginLink = document.querySelector<HTMLAnchorElement>("[data-auth-header-login]");
+  const settingsLink = document.querySelector<HTMLAnchorElement>("[data-auth-header-settings]");
+  const signOutBtn = document.querySelector<HTMLButtonElement>("[data-auth-header-signout]");
+  const avatarWrap = document.querySelector<HTMLElement>("[data-auth-avatar-wrap]");
+  const avatarImg = document.querySelector<HTMLImageElement>("[data-auth-avatar]");
+  if (!loginLink || !settingsLink || !signOutBtn) return;
+
+  const setAvatar = (url: string | null) => {
+    if (!avatarWrap || !avatarImg) return;
+    if (url) {
+      avatarImg.src = url;
+      avatarWrap.classList.remove("hidden");
+      avatarWrap.classList.add("inline-flex");
+    } else {
+      avatarImg.removeAttribute("src");
+      avatarWrap.classList.add("hidden");
+      avatarWrap.classList.remove("inline-flex");
+    }
+  };
+
+  const setVisibility = (isAuthed: boolean) => {
+    // Login
+    loginLink.classList.toggle("hidden", isAuthed);
+    loginLink.classList.toggle("inline-flex", !isAuthed);
+
+    // Settings
+    settingsLink.classList.toggle("hidden", !isAuthed);
+    settingsLink.classList.toggle("inline-flex", isAuthed);
+
+    // Sign out
+    signOutBtn.classList.toggle("hidden", !isAuthed);
+    signOutBtn.classList.toggle("inline-flex", isAuthed);
+  };
+
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    setVisibility(false);
+    return;
+  }
+
+  // If user clicks the login icon, remember current page so /login can bounce back.
+  loginLink.addEventListener("click", () => {
+    try {
+      const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      sessionStorage.setItem("skillatlas_post_login_next", current);
+    } catch {
+      // ignore
+    }
+  });
+
+  signOutBtn.addEventListener("click", async () => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+    signOutBtn.disabled = true;
+    const { error } = await supabase.auth.signOut();
+    signOutBtn.disabled = false;
+    if (error) {
+      showToast(`No se pudo cerrar sesión: ${error.message}`, "error");
+      return;
+    }
+    showToast("Sesión cerrada.", "success");
+    // Stay on current page; header will update via auth state listener.
+  });
+
+  const render = async () => {
+    const { data } = await supabase.auth.getSession();
+    const user = data.session?.user ?? null;
+    setVisibility(Boolean(user));
+    const meta = (user?.user_metadata ?? {}) as Record<string, any>;
+    const avatarUrl =
+      (typeof meta.avatar_url === "string" && meta.avatar_url) ||
+      (typeof meta.picture === "string" && meta.picture) ||
+      null;
+    setAvatar(avatarUrl);
+  };
+
+  await render();
+  supabase.auth.onAuthStateChange(() => {
+    void render();
+  });
+}
+
+function initLayoutVars() {
+  const header = document.querySelector<HTMLElement>("[data-app-header]");
+  if (!header) return;
+
+  const apply = () => {
+    const h = header.offsetHeight;
+    document.documentElement.style.setProperty("--app-header-h", `${h}px`);
+  };
+
+  apply();
+  window.addEventListener("resize", apply);
+}
+
 // Ensure header elements are available before initialization.
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {
+    initLayoutVars();
     initTheme();
     void initI18n();
+    void initAuthHeader();
   });
 } else {
+  initLayoutVars();
   initTheme();
   void initI18n();
+  void initAuthHeader();
 }
 

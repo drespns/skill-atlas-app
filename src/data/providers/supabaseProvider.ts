@@ -31,53 +31,77 @@ type DbProjectEmbed = {
   sort_order: number;
 };
 
-async function loadTechnologiesRows() {
-  const supabase = getSupabaseClient();
-  const { data, error } = await supabase.from("technologies").select("id, slug, name");
-  if (error) throw error;
-  return (data ?? []) as DbTechnology[];
+async function loadTechnologiesRows(): Promise<DbTechnology[]> {
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.from("technologies").select("id, slug, name");
+    if (error) return [];
+    return (data ?? []) as DbTechnology[];
+  } catch {
+    return [];
+  }
 }
 
-async function loadConceptRows() {
-  const supabase = getSupabaseClient();
-  const { data, error } = await supabase
-    .from("concepts")
-    .select("id, technology_id, title, progress, notes");
-  if (error) throw error;
-  return (data ?? []) as DbConcept[];
+async function loadConceptRows(): Promise<DbConcept[]> {
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+      .from("concepts")
+      .select("id, technology_id, title, progress, notes");
+    if (error) return [];
+    return (data ?? []) as DbConcept[];
+  } catch {
+    return [];
+  }
 }
 
-async function loadProjectRows() {
-  const supabase = getSupabaseClient();
-  const { data, error } = await supabase.from("projects").select("id, slug, title, description");
-  if (error) throw error;
-  return (data ?? []) as DbProject[];
+async function loadProjectRows(): Promise<DbProject[]> {
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.from("projects").select("id, slug, title, description");
+    if (error) return [];
+    return (data ?? []) as DbProject[];
+  } catch {
+    return [];
+  }
 }
 
 async function loadProjectTechnologyRows() {
-  const supabase = getSupabaseClient();
-  const { data, error } = await supabase
-    .from("project_technologies")
-    .select("project_id, technology_id");
-  if (error) throw error;
-  return data ?? [];
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+      .from("project_technologies")
+      .select("project_id, technology_id");
+    if (error) return [];
+    return data ?? [];
+  } catch {
+    return [];
+  }
 }
 
 async function loadProjectConceptRows() {
-  const supabase = getSupabaseClient();
-  const { data, error } = await supabase.from("project_concepts").select("project_id, concept_id");
-  if (error) throw error;
-  return data ?? [];
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.from("project_concepts").select("project_id, concept_id");
+    if (error) return [];
+    return data ?? [];
+  } catch {
+    return [];
+  }
 }
 
-async function loadProjectEmbedsRows() {
-  const supabase = getSupabaseClient();
-  const { data, error } = await supabase
-    .from("project_embeds")
-    .select("id, project_id, kind, title, url, sort_order")
-    .order("sort_order", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as DbProjectEmbed[];
+async function loadProjectEmbedsRows(): Promise<DbProjectEmbed[]> {
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+      .from("project_embeds")
+      .select("id, project_id, kind, title, url, sort_order")
+      .order("sort_order", { ascending: true });
+    if (error) return [];
+    return (data ?? []) as DbProjectEmbed[];
+  } catch {
+    return [];
+  }
 }
 
 export async function getTechnologies(): Promise<Technology[]> {

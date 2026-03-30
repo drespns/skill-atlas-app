@@ -31,8 +31,11 @@ const projectCards = await Promise.all(
       </div>
 
       <div class="flex flex-wrap gap-2">
-        <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-900 whitespace-nowrap">
-          {projects.length} proyectos
+        <span
+          class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-900 whitespace-nowrap"
+          data-projects-count
+        >
+          {dataSource === "supabase" ? "…" : `${projects.length} proyectos`}
         </span>
       </div>
     </header>
@@ -76,7 +79,14 @@ const projectCards = await Promise.all(
       </form>
     ) : null}
 
-    {projectCards.length > 0 ? (
+    {dataSource === "supabase" ? (
+      <div
+        data-projects-csr-mount
+        class="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[8rem]"
+      >
+        <p class="text-sm text-gray-600 col-span-full m-0">Cargando proyectos…</p>
+      </div>
+    ) : projectCards.length > 0 ? (
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {projectCards.map(({ project, technologyNames }) => (
           <ProjectCard project={project} technologyNames={technologyNames} />

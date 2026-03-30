@@ -1,0 +1,35 @@
+---
+import AppShell from "../../layouts/AppShell.astro";
+import projectViewBootstrapUrl from "../../scripts/project-view-bootstrap.ts?url";
+import { dataSource } from "../../data";
+
+const title = "Proyecto";
+---
+
+<AppShell title={title}>
+  <div class="space-y-4">
+    {dataSource === "supabase" ? (
+      <>
+        <div
+          data-project-csr-mount
+          class="min-h-[12rem] text-sm text-gray-600"
+        >
+          Cargando proyecto…
+        </div>
+        <script type="module" src={projectViewBootstrapUrl}></script>
+      </>
+    ) : (
+      <section class="space-y-3">
+        <p class="text-sm text-gray-600">
+          Esta vista solo aplica con <code class="text-xs">PUBLIC_DATA_SOURCE=supabase</code>. Usa la ruta clásica de proyecto en modo mock.
+        </p>
+        <a
+          href="/projects"
+          class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline"
+        >
+          Volver a Proyectos
+        </a>
+      </section>
+    )}
+  </div>
+</AppShell>

@@ -103,7 +103,23 @@
     "title": "Ajustes",
     "subtitle": "En el MVP, estos datos son de ejemplo (read-only).",
     "publicName": "Nombre público",
-    "publicBio": "Bio pública"
+    "publicBio": "Bio pública",
+    "auth": {
+      "sectionTitle": "Cuenta",
+      "emailLabel": "Correo",
+      "passwordLabel": "Contraseña",
+      "passwordHint": "Mínimo 6 caracteres (Supabase).",
+      "signIn": "Iniciar sesión",
+      "signUp": "Crear cuenta",
+      "magicToggle": "Magic link por correo (cuenta para el límite de emails/hora)",
+      "magicHelp": "Útil si no quieres contraseña; en plan gratuito Supabase suele limitar pocos correos por hora.",
+      "sendMagicLink": "Enviar magic link",
+      "sessionActive": "Sesión activa",
+      "noSession": "Sin sesión",
+      "currentUser": "Usuario actual",
+      "refresh": "Refrescar estado",
+      "logout": "Cerrar sesión"
+    }
   }
 }
 
