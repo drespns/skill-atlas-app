@@ -64,16 +64,28 @@ const technologies = mockTechnologies.map((t) => ({
       <p class="m-0 text-sm font-semibold">
         <span data-i18n="common.newTechnology">Nueva tecnología</span>
       </p>
+      <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
+        Elige una tecnología del catálogo (hay plantilla de conceptos) o escribe un nombre libre. El <strong>slug</strong> se ajusta solo al elegir del catálogo.
+      </p>
       <div class="flex flex-col md:flex-row gap-2">
-        <input
-          name="name"
-          type="text"
-          placeholder="Ej. SQL, Python, DAX..."
-          data-i18n="technologies.newPlaceholder"
-          data-i18n-attr="placeholder"
-          class="flex-1 border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950"
-          required
-        />
+        <div class="relative flex-1 min-w-0" data-tech-seed-wrap>
+          <input
+            name="name"
+            type="text"
+            placeholder="Buscar: Snowflake, dbt, Power BI… o nombre propio"
+            data-tech-name-input
+            data-i18n="technologies.newPlaceholder"
+            data-i18n-attr="placeholder"
+            autocomplete="off"
+            class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950"
+            required
+          />
+          <ul
+            data-tech-seed-suggestions
+            class="hidden absolute left-0 right-0 top-full z-30 mt-1 max-h-52 overflow-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 py-1 shadow-lg text-left"
+            role="listbox"
+          ></ul>
+        </div>
         <button
           type="submit"
           class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200"

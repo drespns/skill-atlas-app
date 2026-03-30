@@ -66,7 +66,7 @@ El header usa un chequeo de sesión en cliente (sin SSR) para:
 
 Scripts principales:
 
-- `technologies.ts` -> formulario nueva tecnologia + CSR de la rejilla + editar/eliminar
+- `technologies.ts` -> formulario nueva tecnologia (busqueda de **catalogo** con plantillas `concept-seeds`) + CSR de la rejilla + editar/eliminar
 - `technology-detail.ts` -> entrypoint detalle tecnologia (SSR mock); delega en `technology-detail/runner.ts`
 - `technology-view-bootstrap.ts` -> montaje CSR del detalle tecnologia (Supabase)
 - `projects.ts` -> crear proyecto + CSR lista proyectos (Supabase)
@@ -105,6 +105,55 @@ Mejoras UX (Sprint A+):
 - Botón visible para Command Palette en header (además de `Ctrl+K`).
 - Toggle Cards/Lista en páginas (sin pasar por Ajustes) y persistencia en prefs.
 - Preferencias de UI: mostrar/ocultar iconos del header y preferencia de idioma (con opción de ocultar el selector del header).
+
+## Sprint B (import semi-automático de conceptos por tecnología) — **implementado (MVP)**
+
+Ubicación: `/technologies/view?tech=<slug>` (CSR), sección **Conceptos**.
+
+### Código (layout)
+
+- `technology-view-bootstrap.ts`: montaje HTML (formulario concepto, bloque import, lista `[data-concept-list]`).
+- `technology-detail/concept-import.ts`: parseo Markdown, filtros de calidad, vista previa agrupada, URL/texto, quick import, hook `ImportEnricher`.
+- `technology-detail/concept-list-html.ts`: HTML reutilizable de filas de conceptos + refresco de lista.
+- `technology-detail/concept-actions.ts`: editar/eliminar concepto (evita dependencia circular con el import).
+- `technology-detail/runner.ts`: `initConceptForm`, `initConceptActions`, `initConceptImport`.
+- `technology-detail/concept-seeds.ts`: mapa slug → fichero, alias, `getSeedCatalogEntries()` para el picker en `/technologies`.
+- `ui-feedback.ts`: `markdownEditorModal` para editar el Markdown en ventana amplia.
+
+### Fuentes y limitaciones
+
+- **URL** + **texto** pegado. El fetch de URL desde el navegador depende de **CORS** del sitio remoto; si falla, el UX pide usar el tab de texto. Lo habitual para documentación “oficial” en HTML es **no** servir como `.md` plano; el usuario pega Markdown o usa plantilla local.
+- **Catálogos sugeridos**: `public/static/concept-seeds/<fichero>.md`; registro y alias en `concept-seeds.ts`. Botón **Cargar catálogo sugerido** si el slug de la tecnología tiene entrada (p. ej. `python`, `snowflake`, `power-bi` vía alias `powerbi`).
+- **Alta de tecnología** (`/technologies`): campo de nombre con lista filtrable del mismo catálogo; al elegir una fila se fija el **slug** de plantilla; si se edita el nombre a mano, el slug vuelve a derivarse con la regla habitual.
+- Extracción: headings `##`, bullets (`-`, `*`, numeradas), comentarios HTML de nivel (ver más abajo); **sin IA** en v1.
+
+### Filtros de calidad
+
+Implementados en `IMPORT_QUALITY` dentro de `concept-import.ts` (longitud min/max, palabras máx., comas, heurística de párrafo). Los omitidos se cuentan en la vista previa.
+
+### Categoría y nivel (tier)
+
+- **Categoría**: último `##` previo al bullet → prefijo en `notes`: `[cat:…]`.
+- **Nivel** (Iniciación / Junior / Mid / Senior): comentario opcional en el Markdown antes de secciones, p. ej. `<!-- skillatlas-tier: junior -->` (aliases: `principiante`, `intermedio`, `avanzado`, etc.). Sin marca, los conceptos van a **mid**. Persistencia en `notes`: `[tier:…]`.
+- Vista previa: agrupación por **nivel** (acordeón abierto por defecto) y dentro por **categoría** (idem); filtro desplegable **Nivel** + búsqueda por texto. Botón de acción principal: **Generar vista previa** (antes “extraer candidatos”).
+- **Editor amplio**: botón que abre modal con textarea grande para pegar/editar el Markdown del import.
+
+### Tags (MVP)
+
+- Tag en UI: slug derivado del texto del heading de sección (no columna propia en DB).
+
+### Hook IA (futuro)
+
+- `ImportEnricher` en `concept-import.ts`; implementación por defecto identidad. Tras enriquecer se recalculan duplicados frente a BD.
+
+### Quick import
+
+- Botón con confirmación; mismos filtros y dedupe; sin paso de revisión detallada.
+
+### Tras importar
+
+- Se actualiza la lista de conceptos y cabeceras de contadores **sin** `location.reload`; se vuelven a enlazar acciones en lista.
+
 
 ## Assets 3D del login (Earth)
 

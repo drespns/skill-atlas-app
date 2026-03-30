@@ -192,11 +192,14 @@ Recomendacion pragmatica para **SaaS con datos privados**: **B o C** a medio pla
 
 Cuando el SaaS + portfolio por enlace este estable:
 
-### 7.1 Import semiautomatico por tecnologia
+### 7.1 Import semiautomatico por tecnologia (**MVP en repo**)
 
-- Fuente de verdad (prioridad): **URL + texto** (pegado) para máxima flexibilidad.
-- Flujo UX: sugerencias (editable) → preview/diff → confirmar altas en bloque.
-- DB: posible tabla `concept_import_jobs` o solo transaccion cliente.
+Implementación actual (ver `docs/architecture.md` § Sprint B):
+
+- **URL + texto** + plantillas estáticas `public/static/concept-seeds/` y catálogo al crear tecnología en `/technologies`.
+- Vista previa agrupada por **nivel** (comentarios `<!-- skillatlas-tier: … -->`) y por **categoría** (`##`); notas `[cat:…][tier:…]` hasta tener columnas dedicadas.
+- **Generar vista previa**, editor Markdown en modal, importación rápida con confirmación, refresco CSR de la lista de conceptos.
+- Pendientes de producto amplios: Tech Note por tecnología (7.2); IA vía `ImportEnricher`; eventual `concept_import_jobs` o columnas `category`/`tier` en tabla `concepts` + SQL/RLS.
 
 ### 7.2 Secciones de documentacion y referencias externas
 

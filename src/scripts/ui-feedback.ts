@@ -107,6 +107,59 @@ export function confirmModal(options: {
   });
 }
 
+/** Modal con textarea amplia para pegar o editar Markdown (importación de conceptos). */
+export function markdownEditorModal(options: {
+  title: string;
+  initialMarkdown: string;
+  confirmLabel?: string;
+}): Promise<string | null> {
+  const root = getModalRoot();
+  root.classList.remove("hidden");
+  root.classList.add("flex");
+
+  return new Promise((resolve) => {
+    root.innerHTML = `
+      <div data-modal-overlay class="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-200"></div>
+      <div data-modal-panel class="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 space-y-3 opacity-0 scale-[0.98] transition-all duration-200">
+        <h3 class="m-0 text-base font-semibold shrink-0">${escapeHtml(options.title)}</h3>
+        <textarea data-modal-markdown rows="18" class="w-full min-h-[12rem] flex-1 resize-y rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 bg-white dark:bg-gray-950 font-mono text-sm"></textarea>
+        <p class="m-0 text-xs text-gray-500 dark:text-gray-400 shrink-0">Atajos: <kbd class="px-1 rounded border border-gray-300 dark:border-gray-600 text-[10px]">Esc</kbd> cancela si el foco está fuera del área de texto.</p>
+        <div class="flex justify-end gap-2 shrink-0">
+          <button data-modal-cancel type="button" class="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">Cancelar</button>
+          <button data-modal-confirm type="button" class="rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200">${escapeHtml(options.confirmLabel ?? "Aplicar al importador")}</button>
+        </div>
+      </div>
+    `;
+    const ta = root.querySelector<HTMLTextAreaElement>("[data-modal-markdown]");
+    if (ta) ta.value = options.initialMarkdown;
+
+    requestAnimationFrame(() => {
+      root.querySelector("[data-modal-overlay]")?.classList.remove("opacity-0");
+      root.querySelector("[data-modal-panel]")?.classList.remove("opacity-0", "scale-[0.98]");
+    });
+
+    ta?.focus();
+    ta?.setSelectionRange(ta.value.length, ta.value.length);
+
+    const cleanup = (value: string | null) => {
+      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
+      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
+      setTimeout(() => {
+        root.classList.add("hidden");
+        root.classList.remove("flex");
+        root.innerHTML = "";
+        resolve(value);
+      }, 180);
+    };
+
+    root.querySelector("[data-modal-cancel]")?.addEventListener("click", () => cleanup(null));
+    root.querySelector("[data-modal-confirm]")?.addEventListener("click", () => cleanup(ta?.value ?? ""));
+    ta?.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") e.stopPropagation();
+    });
+  });
+}
+
 export function promptModal(options: {
   title: string;
   initialValue?: string;

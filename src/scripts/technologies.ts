@@ -3,6 +3,7 @@ import { getSupabaseBrowserClient } from "./client-supabase";
 import { getSessionUserId } from "./auth-session";
 import { confirmModal, showToast, technologyEditModal } from "./ui-feedback";
 import { loadPrefs } from "./prefs";
+import { getSeedCatalogEntries } from "./technology-detail/concept-seeds";
 
 declare global {
   interface Window {
@@ -35,10 +36,63 @@ async function initTechnologyForm() {
   const form = document.querySelector<HTMLFormElement>("[data-tech-form]");
   if (!form) return;
 
-  const nameInput = form.querySelector<HTMLInputElement>("[name='name']");
+  const nameInput = form.querySelector<HTMLInputElement>("[data-tech-name-input]");
   const submitBtn = form.querySelector<HTMLButtonElement>("[type='submit']");
   const feedback = form.querySelector<HTMLElement>("[data-tech-feedback]");
+  const seedWrap = form.querySelector<HTMLElement>("[data-tech-seed-wrap]");
+  const seedSuggestions = form.querySelector<HTMLUListElement>("[data-tech-seed-suggestions]");
   if (!nameInput || !submitBtn || !feedback) return;
+
+  const seedCatalog = getSeedCatalogEntries();
+  let pickedSlug: string | null = null;
+  let catalogLabelLock: string | null = null;
+
+  const renderSeedSuggestions = (q: string) => {
+    if (!seedSuggestions) return;
+    const ql = q.trim().toLowerCase();
+    const hits = !ql
+      ? seedCatalog.slice(0, 14)
+      : seedCatalog
+          .filter((e) => e.label.toLowerCase().includes(ql) || e.slug.includes(ql))
+          .slice(0, 22);
+    if (hits.length === 0) {
+      seedSuggestions.classList.add("hidden");
+      seedSuggestions.innerHTML = "";
+      return;
+    }
+    seedSuggestions.innerHTML = hits
+      .map(
+        (e) =>
+          `<li role="option"><button type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-900 border-0 bg-transparent cursor-pointer" data-seed-slug="${escHtml(e.slug)}" data-seed-label="${escHtml(e.label)}"><span class="font-medium text-gray-900 dark:text-gray-100">${escHtml(e.label)}</span><span class="block text-[11px] text-gray-500 dark:text-gray-400">Plantilla importación · slug <code class="text-[10px]">${escHtml(e.slug)}</code></span></button></li>`,
+      )
+      .join("");
+    seedSuggestions.classList.remove("hidden");
+  };
+
+  nameInput.addEventListener("focus", () => renderSeedSuggestions(nameInput.value));
+  nameInput.addEventListener("input", () => {
+    if (catalogLabelLock !== null && nameInput.value.trim() !== catalogLabelLock) {
+      pickedSlug = null;
+      catalogLabelLock = null;
+    }
+    renderSeedSuggestions(nameInput.value);
+  });
+
+  seedSuggestions?.addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-seed-slug]");
+    if (!btn) return;
+    const slug = btn.dataset.seedSlug ?? "";
+    const label = btn.dataset.seedLabel ?? "";
+    nameInput.value = label;
+    pickedSlug = slug;
+    catalogLabelLock = label;
+    seedSuggestions.classList.add("hidden");
+    nameInput.focus();
+  });
+
+  document.addEventListener("click", (e) => {
+    if (seedWrap && !seedWrap.contains(e.target as Node)) seedSuggestions?.classList.add("hidden");
+  });
 
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
@@ -75,7 +129,7 @@ async function initTechnologyForm() {
     feedback.textContent = "Guardando...";
     feedback.className = "text-sm text-gray-600";
 
-    const slug = toSlug(name);
+    const slug = pickedSlug ?? toSlug(name);
     const dup = await supabase
       .from("technologies")
       .select("id")
@@ -117,6 +171,8 @@ async function initTechnologyForm() {
     feedback.className = "text-sm text-green-600";
     showToast("Tecnología creada correctamente.", "success");
     nameInput.value = "";
+    pickedSlug = null;
+    catalogLabelLock = null;
     submitBtn.disabled = false;
     if (window.skillatlas?.clearTechnologiesCache) window.skillatlas.clearTechnologiesCache();
     if (window.skillatlas?.bootstrapTechnologiesGrid) {

@@ -60,9 +60,13 @@ El bloque "single-account" y el script `rls-mvp-authenticated.sql` quedan como *
 
 ## Prioridad siguiente (tras SaaS + portfolio)
 
-1. Catalogo de conceptos asistido
-- import semiautomatico por tecnologia (fuentes: **URL + texto**; flujo: sugerencias → revisión → crear)
-- secciones de documentacion y referencias externas:
+1. Catalogo de conceptos asistido (**Sprint B** — **implementado** MVP; detalle en `docs/architecture.md` § Sprint B)
+- ~~import en `/technologies/view` (URL + texto; vista previa; revisión; carga en bloque)~~
+- ~~plantillas `public/static/concept-seeds/*.md` + picker al crear tecnología (`getSeedCatalogEntries`)~~
+- ~~filtros de calidad, agrupación por nivel + categoría, quick import, `ImportEnricher` stub~~
+- ~~modal editor Markdown amplio; refresco de lista sin reload completo~~
+- **Mejoras opcionales**: marcar `skillatlas-tier` en más plantillas que `python.md`; columnas dedicadas `category`/`tier` en DB + migración SQL; i18n de nuevos strings del import
+- secciones de documentacion y referencias externas (post Sprint B o en paralelo si hay tiempo):
   - **1 Tech Note por tecnología** (markdown) + links
   - conceptos siguen siendo “átomos” (RDD, Lazy, Shuffle, etc.)
   - ver seccion 7 en `docs/plan-saas-multi-tenant-portfolio.md`
