@@ -12,6 +12,15 @@ function esc(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+function isTypingInField(target: EventTarget | null) {
+  const el = target as HTMLElement | null;
+  if (!el?.tagName) return false;
+  const tag = el.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  if (el.isContentEditable) return true;
+  return false;
+}
+
 function initCommandPalette() {
   const root = document.querySelector<HTMLElement>("[data-command-palette]");
   if (!root) return;
@@ -160,6 +169,18 @@ function initCommandPalette() {
   document.addEventListener("keydown", (e) => {
     const isK = e.key.toLowerCase() === "k";
     const isEscape = e.key === "Escape";
+
+    if (
+      e.key === "/" &&
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !e.altKey &&
+      !isTypingInField(e.target)
+    ) {
+      e.preventDefault();
+      void openPalette();
+      return;
+    }
 
     if ((e.ctrlKey || e.metaKey) && isK) {
       e.preventDefault();

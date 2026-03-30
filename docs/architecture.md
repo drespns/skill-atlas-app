@@ -52,7 +52,7 @@ En **build estatico**, las lecturas usan el cliente server-side de Supabase (sin
 | Lista tecnologias | `/technologies` | `/technologies` + CSR en `[data-technologies-csr-mount]` |
 | Detalle tecnologia | `/technologies/[techId]` (`techId` = slug) | `/technologies/view?tech=<slug>` + `technology-view-bootstrap.ts` |
 | Login | `/login` | `/login` (email/password + OAuth en cliente) |
-| Ajustes | `/settings` | `/settings` (estado de sesión + logout; auth se hace en `/login`) |
+| Ajustes | `/settings` | `/settings` (sesión, preferencias UI, perfil público + stack de ayuda; sync `portfolio_profiles` en Supabase; auth en `/login`) |
 
 Los componentes `ProjectCard.astro` y `TechnologyCard.astro` enlazan a las rutas CSR cuando el data source es Supabase. `project-detail.ts` no inicializa formularios si existe `[data-project-csr-mount]` (evita doble enganche).
 
@@ -77,6 +77,42 @@ Scripts principales:
 - `ui-feedback.ts` -> modales y toasts
 - `login-auth.ts` -> login/signup email+password + OAuth en `/login`
 - `login-earth.ts` -> escena Three.js (Earth) en background del login
+- `settings-profile.ts` -> nombre/bio/stack de ayuda; `public-profile-local.ts` + upsert `portfolio_profiles`
+- `portfolio-public-profile.ts` -> hidrata cabecera de `/portfolio` desde Supabase o localStorage; chips de **stack de ayuda**
+- `settings-dashboard.ts` -> grid de Ajustes: columnas configurables + orden de tarjetas (drag & drop) persistido en prefs
+
+## Ajustes (`/settings`) — layout y perfil (v0.10+)
+
+### Preferencias (`skillatlas_prefs_v1`)
+
+Además de tema, densidad, fuente, acento, movimiento, vistas lista/cards, iconos del header y visibilidad del selector de idioma:
+
+- **`settingsGridColumns`**: 1–4 columnas en viewport ≥ `md` (en móvil siempre 1). Selector en Preferencias.
+- **`settingsSectionOrder`**: orden de las tarjetas `prefs` | `shortcuts` | `account` | `portfolio` (arrastre desde el asa de 6 puntos en la parte superior de cada tarjeta).
+
+### Perfil y stack de ayuda
+
+- **Nombre público** y **bio**: edición en cliente; **upsert** a `portfolio_profiles` (`display_name`, `bio`) con sesión; caché en `public-profile-local.ts` (`skillatlas_public_profile_v1`).
+- **Stack de ayuda**: lista de herramientas (productividad / IA) definidas en `src/config/help-stack.ts`; persistencia en columna **`help_stack`** (JSONB) tras `docs/sql/saas-005-portfolio-help-stack.sql`, con reintento del cliente si la columna aún no existe.
+- **`portfolio-public-profile.ts`**: en `/portfolio` muestra nombre/bio y chips del stack (Supabase + fallback local).
+
+### Idioma (UI)
+
+- Selector global en header: **banderas** 🇪🇸 / 🇬🇧 (sustituye al `<select>`); misma idea en Preferencias de Ajustes.
+
+### Footer (`AppShell.astro`)
+
+- Bloque “Hecho con” con logos (Astro, Tailwind, TypeScript, Vite, Supabase) y navegación secundaria.
+
+### Catálogo de iconos de tecnologías
+
+- `src/config/icons.ts`: mapas por categorías (lenguajes, web, data, BBDD, data engineering, BI, cloud, DevOps, etc.) exportando `iconByKey` / `getTechnologyIconSrc`.
+
+### Import de conceptos — extras
+
+- **Vista previa**: acciones por nivel, por categoría (sección) y globales (“Todos visibles” / “Ninguno”); listener delegado en el panel de revisión.
+- **Plantillas Markdown** (`public/static/concept-seeds/*.md`): comentarios `<!-- skillatlas-tier: … -->`; script opcional `scripts/annotate-concept-seed-tiers.mjs` para reparto por cuartiles en ficheros sin marcas (omite los que ya contienen `skillatlas-tier`).
+- **Alta de tecnología** (`/technologies`): sugerencias del catálogo con **icono** por fila, lista completa ordenada y altura de panel con scroll (`max-h-[min(70vh,28rem)]`).
 
 ## Tradeoffs actuales
 
@@ -98,13 +134,14 @@ Plan detallado para **multiusuario + portfolio por enlace compartido**: `docs/pl
 
 Implementación (Sprint A):
 - Preferencias guardadas en `localStorage` (`skillatlas_prefs_v1`) y aplicadas en `AppShell.astro` (script inline en `<head>`) + `src/scripts/client.ts`.
-- UI en `/settings` con `src/scripts/settings-prefs.ts`.
+- UI en `/settings` con `src/scripts/settings-prefs.ts` + `settings-dashboard.ts` (grid/columnas/orden).
 - Cache de navegación ligera para CSR lists en `sessionStorage` (TTL 2 min) en `src/scripts/{projects,technologies}.ts`.
 
 Mejoras UX (Sprint A+):
-- Botón visible para Command Palette en header (además de `Ctrl+K`).
+- Botón visible para Command Palette en header (además de `Ctrl+K` y tecla `/` fuera de campos de texto).
 - Toggle Cards/Lista en páginas (sin pasar por Ajustes) y persistencia en prefs.
-- Preferencias de UI: mostrar/ocultar iconos del header y preferencia de idioma (con opción de ocultar el selector del header).
+- Preferencias de UI: mostrar/ocultar iconos del header y selector de idioma por **banderas** (con opción de ocultar el bloque en el header).
+- Listado de **atajos de teclado** documentado en la tarjeta correspondiente de Ajustes.
 
 ## Sprint B (import semi-automático de conceptos por tecnología) — **implementado (MVP)**
 

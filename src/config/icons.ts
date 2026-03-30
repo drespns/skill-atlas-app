@@ -1,77 +1,110 @@
 /**
- * Centralized icon mapping.
+ * Icon mapping for technologies (CSR lists, cards).
  *
- * Keys are normalized technology names/ids in lowercase.
- * Values are paths under `public/icons`.
+ * Conventions:
+ * - Keys: lowercase id, slug, or normalized display name.
+ * - Values: paths under `public/icons` (file names must match repo assets).
+ * - Add new stacks under the closest category block; keep keys alphabetized within each block.
  */
-export const iconByKey: Record<string, string> = {
-  // Data / Python
-  python: "/icons/Python.svg",
-  pandas: "/icons/Pandas.svg",
-  numpy: "/icons/NumPy.svg",
-  tensorflow: "/icons/TensorFlow.svg",
-  keras: "/icons/Keras.svg",
 
-  // Big data
+const programmingLanguages: Record<string, string> = {
+  c: "/icons/C.svg",
+  javascript: "/icons/JavaScript.svg",
+  python: "/icons/Python.svg",
+  r: "/icons/R.svg",
+  scala: "/icons/Scala.svg",
+  typescript: "/icons/TypeScript.svg",
+};
+
+const webAndFrontend: Record<string, string> = {
+  astro: "/icons/Astro.svg",
+  css: "/icons/CSS3.svg",
+  html: "/icons/HTML5.svg",
+  react: "/icons/React.svg",
+  tailwind: "/icons/Tailwind CSS.svg",
+  vite: "/icons/Vite.js.svg",
+};
+
+const dataScienceAndMl: Record<string, string> = {
+  jupyter: "/icons/Jupyter.svg",
+  kaggle: "/icons/Kaggle.svg",
+  keras: "/icons/Keras.svg",
+  numpy: "/icons/NumPy.svg",
+  pandas: "/icons/Pandas.svg",
+  tensorflow: "/icons/TensorFlow.svg",
+};
+
+const bigDataAndStreaming: Record<string, string> = {
+  hadoop: "/icons/Apache Hadoop.svg",
+  kafka: "/icons/Apache Kafka.svg",
   pyspark: "/icons/Apache Spark.svg",
   spark: "/icons/Apache Spark.svg",
-  kafka: "/icons/Apache Kafka.svg",
+};
 
-  // DB
-  sql: "/icons/PostgresSQL.svg",
+const databasesAndStores: Record<string, string> = {
+  mongodb: "/icons/MongoDB.svg",
+  mongo: "/icons/MongoDB.svg",
+  mysql: "/icons/MySQL.svg",
   postgres: "/icons/PostgresSQL.svg",
   postgresql: "/icons/PostgresSQL.svg",
-  mysql: "/icons/MySQL.svg",
+  sql: "/icons/PostgresSQL.svg",
   sqlite: "/icons/SQLite.svg",
-  mongodb: "/icons/MongoDB.svg",
+};
 
-  // Front / tooling
-  astro: "/icons/Astro.svg",
-  react: "/icons/React.svg",
-  typescript: "/icons/TypeScript.svg",
-  javascript: "/icons/JavaScript.svg",
-  html: "/icons/HTML5.svg",
-  css: "/icons/CSS3.svg",
-  tailwind: "/icons/Tailwind CSS.svg",
-  docker: "/icons/Docker.svg",
-  kubernetes: "/icons/Kubernetes.svg",
+/** Warehouses, lakehouse, transformation */
+const dataEngineering: Record<string, string> = {
+  databricks: "/icons/Databricks.svg",
+  dbt: "/icons/Dbt.svg",
+  snowflake: "/icons/Snowflake.svg",
+};
+
+const biAndAnalytics: Record<string, string> = {
+  tableau: "/icons/Tableau.svg",
+};
+
+const cloudPlatforms: Record<string, string> = {
   aws: "/icons/AWS.svg",
+};
+
+const devOpsAndDelivery: Record<string, string> = {
+  docker: "/icons/Docker.svg",
   git: "/icons/Git.svg",
   github: "/icons/GitHub.svg",
   "github actions": "/icons/GitHub Actions.svg",
-
-  // Other
-  jupyter: "/icons/Jupyter.svg",
-  tableau: "/icons/tableau-icon-svgrepo-com.svg",
-  kaggle: "/icons/Kaggle.svg",
-  fastapi: "/icons/FastAPI.svg",
-  markdown: "/icons/Markdown.svg",
-  scala: "/icons/Scala.svg",
-  r: "/icons/R.svg",
-  c: "/icons/C.svg",
-  vercel: "/icons/Vercel.svg",
   jenkins: "/icons/Jenkins.svg",
-  wordpress: "/icons/WordPress.svg",
-  "after effects": "/icons/After Effects.svg",
-  dbeaver: "/icons/DBeaver.svg",
+  kubernetes: "/icons/Kubernetes.svg",
+  vercel: "/icons/Vercel.svg",
 };
 
-/**
- * Returns an icon by a generic key (id, name, alias).
- */
+const toolsAndOther: Record<string, string> = {
+  "after effects": "/icons/After Effects.svg",
+  dbeaver: "/icons/DBeaver.svg",
+  fastapi: "/icons/FastAPI.svg",
+  figma: "/icons/Figma.svg",
+  markdown: "/icons/Markdown.svg",
+  selenium: "/icons/Selenium.svg",
+  wordpress: "/icons/WordPress.svg",
+};
+
+export const iconByKey: Record<string, string> = {
+  ...programmingLanguages,
+  ...webAndFrontend,
+  ...dataScienceAndMl,
+  ...bigDataAndStreaming,
+  ...databasesAndStores,
+  ...dataEngineering,
+  ...biAndAnalytics,
+  ...cloudPlatforms,
+  ...devOpsAndDelivery,
+  ...toolsAndOther,
+};
+
 export function getIconSrc(input?: string | null) {
   if (!input) return "";
   const key = String(input).trim().toLowerCase();
   return iconByKey[key] || "";
 }
 
-/**
- * Resolves the best icon for a technology object.
- *
- * Resolution order:
- * 1) `tech.id`
- * 2) `tech.name`
- */
 export function getTechnologyIconSrc(tech: { id?: string; name?: string }) {
   const byId = getIconSrc(tech.id);
   if (byId) return byId;
@@ -79,8 +112,5 @@ export function getTechnologyIconSrc(tech: { id?: string; name?: string }) {
   const byName = getIconSrc(tech.name);
   if (byName) return byName;
 
-  // Important: do NOT guess a file name under /icons.
-  // Missing files trigger repeated 404s and visual flicker in CSR lists.
   return "";
 }
-

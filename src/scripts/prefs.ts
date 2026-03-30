@@ -6,6 +6,11 @@ export type Motion = "normal" | "reduced";
 export type DefaultView = "cards" | "list";
 export type Lang = "es" | "en";
 
+export const SETTINGS_SECTION_IDS = ["prefs", "shortcuts", "account", "portfolio"] as const;
+export type SettingsSectionId = (typeof SETTINGS_SECTION_IDS)[number];
+
+export type SettingsGridColumns = 1 | 2 | 3 | 4;
+
 export type AppPrefsV1 = {
   v: 1;
   themeMode: ThemeMode;
@@ -18,6 +23,10 @@ export type AppPrefsV1 = {
   showHeaderIcons: boolean;
   showLangSelector: boolean;
   lang: Lang;
+  /** Grid de la página Ajustes (≥ md). */
+  settingsGridColumns: SettingsGridColumns;
+  /** Orden de las tarjetas en Ajustes. */
+  settingsSectionOrder: SettingsSectionId[];
 };
 
 const STORAGE_KEY = "skillatlas_prefs_v1";
@@ -34,6 +43,8 @@ const DEFAULT_PREFS: AppPrefsV1 = {
   showHeaderIcons: true,
   showLangSelector: true,
   lang: "es",
+  settingsGridColumns: 2,
+  settingsSectionOrder: [...SETTINGS_SECTION_IDS],
 };
 
 function safeParse(raw: string | null): unknown {
@@ -45,15 +56,44 @@ function safeParse(raw: string | null): unknown {
   }
 }
 
+function clampSettingsColumns(n: unknown): SettingsGridColumns {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return 2;
+  if (x < 1) return 1;
+  if (x > 4) return 4;
+  return x as SettingsGridColumns;
+}
+
+function normalizeSectionOrder(raw: unknown): SettingsSectionId[] {
+  const allowed = new Set<string>(SETTINGS_SECTION_IDS);
+  const out: SettingsSectionId[] = [];
+  const seen = new Set<string>();
+  if (Array.isArray(raw)) {
+    for (const x of raw) {
+      if (typeof x === "string" && allowed.has(x) && !seen.has(x)) {
+        out.push(x as SettingsSectionId);
+        seen.add(x);
+      }
+    }
+  }
+  for (const id of SETTINGS_SECTION_IDS) {
+    if (!seen.has(id)) out.push(id);
+  }
+  return out;
+}
+
 export function loadPrefs(): AppPrefsV1 {
   const parsed = safeParse(localStorage.getItem(STORAGE_KEY));
   if (!parsed || typeof parsed !== "object") return migrateLegacyPrefs(DEFAULT_PREFS);
 
   const p = parsed as Partial<AppPrefsV1>;
+  const base = p.v === 1 ? p : {};
   const merged: AppPrefsV1 = {
     ...DEFAULT_PREFS,
-    ...(p.v === 1 ? p : {}),
+    ...base,
     v: 1,
+    settingsGridColumns: clampSettingsColumns(base.settingsGridColumns ?? DEFAULT_PREFS.settingsGridColumns),
+    settingsSectionOrder: normalizeSectionOrder(base.settingsSectionOrder ?? DEFAULT_PREFS.settingsSectionOrder),
   };
 
   return migrateLegacyPrefs(merged);

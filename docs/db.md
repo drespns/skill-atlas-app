@@ -20,6 +20,7 @@ Migracion multi-tenant y portfolio por token (scripts versionados):
 | 2 | `docs/sql/saas-002-rls-multi-tenant.sql` | RLS por `auth.uid() = user_id`; sin SELECT amplio de `anon` en tablas de contenido |
 | 3 | `docs/sql/saas-003-fn-portfolio-share.sql` | RPC `skillatlas_portfolio_by_share_token(uuid)` (SECURITY DEFINER); `GRANT EXECUTE` a `anon` |
 | 4 (si aplica) | `docs/sql/saas-004-drop-global-slug-constraints.sql` | Quita UNIQUE solo sobre `slug` en `technologies` / `projects` si quedó del esquema inicial; necesario para que distintos usuarios puedan reutilizar el mismo slug |
+| 5 (recomendado si usas stack de ayuda en la nube) | `docs/sql/saas-005-portfolio-help-stack.sql` | Columna `portfolio_profiles.help_stack` (JSONB) para el «stack de ayuda» en Ajustes; la app hace upsert y tolera ausencia de columna con `select`/`upsert` reducido |
 
 **Sintoma:** puedes crear solo Docker pero al añadir "Python" aparece error de slug duplicado aunque tu lista no muestre Python → casi seguro queda unicidad **global** en `slug`. Ejecuta `saas-004` y confirma que existen los indices `(user_id, slug)` de `saas-001`.
 
@@ -28,6 +29,7 @@ Migracion multi-tenant y portfolio por token (scripts versionados):
 - `user_id` PK (FK a `auth.users`)
 - `display_name`, `bio`
 - `share_enabled`, `share_token` (unico)
+- `help_stack` (JSONB, tras **saas-005**): array de claves de herramientas (`src/config/help-stack.ts`)
 
 La **app aun no crea** la fila automaticamente al registrarse; hay que hacerlo en un siguiente paso (p. ej. primer login o trigger en auth). La RPC de saas-003 asume que existe fila cuando se activa comparticion.
 

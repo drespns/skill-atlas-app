@@ -59,7 +59,8 @@ function initHeaderIconVisibility() {
 }
 
 async function initI18n() {
-  const langSelect = document.querySelector<HTMLSelectElement>("[data-lang-select]");
+  const langFlags = document.querySelector<HTMLElement>("[data-lang-flags]");
+  const langFlagBtns = document.querySelectorAll<HTMLButtonElement>("[data-lang-flag]");
 
   /**
    * i18next setup.
@@ -86,12 +87,15 @@ async function initI18n() {
    */
   const render = () => {
     setLangAttr(i18next.language);
-    if (langSelect) langSelect.value = i18next.language.startsWith("en") ? "en" : "es";
-    // Header selector visibility (pref)
+    const lng = i18next.language.startsWith("en") ? "en" : "es";
+    langFlagBtns.forEach((btn) => {
+      const active = btn.dataset.langFlag === lng;
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
     const show = loadPrefs().showLangSelector;
-    if (langSelect) {
-      langSelect.classList.toggle("hidden", !show);
-      langSelect.classList.toggle("sm:block", Boolean(show));
+    if (langFlags) {
+      langFlags.classList.toggle("hidden", !show);
+      langFlags.classList.toggle("sm:inline-flex", Boolean(show));
     }
     document.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
       const key = el.getAttribute("data-i18n");
@@ -116,12 +120,13 @@ async function initI18n() {
 
   render();
 
-  // Handle language changes from the ES/EN selector.
-  langSelect?.addEventListener("change", async (e) => {
-    const next = (e.target as HTMLSelectElement).value === "en" ? "en" : "es";
-    await i18next.changeLanguage(next);
-    updatePrefs({ lang: next });
-    render();
+  langFlagBtns.forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const next = btn.dataset.langFlag === "en" ? "en" : "es";
+      await i18next.changeLanguage(next);
+      updatePrefs({ lang: next });
+      render();
+    });
   });
 }
 

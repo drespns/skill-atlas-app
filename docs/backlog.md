@@ -82,4 +82,16 @@ El bloque "single-account" y el script `rls-mvp-authenticated.sql` quedan como *
 - opcional: conservar datos en client scripts (prefetch / sessionStorage) para listas CSR
 
 3. Ajustes (UX “daily driver”)
-- preferencias globales **local-first** (sin sync al inicio): tipografía, tema/acentos, densidad UI, vistas por defecto
+- ~~preferencias globales **local-first**~~: tipografía, tema/acentos, densidad UI, vistas por defecto, columnas y orden de tarjetas en `/settings`
+- ~~perfil público + stack de ayuda~~ (`portfolio_profiles`, `help_stack` con saas-005)
+- ~~portfolio: mostrar stack de ayuda~~ (chips bajo bio)
+
+## Release 0.10.0 (resumen documentado)
+
+- Ajustes tipo **dashboard**: rejilla con 1–4 columnas (≥ md), tarjetas reordenables por arrastre (asa superior), orden en `settingsSectionOrder`.
+- **Perfil**: nombre/bio + stack de ayuda; sync Supabase + localStorage; portfolio muestra stack.
+- **i18n UI**: selector de idioma por banderas (header y Ajustes).
+- **Footer**: “Hecho con” + logos (incl. Supabase).
+- **Tecnologías**: catálogo de alta con iconos y lista completa con scroll.
+- **Import conceptos**: selección masiva por nivel/categoría/global; plantillas con tiers; script `annotate-concept-seed-tiers.mjs`.
+- **Iconos**: `src/config/icons.ts` reorganizado; nuevas plantillas HTML/CSS; `help-stack.ts` y assets en `public/icons/`.

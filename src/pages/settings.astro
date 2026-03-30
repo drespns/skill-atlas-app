@@ -1,243 +1,500 @@
 ---
 import AppShell from "../layouts/AppShell.astro";
+import { HELP_STACK_ITEMS } from "../config/help-stack";
 import { profile } from "../data";
 import settingsAuthScriptUrl from "../scripts/settings-auth.ts?url";
 import settingsPrefsScriptUrl from "../scripts/settings-prefs.ts?url";
+import settingsDashboardUrl from "../scripts/settings-dashboard.ts?url";
+import settingsProfileScriptUrl from "../scripts/settings-profile.ts?url";
 
 const title = "Ajustes";
+
+const kbd =
+  "inline-flex items-center rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 px-1.5 py-0.5 text-[11px] font-mono font-semibold text-gray-800 dark:text-gray-200 shadow-sm";
+
+const card =
+  "rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm flex flex-col overflow-hidden";
+const dragBar =
+  "flex justify-center pt-2 pb-1.5 border-b border-gray-100/80 dark:border-gray-800/80 bg-gray-50/50 dark:bg-gray-900/30";
+const grip =
+  "flex flex-col gap-0.5 cursor-grab active:cursor-grabbing px-3 py-0.5 rounded-md hover:bg-gray-100/80 dark:hover:bg-gray-800/50";
 ---
 
 <AppShell title={title}>
-  <section class="max-w-lg space-y-6">
+  <section class="max-w-7xl mx-auto space-y-8">
     <header class="space-y-2">
       <h1 class="m-0 text-2xl font-semibold">
         <span data-i18n="settings.title">{title}</span>
       </h1>
-      <p class="text-sm text-gray-600 dark:text-gray-400">
-        <span data-i18n="settings.subtitle">En el MVP, estos datos son de ejemplo (read-only).</span>
+      <p class="text-sm text-gray-600 dark:text-gray-400 max-w-2xl">
+        <span data-i18n="settings.subtitle">
+          Preferencias de interfaz y perfil público se guardan en este navegador. La cuenta depende de Supabase.
+        </span>
       </p>
     </header>
 
-    <div class="space-y-4">
-      <section
-        class="rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-5 shadow-sm space-y-4"
-      >
-        <div class="flex items-center justify-between gap-3">
-          <h2 class="m-0 text-base font-semibold">
-            <span data-i18n="settings.prefs.sectionTitle">Preferencias</span>
-          </h2>
-          <button
-            type="button"
-            data-pref-reset
-            class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 app-accent-ring"
+    <div
+      data-settings-dashboard
+      class="grid gap-6 auto-rows-min grid-cols-1"
+      style="grid-template-columns: repeat(1, minmax(0, 1fr));"
+    >
+      <!-- prefs -->
+      <article data-settings-section="prefs" class={card}>
+        <div class={dragBar}>
+          <div
+            class={grip}
+            data-settings-drag-handle
+            data-i18n="settings.dashboard.dragHint"
+            data-i18n-attr="aria-label"
+            role="separator"
+            aria-orientation="horizontal"
           >
-            <span data-i18n="settings.prefs.reset">Restablecer</span>
-          </button>
+            <div class="flex flex-col gap-0.5 pointer-events-none" aria-hidden="true">
+              <div class="flex gap-0.5 justify-center">
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+              </div>
+              <div class="flex gap-0.5 justify-center">
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label class="space-y-1">
-            <span class="text-sm font-semibold" data-i18n="settings.prefs.theme">Tema</span>
-            <select
-              data-pref-theme
-              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+        <div class="p-5 space-y-4 flex-1">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="m-0 text-base font-semibold">
+              <span data-i18n="settings.prefs.sectionTitle">Preferencias</span>
+            </h2>
+            <button
+              type="button"
+              data-pref-reset
+              class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 app-accent-ring"
             >
-              <option value="auto" data-i18n="settings.prefs.themeAuto">Auto (sistema)</option>
-              <option value="light" data-i18n="settings.prefs.themeLight">Claro</option>
-              <option value="dark" data-i18n="settings.prefs.themeDark">Oscuro</option>
-            </select>
-          </label>
+              <span data-i18n="settings.prefs.reset">Restablecer</span>
+            </button>
+          </div>
 
-          <label class="space-y-1">
-            <span class="text-sm font-semibold" data-i18n="settings.prefs.density">Densidad</span>
-            <select
-              data-pref-density
-              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
-            >
-              <option value="comfortable" data-i18n="settings.prefs.densityComfortable">Cómoda</option>
-              <option value="compact" data-i18n="settings.prefs.densityCompact">Compacta</option>
-            </select>
-          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="space-y-1">
+              <span class="text-sm font-semibold" data-i18n="settings.prefs.theme">Tema</span>
+              <select
+                data-pref-theme
+                class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+              >
+                <option value="auto" data-i18n="settings.prefs.themeAuto">Auto (sistema)</option>
+                <option value="light" data-i18n="settings.prefs.themeLight">Claro</option>
+                <option value="dark" data-i18n="settings.prefs.themeDark">Oscuro</option>
+              </select>
+            </label>
 
-          <label class="space-y-1">
-            <span class="text-sm font-semibold" data-i18n="settings.prefs.font">Fuente</span>
-            <select
-              data-pref-font
-              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
-            >
-              <option value="system" data-i18n="settings.prefs.fontSystem">Sistema</option>
-              <option value="inter" data-i18n="settings.prefs.fontInter">Inter</option>
-              <option value="mono" data-i18n="settings.prefs.fontMono">Mono</option>
-            </select>
-          </label>
+            <label class="space-y-1">
+              <span class="text-sm font-semibold" data-i18n="settings.prefs.density">Densidad</span>
+              <select
+                data-pref-density
+                class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+              >
+                <option value="comfortable" data-i18n="settings.prefs.densityComfortable">Cómoda</option>
+                <option value="compact" data-i18n="settings.prefs.densityCompact">Compacta</option>
+              </select>
+            </label>
 
-          <label class="space-y-1">
-            <span class="text-sm font-semibold" data-i18n="settings.prefs.accent">Acento</span>
-            <select
-              data-pref-accent
-              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
-            >
-              <option value="indigo" data-i18n="settings.prefs.accentIndigo">Índigo</option>
-              <option value="emerald" data-i18n="settings.prefs.accentEmerald">Esmeralda</option>
-              <option value="rose" data-i18n="settings.prefs.accentRose">Rosa</option>
-              <option value="amber" data-i18n="settings.prefs.accentAmber">Ámbar</option>
-              <option value="sky" data-i18n="settings.prefs.accentSky">Cielo</option>
-              <option value="violet" data-i18n="settings.prefs.accentViolet">Violeta</option>
-            </select>
-          </label>
+            <label class="space-y-1">
+              <span class="text-sm font-semibold" data-i18n="settings.prefs.font">Fuente</span>
+              <select
+                data-pref-font
+                class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+              >
+                <option value="system" data-i18n="settings.prefs.fontSystem">Sistema</option>
+                <option value="inter" data-i18n="settings.prefs.fontInter">Inter</option>
+                <option value="mono" data-i18n="settings.prefs.fontMono">Mono</option>
+              </select>
+            </label>
 
-          <label class="space-y-1">
-            <span class="text-sm font-semibold" data-i18n="settings.prefs.motion">Movimiento</span>
-            <select
-              data-pref-motion
-              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
-            >
-              <option value="normal" data-i18n="settings.prefs.motionNormal">Normal</option>
-              <option value="reduced" data-i18n="settings.prefs.motionReduced">Reducido</option>
-            </select>
-          </label>
+            <label class="space-y-1">
+              <span class="text-sm font-semibold" data-i18n="settings.prefs.accent">Acento</span>
+              <select
+                data-pref-accent
+                class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+              >
+                <option value="indigo" data-i18n="settings.prefs.accentIndigo">Índigo</option>
+                <option value="emerald" data-i18n="settings.prefs.accentEmerald">Esmeralda</option>
+                <option value="rose" data-i18n="settings.prefs.accentRose">Rosa</option>
+                <option value="amber" data-i18n="settings.prefs.accentAmber">Ámbar</option>
+                <option value="sky" data-i18n="settings.prefs.accentSky">Cielo</option>
+                <option value="violet" data-i18n="settings.prefs.accentViolet">Violeta</option>
+              </select>
+            </label>
 
-          <label class="space-y-1">
-            <span class="text-sm font-semibold" data-i18n="settings.prefs.technologiesView"
-              >Vista (Tecnologías)</span
-            >
-            <select
-              data-pref-technologies-view
-              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
-            >
-              <option value="cards" data-i18n="settings.prefs.viewCards">Cards</option>
-              <option value="list" data-i18n="settings.prefs.viewList">Lista</option>
-            </select>
-          </label>
+            <label class="space-y-1">
+              <span class="text-sm font-semibold" data-i18n="settings.prefs.motion">Movimiento</span>
+              <select
+                data-pref-motion
+                class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+              >
+                <option value="normal" data-i18n="settings.prefs.motionNormal">Normal</option>
+                <option value="reduced" data-i18n="settings.prefs.motionReduced">Reducido</option>
+              </select>
+            </label>
 
-          <label class="space-y-1">
-            <span class="text-sm font-semibold" data-i18n="settings.prefs.projectsView">Vista (Proyectos)</span>
-            <select
-              data-pref-projects-view
-              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
-            >
-              <option value="cards" data-i18n="settings.prefs.viewCards">Cards</option>
-              <option value="list" data-i18n="settings.prefs.viewList">Lista</option>
-            </select>
-          </label>
+            <label class="space-y-1">
+              <span class="text-sm font-semibold" data-i18n="settings.prefs.settingsColumns">Columnas (Ajustes)</span>
+              <select
+                data-pref-settings-columns
+                class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+              >
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </label>
 
-          <label class="space-y-1">
-            <span class="text-sm font-semibold" data-i18n="settings.prefs.language">Idioma</span>
-            <select
-              data-pref-lang
-              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
-            >
-              <option value="es">ES</option>
-              <option value="en">EN</option>
-            </select>
-          </label>
+            <label class="space-y-1">
+              <span class="text-sm font-semibold" data-i18n="settings.prefs.technologiesView"
+                >Vista (Tecnologías)</span
+              >
+              <select
+                data-pref-technologies-view
+                class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+              >
+                <option value="cards" data-i18n="settings.prefs.viewCards">Cards</option>
+                <option value="list" data-i18n="settings.prefs.viewList">Lista</option>
+              </select>
+            </label>
 
-          <label class="space-y-1">
-            <span class="text-sm font-semibold" data-i18n="settings.prefs.showHeaderIcons">Iconos del header</span>
-            <select
-              data-pref-show-header-icons
-              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
-            >
-              <option value="yes" data-i18n="settings.prefs.show">Mostrar</option>
-              <option value="no" data-i18n="settings.prefs.hide">Ocultar</option>
-            </select>
-          </label>
+            <label class="space-y-1">
+              <span class="text-sm font-semibold" data-i18n="settings.prefs.projectsView">Vista (Proyectos)</span>
+              <select
+                data-pref-projects-view
+                class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+              >
+                <option value="cards" data-i18n="settings.prefs.viewCards">Cards</option>
+                <option value="list" data-i18n="settings.prefs.viewList">Lista</option>
+              </select>
+            </label>
 
-          <label class="space-y-1">
-            <span class="text-sm font-semibold" data-i18n="settings.prefs.showLangSelector"
-              >Selector de idioma (header)</span
-            >
-            <select
-              data-pref-show-lang-selector
-              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
-            >
-              <option value="yes" data-i18n="settings.prefs.show">Mostrar</option>
-              <option value="no" data-i18n="settings.prefs.hide">Ocultar</option>
-            </select>
-          </label>
-        </div>
+            <div class="space-y-1 sm:col-span-2">
+              <span class="text-sm font-semibold" data-i18n="settings.prefs.language">Idioma</span>
+              <div
+                class="inline-flex rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 p-0.5 gap-0.5"
+                data-pref-lang-flags
+              >
+                <button
+                  type="button"
+                  data-pref-lang-flag="es"
+                  class="rounded-md px-2.5 py-1.5 text-lg leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
+                  aria-pressed="true"
+                  title="Español"
+                >
+                  🇪🇸
+                </button>
+                <button
+                  type="button"
+                  data-pref-lang-flag="en"
+                  class="rounded-md px-2.5 py-1.5 text-lg leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
+                  aria-pressed="false"
+                  title="English"
+                >
+                  🇬🇧
+                </button>
+              </div>
+            </div>
 
-        <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
-          <span data-i18n="settings.prefs.localFirstHint">
-            Se guardan en este navegador (local-first). Más adelante podremos sincronizarlas.
-          </span>
-        </p>
-      </section>
+            <label class="space-y-1">
+              <span class="text-sm font-semibold" data-i18n="settings.prefs.showHeaderIcons">Iconos del header</span>
+              <select
+                data-pref-show-header-icons
+                class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+              >
+                <option value="yes" data-i18n="settings.prefs.show">Mostrar</option>
+                <option value="no" data-i18n="settings.prefs.hide">Ocultar</option>
+              </select>
+            </label>
 
-      <section
-        class="rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-5 shadow-sm space-y-4"
-      >
-        <div class="flex items-center justify-between gap-3">
-          <h2 class="m-0 text-base font-semibold">
-            <span data-i18n="settings.auth.sectionTitle">Cuenta</span>
-          </h2>
-          <span
-            data-auth-status
-            class="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
-          >
-            <span data-auth-status-active class="hidden" data-i18n="settings.auth.sessionActive">Sesión activa</span>
-            <span data-auth-status-inactive data-i18n="settings.auth.noSession">Sin sesión</span>
-          </span>
-        </div>
+            <label class="space-y-1">
+              <span class="text-sm font-semibold" data-i18n="settings.prefs.showLangSelector"
+                >Selector de idioma (header)</span
+              >
+              <select
+                data-pref-show-lang-selector
+                class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+              >
+                <option value="yes" data-i18n="settings.prefs.show">Mostrar</option>
+                <option value="no" data-i18n="settings.prefs.hide">Ocultar</option>
+              </select>
+            </label>
+          </div>
 
-        <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
-          <span data-i18n="settings.auth.currentUser">Usuario actual</span>:
-          <strong data-auth-user-email class="text-gray-900 dark:text-gray-100">-</strong>
-        </p>
-
-        <div data-auth-no-session class="pt-2 space-y-3 hidden">
-          <p class="m-0 text-sm text-amber-700 dark:text-amber-300">
-            Inicia sesión para acceder a Ajustes.
+          <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
+            <span data-i18n="settings.prefs.localFirstHint">
+              Se guardan en este navegador (local-first). Más adelante podremos sincronizarlas.
+            </span>
           </p>
-          <a
-            href="/login"
-            class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/30 px-3 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors no-underline"
-          >
-            Ir a Login
-          </a>
         </div>
+      </article>
 
-        <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100 dark:border-gray-800">
-          <button
-            type="button"
-            data-auth-refresh
-            class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900"
+      <!-- shortcuts -->
+      <article
+        data-settings-section="shortcuts"
+        class={`${card} bg-linear-to-br from-gray-50/80 to-white dark:from-gray-950 dark:to-gray-950`}
+      >
+        <div class={dragBar}>
+          <div
+            class={grip}
+            data-settings-drag-handle
+            data-i18n="settings.dashboard.dragHint"
+            data-i18n-attr="aria-label"
+            role="separator"
+            aria-orientation="horizontal"
           >
-            <span data-i18n="settings.auth.refresh">Refrescar estado</span>
-          </button>
-          <button
-            type="button"
-            data-auth-logout
-            class="inline-flex items-center justify-center rounded-lg border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 px-3 py-2 text-sm font-semibold hover:bg-red-50 dark:hover:bg-red-950/30"
-          >
-            <span data-i18n="settings.auth.logout">Cerrar sesión</span>
-          </button>
+            <div class="flex flex-col gap-0.5 pointer-events-none" aria-hidden="true">
+              <div class="flex gap-0.5 justify-center">
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+              </div>
+              <div class="flex gap-0.5 justify-center">
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+              </div>
+            </div>
+          </div>
         </div>
+        <div class="p-5 space-y-4 flex-1">
+          <h2 class="m-0 text-base font-semibold">
+            <span data-i18n="settings.shortcuts.sectionTitle">Atajos de teclado</span>
+          </h2>
+          <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
+            <span data-i18n="settings.shortcuts.intro">Atajos activos en toda la app (salvo al escribir en un campo).</span
+            >
+          </p>
+          <ul class="m-0 list-none p-0 space-y-3">
+            <li
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-3"
+            >
+              <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <span data-i18n="settings.shortcuts.palette">Abrir búsqueda y navegación rápida</span>
+              </span>
+              <div class="flex flex-wrap items-center gap-1.5">
+                <kbd class={kbd} data-i18n="settings.shortcuts.ctrl">Ctrl</kbd><span class="text-gray-400">+</span><kbd
+                  class={kbd}>K</kbd>
+                <span class="text-xs text-gray-500 dark:text-gray-400 px-1" data-i18n="settings.shortcuts.or">o</span>
+                <kbd class={kbd}>⌘</kbd><span class="text-gray-400">+</span><kbd class={kbd}>K</kbd>
+                <span class="text-xs text-gray-500 dark:text-gray-400 px-1">·</span>
+                <kbd class={kbd}>/</kbd>
+              </div>
+            </li>
+            <li class="text-xs text-gray-600 dark:text-gray-400 px-1 -mt-1">
+              <span data-i18n="settings.shortcuts.slashHint"></span>
+            </li>
+            <li
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-3"
+            >
+              <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <span data-i18n="settings.shortcuts.paletteNavigate">En la paleta: moverse y abrir</span>
+              </span>
+              <div class="flex flex-wrap items-center gap-1.5">
+                <kbd class={kbd}>↑</kbd><kbd class={kbd}>↓</kbd><span class="text-xs text-gray-500">+</span><kbd
+                  class={kbd}>Enter</kbd>
+              </div>
+            </li>
+            <li
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-3"
+            >
+              <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <span data-i18n="settings.shortcuts.close">Cerrar la paleta</span>
+              </span>
+              <kbd class={kbd}>Esc</kbd>
+            </li>
+          </ul>
+        </div>
+      </article>
 
-        <p data-auth-feedback class="text-sm text-gray-600 dark:text-gray-400 m-0"></p>
-      </section>
+      <!-- account -->
+      <article data-settings-section="account" class={card}>
+        <div class={dragBar}>
+          <div
+            class={grip}
+            data-settings-drag-handle
+            data-i18n="settings.dashboard.dragHint"
+            data-i18n-attr="aria-label"
+            role="separator"
+            aria-orientation="horizontal"
+          >
+            <div class="flex flex-col gap-0.5 pointer-events-none" aria-hidden="true">
+              <div class="flex gap-0.5 justify-center">
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+              </div>
+              <div class="flex gap-0.5 justify-center">
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="p-5 space-y-4 flex-1">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="m-0 text-base font-semibold">
+              <span data-i18n="settings.auth.sectionTitle">Cuenta</span>
+            </h2>
+            <span
+              data-auth-status
+              class="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
+            >
+              <span data-auth-status-active class="hidden" data-i18n="settings.auth.sessionActive">Sesión activa</span>
+              <span data-auth-status-inactive data-i18n="settings.auth.noSession">Sin sesión</span>
+            </span>
+          </div>
 
-      <div class="space-y-2">
-        <label class="text-sm font-semibold" data-i18n="settings.publicName">Nombre público</label>
-        <input
-          disabled
-          value={profile.publicName}
-          class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-        />
-      </div>
+          <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
+            <span data-i18n="settings.auth.currentUser">Usuario actual</span>:
+            <strong data-auth-user-email class="text-gray-900 dark:text-gray-100">-</strong>
+          </p>
 
-      <div class="space-y-2">
-        <label class="text-sm font-semibold" data-i18n="settings.publicBio">Bio pública</label>
-        <textarea
-          disabled
-          rows={4}
-          value={profile.bio}
-          class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-        />
-      </div>
+          <div data-auth-no-session class="pt-2 space-y-3 hidden">
+            <p class="m-0 text-sm text-amber-700 dark:text-amber-300">
+              Inicia sesión para acceder a Ajustes.
+            </p>
+            <a
+              href="/login"
+              class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/30 px-3 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors no-underline"
+            >
+              Ir a Login
+            </a>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100 dark:border-gray-800">
+            <button
+              type="button"
+              data-auth-refresh
+              class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900"
+            >
+              <span data-i18n="settings.auth.refresh">Refrescar estado</span>
+            </button>
+            <button
+              type="button"
+              data-auth-logout
+              class="inline-flex items-center justify-center rounded-lg border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 px-3 py-2 text-sm font-semibold hover:bg-red-50 dark:hover:bg-red-950/30"
+            >
+              <span data-i18n="settings.auth.logout">Cerrar sesión</span>
+            </button>
+          </div>
+
+          <p data-auth-feedback class="text-sm text-gray-600 dark:text-gray-400 m-0"></p>
+        </div>
+      </article>
+
+      <!-- portfolio -->
+      <article data-settings-section="portfolio" class={card}>
+        <div class={dragBar}>
+          <div
+            class={grip}
+            data-settings-drag-handle
+            data-i18n="settings.dashboard.dragHint"
+            data-i18n-attr="aria-label"
+            role="separator"
+            aria-orientation="horizontal"
+          >
+            <div class="flex flex-col gap-0.5 pointer-events-none" aria-hidden="true">
+              <div class="flex gap-0.5 justify-center">
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+              </div>
+              <div class="flex gap-0.5 justify-center">
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="p-5 space-y-4 flex-1">
+          <div class="space-y-1">
+            <h2 class="m-0 text-base font-semibold">
+              <span data-i18n="settings.portfolio.sectionTitle">Portfolio público</span>
+            </h2>
+            <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
+              <span data-i18n="settings.portfolio.hint"
+                >Texto que se muestra arriba en Portfolio. Con sesión se sincroniza con Supabase.</span
+              >
+            </p>
+            <p data-profile-cloud-hint class="m-0 text-xs min-h-4 text-gray-500 dark:text-gray-400"></p>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-sm font-semibold" data-i18n="settings.publicName">Nombre público</label>
+            <input
+              type="text"
+              data-profile-public-name
+              data-default-public-name={profile.publicName}
+              value={profile.publicName}
+              class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400/50 dark:focus:ring-gray-500/40"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-sm font-semibold" data-i18n="settings.publicBio">Bio pública</label>
+            <textarea
+              data-profile-public-bio
+              data-default-public-bio={profile.bio}
+              rows={4}
+              class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400/50 dark:focus:ring-gray-500/40"
+            >{profile.bio}</textarea>
+          </div>
+
+          <div class="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <h3 class="m-0 text-sm font-semibold">
+              <span data-i18n="settings.helpStack.title">Stack de ayuda</span>
+            </h3>
+            <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
+              <span data-i18n="settings.helpStack.subtitle"
+                >Herramientas de productividad e IA que usas aparte del catálogo de conceptos.</span
+              >
+            </p>
+            <div
+              class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-72 overflow-y-auto rounded-lg border border-gray-200/80 dark:border-gray-800 p-2 bg-gray-50/50 dark:bg-gray-900/30"
+            >
+              {
+                HELP_STACK_ITEMS.map((item) => (
+                  <label class="flex items-center gap-2 cursor-pointer rounded-md px-2 py-1.5 hover:bg-white dark:hover:bg-gray-950/80 has-[:checked]:bg-emerald-50/80 dark:has-[:checked]:bg-emerald-950/25">
+                    <input
+                      type="checkbox"
+                      data-help-stack-key={item.key}
+                      class="rounded border-gray-300 dark:border-gray-600 shrink-0"
+                    />
+                    <img src={item.icon} alt="" class="h-6 w-6 shrink-0 object-contain" loading="lazy" />
+                    <span class="text-sm text-gray-900 dark:text-gray-100">{item.label}</span>
+                  </label>
+                ))
+              }
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              data-profile-save
+              class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-3 py-2 text-sm font-semibold hover:opacity-90 app-accent-ring"
+            >
+              <span data-i18n="settings.portfolio.save">Guardar perfil</span>
+            </button>
+            <p data-profile-feedback class="m-0 text-xs text-gray-500 dark:text-gray-400 min-h-4"></p>
+          </div>
+        </div>
+      </article>
     </div>
   </section>
 
   <script type="module" src={settingsAuthScriptUrl}></script>
   <script type="module" src={settingsPrefsScriptUrl}></script>
+  <script type="module" src={settingsDashboardUrl}></script>
+  <script type="module" src={settingsProfileScriptUrl}></script>
 </AppShell>

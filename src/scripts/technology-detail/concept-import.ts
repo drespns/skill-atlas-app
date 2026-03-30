@@ -348,9 +348,19 @@ function renderCategoryBlock(cat: string, items: ImportCandidate[], filt: string
           </label>`;
     })
     .join("");
-  return `<details open class="border border-gray-200/90 dark:border-gray-800 rounded-lg bg-white/60 dark:bg-gray-950/40">
-        <summary class="cursor-pointer select-none px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100">${esc(cat)} <span class="font-normal text-gray-500 dark:text-gray-400">(${visible.length})</span></summary>
-        <div class="px-3 pb-2">${rows}</div>
+  const catBtn =
+    visible.length > 0
+      ? `<span class="inline-flex flex-wrap gap-1 shrink-0" data-import-cat-actions>
+        <button type="button" data-import-cat-select class="text-[10px] font-semibold rounded-md border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-900 dark:text-emerald-200 px-2 py-0.5 hover:opacity-90">✓ Sección</button>
+        <button type="button" data-import-cat-clear class="text-[10px] font-semibold rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-0.5 hover:bg-gray-50 dark:hover:bg-gray-800">✗ Sección</button>
+      </span>`
+      : "";
+  return `<details open data-import-category-block class="border border-gray-200/90 dark:border-gray-800 rounded-lg bg-white/60 dark:bg-gray-950/40">
+        <summary class="list-none flex flex-wrap items-center justify-between gap-2 px-3 py-2 [&::-webkit-details-marker]:hidden">
+          <span class="min-w-0 text-sm font-semibold text-gray-900 dark:text-gray-100">${esc(cat)} <span class="font-normal text-gray-500 dark:text-gray-400">(${visible.length})</span></span>
+          ${catBtn}
+        </summary>
+        <div class="px-3 pb-2" data-import-category-body>${rows}</div>
       </details>`;
 }
 
@@ -385,8 +395,18 @@ function renderReviewHtml(
         const vis = filt ? items.filter((i) => i.title.toLowerCase().includes(filt)) : items;
         return n + vis.length;
       }, 0);
-      return `<details open class="border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-violet-50/40 dark:bg-violet-950/20 space-y-2 p-2">
-        <summary class="cursor-pointer select-none px-2 py-1.5 text-sm font-bold text-violet-900 dark:text-violet-100">${esc(TIER_LABELS_ES[tier])} <span class="font-normal opacity-80">(${tierCount})</span></summary>
+      const tierBtn =
+        tierCount > 0
+          ? `<span class="inline-flex flex-wrap gap-1 shrink-0">
+        <button type="button" data-import-tier-select class="text-[10px] font-semibold rounded-md border border-violet-400 dark:border-violet-700 bg-violet-100/80 dark:bg-violet-900/40 text-violet-950 dark:text-violet-100 px-2 py-0.5 hover:opacity-90">✓ Nivel</button>
+        <button type="button" data-import-tier-clear class="text-[10px] font-semibold rounded-md border border-violet-300 dark:border-violet-800 bg-white/70 dark:bg-violet-950/30 px-2 py-0.5 hover:opacity-90">✗ Nivel</button>
+      </span>`
+          : "";
+      return `<details open data-import-tier-root="${tier}" class="border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-violet-50/40 dark:bg-violet-950/20 space-y-2 p-2">
+        <summary class="list-none flex flex-wrap items-center justify-between gap-2 px-2 py-1.5 [&::-webkit-details-marker]:hidden">
+          <span class="min-w-0 text-sm font-bold text-violet-900 dark:text-violet-100">${esc(TIER_LABELS_ES[tier])} <span class="font-normal opacity-80">(${tierCount})</span></span>
+          ${tierBtn}
+        </summary>
         <div class="space-y-2 pl-1">${inner}</div>
       </details>`;
     })
@@ -404,11 +424,20 @@ function renderReviewHtml(
       </select>
     </label>`;
 
+  const bulkBar = `<div class="flex flex-wrap items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+      <span class="font-medium text-gray-500 dark:text-gray-400">Selección rápida</span>
+      <button type="button" data-import-global-select class="rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 font-semibold text-emerald-900 dark:text-emerald-200 hover:opacity-90">Todos visibles</button>
+      <button type="button" data-import-global-clear class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2.5 py-1 font-semibold hover:bg-gray-50 dark:hover:bg-gray-800">Ninguno</button>
+    </div>`;
+
   return `<div class="space-y-3">
     ${statsLine}
+    <div class="flex flex-col gap-2">
     <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:items-center">
-      <input type="search" data-import-filter placeholder="Filtrar por texto…" class="flex-1 min-w-[12rem] text-sm border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950" value="${esc(filter)}" />
+      <input type="search" data-import-filter placeholder="Filtrar por texto…" class="flex-1 min-w-48 text-sm border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950" value="${esc(filter)}" />
       ${tierSelect}
+    </div>
+    ${bulkBar}
     </div>
     <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400">Opcional en Markdown: <code class="text-[10px]">&lt;!-- skillatlas-tier: junior --&gt;</code> antes de un <code class="text-[10px]">##</code>. Sin marca, todo va a «${esc(TIER_LABELS_ES.mid)}».</p>
     <div class="space-y-3">${blocksHtml || `<p class="text-sm text-gray-600 dark:text-gray-400">No hay candidatos visibles con este filtro.</p>`}</div>
@@ -572,6 +601,45 @@ export async function initConceptImport() {
       rerenderReview();
     });
   }
+
+  function bindBulkReviewListeners() {
+    if (!reviewRoot) return;
+    reviewRoot.addEventListener("click", (e) => {
+      const el = e.target as HTMLElement;
+      const btn = el.closest<HTMLButtonElement>(
+        "[data-import-cat-select],[data-import-cat-clear],[data-import-tier-select],[data-import-tier-clear],[data-import-global-select],[data-import-global-clear]",
+      );
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (btn.hasAttribute("data-import-cat-select") || btn.hasAttribute("data-import-cat-clear")) {
+        const details = btn.closest("details[data-import-category-block]");
+        if (!details) return;
+        const check = btn.hasAttribute("data-import-cat-select");
+        details.querySelectorAll<HTMLInputElement>("input[type=checkbox][data-import-candidate-id]").forEach((cb) => {
+          cb.checked = check;
+        });
+        return;
+      }
+      if (btn.hasAttribute("data-import-tier-select") || btn.hasAttribute("data-import-tier-clear")) {
+        const tierRoot = btn.closest("details[data-import-tier-root]");
+        if (!tierRoot) return;
+        const check = btn.hasAttribute("data-import-tier-select");
+        tierRoot.querySelectorAll<HTMLInputElement>("input[type=checkbox][data-import-candidate-id]").forEach((cb) => {
+          cb.checked = check;
+        });
+        return;
+      }
+      if (btn.hasAttribute("data-import-global-select") || btn.hasAttribute("data-import-global-clear")) {
+        const check = btn.hasAttribute("data-import-global-select");
+        reviewBody?.querySelectorAll<HTMLInputElement>("input[type=checkbox][data-import-candidate-id]").forEach((cb) => {
+          cb.checked = check;
+        });
+      }
+    });
+  }
+
+  bindBulkReviewListeners();
 
   btnExpandText?.addEventListener("click", async () => {
     const next = await markdownEditorModal({

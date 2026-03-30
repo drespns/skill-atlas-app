@@ -16,14 +16,14 @@ SkillAtlas es un MVP para gestionar conocimiento tecnico y mostrar portfolio:
 
 - Astro
 - Tailwind CSS v4
-- Supabase (PostgreSQL + RLS; transicion `docs/sql/rls-mvp-authenticated.sql`; SaaS multi-tenant `docs/sql/saas-001` … `saas-003` — ver `docs/db.md`)
+- Supabase (PostgreSQL + RLS; transicion `docs/sql/rls-mvp-authenticated.sql`; SaaS multi-tenant `docs/sql/saas-001` … `saas-005` — ver `docs/db.md`)
 - TypeScript para scripts cliente
 - Cliente Supabase en el navegador: `getSupabaseBrowserClient()` en `src/scripts/client-supabase.ts` (evitar repetir `createClient` en cada script)
 
 ## Auth (login convencional)
 
 - La pantalla principal es **`/login`** (email+contraseña + OAuth).
-- `Ajustes` (`/settings`) se usa para estado de sesión y logout.
+- `Ajustes` (`/settings`) se usa para estado de sesión, logout, preferencias UI (incl. grid/columnas y orden de tarjetas), perfil público y stack de ayuda (`portfolio_profiles` + localStorage).
 - En el header:
   - si NO hay sesión: aparece icono de `/login`
   - si hay sesión: aparecen **Ajustes + Sign out** y avatar (si el provider lo devuelve)

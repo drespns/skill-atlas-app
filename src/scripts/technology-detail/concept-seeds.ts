@@ -88,6 +88,8 @@ const SLUG_TO_SEED_FILE: Record<string, string> = {
   pyspark: "pyspark",
   pydantic: "pydantic",
   // Web / APIs ligado a cloud
+  html: "html",
+  css: "css",
   react: "react",
   node: "node",
   nodejs: "node",
@@ -151,6 +153,8 @@ const SEED_DISPLAY_LABELS: Record<string, string> = {
   polars: "Polars",
   pyspark: "PySpark",
   pydantic: "Pydantic",
+  html: "HTML",
+  css: "CSS",
   react: "React",
   node: "Node.js",
   fastapi: "FastAPI",

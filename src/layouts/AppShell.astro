@@ -4,11 +4,20 @@ import { repoUrl } from "../data";
 import clientScriptUrl from "../scripts/client.ts?url";
 
 const { title = "SkillAtlas" } = Astro.props;
+const year = new Date().getFullYear();
 
 const pathname = Astro.url.pathname;
 const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
 const APP_LOGO_SRC = "/favicon.svg";
+
+/** Logos mostrados en el pie (stack con el que se construye la app). */
+const FOOTER_BUILD_ICONS = [
+  { src: "/icons/Astro.svg", label: "Astro" },
+  { src: "/icons/Tailwind CSS.svg", label: "Tailwind CSS" },
+  { src: "/icons/TypeScript.svg", label: "TypeScript" },
+  { src: "/icons/Vite.js.svg", label: "Vite" },
+] as const;
 ---
 
 <!doctype html>
@@ -146,17 +155,33 @@ const APP_LOGO_SRC = "/favicon.svg";
         </nav>
 
         <div class="flex items-center gap-2" data-header-icons>
-          <select
-            data-lang-select
-            class="hidden sm:block rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+          <div
+            data-lang-flags
+            class="hidden sm:inline-flex items-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 p-0.5 gap-0.5"
+            role="group"
             aria-label="Idioma"
-            title="Idioma"
             data-i18n="common.language"
-            data-i18n-attr="aria-label,title"
+            data-i18n-attr="aria-label"
           >
-            <option value="es">ES</option>
-            <option value="en">EN</option>
-          </select>
+            <button
+              type="button"
+              data-lang-flag="es"
+              class="rounded-md px-2 py-1.5 text-lg leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
+              aria-pressed="true"
+              title="Español"
+            >
+              🇪🇸
+            </button>
+            <button
+              type="button"
+              data-lang-flag="en"
+              class="rounded-md px-2 py-1.5 text-lg leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
+              aria-pressed="false"
+              title="English"
+            >
+              🇬🇧
+            </button>
+          </div>
 
           <button
             type="button"
@@ -327,6 +352,88 @@ const APP_LOGO_SRC = "/favicon.svg";
     >
       <slot />
     </main>
+
+    <footer
+      class="mt-auto border-t border-gray-200/80 dark:border-gray-800 bg-linear-to-b from-transparent to-gray-50/90 dark:to-gray-950/90"
+      style="padding: 2rem var(--app-main-px, 1.25rem) 1.75rem;"
+      aria-label="Site"
+    >
+      <div class="max-w-screen-2xl mx-auto flex flex-col gap-8">
+        <div class="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+          <div class="space-y-2 max-w-md">
+            <div class="flex items-center gap-2">
+              <img src={APP_LOGO_SRC} alt="" class="h-7 w-7 rounded-md opacity-90" />
+              <span class="font-bold text-base tracking-tight">SkillAtlas</span>
+            </div>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="footer.tagline"></p>
+          </div>
+          <nav
+            class="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+            aria-label="Footer"
+          >
+            <a href="/technologies" class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors">
+              <span data-i18n="nav.technologies"></span>
+            </a>
+            <a href="/projects" class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors">
+              <span data-i18n="nav.projects"></span>
+            </a>
+            <a href="/portfolio" class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors">
+              <span data-i18n="nav.portfolio"></span>
+            </a>
+            <a href="/settings" class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors">
+              <span data-i18n="nav.settings"></span>
+            </a>
+            <a
+              href={repoUrl}
+              target="_blank"
+              rel="noreferrer"
+              class="inline-flex items-center gap-1.5 hover:text-gray-900 dark:hover:text-white no-underline transition-colors"
+            >
+              <span data-i18n="footer.openSource"></span>
+              <svg class="h-3.5 w-3.5 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          </nav>
+        </div>
+
+        <div
+          class="flex flex-col items-center gap-4 pt-6 border-t border-gray-200/70 dark:border-gray-800/80"
+          aria-hidden="true"
+        >
+          <p
+            class="m-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400"
+            data-i18n="footer.builtWith"
+          >
+          </p>
+          <div class="flex flex-wrap items-center justify-center gap-7 md:gap-10">
+            {
+              FOOTER_BUILD_ICONS.map((ico) => (
+                <img
+                  src={ico.src}
+                  alt={ico.label}
+                  title={ico.label}
+                  class="h-8 w-auto max-h-8 max-w-[6rem] object-contain opacity-90 dark:opacity-85"
+                  loading="lazy"
+                />
+              ))
+            }
+            <img
+              src="/icons/supabase-logo-icon.svg"
+              alt="Supabase"
+              title="Supabase"
+              class="h-9 w-auto max-h-9 object-contain opacity-90 dark:opacity-85"
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </div>
+      <p class="max-w-screen-2xl mx-auto mt-8 pt-6 border-t border-gray-200/60 dark:border-gray-800/80 text-center text-xs text-gray-500 dark:text-gray-500">
+        © {year} SkillAtlas
+      </p>
+    </footer>
 
     <div
       data-command-palette

@@ -10,6 +10,7 @@ declare global {
     skillatlas?: {
       bootstrapTechnologiesGrid?: () => Promise<void>;
       clearTechnologiesCache?: () => void;
+      applySettingsDashboard?: () => void;
     };
   }
 }
@@ -51,20 +52,23 @@ async function initTechnologyForm() {
     if (!seedSuggestions) return;
     const ql = q.trim().toLowerCase();
     const hits = !ql
-      ? seedCatalog.slice(0, 14)
+      ? [...seedCatalog].sort((a, b) => a.label.localeCompare(b.label, "es"))
       : seedCatalog
           .filter((e) => e.label.toLowerCase().includes(ql) || e.slug.includes(ql))
-          .slice(0, 22);
+          .sort((a, b) => a.label.localeCompare(b.label, "es"));
     if (hits.length === 0) {
       seedSuggestions.classList.add("hidden");
       seedSuggestions.innerHTML = "";
       return;
     }
     seedSuggestions.innerHTML = hits
-      .map(
-        (e) =>
-          `<li role="option"><button type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-900 border-0 bg-transparent cursor-pointer" data-seed-slug="${escHtml(e.slug)}" data-seed-label="${escHtml(e.label)}"><span class="font-medium text-gray-900 dark:text-gray-100">${escHtml(e.label)}</span><span class="block text-[11px] text-gray-500 dark:text-gray-400">Plantilla importación · slug <code class="text-[10px]">${escHtml(e.slug)}</code></span></button></li>`,
-      )
+      .map((e) => {
+        const iconSrc = getTechnologyIconSrc({ id: e.slug, name: e.label });
+        const iconHtml = iconSrc
+          ? `<img src="${escHtml(iconSrc)}" alt="" class="h-5 w-5 shrink-0 rounded-sm object-contain" loading="lazy" />`
+          : `<span class="h-5 w-5 shrink-0 rounded-sm bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>`;
+        return `<li role="option"><button type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-900 border-0 bg-transparent cursor-pointer flex items-start gap-2" data-seed-slug="${escHtml(e.slug)}" data-seed-label="${escHtml(e.label)}">${iconHtml}<span class="min-w-0 flex-1"><span class="font-medium text-gray-900 dark:text-gray-100">${escHtml(e.label)}</span><span class="block text-[11px] text-gray-500 dark:text-gray-400">Plantilla importación · slug <code class="text-[10px]">${escHtml(e.slug)}</code></span></span></button></li>`;
+      })
       .join("");
     seedSuggestions.classList.remove("hidden");
   };

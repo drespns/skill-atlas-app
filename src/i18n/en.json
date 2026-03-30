@@ -21,6 +21,11 @@
     "commandPalettePlaceholder": "Search… (Ctrl+K)",
     "close": "Close"
   },
+  "footer": {
+    "tagline": "A living map of technologies, concepts, and projects.",
+    "openSource": "Open source",
+    "builtWith": "Built with"
+  },
   "nav": {
     "technologies": "Technologies",
     "projects": "Projects",
@@ -65,7 +70,8 @@
     "noEmbedsMock": "No embeds in mock.",
     "filterByTechnology": "Technology",
     "allTechnologies": "All",
-    "filter": "Filter"
+    "filter": "Filter",
+    "helpStackLabel": "Help stack"
   },
   "projectDetail": {
     "editProject": "Edit project",
@@ -102,10 +108,32 @@
     "viewProjects": "View Projects"
   },
   "settings": {
+    "dashboard": {
+      "dragHint": "Drag to reorder cards"
+    },
     "title": "Settings",
-    "subtitle": "In the MVP, this data is example (read-only).",
+    "subtitle": "UI preferences and public profile are stored in this browser. Account auth uses Supabase.",
     "publicName": "Public name",
     "publicBio": "Public bio",
+    "shortcuts": {
+      "sectionTitle": "Keyboard shortcuts",
+      "intro": "Shortcuts work across the app (except while typing in an input).",
+      "palette": "Open quick search and navigation",
+      "ctrl": "Ctrl",
+      "or": "or",
+      "paletteNavigate": "In the palette: move and open",
+      "close": "Close the palette",
+      "slashHint": "Slash (/) opens the same palette when focus is not in a text field."
+    },
+    "portfolio": {
+      "sectionTitle": "Public portfolio",
+      "hint": "Shown at the top of Portfolio. Syncs to Supabase when signed in.",
+      "save": "Save profile"
+    },
+    "helpStack": {
+      "title": "Help stack",
+      "subtitle": "Productivity and AI tools you use beyond the concept catalog."
+    },
     "prefs": {
       "sectionTitle": "Preferences",
       "reset": "Reset",
@@ -130,8 +158,8 @@
       "accentViolet": "Violet",
       "motion": "Motion",
       "motionNormal": "Normal",
-      "motionReduced": "Reduced"
-      ,
+      "motionReduced": "Reduced",
+      "settingsColumns": "Columns (Settings)",
       "technologiesView": "View (Technologies)",
       "projectsView": "View (Projects)",
       "viewCards": "Cards",

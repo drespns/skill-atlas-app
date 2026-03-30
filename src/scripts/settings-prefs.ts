@@ -1,5 +1,6 @@
 import {
   loadPrefs,
+  SETTINGS_SECTION_IDS,
   updatePrefs,
   type Accent,
   type Density,
@@ -7,6 +8,7 @@ import {
   type FontPreset,
   type Lang,
   type Motion,
+  type SettingsGridColumns,
   type ThemeMode,
 } from "./prefs";
 
@@ -31,6 +33,18 @@ function isDefaultView(v: string): v is DefaultView {
 function isLang(v: string): v is Lang {
   return v === "es" || v === "en";
 }
+function isGridCols(v: string): v is SettingsGridColumns {
+  return v === "1" || v === "2" || v === "3" || v === "4";
+}
+
+function renderLangFlags(root: HTMLElement | null, lang: Lang) {
+  if (!root) return;
+  root.querySelectorAll<HTMLButtonElement>("[data-pref-lang-flag]").forEach((btn) => {
+    const fl = btn.dataset.prefLangFlag;
+    const active = fl === lang;
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+}
 
 function initSettingsPrefs() {
   const theme = document.querySelector<HTMLSelectElement>("[data-pref-theme]");
@@ -38,11 +52,12 @@ function initSettingsPrefs() {
   const accent = document.querySelector<HTMLSelectElement>("[data-pref-accent]");
   const density = document.querySelector<HTMLSelectElement>("[data-pref-density]");
   const motion = document.querySelector<HTMLSelectElement>("[data-pref-motion]");
+  const settingsColumns = document.querySelector<HTMLSelectElement>("[data-pref-settings-columns]");
   const technologiesView = document.querySelector<HTMLSelectElement>("[data-pref-technologies-view]");
   const projectsView = document.querySelector<HTMLSelectElement>("[data-pref-projects-view]");
   const showHeaderIcons = document.querySelector<HTMLSelectElement>("[data-pref-show-header-icons]");
   const showLangSelector = document.querySelector<HTMLSelectElement>("[data-pref-show-lang-selector]");
-  const lang = document.querySelector<HTMLSelectElement>("[data-pref-lang]");
+  const langFlags = document.querySelector<HTMLElement>("[data-pref-lang-flags]");
   const reset = document.querySelector<HTMLButtonElement>("[data-pref-reset]");
 
   if (
@@ -51,11 +66,11 @@ function initSettingsPrefs() {
     !accent ||
     !density ||
     !motion ||
+    !settingsColumns ||
     !technologiesView ||
     !projectsView ||
     !showHeaderIcons ||
-    !showLangSelector ||
-    !lang
+    !showLangSelector
   )
     return;
 
@@ -66,11 +81,12 @@ function initSettingsPrefs() {
     accent.value = p.accent;
     density.value = p.density;
     motion.value = p.motion;
+    settingsColumns.value = String(p.settingsGridColumns ?? 2);
     technologiesView.value = p.technologiesView;
     projectsView.value = p.projectsView;
     showHeaderIcons.value = p.showHeaderIcons ? "yes" : "no";
     showLangSelector.value = p.showLangSelector ? "yes" : "no";
-    lang.value = p.lang;
+    renderLangFlags(langFlags, p.lang);
   };
 
   render();
@@ -107,6 +123,14 @@ function initSettingsPrefs() {
     updatePrefs({ motion: v });
   });
 
+  settingsColumns.addEventListener("change", () => {
+    const v = settingsColumns.value;
+    if (!isGridCols(v)) return;
+    const n = Number(v) as SettingsGridColumns;
+    updatePrefs({ settingsGridColumns: n });
+    window.skillatlas?.applySettingsDashboard?.();
+  });
+
   technologiesView.addEventListener("change", () => {
     const v = technologiesView.value;
     if (!isDefaultView(v)) return;
@@ -122,22 +146,23 @@ function initSettingsPrefs() {
   showHeaderIcons.addEventListener("change", () => {
     const v = showHeaderIcons.value === "yes";
     updatePrefs({ showHeaderIcons: v });
-    // refresh current page so header reacts immediately
     window.location.reload();
   });
 
   showLangSelector.addEventListener("change", () => {
     const v = showLangSelector.value === "yes";
     updatePrefs({ showLangSelector: v });
-    // let client.ts re-render toggle state next time; fast reload keeps UX consistent
     window.location.reload();
   });
 
-  lang.addEventListener("change", () => {
-    const v = lang.value;
-    if (!isLang(v)) return;
-    updatePrefs({ lang: v });
-    window.location.reload();
+  langFlags?.querySelectorAll<HTMLButtonElement>("[data-pref-lang-flag]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const v = btn.dataset.prefLangFlag;
+      if (!v || !isLang(v)) return;
+      updatePrefs({ lang: v });
+      renderLangFlags(langFlags, v);
+      window.location.reload();
+    });
   });
 
   reset?.addEventListener("click", () => {
@@ -155,7 +180,10 @@ function initSettingsPrefs() {
       showHeaderIcons: true,
       showLangSelector: true,
       lang: "es",
+      settingsGridColumns: 2,
+      settingsSectionOrder: [...SETTINGS_SECTION_IDS],
     });
+    window.skillatlas?.applySettingsDashboard?.();
   });
 }
 
@@ -164,4 +192,3 @@ if (document.readyState === "loading") {
 } else {
   initSettingsPrefs();
 }
-
