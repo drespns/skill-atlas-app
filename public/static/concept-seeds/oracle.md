@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Instance y Database CDB
@@ -21,6 +22,7 @@
 - LOB BLOB CLOB tipos
 - IOT index organized
 
+<!-- skillatlas-tier: junior -->
 ## Alta disponibilidad
 
 - RAC cluster compartido
@@ -35,6 +37,7 @@
 - Audit Unified tradicional
 - Profiles límites recurso
 
+<!-- skillatlas-tier: mid -->
 ## PL/SQL avanzado
 
 - Packages procedimientos
@@ -48,6 +51,7 @@
 - CDB root common users
 - PDB unplug plug
 
+<!-- skillatlas-tier: senior -->
 ## Rendimiento
 
 - AWR snapshots informes

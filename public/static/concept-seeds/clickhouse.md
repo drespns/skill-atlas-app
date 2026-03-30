@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Columnar OLAP motor
@@ -13,6 +14,7 @@
 - arrayMap arrayJoin
 - Materlized columnas derivadas
 
+<!-- skillatlas-tier: junior -->
 ## Ingesta
 
 - INSERT batch bloques
@@ -25,6 +27,7 @@
 - Data skipping indices
 - Projections preagregados
 
+<!-- skillatlas-tier: mid -->
 ## Replicación y cluster
 
 - ZooKeeper coord merge
@@ -37,6 +40,7 @@
 - parts merges background
 - TTL expiración filas
 
+<!-- skillatlas-tier: senior -->
 ## Integración
 
 - MySQL PostgreSQL engines

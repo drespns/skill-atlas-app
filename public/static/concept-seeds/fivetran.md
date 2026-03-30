@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Connector fuentes SaaS
@@ -12,6 +13,7 @@
 - Historical sync primera carga
 - Re-sync forzar carga
 
+<!-- skillatlas-tier: junior -->
 ## Transformaciones
 
 - Transformations dbt Cloud
@@ -23,6 +25,7 @@
 - Alerting errores sync
 - Logs detalle fallos
 
+<!-- skillatlas-tier: mid -->
 ## Seguridad
 
 - HMAC webhooks
@@ -33,6 +36,7 @@
 
 - Gestión programática conectores
 
+<!-- skillatlas-tier: senior -->
 ## Warehouse soportados
 
 - Snowflake destino

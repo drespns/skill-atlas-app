@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Serverless consultas S3
@@ -18,6 +19,7 @@
 - Iceberg tables managed
 - JSON CSV text
 
+<!-- skillatlas-tier: junior -->
 ## Coste y rendimiento
 
 - Bytes escaneados billing
@@ -29,6 +31,7 @@
 - Lambda connectors externos
 - UDF connectors custom
 
+<!-- skillatlas-tier: mid -->
 ## Seguridad
 
 - Lake Formation permissions
@@ -41,6 +44,7 @@
 - Step Functions orquestación
 - EventBridge Athena events
 
+<!-- skillatlas-tier: senior -->
 ## Engine v3
 
 - Apache Spark batch Athena

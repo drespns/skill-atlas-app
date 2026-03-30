@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Identidad y proyecto
 
 - Proyectos y carpetas
@@ -26,6 +27,7 @@
 - GKE Kubernetes
 - Cloud Functions eventos
 
+<!-- skillatlas-tier: junior -->
 ## Almacenamiento
 
 - Cloud Storage buckets
@@ -47,6 +49,7 @@
 - Datastream CDC
 - Composer Airflow gestionado
 
+<!-- skillatlas-tier: mid -->
 ## Integración y ML
 
 - Cloud Composer orquestación
@@ -64,6 +67,7 @@
 - Security Command Center
 - VPC Service Controls perímetro
 
+<!-- skillatlas-tier: senior -->
 ## DevOps
 
 - Cloud Build CI

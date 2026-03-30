@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Visión unificada
 
 - Microsoft Fabric SaaS datos
@@ -16,6 +17,7 @@
 - Git integración repos
 - Data pipelines orchestration
 
+<!-- skillatlas-tier: junior -->
 ## Warehouse
 
 - SQL analytics T-SQL
@@ -34,6 +36,7 @@
 - Pipeline integración ETL
 - Data pipelines orquestación
 
+<!-- skillatlas-tier: mid -->
 ## Ciencia datos
 
 - Data Science notebooks
@@ -51,6 +54,7 @@
 - Sensitivity labels
 - Endorsement certificación datasets
 
+<!-- skillatlas-tier: senior -->
 ## Seguridad y red
 
 - Entra ID roles workspace

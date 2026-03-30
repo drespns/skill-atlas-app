@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Instance y Database
@@ -22,6 +23,7 @@
 - Filtered index condición
 - INCLUDE covering
 
+<!-- skillatlas-tier: junior -->
 ## Transacciones locking
 
 - Isolation levels SQL Server
@@ -35,6 +37,7 @@
 - Log shipping DR
 - Replication publicaciones
 
+<!-- skillatlas-tier: mid -->
 ## Seguridad
 
 - Windows y SQL auth
@@ -55,6 +58,7 @@
 - Elastic pools costo
 - Hyperscale tier almacén
 
+<!-- skillatlas-tier: senior -->
 ## Herramientas
 
 - SSMS administración

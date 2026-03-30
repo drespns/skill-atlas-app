@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Cluster nodos leader compute
@@ -19,6 +20,7 @@
 - Sort keys ZORDER compuesto
 - DISTKEY sort skew evitar
 
+<!-- skillatlas-tier: junior -->
 ## Rendimiento
 
 - Concurrency Scaling bursts
@@ -34,6 +36,7 @@
 - Column-level grants
 - Datasharing cuentas Snowflake-like
 
+<!-- skillatlas-tier: mid -->
 ## Serverless
 
 - Redshift Serverless RPUs
@@ -45,6 +48,7 @@
 - dbt redshift adapter
 - Zero-ETL Aurora origen
 
+<!-- skillatlas-tier: senior -->
 ## Monitoreo
 
 - Query monitoring tablas

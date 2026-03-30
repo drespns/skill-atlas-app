@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Cluster y nodos data master
@@ -12,6 +13,7 @@
 - Aggregations buckets metrics
 - Sorting script fields
 
+<!-- skillatlas-tier: junior -->
 ## Seguridad
 
 - Fine-grained access control
@@ -24,6 +26,7 @@
 - Alerting monitors triggers
 - Anomaly detection plugin
 
+<!-- skillatlas-tier: mid -->
 ## Ingesta
 
 - Data Prepper pipelines
@@ -35,6 +38,7 @@
 - UltraWarm cold storage AWS
 - Segment merge tuning
 
+<!-- skillatlas-tier: senior -->
 ## Integración
 
 - SQL plugin JDBC

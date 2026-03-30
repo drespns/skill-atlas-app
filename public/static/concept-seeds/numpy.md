@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos array
 
 - ndarray multidimensional
@@ -20,6 +21,7 @@
 - boolean mask selección
 - np.newaxis expand dims
 
+<!-- skillatlas-tier: junior -->
 ## Álgebra lineal
 
 - dot matmul
@@ -41,6 +43,7 @@
 - concatenate stack split
 - meshgrid grilla coordenadas
 
+<!-- skillatlas-tier: mid -->
 ## Máscaras y conjuntos
 
 - masked arrays NaN lógica
@@ -57,6 +60,7 @@
 - __array__ protocolo
 - dtype extension custom
 
+<!-- skillatlas-tier: senior -->
 ## Universal functions
 
 - np.add reduce accumulate

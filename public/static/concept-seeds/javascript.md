@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Variables let y const
@@ -28,6 +29,7 @@
 - this enlazado
 - Getters y setters
 
+<!-- skillatlas-tier: junior -->
 ## Asíncrono
 
 - Promesas y then
@@ -43,6 +45,7 @@
 - default exports
 - Dinámico import()
 
+<!-- skillatlas-tier: mid -->
 ## Arrays y colecciones
 
 - map filter reduce
@@ -56,6 +59,7 @@
 - throw personalizado
 - Modo strict
 
+<!-- skillatlas-tier: senior -->
 ## Runtime y entorno
 
 - Event loop concepto

@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - inventario hosts grupos
@@ -14,6 +15,7 @@
 - check modo dry-run
 - diff cambios archivo
 
+<!-- skillatlas-tier: junior -->
 ## Variables y plantillas
 
 - group_vars host_vars
@@ -27,6 +29,7 @@
 - collections namespaced
 - galaxy instalación roles
 
+<!-- skillatlas-tier: mid -->
 ## Idempotencia
 
 - changed_when control
@@ -40,6 +43,7 @@
 - become sudo privilegios
 - connection local delegación
 
+<!-- skillatlas-tier: senior -->
 ## Rendimiento
 
 - serial rolling updates

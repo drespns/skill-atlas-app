@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Integration fuente datos
@@ -10,6 +11,7 @@
 - Log-based Incremental
 - Full Table refresh
 
+<!-- skillatlas-tier: junior -->
 ## Esquema
 
 - Table selection tablas
@@ -23,6 +25,7 @@
 - BigQuery Redshift destino
 - Destino S3 datos lake
 
+<!-- skillatlas-tier: mid -->
 ## Monitoreo
 
 - Extraction logs
@@ -34,6 +37,7 @@
 - SSH tunnel bases privadas
 - IP allowlist Enterprise
 
+<!-- skillatlas-tier: senior -->
 ## Singer protocolo
 
 - Tap fuente extraccción

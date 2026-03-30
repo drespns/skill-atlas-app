@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Cluster nodos roles
@@ -21,6 +22,7 @@
 - terms cardinality agg
 - date_histogram serie tiempo
 
+<!-- skillatlas-tier: junior -->
 ## Escritura
 
 - Bulk API throughput
@@ -34,6 +36,7 @@
 - Frozen tier almacén frío
 - Cross-cluster search CCS
 
+<!-- skillatlas-tier: mid -->
 ## Seguridad
 
 - X-Pack Security TLS
@@ -51,6 +54,7 @@
 - Data streams logging
 - LogsDB mode costo
 
+<!-- skillatlas-tier: senior -->
 ## Integración ETL
 
 - Elasticsearch Hadoop conector

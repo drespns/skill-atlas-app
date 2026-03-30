@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Tipos de datos
 
 - Strings contadores
@@ -23,6 +24,7 @@
 - Hybrid RDB AOF
 - fsync políticas tradeoff
 
+<!-- skillatlas-tier: junior -->
 ## Réplicas
 
 - Replication async replica
@@ -35,6 +37,7 @@
 - Resharding rebalance
 - Moved redirection cliente
 
+<!-- skillatlas-tier: mid -->
 ## Uso patrones
 
 - Cache-aside pattern
@@ -55,6 +58,7 @@
 - TLS transport
 - AUTH password legacy
 
+<!-- skillatlas-tier: senior -->
 ## Redis Modules
 
 - RediSearch full-text

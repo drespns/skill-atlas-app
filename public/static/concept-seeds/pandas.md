@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Estructuras
 
 - Series unidimensional indexada
@@ -22,6 +23,7 @@
 - query expresión string
 - isin membresía conjunto
 
+<!-- skillatlas-tier: junior -->
 ## Limpieza datos
 
 - dropna fillna
@@ -38,6 +40,7 @@
 - melt unpivot wide long
 - pivot pivot_table agrega
 
+<!-- skillatlas-tier: mid -->
 ## Agregación y grupos
 
 - groupby split apply combine
@@ -60,6 +63,7 @@
 - rolling ventanas móviles
 - expanding acumulativas
 
+<!-- skillatlas-tier: senior -->
 ## Rendimiento
 
 - eval query numexpr engine

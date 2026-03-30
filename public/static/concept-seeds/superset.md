@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Apache Superset BI OSS
@@ -18,6 +19,7 @@
 - Row Level Security filters
 - Guest token embedded
 
+<!-- skillatlas-tier: junior -->
 ## SQL Lab
 
 - Async long queries
@@ -36,6 +38,7 @@
 - Engine parameters extra
 - SSH tunnel opcional
 
+<!-- skillatlas-tier: mid -->
 ## Visualización
 
 - Deck.gl mapas geoespacial
@@ -53,6 +56,7 @@
 - Jinja templating metrics
 - Alerts reports beta
 
+<!-- skillatlas-tier: senior -->
 ## Integración
 
 - dbt metadata exposure opcional

@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Paquetes main
@@ -14,6 +15,7 @@
 - for único bucle
 - range en slices
 
+<!-- skillatlas-tier: junior -->
 ## Funciones
 
 - Múltiples retornos
@@ -31,6 +33,7 @@
 - sync.WaitGroup
 - Mutex y RWMutex
 
+<!-- skillatlas-tier: mid -->
 ## Testing
 
 - go test comando
@@ -45,6 +48,7 @@
 - context en handlers
 - grpc conceptual
 
+<!-- skillatlas-tier: senior -->
 ## Tooling
 
 - gofmt formateo

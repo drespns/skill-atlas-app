@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Arquitectura
 
 - Cluster control plane
@@ -24,6 +25,7 @@
 - Volumen proyectado
 - Downward API metadatos
 
+<!-- skillatlas-tier: junior -->
 ## Red y servicio
 
 - Service ClusterIP interno
@@ -40,6 +42,7 @@
 - requests y limits QoS
 - QualityOfService clases
 
+<!-- skillatlas-tier: mid -->
 ## Almacenamiento
 
 - PersistentVolume reclamo
@@ -54,6 +57,7 @@
 - admission controllers
 - imagePullSecrets registry
 
+<!-- skillatlas-tier: senior -->
 ## GitOps y despliegue
 
 - Helm charts empaquetado

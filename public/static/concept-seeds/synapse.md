@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Arquitectura
 
 - Workspace Synapse
@@ -20,6 +21,7 @@
 - Spark pool autoscale
 - Spark monitoring métricas
 
+<!-- skillatlas-tier: junior -->
 ## Pipelines orquestación
 
 - Copy activity blobs SQL
@@ -32,6 +34,7 @@
 - Purview catalog lineage
 - Managed VNet integración
 
+<!-- skillatlas-tier: mid -->
 ## Seguridad
 
 - Managed private endpoints
@@ -44,6 +47,7 @@
 - Self-hosted IR híbrido
 - Managed identity auth
 
+<!-- skillatlas-tier: senior -->
 ## Integración Power BI
 
 - Datasets desde Synapse

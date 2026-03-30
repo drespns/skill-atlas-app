@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Modelo datos
 
 - Import DirectQuery Composite
@@ -24,6 +25,7 @@
 - Dataflows Gen1 Gen2
 - Incremental refresh particiones
 
+<!-- skillatlas-tier: junior -->
 ## Visualización
 
 - Report desktop service
@@ -39,6 +41,7 @@
 - Premium capacity paginated
 - XMLA endpoint herramientas
 
+<!-- skillatlas-tier: mid -->
 ## Integración Microsoft
 
 - Fabric lakehouse semantic
@@ -56,6 +59,7 @@
 - VertiPaq motor columnar
 - Aggregations acelera DQ
 
+<!-- skillatlas-tier: senior -->
 ## APIs herramientas
 
 - REST APIs administración

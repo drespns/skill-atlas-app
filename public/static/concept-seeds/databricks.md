@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Plataforma
 
 - Workspace UI colaborativa
@@ -23,6 +24,7 @@
 - CDC merge SCD
 - Auto Loader cloudFiles
 
+<!-- skillatlas-tier: junior -->
 ## Notebooks y código
 
 - Databricks notebooks
@@ -36,6 +38,7 @@
 - materialized lake tables
 - Query federation externo
 
+<!-- skillatlas-tier: mid -->
 ## ML y streaming
 
 - MLflow experimentos
@@ -50,6 +53,7 @@
 - Audit logs workspace
 - Customer-managed keys VPC
 
+<!-- skillatlas-tier: senior -->
 ## Costes y gobernanza
 
 - Cluster policies límites

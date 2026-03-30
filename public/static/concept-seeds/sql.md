@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - DML y DDL
@@ -29,6 +30,7 @@
 - Anti join patrón
 - Semijoins
 
+<!-- skillatlas-tier: junior -->
 ## Subconsultas
 
 - Subquery escalar
@@ -50,6 +52,7 @@
 - NTILE
 - FIRST_VALUE
 
+<!-- skillatlas-tier: mid -->
 ## Funciones
 
 - COALESCE y NULLIF
@@ -77,6 +80,7 @@
 - Particionamiento de tablas
 - Estrategia de índices compuestos
 
+<!-- skillatlas-tier: senior -->
 ## Transacciones
 
 - ACID propiedades

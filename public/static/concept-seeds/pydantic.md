@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Modelos
 
 - BaseModel fields typing
@@ -20,6 +21,7 @@
 - PositiveInt constrained int
 - Annotated metadata stack
 
+<!-- skillatlas-tier: junior -->
 ## Configuración
 
 - ConfigDict model config
@@ -33,6 +35,7 @@
 - model_json_schema OpenAPI
 - TypeAdapter genéricos unions
 
+<!-- skillatlas-tier: mid -->
 ## v1 frente v2
 
 - v2 unified validators perf
@@ -43,6 +46,7 @@
 - AwareDatetime zona horaria
 - PastDate future validations
 
+<!-- skillatlas-tier: senior -->
 ## Integración
 
 - FastAPI request body depend

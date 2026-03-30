@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Arquitectura
 
 - Driver orquestación
@@ -23,6 +24,7 @@
 - repartition coalesce
 - broadcast joins pequeños
 
+<!-- skillatlas-tier: junior -->
 ## SQL y catálogo
 
 - spark.sql queries
@@ -36,6 +38,7 @@
 - tumbling watermark streaming
 - Structured Streaming
 
+<!-- skillatlas-tier: mid -->
 ## Rendimiento
 
 - AQE adaptativo
@@ -51,6 +54,7 @@
 - Delta source sink
 - Kafka source streaming
 
+<!-- skillatlas-tier: senior -->
 ## Despliegue
 
 - Standalone cluster

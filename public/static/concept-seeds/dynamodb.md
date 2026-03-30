@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Modelado
 
 - Tabla partition sort key
@@ -20,6 +21,7 @@
 - GSIs overload pattern
 - TTL expiración items
 
+<!-- skillatlas-tier: junior -->
 ## Transacciones
 
 - TransactWriteItems ACID
@@ -31,6 +33,7 @@
 - KMS encryption at rest
 - VPC endpoints privados
 
+<!-- skillatlas-tier: mid -->
 ## Integración
 
 - EventBridge event pipes
@@ -46,6 +49,7 @@
 - Point-in-time recovery PITR
 - On-demand backup tablas
 
+<!-- skillatlas-tier: senior -->
 ## Global tables
 
 - Replicación multi-región

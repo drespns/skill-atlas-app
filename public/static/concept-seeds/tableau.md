@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Conexión datos
 
 - Data source live extract
@@ -21,6 +22,7 @@
 - Reference lines bands
 - Dashboards layout flotante
 
+<!-- skillatlas-tier: junior -->
 ## LOD expressions
 
 - FIXED nivel detalle fijo
@@ -34,6 +36,7 @@
 - Context filters performance
 - Efficient LOD evitar
 
+<!-- skillatlas-tier: mid -->
 ## Server y Cloud
 
 - Tableau Server on-prem
@@ -53,6 +56,7 @@
 - Extensions API dashboards
 - TabPy R integration calc
 
+<!-- skillatlas-tier: senior -->
 ## Publicación
 
 - Subscriptions email PDF

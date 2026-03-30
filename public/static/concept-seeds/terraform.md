@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - HCL sintaxis
@@ -15,6 +16,7 @@
 - terraform import recursos
 - state mv refactor
 
+<!-- skillatlas-tier: junior -->
 ## Módulos
 
 - module reutilizable
@@ -29,6 +31,7 @@
 - fmt y validate
 - workspace select
 
+<!-- skillatlas-tier: mid -->
 ## Patrones
 
 - count y for_each
@@ -43,6 +46,7 @@
 - google proyecto
 - backend S3 GCS Azure
 
+<!-- skillatlas-tier: senior -->
 ## Seguridad y equipos
 
 - tfsec escaneo estático

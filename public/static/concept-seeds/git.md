@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - repositorio y working tree
@@ -15,6 +16,7 @@
 - push publicación
 - pull fetch merge
 
+<!-- skillatlas-tier: junior -->
 ## Historial
 
 - log grafos
@@ -31,6 +33,7 @@
 - merge conflictos resolución
 - reflog recuperación
 
+<!-- skillatlas-tier: mid -->
 ## Remotos y colaboración
 
 - fetch vs pull
@@ -44,6 +47,7 @@
 - husky en Node
 - Git LFS archivos grandes
 
+<!-- skillatlas-tier: senior -->
 ## Monorepo y escala
 
 - submodules concepto

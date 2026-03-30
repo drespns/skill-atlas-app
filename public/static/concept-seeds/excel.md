@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Libro y cuadrícula
 
 - Libro y hojas pestañas
@@ -20,6 +21,7 @@
 - Combinar consultas merge append
 - Parámetros fuentes dinámicas
 
+<!-- skillatlas-tier: junior -->
 ## Modelo de datos
 
 - Power Pivot Star schema
@@ -34,6 +36,7 @@
 - Segmentaciones slicers
 - Gráficos dinámicos vinculados
 
+<!-- skillatlas-tier: mid -->
 ## Colaboración
 
 - Excel Online coedición
@@ -45,6 +48,7 @@
 - Macros VBA legado
 - Power Automate flujos nube
 
+<!-- skillatlas-tier: senior -->
 ## Rendimiento
 
 - Cálculo manual automático

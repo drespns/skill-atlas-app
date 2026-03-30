@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Servidor y instancia
@@ -24,6 +25,7 @@
 - Partial index condición
 - Covering index INCLUDE
 
+<!-- skillatlas-tier: junior -->
 ## Transacciones MVCC
 
 - Isolation levels Postgres
@@ -38,6 +40,7 @@
 - Hot standby lectura
 - Failover Patroni repmgr
 
+<!-- skillatlas-tier: mid -->
 ## Extensión analítica
 
 - Partitioning declarative
@@ -52,6 +55,7 @@
 - citext case-insensitive
 - uuid-ossp gen IDs
 
+<!-- skillatlas-tier: senior -->
 ## Operación
 
 - EXPLAIN ANALYZE real

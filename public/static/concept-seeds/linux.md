@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Shell y sistema
 
 - bash zsh sh diferencias
@@ -15,6 +16,7 @@
 - awk procesamiento columnas
 - tar gzip xz compresión
 
+<!-- skillatlas-tier: junior -->
 ## Procesos
 
 - ps top htop
@@ -32,6 +34,7 @@
 - tcpdump captura
 - iptables nftables firewall
 
+<!-- skillatlas-tier: mid -->
 ## Usuarios y grupos
 
 - useradd usermod
@@ -45,6 +48,7 @@
 - mount fstab arranque
 - LVM básico capas
 
+<!-- skillatlas-tier: senior -->
 ## Rendimiento
 
 - iostat vmstat sar

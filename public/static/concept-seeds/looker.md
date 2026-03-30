@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Modelado LookML
 
 - Project Git versionado
@@ -19,6 +20,7 @@
 - liquid templates HTML
 - Symmetric aggregates fan-out
 
+<!-- skillatlas-tier: junior -->
 ## Rendimiento
 
 - PDT persistent derived table
@@ -33,6 +35,7 @@
 - Looker Studio visualización
 - Embed SSO aplicaciones
 
+<!-- skillatlas-tier: mid -->
 ## API y extensión
 
 - Looker API REST
@@ -45,6 +48,7 @@
 - Model development mode
 - Git branches prod flow
 
+<!-- skillatlas-tier: senior -->
 ## Seguridad
 
 - User attributes RLS

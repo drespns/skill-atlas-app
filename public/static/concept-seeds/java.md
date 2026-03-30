@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos JVM
 
 - JDK JRE JVM
@@ -21,6 +22,7 @@
 - Records inmutables
 - Enums tipados
 
+<!-- skillatlas-tier: junior -->
 ## Colecciones
 
 - List ArrayList LinkedList
@@ -37,6 +39,7 @@
 - Optional encadenado
 - parallelStream cautela
 
+<!-- skillatlas-tier: mid -->
 ## Concurrencia
 
 - Thread y Runnable
@@ -51,6 +54,7 @@
 - try-with-resources
 - Suppressed exceptions
 
+<!-- skillatlas-tier: senior -->
 ## Módulos
 
 - JPMS desde Java 9

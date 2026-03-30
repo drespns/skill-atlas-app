@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos distributed
 
 - Cluster peer-to-peer
@@ -22,6 +23,7 @@
 - Secondary index uso moderado
 - SASI secondary legacy
 
+<!-- skillatlas-tier: junior -->
 ## Escritura
 
 - Lightweight transactions LWT
@@ -37,6 +39,7 @@
 - Decommission salida
 - nodetool status ring
 
+<!-- skillatlas-tier: mid -->
 ## Rendimiento
 
 - Partition key hot spots
@@ -49,6 +52,7 @@
 - Encryption internode TLS
 - Role-based CQL
 
+<!-- skillatlas-tier: senior -->
 ## Herramientas
 
 - nodetool mantenimiento

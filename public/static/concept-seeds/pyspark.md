@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Sesión y JVM
 
 - SparkSession builder getOrCreate
@@ -18,6 +19,7 @@
 - spark.sql ANSI SQL
 - catalog list databases tables
 
+<!-- skillatlas-tier: junior -->
 ## Transformaciones
 
 - select selectExpr
@@ -42,6 +44,7 @@
 - broadcast hint pequeño
 - bucket join grandes
 
+<!-- skillatlas-tier: mid -->
 ## UDF y funciones
 
 - udf Python registra
@@ -61,6 +64,7 @@
 - optimize zorder Delta
 - vacuum retención archivos
 
+<!-- skillatlas-tier: senior -->
 ## Structured Streaming
 
 - readStream writeStream

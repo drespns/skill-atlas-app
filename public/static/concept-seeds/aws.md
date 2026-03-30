@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Identidad y cuentas
 
 - Root account riesgo
@@ -32,6 +33,7 @@
 - ECS contenedores
 - EKS Kubernetes gestionado
 
+<!-- skillatlas-tier: junior -->
 ## Almacenamiento
 
 - S3 buckets y objetos
@@ -52,6 +54,7 @@
 - Kinesis streams
 - MSK Kafka gestionado
 
+<!-- skillatlas-tier: mid -->
 ## Integración mensajería
 
 - SNS notificaciones
@@ -69,6 +72,7 @@
 - Budgets y alertas
 - Trusted Advisor guía
 
+<!-- skillatlas-tier: senior -->
 ## DevOps
 
 - CloudFormation IaC

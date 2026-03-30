@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos DAG
 
 - DAG definición acíclica
@@ -23,6 +24,7 @@
 - Macros ds execution_date
 - Templates campos operador
 
+<!-- skillatlas-tier: junior -->
 ## Ejecución
 
 - Executor Local y Celery
@@ -37,6 +39,7 @@
 - Dynamic task mapping
 - Deferrable operators ahorro
 
+<!-- skillatlas-tier: mid -->
 ## Despliegue
 
 - docker-compose local
@@ -51,6 +54,7 @@
 - Great Expectations integración
 - SLAs y alertas
 
+<!-- skillatlas-tier: senior -->
 ## Observabilidad
 
 - Task logs centralizados

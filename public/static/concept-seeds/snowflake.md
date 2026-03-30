@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Account locator región
@@ -23,6 +24,7 @@
 - Streams CDC lógico
 - Tasks orquestación SQL
 
+<!-- skillatlas-tier: junior -->
 ## Compartición y gobernanza
 
 - Secure data sharing
@@ -38,6 +40,7 @@
 - Flatten función lateral
 - Lateral join VARIANT
 
+<!-- skillatlas-tier: mid -->
 ## Rendimiento y coste
 
 - Clustering keys tablas grandes
@@ -52,6 +55,7 @@
 - Fail-safe días retención
 - Undrop objetos accidentales
 
+<!-- skillatlas-tier: senior -->
 ## Desarrollo y DevOps
 
 - SnowCLI despliegue

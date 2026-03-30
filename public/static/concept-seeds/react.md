@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Componentes función clase
@@ -23,6 +24,7 @@
 - StrictMode doble effects dev
 - Error boundaries boundaries clase
 
+<!-- skillatlas-tier: junior -->
 ## Rendimiento
 
 - React.memo comparación shallow
@@ -42,6 +44,7 @@
 - react-router nested routes
 - data routers loaders
 
+<!-- skillatlas-tier: mid -->
 ## Accesibilidad
 
 - semantic HTML roles
@@ -57,6 +60,7 @@
 - React Testing Library user
 - vitest jest runners
 
+<!-- skillatlas-tier: senior -->
 ## Build ecosystem
 
 - Vite dev server rápido

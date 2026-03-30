@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Questions consultas guardadas
@@ -17,6 +18,7 @@
 - Notebook editor avanzado
 - GUI query builder filtros
 
+<!-- skillatlas-tier: junior -->
 ## Modelado
 
 - Metrics definición reusable
@@ -33,6 +35,7 @@
 - Signed embedding iframe
 - Locked parameters externos
 
+<!-- skillatlas-tier: mid -->
 ## Admin cloud
 
 - Metabase Cloud alojado
@@ -48,6 +51,7 @@
 - Docker Compose despliegue
 - Environment variables config
 
+<!-- skillatlas-tier: senior -->
 ## Rendimiento
 
 - Caching preguntas resultados

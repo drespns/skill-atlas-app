@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Tipos primitivos TS
@@ -23,6 +24,7 @@
 - Restricciones con extends
 - Inferencia de genéricos
 
+<!-- skillatlas-tier: junior -->
 ## Clases
 
 - Modificadores public private
@@ -37,6 +39,7 @@
 - Paths en tsconfig
 - Barrel exports riesgo
 
+<!-- skillatlas-tier: mid -->
 ## Utility types
 
 - Partial y Required
@@ -54,6 +57,7 @@
 - Discriminated unions
 - Exhaustiveness con never
 
+<!-- skillatlas-tier: senior -->
 ## tsconfig
 
 - strict family flags

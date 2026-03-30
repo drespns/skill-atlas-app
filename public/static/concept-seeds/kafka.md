@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Broker nodo Kafka
@@ -24,6 +25,7 @@
 - auto.offset.reset políticas
 - rebalance protocol cooperative
 
+<!-- skillatlas-tier: junior -->
 ## Esquema y contratos
 
 - Schema Registry Avro JSON
@@ -37,6 +39,7 @@
 - SMT single message transform
 - DLQ errores conector
 
+<!-- skillatlas-tier: mid -->
 ## Streams ksqlDB
 
 - ksql streams tablas
@@ -49,6 +52,7 @@
 - unclean leader election riesgo
 - log retention bytes tiempo
 
+<!-- skillatlas-tier: senior -->
 ## Seguridad
 
 - SASL SCRAM SSL

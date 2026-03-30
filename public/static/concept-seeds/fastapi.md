@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos app
 
 - FastAPI app ASGI Starlette
@@ -24,6 +25,7 @@
 - async def endpoints IO bound
 - def sync en threadpool interno
 
+<!-- skillatlas-tier: junior -->
 ## Seguridad
 
 - OAuth2 password bearer JWT
@@ -40,6 +42,7 @@
 - lifespan async context app
 - startup shutdown eventos legacy
 
+<!-- skillatlas-tier: mid -->
 ## Archivos upload
 
 - UploadFile multipart spool
@@ -55,6 +58,7 @@
 - pydantic-settings BaseSettings
 - env vars dotenv local dev
 
+<!-- skillatlas-tier: senior -->
 ## Despliegue
 
 - uvicorn workers producción

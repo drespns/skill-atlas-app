@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Data Catalog
 
 - Metadatos tablas S3
@@ -18,6 +19,7 @@
 - Hudi Delta compat rutas
 - Lake Formation gobierno
 
+<!-- skillatlas-tier: junior -->
 ## Transformaciones
 
 - DynamicFrame frente DataFrame
@@ -36,6 +38,7 @@
 - Expectaciones batch
 - Reports DQ dashboard
 
+<!-- skillatlas-tier: mid -->
 ## Lineage
 
 - Glue lineage OpenLineage
@@ -48,6 +51,7 @@
 
 - Glue streaming Spark structured
 
+<!-- skillatlas-tier: senior -->
 ## Seguridad
 
 - IAM roles job runs

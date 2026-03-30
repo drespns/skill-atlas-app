@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos proyecto
 
 - dbt_project.yml raíz
@@ -21,6 +22,7 @@
 - incremental merge delete insert
 - ephemeral CTE reutilizable
 
+<!-- skillatlas-tier: junior -->
 ## Calidad datos
 
 - unique not_null tests
@@ -35,6 +37,7 @@
 - dbt docs generate
 - exposures dashboards Downstream
 
+<!-- skillatlas-tier: mid -->
 ## Despliegue
 
 - dbt run selección
@@ -49,6 +52,7 @@
 - Snowflake BigQuery Redshift
 - Databricks adapter Spark SQL
 
+<!-- skillatlas-tier: senior -->
 ## Packages y estilo
 
 - dbt-utils macros

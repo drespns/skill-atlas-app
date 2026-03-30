@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Identidad y gobernanza
 
 - Azure AD Entra ID
@@ -28,6 +29,7 @@
 - AKS Kubernetes
 - Batch cómputo masivo
 
+<!-- skillatlas-tier: junior -->
 ## Almacenamiento
 
 - Blob storage capas
@@ -47,6 +49,7 @@
 - Event Hubs ingestión
 - Purview gobierno datos
 
+<!-- skillatlas-tier: mid -->
 ## Integración
 
 - Service Bus colas tópicos
@@ -63,6 +66,7 @@
 - Defender for Cloud
 - Sentinel SIEM nube
 
+<!-- skillatlas-tier: senior -->
 ## DevOps
 
 - Bicep IaC

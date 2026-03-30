@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Project dataset tabla
@@ -20,6 +21,7 @@
 - Partition expiration TTL
 - Table snapshots point-in-time
 
+<!-- skillatlas-tier: junior -->
 ## Ingesta
 
 - Batch load GCS S3
@@ -36,6 +38,7 @@
 - BI Engine cache acelera
 - CMEK cifrado llaves
 
+<!-- skillatlas-tier: mid -->
 ## Seguridad
 
 - IAM roles dataset
@@ -49,6 +52,7 @@
 - Spark connector BigQuery
 - dbt adapter BigQuery
 
+<!-- skillatlas-tier: senior -->
 ## ML dentro BQ
 
 - BQML modelos SQL

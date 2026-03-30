@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Cargo proyecto
@@ -16,6 +17,7 @@
 - Traits derivados
 - Generics en Rust
 
+<!-- skillatlas-tier: junior -->
 ## Colecciones
 
 - Vec dinámico
@@ -31,6 +33,7 @@
 - thiserror crate
 - anyhow aplicaciones
 
+<!-- skillatlas-tier: mid -->
 ## Concurrencia
 
 - std::thread spawn
@@ -46,6 +49,7 @@
 - FFI cautela C
 - zero-cost abstracciones
 
+<!-- skillatlas-tier: senior -->
 ## Testing
 
 - cargo test

@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Imagen vs contenedor
@@ -19,6 +20,7 @@
 - bind mount desarrollo
 - tmpfs efímero
 
+<!-- skillatlas-tier: junior -->
 ## Compose
 
 - docker-compose.yml
@@ -33,6 +35,7 @@
 - Tags y digest pinning
 - Image scanning seguridad
 
+<!-- skillatlas-tier: mid -->
 ## Optimización
 
 - Multi-stage builds
@@ -49,6 +52,7 @@
 - seccomp y AppArmor
 - rootless Docker
 
+<!-- skillatlas-tier: senior -->
 ## Orquestación ligera
 
 - Docker Swarm modos

@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Asignación y vectores
@@ -25,6 +26,7 @@
 - purrr map variantes
 - tibble frente data.frame
 
+<!-- skillatlas-tier: junior -->
 ## Visualización
 
 - ggplot2 aesthetics
@@ -40,6 +42,7 @@
 - S3 orientado objetos
 - S4 cuando aplica
 
+<!-- skillatlas-tier: mid -->
 ## Strings y fechas
 
 - stringr patrones
@@ -54,6 +57,7 @@
 - tidymodels enfoque
 - Validación cruzada concepto
 
+<!-- skillatlas-tier: senior -->
 ## Rendimiento
 
 - data.table cuando escala

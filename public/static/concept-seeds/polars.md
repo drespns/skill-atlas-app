@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - DataFrame columnar Arrow
@@ -20,6 +21,7 @@
 - asof join series tiempo
 - concat vertical horizontal
 
+<!-- skillatlas-tier: junior -->
 ## Strings tiempos
 
 - str contains extract
@@ -37,6 +39,7 @@
 - to_arrow from_arrow
 - read_database connector SQL
 
+<!-- skillatlas-tier: mid -->
 ## Rendimiento
 
 - SIMD kernels Rust
@@ -53,6 +56,7 @@
 - scan_pyarrow dataset
 - sink_parquet write lazy
 
+<!-- skillatlas-tier: senior -->
 ## Cata tipos
 
 - Categorical encodings

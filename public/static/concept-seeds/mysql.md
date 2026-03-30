@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Motor InnoDB default
@@ -18,6 +19,7 @@
 - Full-text índice
 - Covering index PK include
 
+<!-- skillatlas-tier: junior -->
 ## Transacciones
 
 - Isolation InnoDB MVCC
@@ -32,6 +34,7 @@
 - InnoDB Cluster
 - ProxySQL balanceo lecturas
 
+<!-- skillatlas-tier: mid -->
 ## Particionamiento
 
 - RANGE LIST HASH keys
@@ -44,6 +47,7 @@
 - buffer_pool tamaño
 - redo log sizing 8.0
 
+<!-- skillatlas-tier: senior -->
 ## Operación
 
 - mysqldump backup lógico

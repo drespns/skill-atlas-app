@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Motor asociativo
 
 - QIX motor in-memory
@@ -18,6 +19,7 @@
 - Link table bridge granularidad
 - Calendar dimension generada
 
+<!-- skillatlas-tier: junior -->
 ## Expresiones
 
 - Set analysis modificadores
@@ -31,6 +33,7 @@
 - Sheets storytelling apps
 - Extensions mashups web
 
+<!-- skillatlas-tier: mid -->
 ## Client Managed
 
 - Qlik Sense Enterprise Windows
@@ -47,6 +50,7 @@
 - Data Integration pipeline CDC
 - Application automation workflows
 
+<!-- skillatlas-tier: senior -->
 ## Rendimiento
 
 - QVD capas incremental

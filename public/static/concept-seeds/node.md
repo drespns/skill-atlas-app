@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Runtime core
 
 - Event loop libuv
@@ -21,6 +22,7 @@
 - lockfiles reproducibility ci
 - workspaces monorepos
 
+<!-- skillatlas-tier: junior -->
 ## Debugging y perf
 
 - node --inspect debugger
@@ -37,6 +39,7 @@
 - Readable Writable Transform
 - pipeline backpressure backpressure
 
+<!-- skillatlas-tier: mid -->
 ## Networking avanzado
 
 - cluster module fork processes
@@ -53,6 +56,7 @@
 - tsx runner moderno
 - compile tsc producción
 
+<!-- skillatlas-tier: senior -->
 ## Frameworks servidor
 
 - Express minimal routing

@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Fundamentos
 
 - Val como inmutables
@@ -14,6 +15,7 @@
 - Funciones de orden superior
 - Funciones anónimas
 
+<!-- skillatlas-tier: junior -->
 ## Colecciones
 
 - List inmutable
@@ -30,6 +32,7 @@
 - Pattern matching
 - sealed traits exhaustividad
 
+<!-- skillatlas-tier: mid -->
 ## Option Either Try
 
 - Option none some
@@ -45,6 +48,7 @@
 - Akka actores alto nivel
 - Paralelismo colecciones
 
+<!-- skillatlas-tier: senior -->
 ## Spark con Scala
 
 - SparkSession entrada

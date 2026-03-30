@@ -1,3 +1,4 @@
+<!-- skillatlas-tier: iniciacion -->
 ## Modelado documento
 
 - Document BSON JSON
@@ -22,6 +23,7 @@
 - Geospatial 2dsphere
 - TTL index expiración
 
+<!-- skillatlas-tier: junior -->
 ## Escritura
 
 - insertMany orden bulk
@@ -43,6 +45,7 @@
 - WiredTiger default
 - Compression snappy zstd
 
+<!-- skillatlas-tier: mid -->
 ## Seguridad
 
 - Role-based access
@@ -58,6 +61,7 @@
 
 - Bucketing métricas IoT
 
+<!-- skillatlas-tier: senior -->
 ## MongoDB Atlas
 
 - Cloud servicio gestionado
