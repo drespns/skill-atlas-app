@@ -1,106 +1,148 @@
 # SkillAtlas
 
-![Astro](https://img.shields.io/badge/Astro-6.0-FF5D01?logo=astro&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.2-06B6D4?logo=tailwindcss&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-Ready-3178C6?logo=typescript&logoColor=white)
+![Astro](https://img.shields.io/badge/Astro-6-FF5D01?logo=astro&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?logo=supabase&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-MVP-blue)
-![Data Source](https://img.shields.io/badge/Data-Mock_(Supabase_next)-6E56CF)
 ![License](https://img.shields.io/badge/License-Private-lightgrey)
 
-Aplicación web para **gestionar y mostrar conocimiento técnico**:
-tecnologías, conceptos, progreso de aprendizaje y proyectos de portfolio.
+Aplicación web para **organizar conocimiento técnico** y **mostrar un portfolio** coherente: tecnologías, conceptos por tecnología, proyectos con embeds y perfil público. Pensada como MVP con datos **mock** o **Supabase** (PostgreSQL, RLS multi-tenant), misma interfaz en ambos modos.
 
 ---
 
-## ✨ MVP actual
+## Qué incluye hoy
 
-- Flujo principal: **Tecnologías → Conceptos → Proyectos → Portfolio**
-- UI en Astro con Tailwind (modo claro/oscuro)
-- Selector de idioma ES/EN (base ya montada)
-- Embeds de proyectos (Tableau/GitHub links mock)
-- Capa de datos desacoplada para migrar a Supabase sin romper la UI
+- **Flujo**: Tecnologías → Conceptos → Proyectos → Portfolio; conceptos siempre ligados a una tecnología; proyectos enlazan tecnologías y conceptos.
+- **Persistencia Supabase**: CRUD de tecnologías, conceptos y proyectos; asociaciones proyecto–tecnología y proyecto–concepto; embeds ordenables; perfil en `portfolio_profiles` (nombre, bio, stack de ayuda con migración `docs/sql/saas-005-portfolio-help-stack.sql`).
+- **Autenticación**: `/login` con email/contraseña y OAuth (GitHub, LinkedIn OIDC); sesión y logout desde **Ajustes**.
+- **Ajustes** (`/settings`): preferencias de UI (tema, densidad, fuente, atajos), **dashboard** con rejilla configurable (1–4 columnas en escritorio), orden de tarjetas por arrastre, perfil público y stack de ayuda.
+- **Portfolio** (`/portfolio`): cabecera con nombre, bio y chips del stack de ayuda (Supabase + caché local).
+- **Import de conceptos** (detalle de tecnología en modo Supabase): Markdown desde URL o pegado, vista previa con niveles/categorías, selección masiva, plantillas y catálogo de seeds.
+- **UX**: modo claro/oscuro, selector de idioma ES/EN (banderas en cabecera y ajustes), modales y toasts propios, command palette (p. ej. `Ctrl+K`), footer con stack técnico.
+- **Login**: fondo 3D (Three.js) opcional en la pantalla de acceso.
 
----
-
-## 🧱 Stack
-
-- **Frontend:** Astro
-- **Estilos:** Tailwind CSS v4
-- **Lógica cliente:** TypeScript
-- **Backend (próximo):** Supabase (PostgreSQL)
+El sitio se genera como **estático** (`astro build`); con Supabase y RLS, listas y detalles autenticados se **hidratan en el cliente** tras el login. Detalle en [`docs/architecture.md`](docs/architecture.md).
 
 ---
 
-## 📁 Estructura del proyecto
+## Stack
 
-```text
-/
-├─ public/
-│  ├─ icons/                # SVGs de tecnologías y marcas
-│  └─ favicon.svg
-├─ src/
-│  ├─ components/           # UI reutilizable (cards, badges, embeds...)
-│  ├─ config/               # Configuración compartida (icon mapping)
-│  ├─ data/                 # Capa de datos (mock hoy, supabase mañana)
-│  ├─ layouts/              # AppShell (header/nav/theme)
-│  ├─ pages/                # Rutas Astro
-│  ├─ scripts/              # Lógica cliente (theme + i18n)
-│  └─ styles/               # CSS global + Tailwind
-├─ astro.config.mjs
-└─ package.json
-```
-
-![Supabase DB](/public/db/supabase-db.png)
+| Capa | Tecnología |
+|------|------------|
+| Framework | [Astro](https://astro.build/) 6 |
+| Estilos | [Tailwind CSS](https://tailwindcss.com/) v4 |
+| Cliente | TypeScript |
+| Datos / auth | [Supabase](https://supabase.com/) (`@supabase/supabase-js`) |
+| i18n | [i18next](https://www.i18next.com/) |
+| 3D (login) | [three](https://threejs.org/) |
 
 ---
 
-## 🗺️ Rutas actuales
+## Requisitos
 
-- `/` Landing
-- `/app` Dashboard
-- `/technologies` Lista de tecnologías
-- `/technologies/:techId` Detalle de tecnología + conceptos
-- `/projects` Lista de proyectos
-- `/projects/:projectId` Detalle de proyecto + embeds + conceptos
-- `/portfolio` Portfolio público
-- `/settings` Ajustes
+- **Node.js** ≥ 22.12 (ver `package.json` → `engines`)
 
 ---
 
-## 🚀 Scripts
+## Configuración
+
+Crea un archivo `.env` en la raíz (no commitear secretos):
+
+| Variable | Descripción |
+|----------|-------------|
+| `PUBLIC_SUPABASE_URL` | URL del proyecto Supabase |
+| `PUBLIC_SUPABASE_ANON_KEY` | Clave anónima |
+| `PUBLIC_DATA_SOURCE` | `mock` o `supabase` |
+
+Con `supabase`, aplica los scripts SQL en el orden indicado en [`docs/db.md`](docs/db.md) (MVP + `saas-001` … `saas-005` según necesites).
+
+---
+
+## Scripts npm
 
 ```bash
 npm install
-npm run dev
-npm run build
-npm run preview
+npm run dev      # desarrollo
+npm run build    # build de producción
+npm run preview  # sirve la carpeta dist
+```
+
+Tras cambios relevantes, conviene validar con `npm run build`.
+
+---
+
+## Capa de datos
+
+La UI **no** importa el mock directamente: todo pasa por [`src/data/index.ts`](src/data/index.ts), que delega en:
+
+- [`src/data/providers/mockProvider.ts`](src/data/providers/mockProvider.ts)
+- [`src/data/providers/supabaseProvider.ts`](src/data/providers/supabaseProvider.ts)
+
+según `PUBLIC_DATA_SOURCE`. Así se mantiene un contrato estable al cambiar de origen de datos.
+
+---
+
+## Rutas principales
+
+| Ruta | Rol |
+|------|-----|
+| `/` | Landing |
+| `/login` | Acceso (email/OAuth) |
+| `/app` | Dashboard |
+| `/technologies` | Lista de tecnologías |
+| `/technologies/[techId]` | Detalle (modo **mock**, `techId` = slug) |
+| `/technologies/view?tech=<slug>` | Detalle (modo **Supabase**, CSR) |
+| `/projects` | Lista de proyectos |
+| `/projects/[projectId]` | Detalle (modo **mock**) |
+| `/projects/view?project=<slug>` | Detalle (modo **Supabase**, CSR) |
+| `/portfolio` | Portfolio público |
+| `/settings` | Ajustes, sesión y perfil |
+
+Las tarjetas de listado enlazan automáticamente a las rutas CSR cuando el data source es Supabase.
+
+---
+
+## Documentación en el repo
+
+| Documento | Contenido |
+|-----------|-----------|
+| [`AGENTS.md`](AGENTS.md) | Guía operativa para contribuir (convenciones, archivos sensibles, commits/tags) |
+| [`docs/architecture.md`](docs/architecture.md) | CSR vs build, scripts por pantalla, import de conceptos, decisiones UX |
+| [`docs/db.md`](docs/db.md) | Tablas, migraciones SaaS, checklist Supabase |
+| [`docs/backlog.md`](docs/backlog.md) | Roadmap y releases anotadas |
+
+---
+
+## Estructura del repositorio
+
+```text
+├── public/
+│   ├── icons/                 # SVG de marcas y tecnologías
+│   └── static/                # Earth (login), concept-seeds, etc.
+├── docs/                      # Arquitectura, SQL versionado, backlog
+├── scripts/                   # Utilidades Node (p. ej. anotación de tiers en seeds)
+├── src/
+│   ├── components/
+│   ├── config/                # help-stack, icons, seeds
+│   ├── data/                  # Facade + providers
+│   ├── layouts/               # AppShell (header, footer, tema)
+│   ├── pages/                 # Rutas Astro
+│   ├── scripts/               # Lógica cliente por pantalla (+ subcarpetas)
+│   ├── shaders/               # GLSL (tierra en login)
+│   └── styles/
+├── astro.config.mjs
+└── package.json
 ```
 
 ---
 
-## 🧠 Arquitectura de datos (importante)
+## Versionado
 
-El proyecto **no importa `mock.ts` directamente** desde la UI.
-Se usa `src/data/index.ts` como facade:
-
-- Hoy: reexporta datos/funciones del mock
-- Mañana: podrá cambiar a provider Supabase con el mismo contrato
-
-Esto evita reescribir páginas/componentes al migrar backend.
+Las versiones de producto se marcan con **tags** de Git (mensaje tipo `feat:` / bullets, ver `AGENTS.md`). La línea **v0.10.x** consolidó ajustes tipo dashboard, perfil y stack de ayuda en Supabase, import de conceptos ampliado y documentación alineada. La siguiente release prevista en el roadmap cercano es **v0.10.5**, orientada a correcciones y pulido sobre esa base.
 
 ---
 
-## 🔜 Próximos pasos recomendados
+## Licencia
 
-1. Definir contrato final de `src/data/index.ts` (providers)
-2. Crear `supabaseProvider` (lectura inicial)
-3. Sustituir mocks por queries reales
-4. Completar i18n en toda la UI
-5. Añadir CRUD mínimo (tecnologías, conceptos, proyectos)
-
----
-
-## 📌 Nota
-
-Este repositorio está en fase MVP y prioriza claridad del código,
-iteración rápida y preparación para migración a Supabase.
+Repositorio **privado**; uso y distribución según acuerdo del propietario.
