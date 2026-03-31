@@ -38,6 +38,10 @@ export type Project = {
   id: string;
   title: string;
   description: string;
+  /** Rol o responsabilidad en el proyecto (historia). */
+  role: string;
+  /** Resultado o impacto (historia). */
+  outcome: string;
   technologyIds: string[];
   conceptIds: string[];
   embeds: ProjectEmbed[];
@@ -109,6 +113,8 @@ export const projects: Project[] = [
     id: "proj-analytics",
     title: "Analytics Notebook & Dashboards",
     description: "Conexión entre SQL, PySpark y una historia visual para explicar hallazgos.",
+    role: "Data analyst / storytelling",
+    outcome: "Dashboard reproducible y narrativa alineada con negocio.",
     technologyIds: ["sql", "pyspark"],
     conceptIds: ["sql-joins", "sql-window", "pyspark-df"],
     embeds: [
@@ -132,6 +138,8 @@ export const projects: Project[] = [
     id: "proj-bi",
     title: "BI con DAX",
     description: "Proyecto enfocado en medidas y contexto de evaluación en Power BI.",
+    role: "Modelado y medidas",
+    outcome: "Modelo semántico reutilizable y medidas validadas con negocio.",
     technologyIds: ["dax"],
     conceptIds: ["dax-measures"],
     embeds: [

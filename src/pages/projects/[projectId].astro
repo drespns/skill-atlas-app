@@ -43,12 +43,24 @@ const availableProjectTechnologies = project
       data-project-id={project.id}
       data-project-title={project.title}
       data-project-description={project.description ?? ""}
+      data-project-role={project.role ?? ""}
+      data-project-outcome={project.outcome ?? ""}
     >
       <header class="space-y-3">
         <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          <div>
+          <div class="min-w-0 space-y-2">
             <h1 class="m-0 text-2xl font-semibold">{project.title}</h1>
-            <p class="mt-2 text-sm text-gray-600">{project.description}</p>
+            <p class="m-0 text-sm text-gray-600">{project.description}</p>
+            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3 m-0 text-sm">
+              <div>
+                <dt class="font-semibold text-gray-800">Rol</dt>
+                <dd class="m-0 mt-1 text-gray-600">{project.role?.trim() ? project.role : "—"}</dd>
+              </div>
+              <div>
+                <dt class="font-semibold text-gray-800">Resultado / impacto</dt>
+                <dd class="m-0 mt-1 text-gray-600">{project.outcome?.trim() ? project.outcome : "—"}</dd>
+              </div>
+            </dl>
           </div>
 
           <div class="flex flex-wrap gap-2">
@@ -144,7 +156,7 @@ const availableProjectTechnologies = project
 
       <section class="space-y-3">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <h2 class="m-0 text-base font-semibold">Embeds</h2>
+          <h2 class="m-0 text-base font-semibold">Evidencias</h2>
           {dataSource === "supabase" ? (
             <div class="flex flex-wrap items-center gap-3">
               <button

@@ -1,5 +1,124 @@
+import { detectEvidenceUrl } from "../../lib/evidence-url";
 import { embedEditModal, showToast } from "../ui-feedback";
 import { getProjectDbId } from "./helpers";
+
+async function insertProjectEmbed(
+  supabase: any,
+  projectSlug: string,
+  result: { kind: "iframe" | "link"; title: string; url: string },
+  feedback: HTMLElement | null,
+): Promise<boolean> {
+  const projectDbId = await getProjectDbId(supabase, projectSlug);
+  if (!projectDbId) {
+    if (feedback) {
+      feedback.textContent = "No se encontró el proyecto en Supabase.";
+      feedback.className = "text-sm text-red-600";
+    }
+    return false;
+  }
+
+  const countRes = await supabase
+    .from("project_embeds")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", projectDbId);
+
+  if (countRes.error) {
+    if (feedback) {
+      feedback.textContent = `Error al calcular orden: ${countRes.error.message}`;
+      feedback.className = "text-sm text-red-600";
+    }
+    return false;
+  }
+
+  const sortOrder = countRes.count ?? 0;
+
+  const insertRes = await supabase.from("project_embeds").insert([
+    {
+      project_id: projectDbId,
+      kind: result.kind,
+      title: result.title,
+      url: result.url,
+      sort_order: sortOrder,
+    },
+  ] as any);
+
+  if (insertRes.error) {
+    if (feedback) {
+      feedback.textContent = `Error al guardar evidencia: ${insertRes.error.message}`;
+      feedback.className = "text-sm text-red-600";
+    }
+    showToast("Error al guardar evidencia.", "error");
+    return false;
+  }
+
+  if (feedback) {
+    feedback.textContent = "Evidencia añadida correctamente.";
+    feedback.className = "text-sm text-green-600";
+  }
+  showToast("Evidencia añadida.", "success");
+  return true;
+}
+
+/** Chips de plantilla: rellenan el input rápido y disparan el hint de detección. */
+export function initProjectEvidenceTemplates() {
+  const urlInput = document.querySelector<HTMLInputElement>("[data-project-evidence-quick-url]");
+  const buttons = document.querySelectorAll<HTMLButtonElement>("[data-project-evidence-template]");
+  if (!urlInput || buttons.length === 0) return;
+
+  for (const btn of buttons) {
+    btn.addEventListener("click", () => {
+      const starter = (btn.dataset.starterUrl ?? "").trim();
+      if (!starter) return;
+      urlInput.value = starter;
+      urlInput.dispatchEvent(new Event("input", { bubbles: true }));
+      urlInput.focus();
+      urlInput.select();
+    });
+  }
+}
+
+export async function initProjectEvidenceQuickAdd(supabase: any, projectSlug: string) {
+  const urlInput = document.querySelector<HTMLInputElement>("[data-project-evidence-quick-url]");
+  const openBtn = document.querySelector<HTMLButtonElement>("[data-project-evidence-quick-open]");
+  const hint = document.querySelector<HTMLElement>("[data-project-evidence-quick-hint]");
+  const feedback = document.querySelector<HTMLElement>("[data-project-embed-feedback]");
+  if (!urlInput || !openBtn) return;
+
+  const syncHint = () => {
+    const det = detectEvidenceUrl(urlInput.value);
+    if (hint) hint.textContent = det.hint;
+  };
+  urlInput.addEventListener("input", syncHint);
+  syncHint();
+
+  openBtn.addEventListener("click", async () => {
+    const raw = urlInput.value.trim();
+    const det = detectEvidenceUrl(raw);
+    if (det.sourceKey === "empty" || det.sourceKey === "invalid") {
+      if (hint) hint.textContent = det.hint;
+      return;
+    }
+    try {
+      new URL(raw);
+    } catch {
+      if (hint) hint.textContent = "URL no válida.";
+      return;
+    }
+
+    openBtn.disabled = true;
+    const result = await embedEditModal({
+      title: "Añadir evidencia",
+      initialKind: det.suggestedKind,
+      initialTitle: "",
+      initialUrl: raw,
+    });
+    openBtn.disabled = false;
+    if (!result) return;
+
+    const ok = await insertProjectEmbed(supabase, projectSlug, result, feedback);
+    if (ok) window.location.reload();
+  });
+}
 
 export async function initProjectEmbedAdd(supabase: any, projectSlug: string) {
   const button = document.querySelector<HTMLButtonElement>("[data-project-embed-add]");
@@ -8,7 +127,7 @@ export async function initProjectEmbedAdd(supabase: any, projectSlug: string) {
 
   button.addEventListener("click", async () => {
     const result = await embedEditModal({
-      title: "Añadir embed",
+      title: "Añadir evidencia",
       initialKind: "iframe",
       initialTitle: "",
       initialUrl: "",
@@ -17,62 +136,13 @@ export async function initProjectEmbedAdd(supabase: any, projectSlug: string) {
 
     button.disabled = true;
     if (feedback) {
-      feedback.textContent = "Guardando embed...";
+      feedback.textContent = "Guardando evidencia...";
       feedback.className = "text-sm text-gray-600";
     }
 
-    const projectDbId = await getProjectDbId(supabase, projectSlug);
-    if (!projectDbId) {
-      if (feedback) {
-        feedback.textContent = "No se encontró el proyecto en Supabase.";
-        feedback.className = "text-sm text-red-600";
-      }
-      button.disabled = false;
-      return;
-    }
-
-    const countRes = await supabase
-      .from("project_embeds")
-      .select("id", { count: "exact", head: true })
-      .eq("project_id", projectDbId);
-
-    if (countRes.error) {
-      if (feedback) {
-        feedback.textContent = `Error al calcular orden: ${countRes.error.message}`;
-        feedback.className = "text-sm text-red-600";
-      }
-      button.disabled = false;
-      return;
-    }
-
-    const sortOrder = countRes.count ?? 0;
-
-    const insertRes = await supabase.from("project_embeds").insert([
-      {
-        project_id: projectDbId,
-        kind: result.kind,
-        title: result.title,
-        url: result.url,
-        sort_order: sortOrder,
-      },
-    ] as any);
-
-    if (insertRes.error) {
-      if (feedback) {
-        feedback.textContent = `Error al guardar embed: ${insertRes.error.message}`;
-        feedback.className = "text-sm text-red-600";
-      }
-      showToast("Error al guardar embed.", "error");
-      button.disabled = false;
-      return;
-    }
-
-    if (feedback) {
-      feedback.textContent = "Embed añadido correctamente.";
-      feedback.className = "text-sm text-green-600";
-    }
-    showToast("Embed añadido.", "success");
-    window.location.reload();
+    const ok = await insertProjectEmbed(supabase, projectSlug, result, feedback);
+    button.disabled = false;
+    if (ok) window.location.reload();
   });
 }
 
@@ -90,23 +160,19 @@ export async function initProjectEmbedEdit(supabase: any, projectSlug: string) {
       if (!embedId) return;
 
       const result = await embedEditModal({
-        title: "Editar embed",
+        title: "Editar evidencia",
         initialKind: kind === "link" ? "link" : "iframe",
         initialTitle,
         initialUrl,
       });
       if (!result) return;
-      if (
-        result.kind === kind &&
-        result.title === initialTitle &&
-        result.url === initialUrl
-      ) {
+      if (result.kind === kind && result.title === initialTitle && result.url === initialUrl) {
         return;
       }
 
       button.disabled = true;
       if (feedback) {
-        feedback.textContent = "Guardando cambios del embed...";
+        feedback.textContent = "Guardando cambios...";
         feedback.className = "text-sm text-gray-600";
       }
 
@@ -132,19 +198,19 @@ export async function initProjectEmbedEdit(supabase: any, projectSlug: string) {
 
       if (updateRes.error) {
         if (feedback) {
-          feedback.textContent = `Error al actualizar embed: ${updateRes.error.message}`;
+          feedback.textContent = `Error al actualizar: ${updateRes.error.message}`;
           feedback.className = "text-sm text-red-600";
         }
-        showToast("Error al actualizar embed.", "error");
+        showToast("Error al actualizar evidencia.", "error");
         button.disabled = false;
         return;
       }
 
       if (feedback) {
-        feedback.textContent = "Embed actualizado.";
+        feedback.textContent = "Evidencia actualizada.";
         feedback.className = "text-sm text-green-600";
       }
-      showToast("Embed actualizado.", "success");
+      showToast("Evidencia actualizada.", "success");
       window.location.reload();
     });
   }
@@ -163,14 +229,14 @@ export async function initProjectEmbedRemove(supabase: any) {
 
       button.disabled = true;
       if (feedback) {
-        feedback.textContent = "Eliminando embed...";
+        feedback.textContent = "Eliminando evidencia...";
         feedback.className = "text-sm text-gray-600";
       }
 
       const deleteRes = await supabase.from("project_embeds").delete().eq("id", embedId);
       if (deleteRes.error) {
         if (feedback) {
-          feedback.textContent = `Error al eliminar embed: ${deleteRes.error.message}`;
+          feedback.textContent = `Error al eliminar: ${deleteRes.error.message}`;
           feedback.className = "text-sm text-red-600";
         }
         button.disabled = false;
@@ -178,10 +244,10 @@ export async function initProjectEmbedRemove(supabase: any) {
       }
 
       if (feedback) {
-        feedback.textContent = "Embed eliminado correctamente.";
+        feedback.textContent = "Evidencia eliminada.";
         feedback.className = "text-sm text-green-600";
       }
-      showToast("Embed eliminado.", "success");
+      showToast("Evidencia eliminada.", "success");
       window.location.reload();
     });
   }
@@ -201,7 +267,7 @@ export async function initProjectEmbedMove(supabase: any, projectSlug: string) {
 
       button.disabled = true;
       if (feedback) {
-        feedback.textContent = "Reordenando embeds...";
+        feedback.textContent = "Reordenando evidencias...";
         feedback.className = "text-sm text-gray-600";
       }
 
@@ -223,7 +289,7 @@ export async function initProjectEmbedMove(supabase: any, projectSlug: string) {
 
       if (rowsRes.error) {
         if (feedback) {
-          feedback.textContent = `Error al leer embeds: ${rowsRes.error.message}`;
+          feedback.textContent = `Error al leer evidencias: ${rowsRes.error.message}`;
           feedback.className = "text-sm text-red-600";
         }
         button.disabled = false;
@@ -252,7 +318,7 @@ export async function initProjectEmbedMove(supabase: any, projectSlug: string) {
         .eq("id", current.id);
       if (firstUpdate.error) {
         if (feedback) {
-          feedback.textContent = `Error al mover embed: ${firstUpdate.error.message}`;
+          feedback.textContent = `Error al mover: ${firstUpdate.error.message}`;
           feedback.className = "text-sm text-red-600";
         }
         button.disabled = false;
@@ -265,7 +331,7 @@ export async function initProjectEmbedMove(supabase: any, projectSlug: string) {
         .eq("id", target.id);
       if (secondUpdate.error) {
         if (feedback) {
-          feedback.textContent = `Error al mover embed: ${secondUpdate.error.message}`;
+          feedback.textContent = `Error al mover: ${secondUpdate.error.message}`;
           feedback.className = "text-sm text-red-600";
         }
         button.disabled = false;
@@ -276,7 +342,7 @@ export async function initProjectEmbedMove(supabase: any, projectSlug: string) {
         feedback.textContent = "Orden actualizado.";
         feedback.className = "text-sm text-green-600";
       }
-      showToast("Orden de embeds actualizado.", "success");
+      showToast("Orden actualizado.", "success");
       window.location.reload();
     });
   }

@@ -20,6 +20,8 @@ type DbProject = {
   slug: string;
   title: string;
   description: string | null;
+  role: string | null;
+  outcome: string | null;
 };
 
 type DbProjectEmbed = {
@@ -58,7 +60,7 @@ async function loadConceptRows(): Promise<DbConcept[]> {
 async function loadProjectRows(): Promise<DbProject[]> {
   try {
     const supabase = getSupabaseClient();
-    const { data, error } = await supabase.from("projects").select("id, slug, title, description");
+    const { data, error } = await supabase.from("projects").select("id, slug, title, description, role, outcome");
     if (error) return [];
     return (data ?? []) as DbProject[];
   } catch {
@@ -172,6 +174,8 @@ export async function getProjects(): Promise<Project[]> {
     id: p.slug,
     title: p.title,
     description: p.description ?? "",
+    role: p.role ?? "",
+    outcome: p.outcome ?? "",
     technologyIds: technologyIdsByProjectSlug.get(p.slug) ?? [],
     conceptIds: conceptIdsByProjectSlug.get(p.slug) ?? [],
     embeds: embedsByProjectSlug.get(p.slug) ?? [],

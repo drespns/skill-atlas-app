@@ -9,14 +9,25 @@ export async function initProjectEdit(supabase: any, projectSlug: string) {
   button.addEventListener("click", async () => {
     const initialTitle = container.dataset.projectTitle ?? "";
     const initialDescription = container.dataset.projectDescription ?? "";
+    const initialRole = container.dataset.projectRole ?? "";
+    const initialOutcome = container.dataset.projectOutcome ?? "";
 
     const result = await projectEditModal({
       title: "Editar proyecto",
       initialTitle,
       initialDescription,
+      initialRole,
+      initialOutcome,
     });
     if (!result) return;
-    if (result.title === initialTitle && result.description === initialDescription) return;
+    if (
+      result.title === initialTitle &&
+      result.description === initialDescription &&
+      result.role === initialRole &&
+      result.outcome === initialOutcome
+    ) {
+      return;
+    }
 
     button.disabled = true;
     if (feedback) {
@@ -26,7 +37,12 @@ export async function initProjectEdit(supabase: any, projectSlug: string) {
 
     const updateRes = await supabase
       .from("projects")
-      .update({ title: result.title, description: result.description })
+      .update({
+        title: result.title,
+        description: result.description,
+        role: result.role || null,
+        outcome: result.outcome || null,
+      })
       .eq("slug", projectSlug);
 
     if (updateRes.error) {
