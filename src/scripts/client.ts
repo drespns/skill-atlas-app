@@ -58,6 +58,134 @@ function initHeaderIconVisibility() {
   }
 }
 
+function initGlobalBanner() {
+  const root = document.querySelector<HTMLElement>("[data-global-banner]");
+  if (!root) return;
+  const bannerId = root.dataset.bannerId ?? "";
+  const storageKey = `skillatlas_banner_dismissed:${bannerId || "default"}`;
+  const closeBtn = root.querySelector<HTMLButtonElement>("[data-banner-close]");
+  const reopenBtn = document.querySelector<HTMLButtonElement>("[data-banner-reopen]");
+  const glow = document.querySelector<HTMLElement>("[data-banner-glow]");
+
+  const dismissed = (() => {
+    try {
+      return localStorage.getItem(storageKey) === "1";
+    } catch {
+      return false;
+    }
+  })();
+
+  const open = () => {
+    root.dataset.bannerState = "open";
+    root.classList.remove("max-h-0", "opacity-0", "-translate-y-2", "pointer-events-none");
+    root.classList.add("max-h-24", "opacity-100", "translate-y-0", "pointer-events-auto");
+    glow?.classList.remove("opacity-0");
+    glow?.classList.add("opacity-100");
+    reopenBtn?.classList.add("hidden");
+  };
+
+  const close = () => {
+    root.dataset.bannerState = "closed";
+    root.classList.add("max-h-0", "opacity-0", "-translate-y-2", "pointer-events-none");
+    root.classList.remove("max-h-24", "opacity-100", "translate-y-0", "pointer-events-auto");
+    glow?.classList.add("opacity-0");
+    glow?.classList.remove("opacity-100");
+    reopenBtn?.classList.remove("hidden");
+  };
+
+  if (!dismissed) open();
+  else close();
+
+  closeBtn?.addEventListener("click", () => {
+    try {
+      localStorage.setItem(storageKey, "1");
+    } catch {
+      // ignore
+    }
+    close();
+  });
+
+  reopenBtn?.addEventListener("click", () => {
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {
+      // ignore
+    }
+    // Force a reflow so the transition is visible even if user spam-clicks.
+    void root.offsetHeight;
+    open();
+  });
+}
+
+function updateLandingCtas(isAuthed: boolean) {
+  const requestAccess = document.querySelector<HTMLElement>("[data-landing-request-access]");
+  const haveInvite = document.querySelector<HTMLElement>("[data-landing-have-invite]");
+  const openApp = document.querySelector<HTMLElement>("[data-landing-open-app]");
+  const demo = document.querySelector<HTMLElement>("[data-landing-demo]");
+
+  if (requestAccess) {
+    requestAccess.classList.toggle("hidden", isAuthed);
+    requestAccess.classList.toggle("inline-flex", !isAuthed);
+  }
+  if (haveInvite) {
+    haveInvite.classList.toggle("hidden", isAuthed);
+    haveInvite.classList.toggle("inline-flex", !isAuthed);
+  }
+
+  if (openApp) {
+    openApp.classList.toggle("hidden", !isAuthed);
+    openApp.classList.toggle("inline-flex", isAuthed);
+  }
+
+  // Demo is always visible (public).
+  if (demo) {
+    demo.classList.remove("hidden");
+    demo.classList.add("inline-flex");
+  }
+}
+
+async function initLandingCtas() {
+  const hasAny =
+    Boolean(document.querySelector("[data-landing-request-access]")) ||
+    Boolean(document.querySelector("[data-landing-have-invite]")) ||
+    Boolean(document.querySelector("[data-landing-open-app]")) ||
+    Boolean(document.querySelector("[data-landing-demo]"));
+  if (!hasAny) return;
+
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return;
+
+  const render = async () => {
+    const { data } = await supabase.auth.getSession();
+    updateLandingCtas(Boolean(data.session?.user));
+  };
+
+  await render();
+  supabase.auth.onAuthStateChange(() => {
+    void render();
+  });
+}
+
+async function initAuthGuard() {
+  const guard = document.querySelector<HTMLElement>("[data-requires-auth]");
+  if (!guard) return;
+
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return;
+  const { data } = await supabase.auth.getSession();
+  if (data.session?.user) return;
+
+  // Remember next url so /login can bounce back.
+  try {
+    sessionStorage.setItem("skillatlas_post_login_next", window.location.pathname + window.location.search);
+  } catch {
+    // ignore
+  }
+  const url = new URL(window.location.origin + "/");
+  url.searchParams.set("reason", "auth");
+  window.location.href = url.toString();
+}
+
 async function initI18n() {
   const langFlags = document.querySelector<HTMLElement>("[data-lang-flags]");
   const langFlagBtns = document.querySelectorAll<HTMLButtonElement>("[data-lang-flag]");
@@ -146,7 +274,7 @@ async function initAuthHeader() {
   const signOutBtn = document.querySelector<HTMLButtonElement>("[data-auth-header-signout]");
   const avatarWrap = document.querySelector<HTMLElement>("[data-auth-avatar-wrap]");
   const avatarImg = document.querySelector<HTMLImageElement>("[data-auth-avatar]");
-  if (!loginLink || !settingsLink || !signOutBtn) return;
+  if (!loginLink) return;
 
   const setAvatar = (url: string | null) => {
     if (!avatarWrap || !avatarImg) return;
@@ -167,12 +295,12 @@ async function initAuthHeader() {
     loginLink.classList.toggle("inline-flex", !isAuthed);
 
     // Settings
-    settingsLink.classList.toggle("hidden", !isAuthed);
-    settingsLink.classList.toggle("inline-flex", isAuthed);
+    settingsLink?.classList.toggle("hidden", !isAuthed);
+    settingsLink?.classList.toggle("inline-flex", isAuthed);
 
     // Sign out
-    signOutBtn.classList.toggle("hidden", !isAuthed);
-    signOutBtn.classList.toggle("inline-flex", isAuthed);
+    signOutBtn?.classList.toggle("hidden", !isAuthed);
+    signOutBtn?.classList.toggle("inline-flex", isAuthed);
   };
 
   const supabase = getSupabaseBrowserClient();
@@ -191,7 +319,7 @@ async function initAuthHeader() {
     }
   });
 
-  signOutBtn.addEventListener("click", async () => {
+  signOutBtn?.addEventListener("click", async () => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
     signOutBtn.disabled = true;
@@ -209,12 +337,14 @@ async function initAuthHeader() {
     const { data } = await supabase.auth.getSession();
     const user = data.session?.user ?? null;
     setVisibility(Boolean(user));
+    updateLandingCtas(Boolean(user));
     const meta = (user?.user_metadata ?? {}) as Record<string, any>;
     const avatarUrl =
       (typeof meta.avatar_url === "string" && meta.avatar_url) ||
       (typeof meta.picture === "string" && meta.picture) ||
       null;
     setAvatar(avatarUrl);
+
   };
 
   await render();
@@ -242,16 +372,22 @@ if (document.readyState === "loading") {
     initLayoutVars();
     initPrefs();
     initHeaderIconVisibility();
+    initGlobalBanner();
     initCommandPaletteTrigger();
     void initI18n();
     void initAuthHeader();
+    void initLandingCtas();
+    void initAuthGuard();
   });
 } else {
   initLayoutVars();
   initPrefs();
   initHeaderIconVisibility();
+  initGlobalBanner();
   initCommandPaletteTrigger();
   void initI18n();
   void initAuthHeader();
+  void initLandingCtas();
+  void initAuthGuard();
 }
 

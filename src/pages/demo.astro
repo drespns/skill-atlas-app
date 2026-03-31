@@ -1,0 +1,89 @@
+---
+import AppShell from "../layouts/AppShell.astro";
+
+const title = "Demo";
+---
+
+<AppShell title={title}>
+  <section class="space-y-8">
+    <header class="space-y-2 max-w-3xl">
+      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">Demo</h1>
+      <p class="m-0 text-base text-gray-600 dark:text-gray-400">
+        Ejemplos “tipo” de cómo se ven los proyectos, evidencias y tecnologías. Esta página es pública y no depende de tu sesión.
+      </p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="lg:col-span-2 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-200/80 dark:border-gray-800 flex items-center justify-between">
+          <p class="m-0 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Proyecto</p>
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Evidencia principal: embed</span>
+        </div>
+        <div class="p-5 space-y-4">
+          <div class="space-y-1">
+            <h2 class="m-0 text-xl font-semibold">Water Intake · Tableau</h2>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
+              Rol: data analyst · Resultado: dashboard público + insights accionables.
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">Tableau</span>
+            <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">SQL</span>
+            <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">Storytelling</span>
+          </div>
+          <div class="rounded-xl border border-gray-200/80 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/20 p-4">
+            <div class="flex items-center justify-between gap-3">
+              <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Embed (ejemplo)</p>
+              <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">tableau</span>
+            </div>
+            <div class="mt-3 rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-3">
+              <div class="h-40 rounded-md bg-linear-to-br from-gray-100 via-white to-gray-100 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900 flex items-center justify-center text-xs text-gray-500">
+                (aquí iría el iframe)
+              </div>
+            </div>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div class="rounded-xl border border-gray-200/80 dark:border-gray-800 p-4">
+              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Evidencia secundaria</p>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">Repositorio GitHub · documentación · dataset.</p>
+            </div>
+            <div class="rounded-xl border border-gray-200/80 dark:border-gray-800 p-4">
+              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Lectura rápida</p>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">Qué, cómo, con qué y resultado, en 20s.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm p-5">
+          <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Invites only</p>
+          <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">
+            La app completa requiere sesión. Si quieres acceso, pide invite desde la landing.
+          </p>
+        </div>
+        <a
+          href="/"
+          class="inline-flex items-center justify-center rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+        >
+          Volver a la landing
+        </a>
+        <a
+          href="/app"
+          data-landing-open-app
+          class="hidden items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 no-underline"
+        >
+          Abrir app
+        </a>
+        <a
+          href="/login"
+          data-landing-have-invite
+          class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 no-underline"
+        >
+          Ya tengo invitación
+        </a>
+      </div>
+    </div>
+  </section>
+</AppShell>
+

@@ -89,6 +89,27 @@ El bloque "single-account" y el script `rls-mvp-authenticated.sql` quedan como *
   - filtro por tecnología (`?tech=...`)
 - Fix técnico: `getSupabaseBrowserClient()` cacheado (singleton) para evitar warnings de múltiples instancias GoTrue.
 
+---
+
+## Web pública + acceso privado (skillatlas.app) — plan acordado
+
+Decisiones (2026-03-31):
+
+- **Landing en `/`**: marketing + CTA; será lo que se aloje en `skillatlas.app`.
+- **`/login` oculto** (no enlazado desde header; acceso solo para invitados).
+- **Acceso por invitación** (sin signups abiertos): el usuario contacta y se le habilita acceso.
+- **Despliegue**: Vercel + dominio `skillatlas.app`.
+
+Siguientes tareas sugeridas:
+
+- Landing tipo “product site” (hero + secciones + capturas + FAQ + CTA “Solicitar acceso”). **Hecho**
+- Banner global sticky (versión / noticias / CTA). **Hecho**
+- Navegación cruzada: desde la app “Ver landing” (`/`) y desde la landing “Entrar” (solo si invitado). **Hecho**
+- Mecanismo de invitación (MVP):
+  - Supabase Auth: deshabilitar signups libres (o bloquear en UI) + flujo de invitación.
+  - Ruta de contacto: `mailto` al inicio o formulario (guardar solicitudes / enviar email).
+- Despliegue Vercel: variables `.env`, redirects URLs de Supabase, DNS del dominio.
+
 ## Prioridad siguiente (tras SaaS + portfolio)
 
 1. Catalogo de conceptos asistido (**Sprint B** — **implementado** MVP; detalle en `docs/architecture.md` § Sprint B)

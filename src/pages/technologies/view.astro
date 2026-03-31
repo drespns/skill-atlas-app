@@ -7,10 +7,11 @@ const title = "Tecnología";
 ---
 
 <AppShell title={title}>
+  <div data-requires-auth class="hidden"></div>
   <div class="space-y-4">
     {dataSource === "supabase" ? (
       <>
-        <div data-technology-csr-mount class="min-h-[12rem] text-sm text-gray-600">
+        <div data-technology-csr-mount class="min-h-48 text-sm text-gray-600">
           Cargando tecnología…
         </div>
         <script type="module" src={technologyViewBootstrapUrl}></script>

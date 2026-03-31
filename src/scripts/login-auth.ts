@@ -30,9 +30,8 @@ async function initLoginAuth() {
   const passwordForm = document.querySelector<HTMLFormElement>("[data-auth-password-form]");
   const emailInput = document.querySelector<HTMLInputElement>("[data-auth-email]");
   const passwordInput = document.querySelector<HTMLInputElement>("[data-auth-password]");
-  const signUpBtn = document.querySelector<HTMLButtonElement>("[data-auth-sign-up]");
   const feedback = document.querySelector<HTMLElement>("[data-auth-feedback]");
-  if (!passwordForm || !emailInput || !passwordInput || !signUpBtn || !feedback) return;
+  if (!passwordForm || !emailInput || !passwordInput || !feedback) return;
 
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
@@ -100,13 +99,11 @@ async function initLoginAuth() {
 
     const signInBtn = passwordForm.querySelector<HTMLButtonElement>("[data-auth-sign-in]");
     signInBtn && (signInBtn.disabled = true);
-    signUpBtn.disabled = true;
     setFeedback(feedback, "Entrando…", "info");
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     signInBtn && (signInBtn.disabled = false);
-    signUpBtn.disabled = false;
     if (error) {
       setFeedback(feedback, authErrorMessage(error.message), "error");
       showToast("No se pudo iniciar sesión.", "error");
@@ -117,49 +114,6 @@ async function initLoginAuth() {
     showToast("Sesión iniciada.", "success");
     passwordInput.value = "";
     await render();
-  });
-
-  signUpBtn.addEventListener("click", async () => {
-    const { email, password } = readCredentials();
-    if (!email || password.length < 6) {
-      setFeedback(feedback, "Introduce correo y contraseña (mín. 6 caracteres).", "error");
-      return;
-    }
-
-    signUpBtn.disabled = true;
-    const signInBtn = passwordForm.querySelector<HTMLButtonElement>("[data-auth-sign-in]");
-    signInBtn && (signInBtn.disabled = true);
-    setFeedback(feedback, "Creando cuenta…", "info");
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: redirectTo },
-    });
-
-    signUpBtn.disabled = false;
-    signInBtn && (signInBtn.disabled = false);
-
-    if (error) {
-      setFeedback(feedback, authErrorMessage(error.message), "error");
-      showToast("No se pudo crear la cuenta.", "error");
-      return;
-    }
-
-    if (data.session) {
-      setFeedback(feedback, "Cuenta creada e iniciada sesión.", "ok");
-      showToast("Cuenta lista.", "success");
-      passwordInput.value = "";
-      await render();
-      return;
-    }
-
-    setFeedback(
-      feedback,
-      "Cuenta creada. Si Supabase pide confirmación, revisa tu correo.",
-      "info",
-    );
-    showToast("Revisa tu correo si hace falta confirmar.", "success");
   });
 
   const oauthButtons = document.querySelectorAll<HTMLButtonElement>("[data-auth-oauth-provider]");

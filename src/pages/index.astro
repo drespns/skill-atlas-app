@@ -4,59 +4,385 @@ import AppShell from "../layouts/AppShell.astro";
 ---
 
 <AppShell title="SkillAtlas">
-  <section class="space-y-6">
-    <div class="max-w-2xl">
-      <h1 class="text-3xl md:text-4xl font-semibold m-0">
-        <span data-i18n="landing.title">SkillAtlas</span>
-      </h1>
-      <p class="mt-3 text-gray-600">
-        <span data-i18n="landing.subtitle">
-          Gestiona tu conocimiento técnico: tecnologías, conceptos, progreso y proyectos que se
-          convierten en tu portfolio.
-        </span>
-      </p>
+  <section class="relative overflow-hidden">
+    <div class="pointer-events-none absolute inset-0">
+      <div class="absolute -top-32 left-1/2 -translate-x-1/2 h-112 w-240 max-w-[120vw] rounded-full bg-linear-to-r from-indigo-300/35 via-sky-200/25 to-rose-300/30 dark:from-indigo-500/15 dark:via-sky-500/10 dark:to-rose-500/12 blur-3xl" />
+      <div class="absolute -bottom-40 -left-40 h-120 w-120 rounded-full bg-linear-to-br from-emerald-200/25 via-transparent to-amber-200/25 dark:from-emerald-500/10 dark:to-amber-500/10 blur-3xl" />
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="border border-gray-200 rounded-xl p-4">
-        <h2 class="font-semibold text-sm m-0">
-          <span data-i18n="landing.step1Title">1. Tecnologías</span>
-        </h2>
-        <p class="mt-2 text-sm text-gray-600">
-          <span data-i18n="landing.step1Body">Crea categorías como SQL, PySpark o DAX.</span>
+    <div class="relative max-w-screen-2xl mx-auto py-10 md:py-14 space-y-18">
+      <div class="grid lg:grid-cols-2 gap-12 xl:gap-16 items-start">
+        <div class="space-y-8">
+        <div class="inline-flex items-center gap-2 rounded-full border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/50 px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200">
+          <span class="font-semibold">SkillAtlas</span>
+          <span class="text-gray-400">·</span>
+          <span>Invites only</span>
+        </div>
+
+        <h1 class="m-0 text-4xl md:text-6xl font-semibold tracking-tight leading-[1.05]">
+          Tu conocimiento técnico,
+          <span class="text-transparent bg-clip-text bg-linear-to-r from-indigo-600 via-sky-500 to-rose-600 dark:from-indigo-300 dark:via-sky-300 dark:to-rose-300">
+            listo para convertirse en portfolio
+          </span>.
+        </h1>
+        <p class="m-0 text-base md:text-xl text-gray-600 dark:text-gray-400 max-w-xl leading-relaxed">
+          Captura tecnologías y conceptos, construye proyectos con evidencias y publica un portfolio
+          que se lee en minutos.
         </p>
+
+        <div class="flex flex-col sm:flex-row flex-wrap gap-3 pt-3">
+          <a
+            href="mailto:hello@skillatlas.app?subject=Solicitud%20de%20acceso%20a%20SkillAtlas&body=Hola%2C%20me%20gustar%C3%ADa%20solicitar%20acceso%20(invite)%20para%20SkillAtlas.%0A%0A%2D%20Nombre%3A%0A%2D%20Email%3A%0A%2D%20Motivo%20%2F%20uso%3A%0A"
+            data-landing-request-access
+            class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 no-underline"
+          >
+            Solicitar acceso
+          </a>
+          <a
+            href="/login"
+            data-landing-have-invite
+            class="inline-flex items-center justify-center rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+          >
+            Ya tengo invitación
+          </a>
+          <a
+            href="/app"
+            data-landing-open-app
+            class="hidden items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 no-underline shadow-sm"
+          >
+            Abrir app
+          </a>
+          <a
+            href="/demo"
+            data-landing-demo
+            class="inline-flex items-center justify-center rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/55 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+          >
+            Ver demo
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3">
+          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-4 shadow-sm">
+            <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/10 dark:bg-indigo-400/10 text-indigo-700 dark:text-indigo-300">T</span>
+              Tecnologías
+            </p>
+            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Tu mapa de stack.</p>
+          </div>
+          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-4 shadow-sm">
+            <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-sky-500/10 dark:bg-sky-400/10 text-sky-700 dark:text-sky-300">C</span>
+              Conceptos
+            </p>
+            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Aprendizaje trazable.</p>
+          </div>
+          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-4 shadow-sm">
+            <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-rose-500/10 dark:bg-rose-400/10 text-rose-700 dark:text-rose-300">E</span>
+              Evidencias
+            </p>
+            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Links + embeds, rápido.</p>
+          </div>
+        </div>
+
+        <div class="pt-2 space-y-3 max-w-xl">
+          <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
+            Pensado para que tu portfolio no dependa de “me acuerdo de todo”, sino de evidencias y una historia clara (rol + resultado).
+          </p>
+          <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
+            Acceso por invitación hasta v1.0 para iterar rápido y cuidar calidad.
+          </p>
+        </div>
       </div>
-      <div class="border border-gray-200 rounded-xl p-4">
-        <h2 class="font-semibold text-sm m-0">
-          <span data-i18n="landing.step2Title">2. Conceptos</span>
-        </h2>
-        <p class="mt-2 text-sm text-gray-600">
-          <span data-i18n="landing.step2Body">Registra conceptos dentro de cada tecnología.</span>
-        </p>
-      </div>
-      <div class="border border-gray-200 rounded-xl p-4">
-        <h2 class="font-semibold text-sm m-0">
-          <span data-i18n="landing.step3Title">3. Proyectos</span>
-        </h2>
-        <p class="mt-2 text-sm text-gray-600">
-          <span data-i18n="landing.step3Body">Relaciona conceptos y publica tu portfolio.</span>
-        </p>
+
+      <div class="relative">
+        <div class="absolute -inset-3 rounded-3xl bg-linear-to-br from-indigo-200/70 via-transparent to-rose-200/55 dark:from-indigo-500/15 dark:to-rose-500/12 blur-2xl" />
+        <div class="relative rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/85 dark:bg-gray-950/85 shadow-sm overflow-hidden">
+          <div class="px-5 py-4 border-b border-gray-200/80 dark:border-gray-800 flex items-center justify-between bg-white/60 dark:bg-gray-950/40 backdrop-blur">
+            <div class="flex items-center gap-2">
+              <div class="h-2.5 w-2.5 rounded-full bg-rose-400/80" />
+              <div class="h-2.5 w-2.5 rounded-full bg-amber-300/80" />
+              <div class="h-2.5 w-2.5 rounded-full bg-emerald-300/80" />
+            </div>
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Preview</span>
+          </div>
+          <div class="p-6 space-y-4">
+            <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-950/40">
+              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Proyecto · “Tableau Water Intake”</p>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">
+                Rol: data analyst · Resultado: dashboard público + insights accionables.
+              </p>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">Tableau</span>
+                <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">SQL</span>
+                <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">Storytelling</span>
+              </div>
+            </div>
+            <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-950/40">
+              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Evidencias</p>
+              <div class="mt-3 grid grid-cols-1 gap-2">
+                <div class="rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/20 px-3 py-2">
+                  <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Dashboard embed</p>
+                  <p class="mt-1 mb-0 text-xs text-gray-600 dark:text-gray-400 truncate">tableau.com / views / ...</p>
+                </div>
+                <div class="rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/20 px-3 py-2">
+                  <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Repositorio</p>
+                  <p class="mt-1 mb-0 text-xs text-gray-600 dark:text-gray-400 truncate">github.com / ...</p>
+                </div>
+              </div>
+            </div>
+            <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-950/40">
+              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Portfolio</p>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">
+                Cards limpias, filtro por tecnología, evidencia principal destacada.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="flex flex-wrap gap-3">
-      <a
-        href="/app"
-        class="inline-flex items-center justify-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 no-underline"
-      >
-        <span data-i18n="common.openApp">Abrir app</span>
-      </a>
-      <a
-        href="/portfolio"
-        class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 no-underline"
-      >
-        <span data-i18n="common.viewPortfolio">Ver portfolio</span>
-      </a>
+      <div class="pt-10">
+        <div class="h-px w-full bg-linear-to-r from-transparent via-gray-200/80 to-transparent dark:via-gray-800/80" />
+      </div>
+
+    <section class="rounded-3xl border border-gray-200/80 dark:border-gray-800 bg-white/55 dark:bg-gray-950/45 shadow-sm overflow-hidden">
+      <div class="px-6 py-5 border-b border-gray-200/70 dark:border-gray-800/70 bg-white/60 dark:bg-gray-950/40 backdrop-blur flex flex-wrap items-end justify-between gap-3">
+        <div class="space-y-1">
+          <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase">Flujo</p>
+          <h2 class="m-0 text-lg font-semibold">Del proyecto al portfolio, con evidencias.</h2>
+        </div>
+        <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-xl">
+          Una relación visual: empieza pegando URLs, cuenta la historia y publica.
+        </p>
+      </div>
+
+      <div class="relative p-6">
+        <div class="pointer-events-none absolute inset-0">
+          <svg viewBox="0 0 1200 260" class="w-full h-full" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="flowStroke" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0%" stop-color="rgb(99 102 241)" stop-opacity="0.55" />
+                <stop offset="50%" stop-color="rgb(56 189 248)" stop-opacity="0.45" />
+                <stop offset="100%" stop-color="rgb(244 63 94)" stop-opacity="0.50" />
+              </linearGradient>
+              <filter id="flowBlur" x="-20%" y="-40%" width="140%" height="180%">
+                <feGaussianBlur stdDeviation="8" />
+              </filter>
+            </defs>
+            <path
+              d="M 120 150 C 280 60, 420 60, 560 150 S 840 240, 1080 140"
+              stroke="url(#flowStroke)"
+              stroke-width="6"
+              fill="none"
+              filter="url(#flowBlur)"
+            />
+            <path
+              d="M 120 150 C 280 60, 420 60, 560 150 S 840 240, 1080 140"
+              stroke="url(#flowStroke)"
+              stroke-width="2.25"
+              fill="none"
+              opacity="0.9"
+            />
+          </svg>
+        </div>
+
+        <div class="relative grid md:grid-cols-3 gap-5">
+          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-6 shadow-sm">
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-1">
+                <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Evidencias</p>
+                <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Pega URLs y detectamos el tipo para embed/link en segundos.
+                </p>
+              </div>
+              <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 dark:bg-indigo-400/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/15 dark:border-indigo-400/15">
+                🔗
+              </span>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-6 shadow-sm">
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-1">
+                <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Historia</p>
+                <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Rol + resultado para que el proyecto se entienda sin contexto.
+                </p>
+              </div>
+              <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/10 dark:bg-sky-400/10 text-sky-700 dark:text-sky-300 border border-sky-500/15 dark:border-sky-400/15">
+                ✍️
+              </span>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-6 shadow-sm">
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-1">
+                <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Portfolio</p>
+                <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Publica cards limpias y filtrables (cuando tú decidas).
+                </p>
+              </div>
+              <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/10 dark:bg-rose-400/10 text-rose-700 dark:text-rose-300 border border-rose-500/15 dark:border-rose-400/15">
+                ✨
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid lg:grid-cols-2 gap-8 items-start">
+      <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-7 shadow-sm">
+        <h2 class="m-0 text-lg font-semibold">Cómo funciona</h2>
+        <div class="mt-5 space-y-3" style="overflow-anchor: none;">
+          <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
+            <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
+              <span>1) Define tecnologías</span>
+              <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
+            </summary>
+            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">SQL, Tableau, Python… tu mapa base.</p>
+          </details>
+          <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
+            <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
+              <span>2) Añade conceptos</span>
+              <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
+            </summary>
+            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">Lo que realmente aprendes dentro de cada tecnología.</p>
+          </details>
+          <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
+            <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
+              <span>3) Crea proyectos + evidencias</span>
+              <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
+            </summary>
+            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">URLs (link/embed), tecnologías, conceptos, rol y resultado.</p>
+          </details>
+          <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
+            <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
+              <span>4) Publica portfolio</span>
+              <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
+            </summary>
+            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">Cards limpias, filtro por tecnología y evidencia principal destacada.</p>
+          </details>
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-7 shadow-sm">
+        <h2 class="m-0 text-lg font-semibold">FAQ (invites only)</h2>
+        <div class="mt-5 space-y-3" style="overflow-anchor: none;">
+          <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
+            <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
+              <span>¿Por qué invite-only?</span>
+              <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
+            </summary>
+            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">
+              Para iterar sin fricción y mantener la calidad mientras consolidamos el MVP.
+            </p>
+          </details>
+          <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
+            <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
+              <span>¿Qué es público?</span>
+              <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
+            </summary>
+            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">
+              La landing y la demo. La app completa requiere sesión.
+            </p>
+          </details>
+          <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
+            <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
+              <span>¿Cómo pido acceso?</span>
+              <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
+            </summary>
+            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">
+              Usa “Solicitar acceso” y cuéntame el caso de uso. Te mando invite cuando esté listo.
+            </p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="rounded-3xl border border-gray-200/80 dark:border-gray-800 bg-white/55 dark:bg-gray-950/45 shadow-sm overflow-hidden">
+      <div class="px-6 py-5 border-b border-gray-200/70 dark:border-gray-800/70 bg-white/60 dark:bg-gray-950/40 backdrop-blur flex flex-wrap items-end justify-between gap-3">
+        <div class="space-y-1">
+          <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase">Built with</p>
+          <h2 class="m-0 text-lg font-semibold">Astro + Tailwind + TypeScript + Supabase.</h2>
+        </div>
+        <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-xl">
+          Tecnologías
+        </p>
+      </div>
+
+      <div class="p-6">
+        <div class="relative overflow-hidden rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60">
+          <div class="pointer-events-none absolute inset-0">
+            <svg viewBox="0 0 900 280" class="w-full h-full" preserveAspectRatio="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="bw" x1="0" x2="1" y1="0" y2="0">
+                  <stop offset="0%" stop-color="rgb(99 102 241)" stop-opacity="0.45" />
+                  <stop offset="50%" stop-color="rgb(56 189 248)" stop-opacity="0.35" />
+                  <stop offset="100%" stop-color="rgb(244 63 94)" stop-opacity="0.40" />
+                </linearGradient>
+              </defs>
+              <path d="M170 70 C 300 70, 320 140, 450 140" stroke="url(#bw)" stroke-width="3" fill="none" />
+              <path d="M170 140 C 300 140, 320 140, 450 140" stroke="url(#bw)" stroke-width="3" fill="none" />
+              <path d="M170 210 C 300 210, 320 140, 450 140" stroke="url(#bw)" stroke-width="3" fill="none" />
+              <path d="M520 140 C 640 140, 660 70, 780 70" stroke="url(#bw)" stroke-width="3" fill="none" />
+              <path d="M520 140 C 640 140, 660 140, 780 140" stroke="url(#bw)" stroke-width="3" fill="none" />
+              <path d="M520 140 C 640 140, 660 210, 780 210" stroke="url(#bw)" stroke-width="3" fill="none" />
+            </svg>
+          </div>
+
+          <div class="relative grid grid-cols-1 md:grid-cols-3 gap-4 p-5 items-center">
+            <div class="flex flex-col gap-3">
+              <div class="inline-flex items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 dark:bg-indigo-400/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/15 dark:border-indigo-400/15">⚡</span>
+                <div class="min-w-0">
+                  <p class="m-0 text-sm font-semibold">Astro</p>
+                  <p class="mt-0.5 mb-0 text-xs text-gray-600 dark:text-gray-400">UI + islands</p>
+                </div>
+              </div>
+              <div class="inline-flex items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/10 dark:bg-sky-400/10 text-sky-700 dark:text-sky-300 border border-sky-500/15 dark:border-sky-400/15">🎨</span>
+                <div class="min-w-0">
+                  <p class="m-0 text-sm font-semibold">Tailwind</p>
+                  <p class="mt-0.5 mb-0 text-xs text-gray-600 dark:text-gray-400">Design system</p>
+                </div>
+              </div>
+              <div class="inline-flex items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/10 dark:bg-rose-400/10 text-rose-700 dark:text-rose-300 border border-rose-500/15 dark:border-rose-400/15">🛡️</span>
+                <div class="min-w-0">
+                  <p class="m-0 text-sm font-semibold">Supabase</p>
+                  <p class="mt-0.5 mb-0 text-xs text-gray-600 dark:text-gray-400">Auth + RLS</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-center">
+              <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/90 dark:bg-gray-950/80 px-6 py-5 shadow-sm text-center">
+                <p class="m-0 text-sm font-semibold">SkillAtlas</p>
+                <p class="mt-1 mb-0 text-xs text-gray-600 dark:text-gray-400">MVP</p>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <div class="inline-flex items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm justify-between">
+                <p class="m-0 text-sm font-semibold">Tecnologías</p>
+                <span class="text-xs text-gray-600 dark:text-gray-400">mapa</span>
+              </div>
+              <div class="inline-flex items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm justify-between">
+                <p class="m-0 text-sm font-semibold">Proyectos</p>
+                <span class="text-xs text-gray-600 dark:text-gray-400">evidencias</span>
+              </div>
+              <div class="inline-flex items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm justify-between">
+                <p class="m-0 text-sm font-semibold">Portfolio</p>
+                <span class="text-xs text-gray-600 dark:text-gray-400">publicación</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
     </div>
   </section>
 </AppShell>

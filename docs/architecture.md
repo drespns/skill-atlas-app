@@ -124,6 +124,27 @@ Además de tema, densidad, fuente, acento, movimiento, vistas lista/cards, icono
   - reducir logica duplicada en scripts
   - mover mas validacion a DB (constraints + unique indexes)
 
+## Web pública (landing) + app privada (plan)
+
+Objetivo de producto: `skillatlas.app` sirve una **landing pública** en `/` y la app (CRUD + dashboard) queda **privada** para usuarios invitados.
+
+Decisiones (2026-03-31):
+
+- `/` será una landing de marketing (estilo product site), no el dashboard.
+- `/login` existe pero se mantiene **oculto** (no enlazado públicamente); acceso solo por invitación.
+- Rutas internas (`/app`, `/projects*`, `/technologies*`, `/settings`) se protegen para usuarios autenticados e invitados.
+
+Implicaciones técnicas:
+
+- Banner global sticky con versión/noticias (en `AppShell.astro`, config en `src/config/banner.ts`, cierre persistente y botón de re-apertura en header).
+- Navegación cruzada:
+  - desde la app: link a `/` (landing)
+  - desde landing: CTA “Entrar” condicionado a sesión/invitación
+- Control de acceso: “invites only” (Supabase Auth + checks en UI).
+  - Guard de rutas en cliente con `data-requires-auth` (redirección a `/` si no hay sesión).
+  - `/login`: se deshabilita signup en UI (solo login + OAuth).
+  - `/demo`: página pública estática para enseñar el look & feel sin depender de sesión ni de datos.
+
 ## Roadmap (producto prioritario)
 
 Plan detallado para **multiusuario + portfolio por enlace compartido**: `docs/plan-saas-multi-tenant-portfolio.md`. Decision actual para la app interna: **CSR** (sin adapter SSR); el portfolio publico por token usa la RPC `skillatlas_portfolio_by_share_token` (`docs/sql/saas-003-fn-portfolio-share.sql`, **extendida** por `docs/sql/saas-006-projects-role-outcome.sql` con `role` y `outcome` por proyecto en el JSON).

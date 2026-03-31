@@ -30,6 +30,7 @@ const technologyTitle = technology?.name ?? "Tecnología no encontrada";
 ---
 
 <AppShell title={technologyTitle}>
+  <div data-requires-auth class="hidden"></div>
   {technology ? (
     <section class="space-y-6">
       <header class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">

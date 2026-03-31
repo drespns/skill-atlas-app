@@ -87,8 +87,8 @@ según `PUBLIC_DATA_SOURCE`. Así se mantiene un contrato estable al cambiar de 
 
 | Ruta | Rol |
 |------|-----|
-| `/` | Landing |
-| `/login` | Acceso (email/OAuth) |
+| `/` | Landing (pública; `skillatlas.app`) |
+| `/login` | Acceso (oculto en producción; invitación) |
 | `/app` | Dashboard |
 | `/technologies` | Lista de tecnologías |
 | `/technologies/[techId]` | Detalle (modo **mock**, `techId` = slug) |
@@ -96,7 +96,8 @@ según `PUBLIC_DATA_SOURCE`. Así se mantiene un contrato estable al cambiar de 
 | `/projects` | Lista de proyectos |
 | `/projects/[projectId]` | Detalle (modo **mock**) |
 | `/projects/view?project=<slug>` | Detalle (modo **Supabase**, CSR) |
-| `/portfolio` | Portfolio público |
+| `/demo` | Demo pública (estática; no depende de sesión) |
+| `/portfolio` | Portfolio (preview autenticado; en Supabase carga por CSR) |
 | `/settings` | Ajustes, sesión y perfil |
 
 Las tarjetas de listado enlazan automáticamente a las rutas CSR cuando el data source es Supabase.
@@ -139,7 +140,7 @@ Las tarjetas de listado enlazan automáticamente a las rutas CSR cuando el data 
 
 ## Versionado
 
-Las versiones de producto se marcan con **tags** de Git (mensaje tipo `feat:` / bullets, ver `AGENTS.md`). La línea **v0.10.x** consolidó ajustes tipo dashboard, perfil y stack de ayuda en Supabase, import de conceptos ampliado y documentación alineada. La siguiente release prevista en el roadmap cercano es **v0.10.5**, orientada a correcciones y pulido sobre esa base.
+Las versiones de producto se marcan con **tags** de Git (mensaje tipo `feat:` / bullets, ver `AGENTS.md`). La release actual en desarrollo es **v0.20.0**.
 
 ---
 

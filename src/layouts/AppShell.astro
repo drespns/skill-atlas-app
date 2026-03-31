@@ -2,12 +2,14 @@
 import "../styles/global.css";
 import { repoUrl } from "../data";
 import clientScriptUrl from "../scripts/client.ts?url";
+import { GLOBAL_BANNER } from "../config/banner";
 
 const { title = "SkillAtlas" } = Astro.props;
 const year = new Date().getFullYear();
 
 const pathname = Astro.url.pathname;
 const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+const homeHref = pathname === "/" ? "/" : "/app";
 
 const APP_LOGO_SRC = "/favicon.svg";
 
@@ -109,13 +111,52 @@ const FOOTER_BUILD_ICONS = [
     class="bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100 min-h-svh flex flex-col"
     style="font-family: var(--app-font-family);"
   >
+    <div data-global-banner-wrap class="sticky top-0 z-1001">
+      <div
+        data-global-banner
+        data-banner-id={GLOBAL_BANNER.id}
+        data-banner-state="closed"
+        class="overflow-hidden border-b border-gray-200/80 dark:border-gray-800 backdrop-blur transition-[max-height,opacity,transform] duration-300 ease-out max-h-0 opacity-0 -translate-y-2 pointer-events-none bg-white/80 dark:bg-gray-950/75"
+      >
+        <div class="max-w-screen-2xl mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-2">
+          <div class="flex flex-wrap items-center gap-2 min-w-0">
+            <span class="text-[11px] font-semibold rounded-full px-2 py-0.5 border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/70">
+              {GLOBAL_BANNER.version}
+            </span>
+            <span data-banner-text class="text-xs text-gray-700 dark:text-gray-200 truncate">{GLOBAL_BANNER.text}</span>
+            {
+              GLOBAL_BANNER.href ? (
+                <a
+                  data-banner-link
+                  href={GLOBAL_BANNER.href}
+                  class="text-xs font-semibold underline decoration-gray-300 hover:decoration-gray-600 dark:decoration-gray-700 dark:hover:decoration-gray-400"
+                >
+                  {GLOBAL_BANNER.hrefLabel ?? "Ver más"}
+                </a>
+              ) : null
+            }
+          </div>
+          <button
+            type="button"
+            data-banner-close
+            class="text-xs font-semibold rounded-lg border border-gray-200/80 dark:border-gray-800 px-2.5 py-1 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+            aria-label="Cerrar anuncio"
+            title="Cerrar"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+      <div class="pointer-events-none absolute inset-0 -z-10 bg-linear-to-r from-indigo-200/40 via-transparent to-rose-200/40 dark:from-indigo-500/10 dark:to-rose-500/10 opacity-0" data-banner-glow></div>
+    </div>
+
     <header
       class="border-b border-gray-200/80 dark:border-gray-800"
       data-app-header
       style="padding: var(--app-header-py, 1rem) var(--app-header-px, 1.25rem);"
     >
       <div class="max-w-screen-2xl mx-auto flex items-center justify-between gap-4">
-        <a href="/app" class="flex items-center gap-3 no-underline">
+        <a href={homeHref} class="flex items-center gap-3 no-underline">
           <img src={APP_LOGO_SRC} alt="SkillAtlas" class="h-8 w-8 rounded-md" />
           <span class="font-bold text-lg hover:underline">SkillAtlas</span>
           <span
@@ -134,6 +175,9 @@ const FOOTER_BUILD_ICONS = [
         </a>
 
         <nav class="hidden md:flex flex-wrap gap-4 text-sm" data-i18n-scope="nav">
+          <a href="/" class={`hover:underline ${pathname === "/" ? "font-semibold" : ""}`}>
+            <span>Landing</span>
+          </a>
           <a
             href="/technologies"
             class={`hover:underline ${isActive("/technologies") ? "font-semibold" : ""}`}
@@ -155,6 +199,20 @@ const FOOTER_BUILD_ICONS = [
         </nav>
 
         <div class="flex items-center gap-2" data-header-icons>
+          <button
+            type="button"
+            data-banner-reopen
+            class="hidden sm:inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+            aria-label="Mostrar anuncio"
+            title="Mostrar anuncio"
+          >
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 11v3a1 1 0 0 0 1 1h3" />
+              <path d="M21 13v-3a1 1 0 0 0-1-1h-3" />
+              <path d="M7 15l-3 3-3-3" />
+              <path d="M17 9l3-3 3 3" />
+            </svg>
+          </button>
           <div
             data-lang-flags
             class="hidden sm:inline-flex items-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 p-0.5 gap-0.5"
@@ -415,7 +473,7 @@ const FOOTER_BUILD_ICONS = [
                   src={ico.src}
                   alt={ico.label}
                   title={ico.label}
-                  class="h-8 w-auto max-h-8 max-w-[6rem] object-contain opacity-90 dark:opacity-85"
+                  class="h-8 w-auto max-h-8 max-w-24 object-contain opacity-90 dark:opacity-85"
                   loading="lazy"
                 />
               ))
