@@ -1,0 +1,105 @@
+---
+import AppShell from "../layouts/AppShell.astro";
+
+const title = "Solicitar acceso";
+---
+
+<AppShell title={title}>
+  <main class="max-w-3xl mx-auto space-y-8">
+    <header class="space-y-2">
+      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">
+        Solicitar acceso
+      </h1>
+      <p class="m-0 text-sm md:text-base text-gray-600 dark:text-gray-400">
+        Cuéntame tu caso de uso y te enviaré invitación cuando haya hueco.
+      </p>
+    </header>
+
+    <section class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm p-5 space-y-4">
+      <form data-access-request-form class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label class="space-y-1">
+            <span class="text-sm font-semibold">Nombre</span>
+            <input
+              name="full_name"
+              type="text"
+              autocomplete="name"
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-3 py-2 text-sm"
+              placeholder="Tu nombre"
+            />
+          </label>
+          <label class="space-y-1">
+            <span class="text-sm font-semibold">Email</span>
+            <input
+              name="email"
+              type="email"
+              autocomplete="email"
+              required
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-3 py-2 text-sm"
+              placeholder="tu@email.com"
+            />
+          </label>
+        </div>
+
+        <label class="space-y-1 block">
+          <span class="text-sm font-semibold">Mensaje</span>
+          <textarea
+            name="message"
+            rows={4}
+            class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-3 py-2 text-sm"
+            placeholder="¿Qué quieres construir y por qué te interesa SkillAtlas?"
+          ></textarea>
+        </label>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label class="space-y-1">
+            <span class="text-sm font-semibold">LinkedIn (opcional)</span>
+            <input
+              name="linkedin_url"
+              type="url"
+              inputmode="url"
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-3 py-2 text-sm"
+              placeholder="https://www.linkedin.com/in/..."
+            />
+          </label>
+          <label class="space-y-1">
+            <span class="text-sm font-semibold">GitHub (opcional)</span>
+            <input
+              name="github_url"
+              type="url"
+              inputmode="url"
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-3 py-2 text-sm"
+              placeholder="https://github.com/..."
+            />
+          </label>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <button
+            type="submit"
+            class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 no-underline app-accent-ring"
+            data-access-request-submit
+          >
+            Enviar solicitud
+          </button>
+          <p class="m-0 text-sm text-gray-600 dark:text-gray-400 min-h-6" data-access-request-feedback></p>
+        </div>
+      </form>
+    </section>
+
+    <section class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 p-5">
+      <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase">
+        Contacto directo
+      </p>
+      <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">
+        Si prefieres, escríbeme en LinkedIn o GitHub:
+        <a class="font-semibold underline underline-offset-2" href="https://www.linkedin.com/in/drespns/" target="_blank" rel="noreferrer">LinkedIn</a>
+        ·
+        <a class="font-semibold underline underline-offset-2" href="https://github.com/drespns/" target="_blank" rel="noreferrer">GitHub</a>
+      </p>
+    </section>
+  </main>
+
+  <script src="../scripts/request-access.ts"></script>
+</AppShell>
+

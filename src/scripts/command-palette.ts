@@ -52,8 +52,8 @@ function initCommandPalette() {
     {
       id: "request-access",
       label: "Solicitar acceso",
-      href: "mailto:drespns@gmail.com?subject=SkillAtlas%20%E2%80%94%20Solicitud%20de%20acceso",
-      hint: "Email",
+      href: "/request-access",
+      hint: "/request-access",
     },
   ];
 

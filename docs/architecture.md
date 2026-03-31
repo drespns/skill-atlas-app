@@ -11,6 +11,13 @@ Astro genera sitio **estatico** (`output: static`). Las paginas se prerenderizan
 - Providers: mock y supabase
 - Scripts cliente por pantalla: `src/scripts/*.ts` y subcarpetas (`project-detail/`, `technology-detail/`)
 
+### Acceso privado + solicitudes (invite-only)
+
+La app está pensada como acceso privado por invitación. Para no depender de `mailto:` existe una pantalla pública:
+
+- `/request-access`: formulario que inserta en `public.access_requests` (ver migración `docs/sql/saas-009-access-requests.sql`).
+- La tabla permite **INSERT** desde `anon`/`auth` y bloquea **SELECT/UPDATE/DELETE** desde cliente (la revisión de solicitudes se hace desde el dashboard de Supabase o un panel admin futuro).
+
 ### Scripts cliente en Astro (importante)
 
 Para que funcione igual en **dev** y **producción** (Vercel), los scripts cliente deben cargarse como **scripts procesados por Astro**:
@@ -116,6 +123,7 @@ Además de tema, densidad, fuente, acento, movimiento, vistas lista/cards, icono
 
 - **Nombre público** y **bio**: edición en cliente; **upsert** a `portfolio_profiles` (`display_name`, `bio`) con sesión; caché en `public-profile-local.ts` (`skillatlas_public_profile_v1`).
 - **Stack de ayuda**: lista de herramientas (productividad / IA) definidas en `src/config/help-stack.ts`; persistencia en columna **`help_stack`** (JSONB) tras `docs/sql/saas-005-portfolio-help-stack.sql`, con reintento del cliente si la columna aún no existe.
+- **Avatar**: `portfolio_profiles.avatar_url` + Storage bucket `portfolio_avatars` (migración `docs/sql/saas-008-portfolio-avatar.sql`). En cliente se sube la imagen y en `/portfolio` se hidrata (signed URL si aplica) con fallback al avatar del último provider OAuth.
 - **`portfolio-public-profile.ts`**: en `/portfolio` muestra nombre/bio y chips del stack (Supabase + fallback local).
 
 ### Idioma (UI)
