@@ -94,6 +94,20 @@ const projectCards = await Promise.all(
             data-i18n-attr="placeholder"
             class="border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950"
           />
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <input
+              name="role"
+              type="text"
+              placeholder="Rol (opcional)"
+              class="border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950"
+            />
+            <input
+              name="outcome"
+              type="text"
+              placeholder="Resultado / impacto (opcional)"
+              class="border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950"
+            />
+          </div>
           <div class="flex items-center gap-3">
             <button
               type="submit"

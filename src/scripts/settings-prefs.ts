@@ -37,15 +37,6 @@ function isGridCols(v: string): v is SettingsGridColumns {
   return v === "1" || v === "2" || v === "3" || v === "4";
 }
 
-function renderLangFlags(root: HTMLElement | null, lang: Lang) {
-  if (!root) return;
-  root.querySelectorAll<HTMLButtonElement>("[data-pref-lang-flag]").forEach((btn) => {
-    const fl = btn.dataset.prefLangFlag;
-    const active = fl === lang;
-    btn.setAttribute("aria-pressed", active ? "true" : "false");
-  });
-}
-
 function initSettingsPrefs() {
   const theme = document.querySelector<HTMLSelectElement>("[data-pref-theme]");
   const font = document.querySelector<HTMLSelectElement>("[data-pref-font]");
@@ -86,7 +77,6 @@ function initSettingsPrefs() {
     projectsView.value = p.projectsView;
     showHeaderIcons.value = p.showHeaderIcons ? "yes" : "no";
     showLangSelector.value = p.showLangSelector ? "yes" : "no";
-    renderLangFlags(langFlags, p.lang);
   };
 
   render();
@@ -156,19 +146,21 @@ function initSettingsPrefs() {
   });
 
   langFlags?.querySelectorAll<HTMLButtonElement>("[data-pref-lang-flag]").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       const v = btn.dataset.prefLangFlag;
       if (!v || !isLang(v)) return;
       updatePrefs({ lang: v });
-      renderLangFlags(langFlags, v);
-      window.location.reload();
+      if (window.skillatlas?.setUiLang) {
+        await window.skillatlas.setUiLang(v);
+      } else {
+        window.location.reload();
+      }
     });
   });
 
-  reset?.addEventListener("click", () => {
+  reset?.addEventListener("click", async () => {
     localStorage.removeItem("skillatlas_prefs_v1");
     localStorage.removeItem("theme");
-    render();
     updatePrefs({
       themeMode: "auto",
       font: "system",
@@ -183,7 +175,9 @@ function initSettingsPrefs() {
       settingsGridColumns: 2,
       settingsSectionOrder: [...SETTINGS_SECTION_IDS],
     });
+    render();
     window.skillatlas?.applySettingsDashboard?.();
+    await window.skillatlas?.setUiLang?.("es");
   });
 }
 

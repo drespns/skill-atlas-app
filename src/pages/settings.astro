@@ -17,7 +17,7 @@ const card =
 const dragBar =
   "flex justify-center pt-2 pb-1.5 border-b border-gray-100/80 dark:border-gray-800/80 bg-gray-50/50 dark:bg-gray-900/30";
 const grip =
-  "flex flex-col gap-0.5 cursor-grab active:cursor-grabbing px-3 py-0.5 rounded-md hover:bg-gray-100/80 dark:hover:bg-gray-800/50";
+  "flex flex-col gap-0.5 cursor-grab active:cursor-grabbing px-3 py-0.5 rounded-md hover:bg-gray-100/80 dark:hover:bg-gray-800/50 select-none touch-manipulation";
 ---
 
 <AppShell title={title}>
@@ -32,6 +32,145 @@ const grip =
         </span>
       </p>
     </header>
+
+    <div class="space-y-2">
+    <div
+      class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 px-3 py-2.5 shadow-sm"
+      role="region"
+      data-i18n="settings.dashboard.layoutToolbarLabel"
+      data-i18n-attr="aria-label"
+    >
+      <div class="flex items-center gap-2 min-w-0 flex-1 basis-full sm:basis-auto sm:flex-initial sm:max-w-[min(100%,26rem)]">
+        <svg
+          class="h-5 w-5 shrink-0 text-gray-500 dark:text-gray-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        <span
+          data-auth-status
+          class="text-xs px-2 py-1 rounded-full shrink-0 bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
+        >
+          <span data-auth-status-active class="hidden" data-i18n="settings.auth.sessionActive">Sesión activa</span>
+          <span data-auth-status-inactive data-i18n="settings.auth.noSession">Sin sesión</span>
+        </span>
+        <strong
+          data-auth-user-email
+          class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate min-w-0"
+          >-</strong
+        >
+      </div>
+
+      <div class="flex flex-wrap items-center justify-end gap-3 sm:gap-4 sm:shrink-0">
+        <span class="text-gray-300 dark:text-gray-600 select-none hidden sm:inline" aria-hidden="true">|</span>
+        <div class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-200">
+          <svg
+            class="h-5 w-5 shrink-0 text-gray-500 dark:text-gray-400"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+          </svg>
+          <label class="inline-flex flex-wrap items-center gap-2 font-medium">
+            <span data-i18n="settings.prefs.theme">Tema</span>
+            <select
+              data-pref-theme
+              class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring min-w-[10rem]"
+            >
+              <option value="auto" data-i18n="settings.prefs.themeAuto">Auto (sistema)</option>
+              <option value="light" data-i18n="settings.prefs.themeLight">Claro</option>
+              <option value="dark" data-i18n="settings.prefs.themeDark">Oscuro</option>
+            </select>
+          </label>
+        </div>
+        <div
+          class="hidden sm:block w-px h-7 shrink-0 bg-gray-200 dark:bg-gray-700"
+          aria-hidden="true"
+        >
+        </div>
+        <div class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-200">
+          <svg
+            class="h-5 w-5 shrink-0 text-gray-500 dark:text-gray-400"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect width="7" height="7" x="3" y="3" rx="1"></rect>
+            <rect width="7" height="7" x="14" y="3" rx="1"></rect>
+            <rect width="7" height="7" x="14" y="14" rx="1"></rect>
+            <rect width="7" height="7" x="3" y="14" rx="1"></rect>
+          </svg>
+          <label class="inline-flex flex-wrap items-center gap-2 font-medium">
+            <span data-i18n="settings.prefs.settingsColumns">Columnas (Ajustes)</span>
+            <select
+              data-pref-settings-columns
+              class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring min-w-[4.5rem]"
+            >
+              <option value="1">1</option>
+              <option value="2" selected>2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
+          </label>
+        </div>
+        <div
+          class="hidden sm:block w-px h-7 shrink-0 bg-gray-200 dark:bg-gray-700"
+          aria-hidden="true"
+        >
+        </div>
+        <div class="flex flex-wrap items-center gap-2 justify-end">
+          <button
+            type="button"
+            data-auth-refresh
+            class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 px-2.5 py-1.5 text-xs sm:text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 app-accent-ring"
+          >
+            <span data-i18n="settings.auth.refresh">Refrescar estado</span>
+          </button>
+          <button
+            type="button"
+            data-auth-logout
+            class="inline-flex items-center justify-center rounded-lg border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 px-2.5 py-1.5 text-xs sm:text-sm font-semibold hover:bg-red-50 dark:hover:bg-red-950/30"
+          >
+            <span data-i18n="settings.auth.logout">Cerrar sesión</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      data-auth-no-session
+      hidden
+      class="flex flex-wrap items-center gap-2 rounded-lg border border-amber-200/80 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/25 px-3 py-2 text-sm text-amber-900 dark:text-amber-100"
+    >
+      <span data-i18n="settings.auth.noSessionBanner">Para guardar en la nube, inicia sesión.</span>
+      <a
+        href="/login"
+        class="font-semibold text-amber-800 dark:text-amber-200 underline underline-offset-2 hover:opacity-90"
+        data-i18n="settings.auth.goToLogin"
+      >
+        Ir a login
+      </a>
+    </div>
+
+    <p data-auth-feedback class="text-xs text-gray-600 dark:text-gray-400 m-0 min-h-4"></p>
+    </div>
 
     <div
       data-settings-dashboard
@@ -79,18 +218,6 @@ const grip =
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label class="space-y-1">
-              <span class="text-sm font-semibold" data-i18n="settings.prefs.theme">Tema</span>
-              <select
-                data-pref-theme
-                class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
-              >
-                <option value="auto" data-i18n="settings.prefs.themeAuto">Auto (sistema)</option>
-                <option value="light" data-i18n="settings.prefs.themeLight">Claro</option>
-                <option value="dark" data-i18n="settings.prefs.themeDark">Oscuro</option>
-              </select>
-            </label>
-
-            <label class="space-y-1">
               <span class="text-sm font-semibold" data-i18n="settings.prefs.density">Densidad</span>
               <select
                 data-pref-density
@@ -136,19 +263,6 @@ const grip =
               >
                 <option value="normal" data-i18n="settings.prefs.motionNormal">Normal</option>
                 <option value="reduced" data-i18n="settings.prefs.motionReduced">Reducido</option>
-              </select>
-            </label>
-
-            <label class="space-y-1">
-              <span class="text-sm font-semibold" data-i18n="settings.prefs.settingsColumns">Columnas (Ajustes)</span>
-              <select
-                data-pref-settings-columns
-                class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
-              >
-                <option value="1">1</option>
-                <option value="2" selected>2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
               </select>
             </label>
 
@@ -311,83 +425,6 @@ const grip =
               <kbd class={kbd}>Esc</kbd>
             </li>
           </ul>
-        </div>
-      </article>
-
-      <!-- account -->
-      <article data-settings-section="account" class={card}>
-        <div class={dragBar}>
-          <div
-            class={grip}
-            data-settings-drag-handle
-            data-i18n="settings.dashboard.dragHint"
-            data-i18n-attr="aria-label"
-            role="separator"
-            aria-orientation="horizontal"
-          >
-            <div class="flex flex-col gap-0.5 pointer-events-none" aria-hidden="true">
-              <div class="flex gap-0.5 justify-center">
-                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
-                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
-                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
-              </div>
-              <div class="flex gap-0.5 justify-center">
-                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
-                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
-                <span class="w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-500"></span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="p-5 space-y-4 flex-1">
-          <div class="flex items-center justify-between gap-3">
-            <h2 class="m-0 text-base font-semibold">
-              <span data-i18n="settings.auth.sectionTitle">Cuenta</span>
-            </h2>
-            <span
-              data-auth-status
-              class="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
-            >
-              <span data-auth-status-active class="hidden" data-i18n="settings.auth.sessionActive">Sesión activa</span>
-              <span data-auth-status-inactive data-i18n="settings.auth.noSession">Sin sesión</span>
-            </span>
-          </div>
-
-          <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
-            <span data-i18n="settings.auth.currentUser">Usuario actual</span>:
-            <strong data-auth-user-email class="text-gray-900 dark:text-gray-100">-</strong>
-          </p>
-
-          <div data-auth-no-session class="pt-2 space-y-3 hidden">
-            <p class="m-0 text-sm text-amber-700 dark:text-amber-300">
-              Inicia sesión para acceder a Ajustes.
-            </p>
-            <a
-              href="/login"
-              class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/30 px-3 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors no-underline"
-            >
-              Ir a Login
-            </a>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100 dark:border-gray-800">
-            <button
-              type="button"
-              data-auth-refresh
-              class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900"
-            >
-              <span data-i18n="settings.auth.refresh">Refrescar estado</span>
-            </button>
-            <button
-              type="button"
-              data-auth-logout
-              class="inline-flex items-center justify-center rounded-lg border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 px-3 py-2 text-sm font-semibold hover:bg-red-50 dark:hover:bg-red-950/30"
-            >
-              <span data-i18n="settings.auth.logout">Cerrar sesión</span>
-            </button>
-          </div>
-
-          <p data-auth-feedback class="text-sm text-gray-600 dark:text-gray-400 m-0"></p>
         </div>
       </article>
 

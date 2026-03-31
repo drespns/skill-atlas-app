@@ -109,7 +109,8 @@
   },
   "settings": {
     "dashboard": {
-      "dragHint": "Arrastrar para reordenar tarjetas"
+      "dragHint": "Arrastrar para reordenar tarjetas",
+      "layoutToolbarLabel": "Sesión, tema, columnas y acciones de cuenta en Ajustes"
     },
     "title": "Ajustes",
     "subtitle": "Preferencias de interfaz y perfil público se guardan en este navegador. La cuenta depende de Supabase.",
@@ -182,6 +183,8 @@
       "sendMagicLink": "Enviar magic link",
       "sessionActive": "Sesión activa",
       "noSession": "Sin sesión",
+      "noSessionBanner": "Para guardar en la nube, inicia sesión.",
+      "goToLogin": "Ir a login",
       "currentUser": "Usuario actual",
       "refresh": "Refrescar estado",
       "logout": "Cerrar sesión"

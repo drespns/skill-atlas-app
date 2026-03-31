@@ -33,7 +33,7 @@ function readOrderFromDom(grid: HTMLElement): SettingsSectionId[] {
   const out: SettingsSectionId[] = [];
   grid.querySelectorAll<HTMLElement>(SECTION_SEL).forEach((el) => {
     const id = el.dataset.settingsSection;
-    if (id === "prefs" || id === "shortcuts" || id === "account" || id === "portfolio") out.push(id);
+    if (id === "prefs" || id === "shortcuts" || id === "portfolio") out.push(id);
   });
   return out;
 }
@@ -43,18 +43,30 @@ function persistOrder(grid: HTMLElement) {
 }
 
 function initDrag(grid: HTMLElement) {
-  let dragId: string | null = null;
+  /** Dragstart `target` is the draggable node (the article), not the handle — use a flag set from the handle. */
+  const clearDragReady = () => {
+    grid.querySelectorAll<HTMLElement>(SECTION_SEL).forEach((s) => {
+      delete s.dataset.settingsDragReady;
+    });
+  };
+
+  document.addEventListener("pointerup", clearDragReady, true);
 
   grid.querySelectorAll<HTMLElement>(SECTION_SEL).forEach((section) => {
     section.setAttribute("draggable", "true");
 
+    section.querySelector<HTMLElement>("[data-settings-drag-handle]")?.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      section.dataset.settingsDragReady = "1";
+    });
+
     section.addEventListener("dragstart", (e) => {
-      const t = e.target as HTMLElement | null;
-      if (!t?.closest("[data-settings-drag-handle]")) {
+      if (section.dataset.settingsDragReady !== "1") {
         e.preventDefault();
         return;
       }
-      dragId = section.dataset.settingsSection ?? null;
+      delete section.dataset.settingsDragReady;
+      const dragId = section.dataset.settingsSection ?? null;
       if (dragId) e.dataTransfer?.setData("text/plain", dragId);
       e.dataTransfer!.effectAllowed = "move";
       section.classList.add("opacity-60", "ring-2", "ring-gray-300", "dark:ring-gray-600");
@@ -62,7 +74,7 @@ function initDrag(grid: HTMLElement) {
 
     section.addEventListener("dragend", () => {
       section.classList.remove("opacity-60", "ring-2", "ring-gray-300", "dark:ring-gray-600");
-      dragId = null;
+      clearDragReady();
     });
 
     section.addEventListener("dragover", (e) => {

@@ -12,17 +12,29 @@ function setFeedback(node: HTMLElement | null, message: string, kind: "ok" | "er
         : "text-sm text-gray-600 dark:text-gray-400 m-0";
 }
 
+const STATUS_ACTIVE_CLASS =
+  "text-xs px-2 py-1 rounded-full shrink-0 bg-green-100 text-green-800 dark:bg-green-950/50 dark:text-green-200";
+const STATUS_INACTIVE_CLASS =
+  "text-xs px-2 py-1 rounded-full shrink-0 bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200";
+
 async function initSettingsAuth() {
   const feedback = document.querySelector<HTMLElement>("[data-auth-feedback]");
-  const userEmail = document.querySelector<HTMLElement>("[data-auth-user-email]");
-  const statusWrap = document.querySelector<HTMLElement>("[data-auth-status]");
-  const statusActive = document.querySelector<HTMLElement>("[data-auth-status-active]");
-  const statusInactive = document.querySelector<HTMLElement>("[data-auth-status-inactive]");
+  const userEmails = document.querySelectorAll<HTMLElement>("[data-auth-user-email]");
+  const statusWraps = document.querySelectorAll<HTMLElement>("[data-auth-status]");
+  const statusActives = document.querySelectorAll<HTMLElement>("[data-auth-status-active]");
+  const statusInactives = document.querySelectorAll<HTMLElement>("[data-auth-status-inactive]");
   const noSessionEl = document.querySelector<HTMLElement>("[data-auth-no-session]");
   const logoutBtn = document.querySelector<HTMLButtonElement>("[data-auth-logout]");
   const refreshBtn = document.querySelector<HTMLButtonElement>("[data-auth-refresh]");
 
-  if (!feedback || !userEmail || !statusWrap || !statusActive || !statusInactive || !logoutBtn || !refreshBtn) {
+  if (
+    userEmails.length === 0 ||
+    statusWraps.length === 0 ||
+    statusActives.length === 0 ||
+    statusInactives.length === 0 ||
+    !logoutBtn ||
+    !refreshBtn
+  ) {
     return;
   }
 
@@ -33,19 +45,25 @@ async function initSettingsAuth() {
     const { data } = await supabase.auth.getSession();
     const session = data.session;
     if (session?.user?.email) {
-      if (statusActive) statusActive.classList.remove("hidden");
-      if (statusInactive) statusInactive.classList.add("hidden");
-      statusWrap.className =
-        "text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-950/50 dark:text-green-200";
-      userEmail.textContent = session.user.email;
+      statusActives.forEach((el) => el.classList.remove("hidden"));
+      statusInactives.forEach((el) => el.classList.add("hidden"));
+      statusWraps.forEach((el) => {
+        el.className = STATUS_ACTIVE_CLASS;
+      });
+      userEmails.forEach((el) => {
+        el.textContent = session.user.email;
+      });
       logoutBtn.disabled = false;
       if (noSessionEl) noSessionEl.hidden = true;
     } else {
-      if (statusActive) statusActive.classList.add("hidden");
-      if (statusInactive) statusInactive.classList.remove("hidden");
-      statusWrap.className =
-        "text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200";
-      userEmail.textContent = "-";
+      statusActives.forEach((el) => el.classList.add("hidden"));
+      statusInactives.forEach((el) => el.classList.remove("hidden"));
+      statusWraps.forEach((el) => {
+        el.className = STATUS_INACTIVE_CLASS;
+      });
+      userEmails.forEach((el) => {
+        el.textContent = "-";
+      });
       logoutBtn.disabled = true;
       if (noSessionEl) noSessionEl.hidden = false;
     }

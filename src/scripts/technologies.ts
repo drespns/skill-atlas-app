@@ -11,6 +11,7 @@ declare global {
       bootstrapTechnologiesGrid?: () => Promise<void>;
       clearTechnologiesCache?: () => void;
       applySettingsDashboard?: () => void;
+      setUiLang?: (lng: "es" | "en") => Promise<void>;
     };
   }
 }

@@ -109,7 +109,8 @@
   },
   "settings": {
     "dashboard": {
-      "dragHint": "Drag to reorder cards"
+      "dragHint": "Drag to reorder cards",
+      "layoutToolbarLabel": "Settings toolbar: session, theme, columns and account actions"
     },
     "title": "Settings",
     "subtitle": "UI preferences and public profile are stored in this browser. Account auth uses Supabase.",
@@ -182,6 +183,8 @@
       "sendMagicLink": "Send magic link",
       "sessionActive": "Signed in",
       "noSession": "No session",
+      "noSessionBanner": "Sign in to sync with the cloud.",
+      "goToLogin": "Go to login",
       "currentUser": "Current user",
       "refresh": "Refresh status",
       "logout": "Log out"

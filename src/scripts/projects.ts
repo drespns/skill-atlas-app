@@ -36,6 +36,8 @@ async function initProjectForm() {
 
   const titleInput = form.querySelector<HTMLInputElement>("[name='title']");
   const descInput = form.querySelector<HTMLTextAreaElement>("[name='description']");
+  const roleInput = form.querySelector<HTMLInputElement>("[name='role']");
+  const outcomeInput = form.querySelector<HTMLInputElement>("[name='outcome']");
   const feedback = form.querySelector<HTMLElement>("[data-project-feedback]");
   const submitBtn = form.querySelector<HTMLButtonElement>("[type='submit']");
   if (!titleInput || !descInput || !feedback || !submitBtn) return;
@@ -71,6 +73,8 @@ async function initProjectForm() {
     event.preventDefault();
     const title = titleInput.value.trim();
     const description = descInput.value.trim();
+    const role = (roleInput?.value ?? "").trim();
+    const outcome = (outcomeInput?.value ?? "").trim();
     if (!title) return;
 
     submitBtn.disabled = true;
@@ -99,7 +103,7 @@ async function initProjectForm() {
 
     const insertRes = await supabase
       .from("projects")
-      .insert([{ slug, title, description, user_id: userId }] as any);
+      .insert([{ slug, title, description, role, outcome, user_id: userId }] as any);
     if (insertRes.error) {
       feedback.textContent = `Error al guardar: ${insertRes.error.message}`;
       feedback.className = "text-sm text-red-600";
@@ -112,6 +116,8 @@ async function initProjectForm() {
     showToast("Proyecto creado correctamente.", "success");
     titleInput.value = "";
     descInput.value = "";
+    if (roleInput) roleInput.value = "";
+    if (outcomeInput) outcomeInput.value = "";
     submitBtn.disabled = false;
     if (window.skillatlas?.clearProjectsCache) window.skillatlas.clearProjectsCache();
     if (window.skillatlas?.bootstrapProjectsList) {
@@ -193,7 +199,7 @@ async function bootstrapProjectsList() {
   }
 
   const [projRes, ptRes, techRes, pcRes] = await Promise.all([
-    supabase.from("projects").select("id, slug, title, description").order("title"),
+    supabase.from("projects").select("id, slug, title, description, role, outcome").order("title"),
     supabase.from("project_technologies").select("project_id, technology_id"),
     supabase.from("technologies").select("id, slug, name"),
     supabase.from("project_concepts").select("project_id"),
@@ -209,6 +215,8 @@ async function bootstrapProjectsList() {
     slug: string;
     title: string;
     description: string | null;
+    role: string | null;
+    outcome: string | null;
   }[];
   const techRows = (techRes.data ?? []) as { id: string; slug: string; name: string }[];
   const techNameById = new Map(techRows.map((t) => [t.id, t.name]));
@@ -259,11 +267,17 @@ async function bootstrapProjectsList() {
               const techLabel = technologyNames.slice(0, 3).map(escHtml).join(" · ");
               const more = Math.max(0, technologyNames.length - 3);
               const techSummary = techLabel ? `${techLabel}${more ? ` · +${more}` : ""}` : "";
+              const roleLine = (project.role ?? "").trim();
               return `<a href="${href}" class="block no-underline px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-900/40 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
                 <div class="flex items-start justify-between gap-4">
                   <div class="min-w-0">
                     <p class="m-0 font-semibold truncate">${escHtml(project.title)}</p>
                     <p class="mt-1 text-sm text-gray-600 dark:text-gray-300 truncate">${escHtml(project.description ?? "")}</p>
+                    ${
+                      roleLine
+                        ? `<p class="mt-1 text-xs text-emerald-700 dark:text-emerald-300 truncate">${escHtml(roleLine)}</p>`
+                        : ""
+                    }
                     ${
                       techSummary
                         ? `<p class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">${techSummary}</p>`
@@ -289,10 +303,16 @@ async function bootstrapProjectsList() {
               .join("");
             const nConcepts = conceptCountByProject.get(project.id) ?? 0;
             const href = `/projects/view?project=${encodeURIComponent(project.slug)}`;
+            const roleLine = (project.role ?? "").trim();
             return `<article class="border border-gray-200/80 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 flex flex-col gap-3 shadow-sm">
               <div class="flex items-start justify-between gap-3"><div>
                 <h3 class="m-0 text-base font-semibold">${escHtml(project.title)}</h3>
-                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">${escHtml(project.description ?? "")}</p></div></div>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">${escHtml(project.description ?? "")}</p>
+                ${
+                  roleLine
+                    ? `<p class="mt-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">${escHtml(roleLine)}</p>`
+                    : ""
+                }</div></div>
               <div class="flex flex-wrap gap-2">${pills}</div>
               <div class="flex items-center justify-between gap-3">
                 <span class="text-xs text-gray-500 dark:text-gray-400">${nConcepts} conceptos</span>

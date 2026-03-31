@@ -92,6 +92,10 @@ async function initI18n() {
       const active = btn.dataset.langFlag === lng;
       btn.setAttribute("aria-pressed", active ? "true" : "false");
     });
+    document.querySelectorAll<HTMLButtonElement>("[data-pref-lang-flag]").forEach((btn) => {
+      const active = btn.dataset.prefLangFlag === lng;
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
     const show = loadPrefs().showLangSelector;
     if (langFlags) {
       langFlags.classList.toggle("hidden", !show);
@@ -119,6 +123,12 @@ async function initI18n() {
   };
 
   render();
+
+  window.skillatlas = window.skillatlas ?? {};
+  window.skillatlas.setUiLang = async (lng: "es" | "en") => {
+    await i18next.changeLanguage(lng);
+    render();
+  };
 
   langFlagBtns.forEach((btn) => {
     btn.addEventListener("click", async () => {

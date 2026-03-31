@@ -6,7 +6,7 @@ export type Motion = "normal" | "reduced";
 export type DefaultView = "cards" | "list";
 export type Lang = "es" | "en";
 
-export const SETTINGS_SECTION_IDS = ["prefs", "shortcuts", "account", "portfolio"] as const;
+export const SETTINGS_SECTION_IDS = ["prefs", "shortcuts", "portfolio"] as const;
 export type SettingsSectionId = (typeof SETTINGS_SECTION_IDS)[number];
 
 export type SettingsGridColumns = 1 | 2 | 3 | 4;
