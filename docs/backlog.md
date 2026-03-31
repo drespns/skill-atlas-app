@@ -123,7 +123,7 @@ Siguientes tareas sugeridas:
 - Mecanismo de invitación (MVP):
   - Supabase Auth: deshabilitar signups libres (o bloquear en UI) + flujo de invitación.
   - Ruta de contacto: `mailto` al inicio o formulario (guardar solicitudes / enviar email).
-- Despliegue Vercel: variables `.env`, redirects URLs de Supabase, DNS del dominio.
+- Despliegue Vercel: variables `PUBLIC_*` en Project Settings, redirects URLs de Supabase, DNS del dominio; build con **`@astrojs/vercel`** (no `@astrojs/node`) para rutas dinámicas.
 
 ## Prioridad siguiente (tras SaaS + portfolio)
 

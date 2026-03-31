@@ -10,6 +10,7 @@ Astro genera sitio **estatico** (`output: static`). Las paginas se prerenderizan
 - Data access facade: `src/data/index.ts`
 - Providers: mock y supabase
 - Scripts cliente por pantalla: `src/scripts/*.ts` y subcarpetas (`project-detail/`, `technology-detail/`)
+- **Despliegue Vercel**: `astro.config.mjs` usa `@astrojs/vercel` para que las rutas **on-demand** (p. ej. `/portfolio/[slug]` con `prerender = false`) generen la salida que Vercel espera. El adapter `@astrojs/node` sirve para un **proceso Node propio** (`node ./dist/server/entry.mjs`); en Vercel sin ese proceso el sitio puede responder **404** en todas las rutas.
 
 ### Acceso privado + solicitudes (invite-only)
 

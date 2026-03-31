@@ -1,14 +1,15 @@
 // @ts-check
-import node from "@astrojs/node";
+import vercel from "@astrojs/vercel";
 import { defineConfig } from "astro/config";
 
 import tailwindcss from "@tailwindcss/vite";
 
-// Por defecto Astro pre-renderiza todo como estático. `src/pages/portfolio/[slug].astro`
-// usa `export const prerender = false` para resolverse en el servidor (ruta dinámica).
-// El adapter Node permite ese modo en despliegue (`node ./dist/server/entry.mjs`).
+// Despliegue en Vercel: rutas on-demand (p. ej. `src/pages/portfolio/[slug].astro` con
+// `prerender = false`) requieren el adapter `@astrojs/vercel`, no `@astrojs/node`.
+// Para servidor Node propio (Docker/VPS): `adapter: node({ mode: "standalone" })` +
+// `node ./dist/server/entry.mjs` según la guía de Astro.
 export default defineConfig({
-  adapter: node({ mode: "standalone" }),
+  adapter: vercel(),
   prefetch: {
     defaultStrategy: "viewport",
   },
