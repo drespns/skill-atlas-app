@@ -50,6 +50,7 @@ function initCommandPalette() {
     { id: "go-app", label: "Abrir app", href: "/app", hint: "/app" },
     { id: "go-technologies", label: "Tecnologías", href: "/technologies", hint: "/technologies" },
     { id: "go-projects", label: "Proyectos", href: "/projects", hint: "/projects" },
+    { id: "go-cv", label: "CV", href: "/cv", hint: "/cv" },
     { id: "new-technology", label: "Crear tecnología", href: "/technologies?create=1", hint: "Acción" },
     { id: "new-project", label: "Crear proyecto", href: "/projects?create=1", hint: "Acción" },
     { id: "go-settings", label: "Ajustes", href: "/settings", hint: "/settings" },

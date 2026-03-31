@@ -10,13 +10,15 @@ SkillAtlas es un MVP para gestionar conocimiento tecnico y mostrar portfolio:
 - conceptos por tecnologia
 - proyectos
 - embeds por proyecto
-- portfolio publico
+- portfolio publico (sesion en `/portfolio`; URL publica legible `/portfolio/<slug>` con **saas-011**)
+- CV privado (`/cv`; seleccion de proyectos en prefs)
 
 ## Stack actual
 
 - Astro
 - Tailwind CSS v4
-- Supabase (PostgreSQL + RLS; transicion `docs/sql/rls-mvp-authenticated.sql`; SaaS multi-tenant `docs/sql/saas-001` … `saas-005` — ver `docs/db.md`)
+- Supabase (PostgreSQL + RLS; transicion `docs/sql/rls-mvp-authenticated.sql`; SaaS multi-tenant `docs/sql/saas-001` … `saas-011` — ver `docs/db.md`)
+- Despliegue **Vercel:** `@astrojs/vercel` en `astro.config.mjs` (rutas on-demand); no commitear `.vercel/` ni `dist/`
 - TypeScript para scripts cliente
 - Cliente Supabase en el navegador: `getSupabaseBrowserClient()` en `src/scripts/client-supabase.ts` (evitar repetir `createClient` en cada script)
 
@@ -26,7 +28,7 @@ SkillAtlas es un MVP para gestionar conocimiento tecnico y mostrar portfolio:
 - `Ajustes` (`/settings`) se usa para estado de sesión, logout, preferencias UI (incl. grid/columnas y orden de tarjetas), perfil público y stack de ayuda (`portfolio_profiles` + localStorage).
 - En el header:
   - si NO hay sesión: aparece icono de `/login`
-  - si hay sesión: aparecen **Ajustes + Sign out** y avatar (si el provider lo devuelve)
+  - si hay sesión: aparecen **Ajustes + Sign out** y avatar (si el provider lo devuelve); enlaces de app (CV, tecnologías, proyectos, portfolio); **Admin** si allowlist; **no** hay enlace a **Precios** en la barra (Precios: landing/hero + footer con sesión).
 - Providers usados en el cliente:
   - GitHub: `provider: "github"`
   - LinkedIn: `provider: "linkedin_oidc"` (OIDC, no `"linkedin"`)
@@ -86,6 +88,7 @@ UI/UX:
 - `src/pages/technologies/[techId].astro` y `src/pages/technologies/view.astro`
 - `src/pages/projects/[projectId].astro` y `src/pages/projects/view.astro`
 - `src/scripts/project-view-bootstrap.ts`, `src/scripts/technology-view-bootstrap.ts`
+- `src/scripts/settings-profile.ts`, `src/scripts/cv-page.ts`, `src/lib/public-portfolio-slug.ts` (perfil, CV, slug publico)
 
 ## Regla de trabajo recomendada
 

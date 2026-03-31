@@ -38,6 +38,11 @@ export type AppPrefsV1 = {
   settingsSectionOrder: SettingsSectionId[];
   /** Layout 2D (GridStack) en /settings (opcional). */
   settingsLayoutV1?: SettingsLayoutV1;
+  /**
+   * Proyectos mostrados en /cv (slugs, orden conservado).
+   * Ausente o `undefined`: todos los proyectos del usuario.
+   */
+  cvProjectSlugs?: string[];
 };
 
 const STORAGE_KEY = "skillatlas_prefs_v1";
@@ -115,6 +120,16 @@ function normalizeSettingsLayout(raw: unknown): SettingsLayoutV1 | undefined {
   return out.length > 0 ? out : undefined;
 }
 
+function normalizeCvProjectSlugs(raw: unknown): string[] | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (!Array.isArray(raw)) return undefined;
+  const out = raw
+    .filter((x): x is string => typeof x === "string")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return out.length > 0 ? Array.from(new Set(out)) : [];
+}
+
 export function loadPrefs(): AppPrefsV1 {
   const inferredLang: Lang = (() => {
     try {
@@ -138,6 +153,7 @@ export function loadPrefs(): AppPrefsV1 {
     settingsGridColumns: clampSettingsColumns(base.settingsGridColumns ?? DEFAULT_PREFS.settingsGridColumns),
     settingsSectionOrder: normalizeSectionOrder(base.settingsSectionOrder ?? DEFAULT_PREFS.settingsSectionOrder),
     settingsLayoutV1: normalizeSettingsLayout((base as any).settingsLayoutV1),
+    cvProjectSlugs: normalizeCvProjectSlugs((base as Partial<AppPrefsV1>).cvProjectSlugs),
   };
 
   return migrateLegacyPrefs(merged);

@@ -107,6 +107,22 @@ function initCommandPaletteTrigger() {
   btn.addEventListener("click", () => window.dispatchEvent(new Event("skillatlas:open-palette")));
 }
 
+/** Alinea `data-nav-active` con la URL actual (necesario con View Transitions: el HTML del build queda obsoleto). */
+function syncHeaderNavActive() {
+  const raw = window.location.pathname.replace(/\/$/, "") || "/";
+  document.querySelectorAll<HTMLAnchorElement>("[data-header-nav-link]").forEach((a) => {
+    const href = (a.getAttribute("href") ?? "").replace(/\/$/, "") || "/";
+    const active =
+      href === "/" ? raw === "/" : raw === href || raw.startsWith(`${href}/`);
+    a.dataset.navActive = active ? "true" : "false";
+  });
+  document.querySelectorAll<HTMLAnchorElement>("[data-admin-header-link]").forEach((a) => {
+    const href = (a.getAttribute("href") ?? "").replace(/\/$/, "") || "/";
+    const active = raw === href || raw.startsWith(`${href}/`);
+    a.dataset.navActive = active ? "true" : "false";
+  });
+}
+
 function initHeaderNavIndicator() {
   const nav = document.querySelector<HTMLElement>("[data-header-nav]");
   if (!nav) return;
@@ -117,8 +133,8 @@ function initHeaderNavIndicator() {
 
   const allLinks = () =>
     Array.from(nav.querySelectorAll<HTMLAnchorElement>("[data-header-nav-link]")).filter((a) => {
-      // Only visible links (auth will toggle hidden)
-      return !a.classList.contains("hidden") && a.offsetParent !== null;
+      const r = a.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
     });
 
   const moveTo = (a: HTMLElement | null) => {
@@ -126,13 +142,18 @@ function initHeaderNavIndicator() {
     if (!a || links.length === 0) {
       indicator.style.opacity = "0";
       indicator.style.width = "0px";
+      indicator.style.left = "0px";
+      indicator.style.transform = "none";
       return;
     }
     const navRect = nav.getBoundingClientRect();
     const r = a.getBoundingClientRect();
     const x = r.left - navRect.left;
     indicator.style.opacity = "1";
-    indicator.style.transform = `translateX(${Math.max(0, x)}px)`;
+    // `left` + `width` (no translateX): en flex con justify-center, un abspos sin `left:0`
+    // puede tener posición estática rara; además transform+width animando a la vez desalineaba el subrayado.
+    indicator.style.transform = "none";
+    indicator.style.left = `${Math.max(0, x)}px`;
     indicator.style.width = `${Math.max(0, r.width)}px`;
   };
 
@@ -141,22 +162,34 @@ function initHeaderNavIndicator() {
   const attach = () => {
     const links = allLinks();
     for (const a of links) {
+      if (a.dataset.navHoverBound === "1") continue;
+      a.dataset.navHoverBound = "1";
       a.addEventListener("mouseenter", () => moveTo(a));
       a.addEventListener("focus", () => moveTo(a));
     }
-    nav.addEventListener("mouseleave", () => moveTo(activeLink()));
+    if (nav.dataset.navLeaveBound !== "1") {
+      nav.dataset.navLeaveBound = "1";
+      nav.addEventListener("mouseleave", () => moveTo(activeLink()));
+    }
   };
 
-  // Initial position
-  moveTo(activeLink());
-  attach();
+  const refresh = () => {
+    syncHeaderNavActive();
+    moveTo(activeLink());
+    attach();
+  };
 
-  const ro = new ResizeObserver(() => moveTo(activeLink()));
+  refresh();
+
+  const ro = new ResizeObserver(() => refresh());
   ro.observe(nav);
 
-  // When auth toggles link visibility, re-evaluate.
   window.addEventListener("skillatlas:auth-nav-updated", () => {
-    moveTo(activeLink());
+    refresh();
+  });
+
+  document.addEventListener("astro:page-load", () => {
+    refresh();
   });
 }
 
@@ -449,7 +482,7 @@ async function initI18n() {
 async function initAuthHeader() {
   const settingsLink = document.querySelector<HTMLAnchorElement>("[data-auth-header-settings]");
   const signOutBtn = document.querySelector<HTMLButtonElement>("[data-auth-header-signout]");
-  const publicHeaderPricing = document.querySelector<HTMLAnchorElement>("[data-public-header-pricing]");
+  const publicFooterPricing = document.querySelector<HTMLAnchorElement>("[data-public-footer-pricing]");
   const adminHeaderLink = document.querySelector<HTMLAnchorElement>("[data-admin-header-link]");
   const avatarWrap = document.querySelector<HTMLElement>("[data-auth-avatar-wrap]");
   const avatarImg = document.querySelector<HTMLImageElement>("[data-auth-avatar]");
@@ -461,7 +494,6 @@ async function initAuthHeader() {
   if (
     !settingsLink &&
     !signOutBtn &&
-    !publicHeaderPricing &&
     !adminHeaderLink &&
     authNavLinks.length === 0 &&
     footerAuthNavLinks.length === 0 &&
@@ -497,10 +529,8 @@ async function initAuthHeader() {
       el.classList.toggle("inline-flex", isAuthed);
     });
 
-    if (publicHeaderPricing) {
-      publicHeaderPricing.classList.add("hidden");
-      if (!isAuthed) publicHeaderPricing.classList.add("md:inline-flex");
-      else publicHeaderPricing.classList.remove("md:inline-flex");
+    if (publicFooterPricing) {
+      publicFooterPricing.classList.toggle("hidden", !isAuthed);
     }
 
     if (adminHeaderLink) {
@@ -645,6 +675,7 @@ async function bootClient() {
   await initPrefs();
   initHeaderIconVisibility();
   initGlobalBanner();
+  syncHeaderNavActive();
   initHeaderNavIndicator();
   initCommandPaletteTrigger();
   await initI18n();

@@ -39,8 +39,27 @@
     "technologies": "Technologies",
     "projects": "Projects",
     "portfolio": "Portfolio",
+    "cv": "CV",
+    "admin": "Admin",
     "settings": "Settings",
     "pricing": "Pricing"
+  },
+  "cv": {
+    "kicker": "Private document",
+    "pageTitle": "CV",
+    "intro": "A private preview of your résumé. Nobody can see this page without your session. Next: templates and export.",
+    "printOrPdf": "Print / PDF",
+    "printHint": "Use “Save as PDF” in your browser’s print dialog.",
+    "loading": "Loading…",
+    "needSession": "Sign in to view your CV.",
+    "loadError": "Could not load projects.",
+    "projectsSectionTitle": "Projects on your CV",
+    "selectAll": "Select all",
+    "selectNone": "Clear all",
+    "defaultName": "Unnamed",
+    "noBio": "",
+    "noProjectsSelected": "No projects selected.",
+    "docProjectsHeading": "Projects"
   },
   "pricing": {
     "pageTitle": "Pricing",

@@ -6,12 +6,24 @@ Orden priorizado para ganar profundidad sin dejar de pulir tecnologías/portfoli
 
 1. **Precios y posicionamiento** — Página pública `/pricing` (planes Starter / Pro / Team, comparativa, FAQ, toggle mensual/anual). CTAs alineados con acceso por invitación. Más adelante: Patreon u otros apoyos y facturación real (p. ej. Stripe) cuando cierres importes y condiciones legales.
 2. **Portfolio por enlace** — Ruta `/p/[token]` + RPC `skillatlas_portfolio_by_share_token` + UI (activar compartir, copiar enlace). Ver `docs/plan-saas-multi-tenant-portfolio.md`.
+   - **Parcial (v0.45+):** URL legible **`/portfolio/<slug>`** + RPC `skillatlas_portfolio_by_public_slug` + Ajustes (`public_slug`, `share_enabled`, migración **saas-011**). El token `/p/...` sigue en roadmap si se unifica UX.
 3. **CV / hoja de vida** — Por defecto **100 % privado** (previsualización y descarga); **opción explícita de enlace público** revocable (token o flag en perfil, RLS acorde). Varias plantillas; fuentes de datos: perfil, proyectos seleccionados, stack; export PDF (primero cliente/`print`; servidor opcional para pixel-perfect).
+   - **Parcial (v0.45+):** página **`/cv`** (solo sesión), selección de proyectos en prefs (`cvProjectSlugs`), impresión/PDF vía navegador; **sin** enlace público todavía.
 4. **Salida profesional** — PDF de portfolio, previews OG por proyecto, export estático cuando tenga sentido.
 5. **Trabajo diario** — Duplicar proyecto, plantillas de proyecto, actividad reciente en `/app`, búsqueda ampliada en el command palette.
 6. **Monetización** — Tras validar demanda: pasarela + tabla de suscripciones + límites por plan; mantener precio accesible como objetivo de producto.
 
-**Implementación reciente:** `/pricing` (`src/pages/pricing.astro`, `src/scripts/pricing-billing.ts`); enlaces en footer, landing y Ctrl+K. Textos i18n en `pricing.*` (`src/i18n/{es,en}.json`).
+**Implementación reciente:** `/pricing` (`src/pages/pricing.astro`, `src/scripts/pricing-billing.ts`); enlaces en footer, landing y Ctrl+K. Textos i18n en `pricing.*` (`src/i18n/{es,en}.json`). **El header no enlaza a Precios** (v0.45+); acceso vía landing/hero/footer (authed) y palette.
+
+---
+
+## Release v0.45.0 (resumen)
+
+- **Despliegue:** `@astrojs/vercel` (no `@astrojs/node`) para evitar 404 en Vercel; **`.vercel/`** en `.gitignore` (artefactos de build local).
+- **Portfolio público:** `saas-011` + `/portfolio/[slug]` + Ajustes (slug, compartir, copiar URL).
+- **CV:** `/cv` privado, prefs `cvProjectSlugs`, estilos de impresión `body.cv-print-mode`.
+- **Landing:** scroll horizontal contenido con `overflow-x: hidden` en `html`/`body` (sin cambiar el full-bleed del hero).
+- **Header:** `syncHeaderNavActive()` + indicador `left`/`width`; sin Precios en nav; Admin separado de iconos con `flex-1` espaciador; estilos activos `.header-nav-link` / `.header-admin-link`.
 
 ---
 

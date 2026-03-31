@@ -36,6 +36,12 @@ Para que funcione igual en **dev** y **producción** (Vercel), los scripts clien
 La app usa el router del navegador con **View Transitions** (`<ClientRouter />`) para que la navegación sea más fluida. Además, Astro hace **prefetch** de links (estrategia `viewport`) para reducir tiempos de carga.
 
 Esto implica que scripts cliente que antes dependían de `DOMContentLoaded` deben ser **idempotentes** y re-ejecutarse en eventos del router (`astro:page-load`, `astro:after-swap`).
+
+**Cabecera y estado activo:** el HTML prerenderizado solo refleja la ruta del **build** de esa página. Tras navegar en cliente, `src/scripts/client.ts` ejecuta **`syncHeaderNavActive()`** para alinear `data-nav-active` en cada `[data-header-nav-link]` y `[data-admin-header-link]` con `location.pathname` (misma regla que `isActive` en `AppShell.astro`).
+
+**Indicador subrayado (nav):** el subrayado animado usa **`left` + `width`** en el elemento `[data-header-nav-indicator]` (anclado con `left-0` en el `<nav>`), no `translateX` horizontal, para evitar desalineación con **flex + `justify-center`** y con la animación de ancho al hacer hover.
+
+**Precios en header:** no hay enlace a `/pricing` en la barra superior; **Precios** sigue en landing/hero y, con sesión, en el **footer** (`data-public-footer-pricing`).
 ### Geo / país del usuario (futuro)
 
 Ahora mismo, para elegir bandera/región usamos señales del navegador (**`navigator.language`** y fallback por **timezone**). Esto no garantiza ubicación física real.
@@ -89,6 +95,7 @@ En **build estatico**, las lecturas usan el cliente server-side de Supabase (sin
 | Detalle tecnologia | `/technologies/[techId]` (`techId` = slug) | `/technologies/view?tech=<slug>` + `technology-view-bootstrap.ts` |
 | Login | `/login` | `/login` (email/password + OAuth en cliente) |
 | Ajustes | `/settings` | `/settings` (sesión, preferencias UI, perfil público + stack de ayuda; sync `portfolio_profiles` en Supabase; auth en `/login`) |
+| CV (privado) | — | `/cv` — sesión obligatoria; perfil + proyectos seleccionados; preferencia `cvProjectSlugs` en `user_prefs` / `skillatlas_prefs_v1`; impresión (`body.cv-print-mode`) |
 | Portfolio público (slug) | — | `/portfolio/<slug>` — **SSR/on-demand** (`prerender = false`): anon llama RPC `skillatlas_portfolio_by_public_slug`; configuración en Ajustes (`public_slug`, `share_enabled`, migración **saas-011**) |
 
 Los componentes `ProjectCard.astro` y `TechnologyCard.astro` enlazan a las rutas CSR cuando el data source es Supabase. `project-detail.ts` no inicializa formularios si existe `[data-project-csr-mount]` (evita doble enganche).
@@ -116,6 +123,7 @@ Scripts principales:
 - `login-auth.ts` -> login/signup email+password + OAuth en `/login`
 - `login-earth.ts` -> escena Three.js (Earth) en background del login
 - `settings-profile.ts` -> nombre/bio/stack de ayuda; URL pública `/portfolio/<slug>` (`share_enabled`, `public_slug`); `public-profile-local.ts` + upsert `portfolio_profiles`
+- `cv-page.ts` -> `/cv` (privado): proyectos desde Supabase, selección persistente en prefs (`cvProjectSlugs`), impresión/PDF vía navegador
 - `portfolio-public-profile.ts` -> hidrata cabecera de `/portfolio` desde Supabase o localStorage; chips de **stack de ayuda**
 - `settings-dashboard.ts` -> grid de Ajustes: columnas configurables + orden de tarjetas (drag & drop) persistido en prefs
 
@@ -127,6 +135,7 @@ Además de tema, densidad, fuente, acento, movimiento, vistas lista/cards, icono
 
 - **`settingsGridColumns`**: 1–4 columnas en viewport ≥ `md` (en móvil siempre 1). Selector en Preferencias.
 - **`settingsSectionOrder`**: orden de las tarjetas `prefs` | `shortcuts` | `portfolio` (sesión y acciones de cuenta van en la barra fija superior, sin arrastre).
+- **`cvProjectSlugs`** (opcional): array de slugs de proyectos incluidos en `/cv`; ausente = todos; vacío = ninguno; persistido en `user_prefs` y caché local `skillatlas_prefs_v1` (ver `src/scripts/prefs.ts`).
 
 ### Perfil y stack de ayuda
 
@@ -161,6 +170,10 @@ Además de tema, densidad, fuente, acento, movimiento, vistas lista/cards, icono
   - extraer servicios compartidos de Supabase por entidad
   - reducir logica duplicada en scripts
   - mover mas validacion a DB (constraints + unique indexes)
+
+## Landing (`/`) — scroll horizontal
+
+El hero usa **full-bleed** (`w-screen` centrado con `left-1/2 -translate-x-1/2`). Para evitar **scroll horizontal** por `100vw`/blobs sin recortar el diseño del fondo, `src/styles/global.css` aplica **`overflow-x: hidden`** en `html` y `body` (la sección mantiene `overflow-x-clip`).
 
 ## Web pública (landing) + app privada (plan)
 

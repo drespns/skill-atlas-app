@@ -1,0 +1,74 @@
+---
+import AppShell from "../layouts/AppShell.astro";
+
+const title = "CV";
+---
+
+<AppShell title={title}>
+  <div data-requires-auth class="hidden"></div>
+  <div data-cv-mount class="space-y-8">
+    <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between print:hidden">
+      <div class="space-y-1">
+        <p class="app-kicker m-0">
+          <span data-i18n="cv.kicker">Documento privado</span>
+        </p>
+        <h1 class="m-0 text-2xl font-semibold tracking-tight">
+          <span data-i18n="cv.pageTitle">{title}</span>
+        </h1>
+        <p class="m-0 max-w-2xl text-sm text-gray-600 dark:text-gray-400" data-i18n="cv.intro">
+          Vista previa local de tu CV. Nadie puede ver esta página sin tu sesión. Más adelante: plantillas y exportación.
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          data-cv-print
+          class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900"
+        >
+          <span data-i18n="cv.printOrPdf">Imprimir / PDF</span>
+        </button>
+        <p class="m-0 w-full text-xs text-gray-500 dark:text-gray-400 sm:w-auto" data-i18n="cv.printHint">
+          Usa “Guardar como PDF” en el diálogo de impresión del navegador.
+        </p>
+      </div>
+    </header>
+
+    <p data-cv-loading class="m-0 text-sm text-gray-600 dark:text-gray-400 print:hidden">…</p>
+    <p data-cv-error class="m-0 hidden text-sm text-red-600 dark:text-red-400 print:hidden"></p>
+
+    <div data-cv-editor class="hidden space-y-4 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 p-5 shadow-sm print:hidden">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h2 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">
+          <span data-i18n="cv.projectsSectionTitle">Proyectos en el CV</span>
+        </h2>
+        <div class="flex flex-wrap gap-3 text-xs font-semibold">
+          <button type="button" data-cv-select-all class="text-indigo-700 dark:text-indigo-300 hover:underline">
+            <span data-i18n="cv.selectAll">Marcar todos</span>
+          </button>
+          <button type="button" data-cv-select-none class="text-gray-600 dark:text-gray-400 hover:underline">
+            <span data-i18n="cv.selectNone">Quitar todos</span>
+          </button>
+        </div>
+      </div>
+      <ul data-cv-project-list class="m-0 list-none space-y-2 p-0"></ul>
+    </div>
+
+    <article
+      data-cv-document
+      class="hidden rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-8 shadow-sm print:border-0 print:shadow-none print:p-0"
+    >
+      <div class="border-b border-gray-200/80 dark:border-gray-800 pb-6 print:border-gray-300">
+        <h2 data-cv-doc-name class="m-0 text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-100"></h2>
+        <p data-cv-doc-bio class="mt-3 mb-0 max-w-3xl text-base leading-relaxed text-gray-600 dark:text-gray-300"></p>
+      </div>
+      <section class="pt-6" data-cv-doc-projects-section>
+        <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.docProjectsHeading">
+          Proyectos
+        </h3>
+        <div data-cv-doc-projects class="mt-4 space-y-8"></div>
+      </section>
+    </article>
+  </div>
+
+  <script src="../scripts/cv-page.ts"></script>
+</AppShell>

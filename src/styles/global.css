@@ -7,10 +7,37 @@
 html {
   background-color: #ffffff;
   color: #111827;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
+  overflow-x: hidden;
+}
+
+/* Nav activo: el cliente actualiza `data-nav-active` en cada ruta (View Transitions). */
+[data-header-nav] .header-nav-link[data-nav-active="true"],
+[data-app-header] .header-admin-link[data-nav-active="true"] {
+  font-weight: 600;
+  color: rgb(17 24 39);
+}
+
+.dark [data-header-nav] .header-nav-link[data-nav-active="true"],
+.dark [data-app-header] .header-admin-link[data-nav-active="true"] {
+  color: rgb(249 250 251);
+}
+
+@media print {
+  body.cv-print-mode [data-app-header],
+  body.cv-print-mode [data-global-banner-wrap],
+  body.cv-print-mode footer {
+    display: none !important;
+  }
+
+  body.cv-print-mode [data-app-main] {
+    padding: 1.25rem !important;
+    max-width: none !important;
+  }
 }
 
 /* Preferencias globales (UI) */

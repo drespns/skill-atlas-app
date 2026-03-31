@@ -39,8 +39,27 @@
     "technologies": "Tecnologías",
     "projects": "Proyectos",
     "portfolio": "Portfolio",
+    "cv": "CV",
+    "admin": "Admin",
     "settings": "Ajustes",
     "pricing": "Precios"
+  },
+  "cv": {
+    "kicker": "Documento privado",
+    "pageTitle": "CV",
+    "intro": "Vista previa local de tu CV. Nadie puede ver esta página sin tu sesión. Más adelante: plantillas y exportación.",
+    "printOrPdf": "Imprimir / PDF",
+    "printHint": "Usa “Guardar como PDF” en el diálogo de impresión del navegador.",
+    "loading": "Cargando…",
+    "needSession": "Inicia sesión para ver tu CV.",
+    "loadError": "No se pudieron cargar los proyectos.",
+    "projectsSectionTitle": "Proyectos en el CV",
+    "selectAll": "Marcar todos",
+    "selectNone": "Quitar todos",
+    "defaultName": "Sin nombre",
+    "noBio": "",
+    "noProjectsSelected": "No hay proyectos seleccionados.",
+    "docProjectsHeading": "Proyectos"
   },
   "pricing": {
     "pageTitle": "Precios",

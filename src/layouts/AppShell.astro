@@ -169,8 +169,8 @@ const FOOTER_BUILD_ICONS = [
       data-app-header
       style="padding: var(--app-header-py, 1rem) var(--app-header-px, 1.25rem);"
     >
-      <div class="max-w-screen-2xl mx-auto flex items-center justify-between gap-4">
-        <div class="relative" data-home-wrap>
+      <div class="max-w-screen-2xl mx-auto flex w-full min-w-0 items-center gap-4">
+        <div class="relative shrink-0" data-home-wrap>
           <a href="/" data-home-link class="flex items-center gap-3 no-underline">
             <img src={APP_LOGO_SRC} alt="SkillAtlas" class="h-8 w-8 rounded-md" />
             <span class="font-bold text-lg hover:underline">SkillAtlas</span>
@@ -221,38 +221,37 @@ const FOOTER_BUILD_ICONS = [
 
         <nav
           data-header-nav
-          class="hidden md:flex flex-wrap gap-1 text-sm relative"
+          class="hidden md:flex md:flex-1 flex-wrap items-center justify-center gap-1 text-sm relative min-w-0"
           data-i18n-scope="nav"
         >
           <div
             data-header-nav-indicator
-            class="pointer-events-none absolute -bottom-1 h-1 rounded-full opacity-0"
+            class="pointer-events-none absolute left-0 -bottom-1 h-1 rounded-full opacity-0"
             style="
               background: hsl(var(--app-accent-hsl) / 0.95);
-              transform: translateX(0px);
               width: 0px;
               transition:
-                transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+                left 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
                 width 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
                 opacity 160ms ease-out;
             "
             aria-hidden="true"
           ></div>
           <a
-            href="/pricing"
-            data-public-header-pricing
+            href="/cv"
+            data-auth-nav
             data-header-nav-link
-            data-nav-active={isActive("/pricing") ? "true" : "false"}
-            class={`relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 ${isActive("/pricing") ? "font-semibold text-gray-900 dark:text-gray-50" : "text-gray-700 dark:text-gray-200"} hidden md:inline-flex`}
+            data-nav-active={isActive("/cv") ? "true" : "false"}
+            class="header-nav-link relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
           >
-            <span data-i18n="nav.pricing">Precios</span>
+            <span data-i18n="nav.cv">CV</span>
           </a>
           <a
             href="/technologies"
             data-auth-nav
             data-header-nav-link
             data-nav-active={isActive("/technologies") ? "true" : "false"}
-            class={`relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 ${isActive("/technologies") ? "font-semibold text-gray-900 dark:text-gray-50" : "text-gray-700 dark:text-gray-200"} hidden`}
+            class="header-nav-link relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
           >
             <span data-i18n="nav.technologies">Tecnologías</span>
           </a>
@@ -261,7 +260,7 @@ const FOOTER_BUILD_ICONS = [
             data-auth-nav
             data-header-nav-link
             data-nav-active={isActive("/projects") ? "true" : "false"}
-            class={`relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 ${isActive("/projects") ? "font-semibold text-gray-900 dark:text-gray-50" : "text-gray-700 dark:text-gray-200"} hidden`}
+            class="header-nav-link relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
           >
             <span data-i18n="nav.projects">Proyectos</span>
           </a>
@@ -270,22 +269,23 @@ const FOOTER_BUILD_ICONS = [
             data-auth-nav
             data-header-nav-link
             data-nav-active={isActive("/portfolio") ? "true" : "false"}
-            class={`relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 ${isActive("/portfolio") ? "font-semibold text-gray-900 dark:text-gray-50" : "text-gray-700 dark:text-gray-200"} hidden`}
+            class="header-nav-link relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
           >
             <span data-i18n="nav.portfolio">Portfolio</span>
           </a>
+        </nav>
+
+        <div class="flex min-w-0 flex-1 items-center justify-end gap-3 md:min-w-0">
           <a
             href="/admin"
             data-admin-header-link
-            data-header-nav-link
             data-nav-active={isActive("/admin") ? "true" : "false"}
-            class={`relative px-3 py-1.5 md:ml-3 md:pl-4 md:border-l md:border-gray-200/80 dark:md:border-gray-700 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 ${isActive("/admin") ? "font-semibold text-gray-900 dark:text-gray-50" : "text-gray-700 dark:text-gray-200"} hidden`}
+            class="header-admin-link relative shrink-0 px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
           >
-            Admin
+            <span data-i18n="nav.admin">Admin</span>
           </a>
-        </nav>
-
-        <div class="flex items-center gap-2" data-header-icons>
+          <span class="hidden min-h-0 min-w-4 flex-1 basis-0 md:block" aria-hidden="true"></span>
+          <div class="flex shrink-0 items-center gap-2" data-header-icons>
           <button
             type="button"
             data-banner-reopen
@@ -480,6 +480,7 @@ const FOOTER_BUILD_ICONS = [
             </svg>
           </button>
         </div>
+        </div>
       </div>
     </header>
 
@@ -509,8 +510,19 @@ const FOOTER_BUILD_ICONS = [
             class="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-gray-700 dark:text-gray-300"
             aria-label="Footer"
           >
-            <a href="/pricing" class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors">
+            <a
+              href="/pricing"
+              data-public-footer-pricing
+              class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
+            >
               <span data-i18n="nav.pricing"></span>
+            </a>
+            <a
+              href="/cv"
+              data-auth-footer-nav
+              class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
+            >
+              <span data-i18n="nav.cv"></span>
             </a>
             <a
               href="/technologies"
