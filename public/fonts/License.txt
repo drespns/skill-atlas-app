@@ -1,0 +1,11 @@
+Copyright (c) 2025, Student Designer
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below and is also available with a FAQ at:
+https://scripts.sil.org/OFL
+
+-----------------------------------------------------------
+NOTE:
+Include the full, unmodified SIL Open Font License 1.1 text
+below this header.
+-----------------------------------------------------------
