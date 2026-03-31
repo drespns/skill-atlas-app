@@ -1,8 +1,6 @@
 ---
 import AppShell from "../layouts/AppShell.astro";
 import ProjectCard from "../components/ProjectCard.astro";
-import projectsScriptUrl from "../scripts/projects.ts?url";
-import viewToggleScriptUrl from "../scripts/view-toggle.ts?url";
 import { dataSource, getProjects, getTechnologyById } from "../data";
 
 const title = "Proyectos";
@@ -148,8 +146,8 @@ const projectCards = await Promise.all(
   </section>
 
   {dataSource === "supabase" ? (
-    <script type="module" src={projectsScriptUrl}></script>
+    <script src="../scripts/projects.ts"></script>
   ) : null}
-  {dataSource === "supabase" ? <script type="module" src={viewToggleScriptUrl}></script> : null}
+  {dataSource === "supabase" ? <script src="../scripts/view-toggle.ts"></script> : null}
 </AppShell>
 

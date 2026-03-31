@@ -2,7 +2,6 @@
 import AppShell from "../../layouts/AppShell.astro";
 import ProgressBadge from "../../components/ProgressBadge.astro";
 import EmbedCard from "../../components/EmbedCard.astro";
-import projectDetailScriptUrl from "../../scripts/project-detail.ts?url";
 import {
   dataSource,
   getConceptById,
@@ -312,8 +311,6 @@ const availableProjectTechnologies = project
     </section>
   )}
 
-  {dataSource === "supabase" ? (
-    <script type="module" src={projectDetailScriptUrl}></script>
-  ) : null}
+  {dataSource === "supabase" ? <script src="../../scripts/project-detail.ts"></script> : null}
 </AppShell>
 

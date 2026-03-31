@@ -11,6 +11,13 @@ Astro genera sitio **estatico** (`output: static`). Las paginas se prerenderizan
 - Providers: mock y supabase
 - Scripts cliente por pantalla: `src/scripts/*.ts` y subcarpetas (`project-detail/`, `technology-detail/`)
 
+### Scripts cliente en Astro (importante)
+
+Para que funcione igual en **dev** y **producción** (Vercel), los scripts cliente deben cargarse como **scripts procesados por Astro**:
+
+- Usar `<script src="../scripts/mi-script.ts"></script>` (sin `type="module"`).
+- Evitar servir `.ts` directamente por URL o usar `?url`, porque puede acabar en MIME incorrecto / imports a `.ts` en producción.
+
 ## Capa de datos
 
 `src/data/index.ts` es la entrada unica:

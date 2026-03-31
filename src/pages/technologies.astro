@@ -1,8 +1,6 @@
 ---
 import AppShell from "../layouts/AppShell.astro";
 import TechnologyCard from "../components/TechnologyCard.astro";
-import technologiesScriptUrl from "../scripts/technologies.ts?url";
-import viewToggleScriptUrl from "../scripts/view-toggle.ts?url";
 
 import { dataSource, getConcepts, getTechnologies } from "../data";
 
@@ -116,8 +114,8 @@ const technologies = mockTechnologies.map((t) => ({
   )}
 
   {dataSource === "supabase" ? (
-    <script type="module" src={technologiesScriptUrl}></script>
+    <script src="../scripts/technologies.ts"></script>
   ) : null}
-  {dataSource === "supabase" ? <script type="module" src={viewToggleScriptUrl}></script> : null}
+  {dataSource === "supabase" ? <script src="../scripts/view-toggle.ts"></script> : null}
 </AppShell>
 

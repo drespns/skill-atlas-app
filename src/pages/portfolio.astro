@@ -3,8 +3,6 @@ import AppShell from "../layouts/AppShell.astro";
 import EmbedCard from "../components/EmbedCard.astro";
 import { getTechnologyIconSrc } from "../config/icons";
 import { dataSource, profile, getProjects, getTechnologyById } from "../data";
-import portfolioPublicProfileUrl from "../scripts/portfolio-public-profile.ts?url";
-import portfolioProjectsUrl from "../scripts/portfolio-projects.ts?url";
 
 const title = "Portfolio";
 const projects = await getProjects();
@@ -186,7 +184,9 @@ function techHue(name: string) {
     )}
   </section>
 
-  <script type="module" src={portfolioPublicProfileUrl}></script>
-  {dataSource === "supabase" ? <script type="module" src={portfolioProjectsUrl}></script> : null}
+  <script src="../scripts/portfolio-public-profile.ts"></script>
+  {dataSource === "supabase" ? (
+    <script src="../scripts/portfolio-projects.ts"></script>
+  ) : null}
 </AppShell>
 

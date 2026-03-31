@@ -2,7 +2,6 @@
 import AppShell from "../../layouts/AppShell.astro";
 import ProgressBadge from "../../components/ProgressBadge.astro";
 import ProjectCard from "../../components/ProjectCard.astro";
-import technologyDetailScriptUrl from "../../scripts/technology-detail.ts?url";
 
 import {
   dataSource,
@@ -229,8 +228,6 @@ const technologyTitle = technology?.name ?? "Tecnología no encontrada";
     </section>
   )}
 
-  {dataSource === "supabase" ? (
-    <script type="module" src={technologyDetailScriptUrl}></script>
-  ) : null}
+  {dataSource === "supabase" ? <script src="../../scripts/technology-detail.ts"></script> : null}
 </AppShell>
 

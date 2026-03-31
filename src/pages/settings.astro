@@ -2,10 +2,6 @@
 import AppShell from "../layouts/AppShell.astro";
 import { HELP_STACK_ITEMS } from "../config/help-stack";
 import { profile } from "../data";
-import settingsAuthScriptUrl from "../scripts/settings-auth.ts?url";
-import settingsPrefsScriptUrl from "../scripts/settings-prefs.ts?url";
-import settingsDashboardUrl from "../scripts/settings-dashboard.ts?url";
-import settingsProfileScriptUrl from "../scripts/settings-profile.ts?url";
 
 const title = "Ajustes";
 
@@ -89,7 +85,7 @@ const grip =
             <span data-i18n="settings.prefs.theme">Tema</span>
             <select
               data-pref-theme
-              class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring min-w-[10rem]"
+              class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring min-w-40"
             >
               <option value="auto" data-i18n="settings.prefs.themeAuto">Auto (sistema)</option>
               <option value="light" data-i18n="settings.prefs.themeLight">Claro</option>
@@ -122,7 +118,7 @@ const grip =
             <span data-i18n="settings.prefs.settingsColumns">Columnas (Ajustes)</span>
             <select
               data-pref-settings-columns
-              class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring min-w-[4.5rem]"
+              class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring min-w-18"
             >
               <option value="1">1</option>
               <option value="2" selected>2</option>
@@ -502,7 +498,7 @@ const grip =
             >
               {
                 HELP_STACK_ITEMS.map((item) => (
-                  <label class="flex items-center gap-2 cursor-pointer rounded-md px-2 py-1.5 hover:bg-white dark:hover:bg-gray-950/80 has-[:checked]:bg-emerald-50/80 dark:has-[:checked]:bg-emerald-950/25">
+                  <label class="flex items-center gap-2 cursor-pointer rounded-md px-2 py-1.5 hover:bg-white dark:hover:bg-gray-950/80 has-checked:bg-emerald-50/80 dark:has-checked:bg-emerald-950/25">
                     <input
                       type="checkbox"
                       data-help-stack-key={item.key}
@@ -531,8 +527,8 @@ const grip =
     </div>
   </section>
 
-  <script type="module" src={settingsAuthScriptUrl}></script>
-  <script type="module" src={settingsPrefsScriptUrl}></script>
-  <script type="module" src={settingsDashboardUrl}></script>
-  <script type="module" src={settingsProfileScriptUrl}></script>
+  <script src="../scripts/settings-auth.ts"></script>
+  <script src="../scripts/settings-prefs.ts"></script>
+  <script src="../scripts/settings-dashboard.ts"></script>
+  <script src="../scripts/settings-profile.ts"></script>
 </AppShell>
