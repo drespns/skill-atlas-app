@@ -36,7 +36,8 @@ function toSlug(value: string) {
 
 async function initTechnologyForm() {
   const form = document.querySelector<HTMLFormElement>("[data-tech-form]");
-  if (!form) return;
+  if (!form || form.dataset.skillatlasBound === "1") return;
+  form.dataset.skillatlasBound = "1";
 
   const nameInput = form.querySelector<HTMLInputElement>("[data-tech-name-input]");
   const submitBtn = form.querySelector<HTMLButtonElement>("[type='submit']");
@@ -361,7 +362,9 @@ async function bootstrapTechnologiesGrid() {
     }
     mount.innerHTML = cached.html;
     if (countEl) countEl.textContent = cached.countText;
+    void initTechnologyActions();
     setTimeout(() => {
+      clearCache(userId);
       void bootstrapTechnologiesGrid().then(() => initTechnologyActions());
     }, 0);
     return;
@@ -483,13 +486,16 @@ window.skillatlas.clearTechnologiesCache = () => {
   })();
 };
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
-    void initTechnologyForm();
-    void bootstrapTechnologiesGrid().then(() => initTechnologyActions());
-  });
-} else {
+function bootTechnologiesPage() {
   void initTechnologyForm();
   void bootstrapTechnologiesGrid().then(() => initTechnologyActions());
 }
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootTechnologiesPage);
+} else {
+  bootTechnologiesPage();
+}
+
+document.addEventListener("astro:page-load", bootTechnologiesPage);
 

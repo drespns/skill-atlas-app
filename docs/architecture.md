@@ -16,7 +16,12 @@ Astro genera sitio **estatico** (`output: static`). Las paginas se prerenderizan
 La app está pensada como acceso privado por invitación. Para no depender de `mailto:` existe una pantalla pública:
 
 - `/request-access`: formulario que inserta en `public.access_requests` (ver migración `docs/sql/saas-009-access-requests.sql`).
-- La tabla permite **INSERT** desde `anon`/`auth` y bloquea **SELECT/UPDATE/DELETE** desde cliente (la revisión de solicitudes se hace desde el dashboard de Supabase o un panel admin futuro).
+- Tras **`docs/sql/saas-010-admin-access-requests.sql`**: existe allowlist `public.admin_users`; usuarios en esa tabla pueden **SELECT/UPDATE** `access_requests` desde cliente. El resto de cuentas autenticadas **no** leen filas (RLS).
+- **`/admin`**: página CSR protegida por sesión (`data-requires-auth`) + comprobación de admin en cliente; el enlace en cabecera y la entrada en el command palette solo se muestran si `isSkillAtlasAdmin` es true (caché corta en `sessionStorage`). **Cualquiera puede escribir la URL**: no es secreto; la confidencialidad depende de RLS y del login.
+
+**Nota:** ser propietario del proyecto en Supabase **no** implica estar en `admin_users`; hay que insertar tu `auth.users.id` manualmente.
+
+- **`/pricing`**: página de marketing estática + script `pricing-billing.ts` (toggle mensual/anual solo en cliente). Sin pasarela de pago acoplada; CTA coherente con invite-only (`/request-access`).
 
 ### Scripts cliente en Astro (importante)
 
@@ -27,7 +32,9 @@ Para que funcione igual en **dev** y **producción** (Vercel), los scripts clien
 
 ### Navegación sin recarga (View Transitions + Prefetch)
 
-La app usa el router del navegador con **View Transitions** (`<ClientRouter />`) para que la navegación sea más fluida. Además, Astro hace **prefetch** de links (estrategia `viewport`) para reducir tiempos de carga.\n+\n+Esto implica que scripts cliente que antes dependían de `DOMContentLoaded` deben ser **idempotentes** y re-ejecutarse en eventos del router (`astro:page-load`, `astro:after-swap`).\n+
+La app usa el router del navegador con **View Transitions** (`<ClientRouter />`) para que la navegación sea más fluida. Además, Astro hace **prefetch** de links (estrategia `viewport`) para reducir tiempos de carga.
+
+Esto implica que scripts cliente que antes dependían de `DOMContentLoaded` deben ser **idempotentes** y re-ejecutarse en eventos del router (`astro:page-load`, `astro:after-swap`).
 ### Geo / país del usuario (futuro)
 
 Ahora mismo, para elegir bandera/región usamos señales del navegador (**`navigator.language`** y fallback por **timezone**). Esto no garantiza ubicación física real.

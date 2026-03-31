@@ -25,6 +25,7 @@ Migracion multi-tenant y portfolio por token (scripts versionados):
 | 7 | `docs/sql/saas-007-user-prefs.sql` | Tabla `user_prefs` (JSONB) para persistir preferencias y layout de `/settings` por usuario (RLS por `auth.uid()`) |
 | 8 | `docs/sql/saas-008-portfolio-avatar.sql` | `portfolio_profiles.avatar_url` + bucket `portfolio_avatars` en Storage y políticas para que cada usuario gestione sus archivos |
 | 9 | `docs/sql/saas-009-access-requests.sql` | Tabla `access_requests` (INSERT permitido para `anon`/`auth`, sin SELECT) para el formulario público de `/request-access` |
+| 10 | `docs/sql/saas-010-admin-access-requests.sql` | Tabla `admin_users` (allowlist) + RLS admin-only para listar/gestionar `access_requests` desde `/admin` |
 
 **Nota saas-006:** si ya aplicaste `saas-003`, debes aplicar **saas-006** (o al menos el bloque `CREATE OR REPLACE FUNCTION` del script) para que la RPC y el esquema coincidan con lo que espera el frontend (`select` con `role`/`outcome` y consumidores del JSON del portfolio). En entornos nuevos: orden típico … → `saas-003` → … → `saas-006`.
 

@@ -32,7 +32,8 @@ function toSlug(value: string) {
 
 async function initProjectForm() {
   const form = document.querySelector<HTMLFormElement>("[data-project-form]");
-  if (!form) return;
+  if (!form || form.dataset.skillatlasBound === "1") return;
+  form.dataset.skillatlasBound = "1";
 
   const titleInput = form.querySelector<HTMLInputElement>("[name='title']");
   const descInput = form.querySelector<HTMLTextAreaElement>("[name='description']");
@@ -352,13 +353,16 @@ window.skillatlas.clearProjectsCache = () => {
   })();
 };
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
-    void initProjectForm();
-    void bootstrapProjectsList();
-  });
-} else {
+function bootProjectsPage() {
   void initProjectForm();
   void bootstrapProjectsList();
 }
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootProjectsPage);
+} else {
+  bootProjectsPage();
+}
+
+document.addEventListener("astro:page-load", bootProjectsPage);
 

@@ -1,5 +1,20 @@
 # Backlog
 
+## Roadmap de producto (orden acordado — 2026)
+
+Orden priorizado para ganar profundidad sin dejar de pulir tecnologías/portfolio:
+
+1. **Precios y posicionamiento** — Página pública `/pricing` (planes Starter / Pro / Team, comparativa, FAQ, toggle mensual/anual). CTAs alineados con acceso por invitación. Más adelante: Patreon u otros apoyos y facturación real (p. ej. Stripe) cuando cierres importes y condiciones legales.
+2. **Portfolio por enlace** — Ruta `/p/[token]` + RPC `skillatlas_portfolio_by_share_token` + UI (activar compartir, copiar enlace). Ver `docs/plan-saas-multi-tenant-portfolio.md`.
+3. **CV / hoja de vida** — Por defecto **100 % privado** (previsualización y descarga); **opción explícita de enlace público** revocable (token o flag en perfil, RLS acorde). Varias plantillas; fuentes de datos: perfil, proyectos seleccionados, stack; export PDF (primero cliente/`print`; servidor opcional para pixel-perfect).
+4. **Salida profesional** — PDF de portfolio, previews OG por proyecto, export estático cuando tenga sentido.
+5. **Trabajo diario** — Duplicar proyecto, plantillas de proyecto, actividad reciente en `/app`, búsqueda ampliada en el command palette.
+6. **Monetización** — Tras validar demanda: pasarela + tabla de suscripciones + límites por plan; mantener precio accesible como objetivo de producto.
+
+**Implementación reciente:** `/pricing` (`src/pages/pricing.astro`, `src/scripts/pricing-billing.ts`); enlaces en footer, landing y Ctrl+K. Textos i18n en `pricing.*` (`src/i18n/{es,en}.json`).
+
+---
+
 ## Prioridad maxima (producto): SaaS + portfolio por enlace
 
 Plan detallado (fases, DB, RLS, rutas, riesgos): **`docs/plan-saas-multi-tenant-portfolio.md`**

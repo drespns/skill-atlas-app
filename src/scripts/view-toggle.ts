@@ -16,9 +16,10 @@ function setPressed(group: HTMLElement, view: DefaultView) {
 
 function initViewToggle() {
   const group = document.querySelector<HTMLElement>("[data-view-toggle]");
-  if (!group) return;
+  if (!group || group.dataset.skillatlasBound === "1") return;
   const scope = group.getAttribute("data-scope"); // "projects" | "technologies"
   if (scope !== "projects" && scope !== "technologies") return;
+  group.dataset.skillatlasBound = "1";
 
   const prefs = loadPrefs();
   const current = scope === "projects" ? prefs.projectsView : prefs.technologiesView;
@@ -47,4 +48,6 @@ if (document.readyState === "loading") {
 } else {
   initViewToggle();
 }
+
+document.addEventListener("astro:page-load", initViewToggle);
 

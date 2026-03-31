@@ -239,6 +239,15 @@ const FOOTER_BUILD_ICONS = [
             aria-hidden="true"
           ></div>
           <a
+            href="/pricing"
+            data-public-header-pricing
+            data-header-nav-link
+            data-nav-active={isActive("/pricing") ? "true" : "false"}
+            class={`relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 ${isActive("/pricing") ? "font-semibold text-gray-900 dark:text-gray-50" : "text-gray-700 dark:text-gray-200"} hidden md:inline-flex`}
+          >
+            <span data-i18n="nav.pricing">Precios</span>
+          </a>
+          <a
             href="/technologies"
             data-auth-nav
             data-header-nav-link
@@ -264,6 +273,15 @@ const FOOTER_BUILD_ICONS = [
             class={`relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 ${isActive("/portfolio") ? "font-semibold text-gray-900 dark:text-gray-50" : "text-gray-700 dark:text-gray-200"} hidden`}
           >
             <span data-i18n="nav.portfolio">Portfolio</span>
+          </a>
+          <a
+            href="/admin"
+            data-admin-header-link
+            data-header-nav-link
+            data-nav-active={isActive("/admin") ? "true" : "false"}
+            class={`relative px-3 py-1.5 md:ml-3 md:pl-4 md:border-l md:border-gray-200/80 dark:md:border-gray-700 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 ${isActive("/admin") ? "font-semibold text-gray-900 dark:text-gray-50" : "text-gray-700 dark:text-gray-200"} hidden`}
+          >
+            Admin
           </a>
         </nav>
 
@@ -373,33 +391,35 @@ const FOOTER_BUILD_ICONS = [
           <a
             href="/settings"
             data-auth-header-settings
-            class={`inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors ${isActive("/settings") ? "ring-1 ring-gray-300 dark:ring-gray-700" : ""} hidden`}
+            class={`header-settings-rainbow ${isActive("/settings") ? "header-settings-rainbow--active" : ""} inline-flex hidden`}
             aria-label="Ajustes"
             title="Ajustes"
             data-i18n="nav.settings"
             data-i18n-attr="aria-label,title"
           >
-            <svg
-              class="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <!-- Icon from Lucide "sliders-horizontal" (inline SVG) -->
-              <path d="M21 4H14" />
-              <path d="M10 4H3" />
-              <path d="M21 12H12" />
-              <path d="M8 12H3" />
-              <path d="M21 20H16" />
-              <path d="M12 20H3" />
-              <path d="M14 2v4" />
-              <path d="M8 10v4" />
-              <path d="M16 18v4" />
-            </svg>
+            <span class="header-settings-rainbow__inner">
+              <svg
+                class="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <!-- Icon from Lucide "sliders-horizontal" (inline SVG) -->
+                <path d="M21 4H14" />
+                <path d="M10 4H3" />
+                <path d="M21 12H12" />
+                <path d="M8 12H3" />
+                <path d="M21 20H16" />
+                <path d="M12 20H3" />
+                <path d="M14 2v4" />
+                <path d="M8 10v4" />
+                <path d="M16 18v4" />
+              </svg>
+            </span>
           </a>
 
           <a
@@ -489,6 +509,9 @@ const FOOTER_BUILD_ICONS = [
             class="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-gray-700 dark:text-gray-300"
             aria-label="Footer"
           >
+            <a href="/pricing" class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors">
+              <span data-i18n="nav.pricing"></span>
+            </a>
             <a
               href="/technologies"
               data-auth-footer-nav

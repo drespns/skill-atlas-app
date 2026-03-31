@@ -89,6 +89,7 @@ según `PUBLIC_DATA_SOURCE`. Así se mantiene un contrato estable al cambiar de 
 | Ruta | Rol |
 |------|-----|
 | `/` | Landing (pública; `skillatlas.app`) |
+| `/pricing` | Precios (pública; marketing) |
 | `/login` | Acceso (oculto en producción; invitación) |
 | `/app` | Dashboard |
 | `/technologies` | Lista de tecnologías |
@@ -101,6 +102,7 @@ según `PUBLIC_DATA_SOURCE`. Así se mantiene un contrato estable al cambiar de 
 | `/portfolio` | Portfolio (preview autenticado; en Supabase carga por CSR) |
 | `/settings` | Ajustes, sesión y perfil |
 | `/request-access` | Solicitud de acceso (pública; guarda en `access_requests`) |
+| `/admin` | Panel admin (privado; lista/gestiona `access_requests`) |
 
 Las tarjetas de listado enlazan automáticamente a las rutas CSR cuando el data source es Supabase.
 

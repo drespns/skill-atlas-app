@@ -92,6 +92,85 @@ html[data-motion="reduced"] *::after {
   transition-duration: 0.001ms !important;
 }
 
+/* Header: highlight Settings with a flowing rainbow edge */
+@keyframes header-settings-rainbow-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.header-settings-rainbow {
+  position: relative;
+  isolation: isolate;
+  border-radius: 0.5rem;
+  padding: 2px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+
+.header-settings-rainbow::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 0;
+  width: 220%;
+  height: 220%;
+  translate: -50% -50%;
+  background: conic-gradient(
+    from 0deg,
+    #6366f1,
+    #8b5cf6,
+    #d946ef,
+    #ec4899,
+    #f97316,
+    #eab308,
+    #22c55e,
+    #14b8a6,
+    #0ea5e9,
+    #6366f1
+  );
+  animation: header-settings-rainbow-spin 3.25s linear infinite;
+}
+
+.header-settings-rainbow__inner {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: calc(0.5rem - 2px);
+  background-color: rgb(255 255 255 / 0.94);
+  transition: background-color 150ms ease;
+}
+
+html.dark .header-settings-rainbow__inner {
+  background-color: rgb(3 7 18 / 0.94);
+}
+
+.header-settings-rainbow:hover .header-settings-rainbow__inner {
+  background-color: rgb(249 250 251 / 1);
+}
+
+html.dark .header-settings-rainbow:hover .header-settings-rainbow__inner {
+  background-color: rgb(17 24 39 / 1);
+}
+
+.header-settings-rainbow:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-hsl) / 0.65);
+  outline-offset: 2px;
+}
+
+.header-settings-rainbow--active .header-settings-rainbow__inner {
+  box-shadow: inset 0 0 0 1px rgb(209 213 219 / 0.85);
+}
+
+html.dark .header-settings-rainbow--active .header-settings-rainbow__inner {
+  box-shadow: inset 0 0 0 1px rgb(55 65 81 / 0.9);
+}
+
 /* Buttons (accented) */
 .btn-primary {
   display: inline-flex;

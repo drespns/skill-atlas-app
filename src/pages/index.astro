@@ -4,385 +4,722 @@ import AppShell from "../layouts/AppShell.astro";
 ---
 
 <AppShell title="SkillAtlas">
-  <section class="relative overflow-hidden">
-    <div class="pointer-events-none absolute inset-0">
-      <div class="absolute -top-32 left-1/2 -translate-x-1/2 h-112 w-240 max-w-[120vw] rounded-full bg-linear-to-r from-indigo-300/35 via-sky-200/25 to-rose-300/30 dark:from-indigo-500/15 dark:via-sky-500/10 dark:to-rose-500/12 blur-3xl" />
-      <div class="absolute -bottom-40 -left-40 h-120 w-120 rounded-full bg-linear-to-br from-emerald-200/25 via-transparent to-amber-200/25 dark:from-emerald-500/10 dark:to-amber-500/10 blur-3xl" />
+  <!-- Full-bleed background (main is max-w constrained): edge vignette + no hard “cut” at content width -->
+  <section
+    class="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 overflow-x-clip text-gray-900 dark:text-gray-100"
+  >
+    <div class="pointer-events-none absolute inset-0 isolate min-h-full">
+      <div class="absolute inset-0 -z-20 overflow-hidden">
+        <div
+          class="absolute -top-40 left-1/2 h-[28rem] w-[min(140vw,90rem)] max-w-none -translate-x-1/2 rounded-[100%] bg-linear-to-r from-indigo-300/38 via-sky-200/28 to-rose-300/32 dark:from-indigo-500/18 dark:via-sky-500/12 dark:to-rose-500/14 blur-3xl"
+        />
+        <div
+          class="absolute -top-20 -right-[min(18vw,12rem)] h-80 w-[min(90vw,52rem)] rounded-[100%] bg-linear-to-bl from-violet-200/25 via-transparent to-transparent dark:from-violet-500/12 blur-3xl"
+        />
+        <div
+          class="absolute -bottom-48 -left-[min(12vw,8rem)] h-[26rem] w-[min(95vw,56rem)] rounded-[100%] bg-linear-to-br from-emerald-200/28 via-transparent to-amber-200/22 dark:from-emerald-500/12 dark:to-amber-500/10 blur-3xl"
+        />
+      </div>
+      <div class="landing-dots absolute inset-0 z-0" aria-hidden="true"></div>
+      <div
+        class="landing-edge-vignette pointer-events-none absolute inset-0 z-[1]"
+        aria-hidden="true"
+      ></div>
     </div>
 
-    <div class="relative max-w-screen-2xl mx-auto py-10 md:py-14 space-y-18">
+    <div class="relative z-10 max-w-screen-2xl mx-auto py-10 md:py-14 space-y-18">
       <div class="grid lg:grid-cols-2 gap-12 xl:gap-16 items-start">
         <div class="space-y-8">
-        <div class="inline-flex items-center gap-2 rounded-full border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/50 px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200">
-          <span class="font-semibold">SkillAtlas</span>
-          <span class="text-gray-400">·</span>
-          <span>Invites only</span>
+          <div class="inline-flex items-center gap-2 rounded-full border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/50 px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200">
+            <span class="font-semibold" data-i18n="landing.heroBadgeBrand">SkillAtlas</span>
+            <span class="text-gray-400">·</span>
+            <span data-i18n="landing.heroBadgeTail">Solo por invitación</span>
+          </div>
+
+          <h1 class="m-0 text-4xl md:text-6xl font-semibold tracking-tight leading-[1.05]">
+            <span data-i18n="landing.heroTitleBefore">Tu conocimiento técnico,</span>
+            <br />
+            <span
+              class="text-transparent bg-clip-text bg-linear-to-r from-indigo-600 via-sky-500 to-rose-600 dark:from-indigo-300 dark:via-sky-300 dark:to-rose-300"
+              data-i18n="landing.heroTitleGradient"
+            >
+              listo para convertirse en portfolio
+            </span>.
+          </h1>
+          <p
+            class="m-0 text-base md:text-xl text-gray-600 dark:text-gray-400 max-w-xl leading-relaxed"
+            data-i18n="landing.heroSubtitle"
+          >
+            Captura tecnologías y conceptos, construye proyectos con evidencias y publica un portfolio
+            que se lee en minutos.
+          </p>
+
+          <div class="flex flex-col sm:flex-row flex-wrap gap-3 pt-3">
+            <a
+              href="/request-access"
+              data-landing-request-access
+              class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 no-underline"
+            >
+              <span data-i18n="landing.ctaRequest">Solicitar acceso</span>
+            </a>
+            <a
+              href="/login"
+              data-landing-have-invite
+              class="inline-flex items-center justify-center rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="landing.ctaLogin">Entrar (acceso privado)</span>
+            </a>
+            <a
+              href="/app"
+              data-landing-open-app
+              class="hidden items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 no-underline shadow-sm"
+            >
+              <span data-i18n="landing.ctaOpenApp">Abrir app</span>
+            </a>
+            <a
+              href="/demo"
+              data-landing-demo
+              class="inline-flex items-center justify-center rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/55 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="landing.ctaDemo">Ver demo</span>
+            </a>
+            <a
+              href="/pricing"
+              class="inline-flex items-center justify-center rounded-lg border border-transparent px-4 py-2.5 text-sm font-semibold text-indigo-700 dark:text-indigo-300 hover:underline underline-offset-8 decoration-2 hover:decoration-4 no-underline"
+            >
+              <span data-i18n="nav.pricing">Precios</span>
+            </a>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3">
+            <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-4 shadow-sm">
+              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/10 dark:bg-indigo-400/10 text-indigo-700 dark:text-indigo-300">T</span>
+                <span data-i18n="landing.pillTechTitle">Tecnologías</span>
+              </p>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="landing.pillTechDesc">
+                Tu mapa de stack.
+              </p>
+            </div>
+            <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-4 shadow-sm">
+              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-sky-500/10 dark:bg-sky-400/10 text-sky-700 dark:text-sky-300">C</span>
+                <span data-i18n="landing.pillConceptTitle">Conceptos</span>
+              </p>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="landing.pillConceptDesc">
+                Aprendizaje trazable.
+              </p>
+            </div>
+            <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-4 shadow-sm">
+              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-rose-500/10 dark:bg-rose-400/10 text-rose-700 dark:text-rose-300">E</span>
+                <span data-i18n="landing.pillEvidenceTitle">Evidencias</span>
+              </p>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="landing.pillEvidenceDesc">
+                Links + embeds, rápido.
+              </p>
+            </div>
+          </div>
+
+          <div class="pt-2 space-y-3 max-w-xl">
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.noteEvidence">
+              Pensado para que tu portfolio no dependa de “me acuerdo de todo”, sino de evidencias y una historia clara (rol + resultado).
+            </p>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.noteInvite">
+              Acceso por invitación mientras iteramos con calma hacia una v1 que merezca el nombre.
+            </p>
+          </div>
         </div>
 
-        <h1 class="m-0 text-4xl md:text-6xl font-semibold tracking-tight leading-[1.05]">
-          Tu conocimiento técnico,
-          <span class="text-transparent bg-clip-text bg-linear-to-r from-indigo-600 via-sky-500 to-rose-600 dark:from-indigo-300 dark:via-sky-300 dark:to-rose-300">
-            listo para convertirse en portfolio
-          </span>.
-        </h1>
-        <p class="m-0 text-base md:text-xl text-gray-600 dark:text-gray-400 max-w-xl leading-relaxed">
-          Captura tecnologías y conceptos, construye proyectos con evidencias y publica un portfolio
-          que se lee en minutos.
+        <div class="relative">
+          <div class="absolute -inset-3 rounded-3xl bg-linear-to-br from-indigo-200/70 via-transparent to-rose-200/55 dark:from-indigo-500/15 dark:to-rose-500/12 blur-2xl" />
+          <div class="relative rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/85 dark:bg-gray-950/85 shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-200/80 dark:border-gray-800 flex items-center justify-between bg-white/60 dark:bg-gray-950/40 backdrop-blur">
+              <div class="flex items-center gap-2">
+                <div class="h-2.5 w-2.5 rounded-full bg-rose-400/80" />
+                <div class="h-2.5 w-2.5 rounded-full bg-amber-300/80" />
+                <div class="h-2.5 w-2.5 rounded-full bg-emerald-300/80" />
+              </div>
+              <span class="text-xs font-semibold text-gray-500 dark:text-gray-400" data-i18n="landing.previewLabel">Vista previa</span>
+            </div>
+            <div class="p-6 space-y-4">
+              <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-950/40">
+                <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewProjectTitle">
+                  Proyecto · “Tableau Water Intake”
+                </p>
+                <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.previewProjectBody">
+                  Rol: data analyst · Resultado: dashboard público + insights accionables.
+                </p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">Tableau</span>
+                  <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">SQL</span>
+                  <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">Storytelling</span>
+                </div>
+              </div>
+              <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-950/40">
+                <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewEvidenceTitle">Evidencias</p>
+                <div class="mt-3 grid grid-cols-1 gap-2">
+                  <div class="rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/20 px-3 py-2">
+                    <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewEmbedTitle">
+                      Dashboard embebido
+                    </p>
+                    <p class="mt-1 mb-0 text-xs text-gray-600 dark:text-gray-400 truncate" data-i18n="landing.previewEmbedUrl">
+                      tableau.com / vistas / …
+                    </p>
+                  </div>
+                  <div class="rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/20 px-3 py-2">
+                    <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewRepoTitle">Repositorio</p>
+                    <p class="mt-1 mb-0 text-xs text-gray-600 dark:text-gray-400 truncate" data-i18n="landing.previewRepoUrl">github.com / …</p>
+                  </div>
+                </div>
+              </div>
+              <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-950/40">
+                <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewPortfolioTitle">Portfolio</p>
+                <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.previewPortfolioBody">
+                  Tarjetas claras, filtro por tecnología y evidencia principal destacada.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="rounded-2xl border border-amber-200/70 dark:border-amber-800/60 bg-linear-to-r from-amber-50/90 via-white/80 to-sky-50/70 dark:from-amber-950/35 dark:via-gray-950/40 dark:to-sky-950/25 px-5 py-4 shadow-sm"
+      >
+        <p class="m-0 text-sm font-medium text-amber-950/95 dark:text-amber-100/90 leading-relaxed" data-i18n="landing.devStrip">
+          Parte del producto ya puedes usarlo con invitación; el resto está en el taller. Sin fechas mágicas ni humo.
         </p>
-
-        <div class="flex flex-col sm:flex-row flex-wrap gap-3 pt-3">
-          <a
-            href="/request-access"
-            data-landing-request-access
-            class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 no-underline"
-          >
-            Solicitar acceso
-          </a>
-          <a
-            href="/login"
-            data-landing-have-invite
-            class="inline-flex items-center justify-center rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
-          >
-            Entrar (acceso privado)
-          </a>
-          <a
-            href="/app"
-            data-landing-open-app
-            class="hidden items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 no-underline shadow-sm"
-          >
-            Abrir app
-          </a>
-          <a
-            href="/demo"
-            data-landing-demo
-            class="inline-flex items-center justify-center rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/55 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
-          >
-            Ver demo
-          </a>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3">
-          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-4 shadow-sm">
-            <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/10 dark:bg-indigo-400/10 text-indigo-700 dark:text-indigo-300">T</span>
-              Tecnologías
-            </p>
-            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Tu mapa de stack.</p>
-          </div>
-          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-4 shadow-sm">
-            <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-sky-500/10 dark:bg-sky-400/10 text-sky-700 dark:text-sky-300">C</span>
-              Conceptos
-            </p>
-            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Aprendizaje trazable.</p>
-          </div>
-          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-4 shadow-sm">
-            <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-rose-500/10 dark:bg-rose-400/10 text-rose-700 dark:text-rose-300">E</span>
-              Evidencias
-            </p>
-            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Links + embeds, rápido.</p>
-          </div>
-        </div>
-
-        <div class="pt-2 space-y-3 max-w-xl">
-          <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
-            Pensado para que tu portfolio no dependa de “me acuerdo de todo”, sino de evidencias y una historia clara (rol + resultado).
-          </p>
-          <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
-            Acceso por invitación hasta v1.0 para iterar rápido y cuidar calidad.
-          </p>
-        </div>
       </div>
-
-      <div class="relative">
-        <div class="absolute -inset-3 rounded-3xl bg-linear-to-br from-indigo-200/70 via-transparent to-rose-200/55 dark:from-indigo-500/15 dark:to-rose-500/12 blur-2xl" />
-        <div class="relative rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/85 dark:bg-gray-950/85 shadow-sm overflow-hidden">
-          <div class="px-5 py-4 border-b border-gray-200/80 dark:border-gray-800 flex items-center justify-between bg-white/60 dark:bg-gray-950/40 backdrop-blur">
-            <div class="flex items-center gap-2">
-              <div class="h-2.5 w-2.5 rounded-full bg-rose-400/80" />
-              <div class="h-2.5 w-2.5 rounded-full bg-amber-300/80" />
-              <div class="h-2.5 w-2.5 rounded-full bg-emerald-300/80" />
-            </div>
-            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Preview</span>
-          </div>
-          <div class="p-6 space-y-4">
-            <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-950/40">
-              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Proyecto · “Tableau Water Intake”</p>
-              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">
-                Rol: data analyst · Resultado: dashboard público + insights accionables.
-              </p>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">Tableau</span>
-                <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">SQL</span>
-                <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">Storytelling</span>
-              </div>
-            </div>
-            <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-950/40">
-              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Evidencias</p>
-              <div class="mt-3 grid grid-cols-1 gap-2">
-                <div class="rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/20 px-3 py-2">
-                  <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Dashboard embed</p>
-                  <p class="mt-1 mb-0 text-xs text-gray-600 dark:text-gray-400 truncate">tableau.com / views / ...</p>
-                </div>
-                <div class="rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/20 px-3 py-2">
-                  <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Repositorio</p>
-                  <p class="mt-1 mb-0 text-xs text-gray-600 dark:text-gray-400 truncate">github.com / ...</p>
-                </div>
-              </div>
-            </div>
-            <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-950/40">
-              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Portfolio</p>
-              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">
-                Cards limpias, filtro por tecnología, evidencia principal destacada.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
       <div class="pt-10">
         <div class="h-px w-full bg-linear-to-r from-transparent via-gray-200/80 to-transparent dark:via-gray-800/80" />
       </div>
 
-    <section class="rounded-3xl border border-gray-200/80 dark:border-gray-800 bg-white/55 dark:bg-gray-950/45 shadow-sm overflow-hidden">
-      <div class="px-6 py-5 border-b border-gray-200/70 dark:border-gray-800/70 bg-white/60 dark:bg-gray-950/40 backdrop-blur flex flex-wrap items-end justify-between gap-3">
-        <div class="space-y-1">
-          <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase">Flujo</p>
-          <h2 class="m-0 text-lg font-semibold">Del proyecto al portfolio, con evidencias.</h2>
-        </div>
-        <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-xl">
-          Una relación visual: empieza pegando URLs, cuenta la historia y publica.
-        </p>
-      </div>
-
-      <div class="relative p-6">
-        <div class="pointer-events-none absolute inset-0">
-          <svg viewBox="0 0 1200 260" class="w-full h-full" preserveAspectRatio="none" aria-hidden="true">
-            <defs>
-              <linearGradient id="flowStroke" x1="0" x2="1" y1="0" y2="0">
-                <stop offset="0%" stop-color="rgb(99 102 241)" stop-opacity="0.55" />
-                <stop offset="50%" stop-color="rgb(56 189 248)" stop-opacity="0.45" />
-                <stop offset="100%" stop-color="rgb(244 63 94)" stop-opacity="0.50" />
-              </linearGradient>
-              <filter id="flowBlur" x="-20%" y="-40%" width="140%" height="180%">
-                <feGaussianBlur stdDeviation="8" />
-              </filter>
-            </defs>
-            <path
-              d="M 120 150 C 280 60, 420 60, 560 150 S 840 240, 1080 140"
-              stroke="url(#flowStroke)"
-              stroke-width="6"
-              fill="none"
-              filter="url(#flowBlur)"
-            />
-            <path
-              d="M 120 150 C 280 60, 420 60, 560 150 S 840 240, 1080 140"
-              stroke="url(#flowStroke)"
-              stroke-width="2.25"
-              fill="none"
-              opacity="0.9"
-            />
-          </svg>
-        </div>
-
-        <div class="relative grid md:grid-cols-3 gap-5">
-          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-6 shadow-sm">
-            <div class="flex items-start justify-between gap-3">
-              <div class="space-y-1">
-                <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Evidencias</p>
-                <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Pega URLs y detectamos el tipo para embed/link en segundos.
-                </p>
-              </div>
-              <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 dark:bg-indigo-400/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/15 dark:border-indigo-400/15">
-                🔗
-              </span>
-            </div>
+      <section class="rounded-3xl border border-gray-200/80 dark:border-gray-800 bg-white/55 dark:bg-gray-950/45 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-200/70 dark:border-gray-800/70 bg-white/60 dark:bg-gray-950/40 backdrop-blur flex flex-wrap items-end justify-between gap-3">
+          <div class="space-y-1">
+            <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase" data-i18n="landing.flowKicker">Flujo</p>
+            <h2 class="m-0 text-lg font-semibold" data-i18n="landing.flowTitle">Del proyecto al portfolio, con evidencias.</h2>
           </div>
-
-          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-6 shadow-sm">
-            <div class="flex items-start justify-between gap-3">
-              <div class="space-y-1">
-                <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Historia</p>
-                <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Rol + resultado para que el proyecto se entienda sin contexto.
-                </p>
-              </div>
-              <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/10 dark:bg-sky-400/10 text-sky-700 dark:text-sky-300 border border-sky-500/15 dark:border-sky-400/15">
-                ✍️
-              </span>
-            </div>
-          </div>
-
-          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-6 shadow-sm">
-            <div class="flex items-start justify-between gap-3">
-              <div class="space-y-1">
-                <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Portfolio</p>
-                <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Publica cards limpias y filtrables (cuando tú decidas).
-                </p>
-              </div>
-              <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/10 dark:bg-rose-400/10 text-rose-700 dark:text-rose-300 border border-rose-500/15 dark:border-rose-400/15">
-                ✨
-              </span>
-            </div>
-          </div>
+          <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-xl" data-i18n="landing.flowSubtitle">
+            Una relación visual: empieza pegando URLs, cuenta la historia y publica.
+          </p>
         </div>
-      </div>
-    </section>
 
-    <section class="grid lg:grid-cols-2 gap-8 items-start">
-      <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-7 shadow-sm">
-        <h2 class="m-0 text-lg font-semibold">Cómo funciona</h2>
-        <div class="mt-5 space-y-3" style="overflow-anchor: none;">
-          <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
-            <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
-              <span>1) Define tecnologías</span>
-              <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
-            </summary>
-            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">SQL, Tableau, Python… tu mapa base.</p>
-          </details>
-          <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
-            <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
-              <span>2) Añade conceptos</span>
-              <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
-            </summary>
-            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">Lo que realmente aprendes dentro de cada tecnología.</p>
-          </details>
-          <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
-            <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
-              <span>3) Crea proyectos + evidencias</span>
-              <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
-            </summary>
-            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">URLs (link/embed), tecnologías, conceptos, rol y resultado.</p>
-          </details>
-          <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
-            <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
-              <span>4) Publica portfolio</span>
-              <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
-            </summary>
-            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">Cards limpias, filtro por tecnología y evidencia principal destacada.</p>
-          </details>
-        </div>
-      </div>
-
-      <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-7 shadow-sm">
-        <h2 class="m-0 text-lg font-semibold">FAQ (invites only)</h2>
-        <div class="mt-5 space-y-3" style="overflow-anchor: none;">
-          <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
-            <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
-              <span>¿Por qué invite-only?</span>
-              <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
-            </summary>
-            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">
-              Para iterar sin fricción y mantener la calidad mientras consolidamos el MVP.
-            </p>
-          </details>
-          <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
-            <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
-              <span>¿Qué es público?</span>
-              <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
-            </summary>
-            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">
-              La landing y la demo. La app completa requiere sesión.
-            </p>
-          </details>
-          <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
-            <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
-              <span>¿Cómo pido acceso?</span>
-              <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
-            </summary>
-            <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">
-              Usa “Solicitar acceso” y cuéntame el caso de uso. Te mando invite cuando esté listo.
-            </p>
-          </details>
-        </div>
-      </div>
-    </section>
-
-    <section class="rounded-3xl border border-gray-200/80 dark:border-gray-800 bg-white/55 dark:bg-gray-950/45 shadow-sm overflow-hidden">
-      <div class="px-6 py-5 border-b border-gray-200/70 dark:border-gray-800/70 bg-white/60 dark:bg-gray-950/40 backdrop-blur flex flex-wrap items-end justify-between gap-3">
-        <div class="space-y-1">
-          <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase">Built with</p>
-          <h2 class="m-0 text-lg font-semibold">Astro + Tailwind + TypeScript + Supabase.</h2>
-        </div>
-        <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-xl">
-          Tecnologías
-        </p>
-      </div>
-
-      <div class="p-6">
-        <div class="relative overflow-hidden rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60">
+        <div class="relative p-6">
           <div class="pointer-events-none absolute inset-0">
-            <svg viewBox="0 0 900 280" class="w-full h-full" preserveAspectRatio="none" aria-hidden="true">
+            <svg viewBox="0 0 1200 260" class="w-full h-full" preserveAspectRatio="none" aria-hidden="true">
               <defs>
-                <linearGradient id="bw" x1="0" x2="1" y1="0" y2="0">
-                  <stop offset="0%" stop-color="rgb(99 102 241)" stop-opacity="0.45" />
-                  <stop offset="50%" stop-color="rgb(56 189 248)" stop-opacity="0.35" />
-                  <stop offset="100%" stop-color="rgb(244 63 94)" stop-opacity="0.40" />
+                <linearGradient id="flowStroke" x1="0" x2="1" y1="0" y2="0">
+                  <stop offset="0%" stop-color="rgb(99 102 241)" stop-opacity="0.55" />
+                  <stop offset="50%" stop-color="rgb(56 189 248)" stop-opacity="0.45" />
+                  <stop offset="100%" stop-color="rgb(244 63 94)" stop-opacity="0.50" />
                 </linearGradient>
+                <filter id="flowBlur" x="-20%" y="-40%" width="140%" height="180%">
+                  <feGaussianBlur stdDeviation="8" />
+                </filter>
               </defs>
-              <path d="M170 70 C 300 70, 320 140, 450 140" stroke="url(#bw)" stroke-width="3" fill="none" />
-              <path d="M170 140 C 300 140, 320 140, 450 140" stroke="url(#bw)" stroke-width="3" fill="none" />
-              <path d="M170 210 C 300 210, 320 140, 450 140" stroke="url(#bw)" stroke-width="3" fill="none" />
-              <path d="M520 140 C 640 140, 660 70, 780 70" stroke="url(#bw)" stroke-width="3" fill="none" />
-              <path d="M520 140 C 640 140, 660 140, 780 140" stroke="url(#bw)" stroke-width="3" fill="none" />
-              <path d="M520 140 C 640 140, 660 210, 780 210" stroke="url(#bw)" stroke-width="3" fill="none" />
+              <path
+                d="M 120 150 C 280 60, 420 60, 560 150 S 840 240, 1080 140"
+                stroke="url(#flowStroke)"
+                stroke-width="6"
+                fill="none"
+                filter="url(#flowBlur)"
+              />
+              <path
+                d="M 120 150 C 280 60, 420 60, 560 150 S 840 240, 1080 140"
+                stroke="url(#flowStroke)"
+                stroke-width="2.25"
+                fill="none"
+                opacity="0.9"
+              />
             </svg>
           </div>
 
-          <div class="relative grid grid-cols-1 md:grid-cols-3 gap-4 p-5 items-center">
-            <div class="flex flex-col gap-3">
-              <div class="inline-flex items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm">
-                <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 dark:bg-indigo-400/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/15 dark:border-indigo-400/15">⚡</span>
-                <div class="min-w-0">
-                  <p class="m-0 text-sm font-semibold">Astro</p>
-                  <p class="mt-0.5 mb-0 text-xs text-gray-600 dark:text-gray-400">UI + islands</p>
+          <div class="relative grid md:grid-cols-3 gap-5">
+            <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-6 shadow-sm">
+              <div class="flex items-start justify-between gap-3">
+                <div class="space-y-1">
+                  <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.flowCard1Title">Evidencias</p>
+                  <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="landing.flowCard1Body">
+                    Pega URLs y detectamos el tipo para embed o enlace en segundos.
+                  </p>
                 </div>
-              </div>
-              <div class="inline-flex items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm">
-                <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/10 dark:bg-sky-400/10 text-sky-700 dark:text-sky-300 border border-sky-500/15 dark:border-sky-400/15">🎨</span>
-                <div class="min-w-0">
-                  <p class="m-0 text-sm font-semibold">Tailwind</p>
-                  <p class="mt-0.5 mb-0 text-xs text-gray-600 dark:text-gray-400">Design system</p>
-                </div>
-              </div>
-              <div class="inline-flex items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm">
-                <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/10 dark:bg-rose-400/10 text-rose-700 dark:text-rose-300 border border-rose-500/15 dark:border-rose-400/15">🛡️</span>
-                <div class="min-w-0">
-                  <p class="m-0 text-sm font-semibold">Supabase</p>
-                  <p class="mt-0.5 mb-0 text-xs text-gray-600 dark:text-gray-400">Auth + RLS</p>
-                </div>
+                <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 dark:bg-indigo-400/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/15 dark:border-indigo-400/15">
+                  🔗
+                </span>
               </div>
             </div>
 
-            <div class="flex items-center justify-center">
-              <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/90 dark:bg-gray-950/80 px-6 py-5 shadow-sm text-center">
-                <p class="m-0 text-sm font-semibold">SkillAtlas</p>
-                <p class="mt-1 mb-0 text-xs text-gray-600 dark:text-gray-400">MVP</p>
+            <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-6 shadow-sm">
+              <div class="flex items-start justify-between gap-3">
+                <div class="space-y-1">
+                  <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.flowCard2Title">Historia</p>
+                  <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="landing.flowCard2Body">
+                    Rol + resultado para que el proyecto se entienda sin contexto.
+                  </p>
+                </div>
+                <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/10 dark:bg-sky-400/10 text-sky-700 dark:text-sky-300 border border-sky-500/15 dark:border-sky-400/15">
+                  ✍️
+                </span>
               </div>
             </div>
 
-            <div class="flex flex-col gap-3">
-              <div class="inline-flex items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm justify-between">
-                <p class="m-0 text-sm font-semibold">Tecnologías</p>
-                <span class="text-xs text-gray-600 dark:text-gray-400">mapa</span>
-              </div>
-              <div class="inline-flex items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm justify-between">
-                <p class="m-0 text-sm font-semibold">Proyectos</p>
-                <span class="text-xs text-gray-600 dark:text-gray-400">evidencias</span>
-              </div>
-              <div class="inline-flex items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm justify-between">
-                <p class="m-0 text-sm font-semibold">Portfolio</p>
-                <span class="text-xs text-gray-600 dark:text-gray-400">publicación</span>
+            <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-6 shadow-sm">
+              <div class="flex items-start justify-between gap-3">
+                <div class="space-y-1">
+                  <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.flowCard3Title">Portfolio</p>
+                  <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="landing.flowCard3Body">
+                    Publica tarjetas limpias y filtrables cuando tú decidas.
+                  </p>
+                </div>
+                <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/10 dark:bg-rose-400/10 text-rose-700 dark:text-rose-300 border border-rose-500/15 dark:border-rose-400/15">
+                  ✨
+                </span>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <section class="rounded-3xl border border-indigo-200/50 dark:border-indigo-900/40 bg-white/55 dark:bg-gray-950/45 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-200/70 dark:border-gray-800/70 bg-linear-to-r from-indigo-50/50 via-white/60 to-transparent dark:from-indigo-950/30 dark:via-gray-950/50 dark:to-transparent backdrop-blur flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+          <div class="space-y-1 max-w-3xl">
+            <p class="m-0 text-xs font-semibold tracking-wide text-indigo-600 dark:text-indigo-300 uppercase" data-i18n="landing.roadmapKicker">
+              Hoja de ruta
+            </p>
+            <h2 class="m-0 text-xl md:text-2xl font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.roadmapTitle">
+              Lo que viene — en construcción, con honestidad
+            </h2>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="landing.roadmapSubtitle">
+              El orden es aproximado; lo importante es que sepas qué es real hoy y qué sigue en el taller.
+            </p>
+          </div>
+        </div>
+        <div class="p-6 grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-5 shadow-sm flex flex-col gap-3">
+            <div class="flex items-start justify-between gap-3">
+              <h3 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.rmPricingTitle">Precios y planes</h3>
+              <span
+                class="shrink-0 rounded-full border border-amber-200/90 dark:border-amber-800/60 bg-amber-50/90 dark:bg-amber-950/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-900 dark:text-amber-200"
+                data-i18n="landing.badgePartial"
+              >
+                Parcial
+              </span>
+            </div>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed flex-1" data-i18n="landing.rmPricingBody">
+              Página pública con tallaje orientativo y comparativa; cobrar de verdad llegará con condiciones claras.
+            </p>
+          </div>
+          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-5 shadow-sm flex flex-col gap-3">
+            <div class="flex items-start justify-between gap-3">
+              <h3 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.rmShareTitle">Portfolio por enlace</h3>
+              <span
+                class="shrink-0 rounded-full border border-indigo-200/80 dark:border-indigo-800/50 bg-indigo-50/80 dark:bg-indigo-950/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-900 dark:text-indigo-200"
+                data-i18n="landing.badgeDev"
+              >
+                En desarrollo
+              </span>
+            </div>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed flex-1" data-i18n="landing.rmShareBody">
+              Ruta con token, activar compartir desde perfil y lectura pública segura vía RPC.
+            </p>
+          </div>
+          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-5 shadow-sm flex flex-col gap-3">
+            <div class="flex items-start justify-between gap-3">
+              <h3 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.rmCvTitle">CV y exportación</h3>
+              <span
+                class="shrink-0 rounded-full border border-indigo-200/80 dark:border-indigo-800/50 bg-indigo-50/80 dark:bg-indigo-950/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-900 dark:text-indigo-200"
+                data-i18n="landing.badgeDev"
+              >
+                En desarrollo
+              </span>
+            </div>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed flex-1" data-i18n="landing.rmCvBody">
+              Privado por defecto, plantillas, PDF y enlace público opcional cuando quieras presumir.
+            </p>
+          </div>
+          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-5 shadow-sm flex flex-col gap-3">
+            <div class="flex items-start justify-between gap-3">
+              <h3 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.rmExportTitle">Salida profesional</h3>
+              <span
+                class="shrink-0 rounded-full border border-indigo-200/80 dark:border-indigo-800/50 bg-indigo-50/80 dark:bg-indigo-950/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-900 dark:text-indigo-200"
+                data-i18n="landing.badgeDev"
+              >
+                En desarrollo
+              </span>
+            </div>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed flex-1" data-i18n="landing.rmExportBody">
+              PDF de portfolio, previews ricos por proyecto y export estático cuando encaje.
+            </p>
+          </div>
+          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-5 shadow-sm flex flex-col gap-3">
+            <div class="flex items-start justify-between gap-3">
+              <h3 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.rmDailyTitle">Día a día en la app</h3>
+              <span
+                class="shrink-0 rounded-full border border-indigo-200/80 dark:border-indigo-800/50 bg-indigo-50/80 dark:bg-indigo-950/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-900 dark:text-indigo-200"
+                data-i18n="landing.badgeDev"
+              >
+                En desarrollo
+              </span>
+            </div>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed flex-1" data-i18n="landing.rmDailyBody">
+              Duplicar proyectos, plantillas, actividad reciente y command palette más ambicioso.
+            </p>
+          </div>
+          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-5 shadow-sm flex flex-col gap-3">
+            <div class="flex items-start justify-between gap-3">
+              <h3 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.rmBillingTitle">Monetización real</h3>
+              <span
+                class="shrink-0 rounded-full border border-indigo-200/80 dark:border-indigo-800/50 bg-indigo-50/80 dark:bg-indigo-950/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-900 dark:text-indigo-200"
+                data-i18n="landing.badgeDev"
+              >
+                En desarrollo
+              </span>
+            </div>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed flex-1" data-i18n="landing.rmBillingBody">
+              Pasarela, suscripciones y límites por plan cuando la demanda lo merezca, sin perder de vista precios humanos.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-3xl border border-emerald-200/45 dark:border-emerald-900/35 bg-white/55 dark:bg-gray-950/45 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-200/70 dark:border-gray-800/70 bg-linear-to-r from-emerald-50/40 via-white/55 to-transparent dark:from-emerald-950/25 dark:via-gray-950/45 dark:to-transparent">
+          <p class="m-0 text-xs font-semibold tracking-wide text-emerald-700 dark:text-emerald-300 uppercase" data-i18n="landing.todayKicker">
+            Disponible hoy
+          </p>
+          <h2 class="mt-2 mb-0 text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.todayTitle">
+            Lo que el MVP ya te deja hacer
+          </h2>
+          <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed" data-i18n="landing.todayIntro">
+            Con invitación tienes el núcleo completo: organizar conocimiento y enseñarlo con criterio.
+          </p>
+        </div>
+        <div class="p-6">
+          <ul class="m-0 pl-5 space-y-2.5 text-sm text-gray-700 dark:text-gray-300 leading-relaxed list-disc marker:text-emerald-600 dark:marker:text-emerald-400">
+            <li data-i18n="landing.todayLi1">CRUD de tecnologías, conceptos y proyectos con multi-tenant y RLS en la nube.</li>
+            <li data-i18n="landing.todayLi2">Evidencias como enlace o embed, ordenadas y con pistas según la URL.</li>
+            <li data-i18n="landing.todayLi3">Historia de proyecto: rol + resultado para explicar impacto, no solo tareas.</li>
+            <li data-i18n="landing.todayLi4">Portfolio con sesión, demo pública, precios y solicitudes de acceso con panel para quien administra.</li>
+            <li data-i18n="landing.todayLi5">Modo oscuro, ES/EN, View Transitions, rejilla de ajustes y un montón de detalle geek que importa en el día a día.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="grid lg:grid-cols-2 gap-8 items-start">
+        <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-7 shadow-sm">
+          <h2 class="m-0 text-lg font-semibold" data-i18n="landing.howTitle">Cómo funciona</h2>
+          <div class="mt-5 space-y-3" style="overflow-anchor: none;">
+            <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
+              <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
+                <span data-i18n="landing.how1Summary">1) Define tecnologías</span>
+                <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
+              </summary>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.how1Body">SQL, Tableau, Python… tu mapa base.</p>
+            </details>
+            <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
+              <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
+                <span data-i18n="landing.how2Summary">2) Añade conceptos</span>
+                <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
+              </summary>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.how2Body">
+                Lo que realmente aprendes dentro de cada tecnología.
+              </p>
+            </details>
+            <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
+              <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
+                <span data-i18n="landing.how3Summary">3) Crea proyectos y evidencias</span>
+                <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
+              </summary>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.how3Body">
+                URLs (enlace o embed), tecnologías, conceptos, rol y resultado.
+              </p>
+            </details>
+            <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
+              <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
+                <span data-i18n="landing.how4Summary">4) Publica portfolio</span>
+                <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
+              </summary>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.how4Body">
+                Tarjetas claras, filtro por tecnología y evidencia principal destacada.
+              </p>
+            </details>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-7 shadow-sm">
+          <h2 class="m-0 text-lg font-semibold" data-i18n="landing.faqTitle">Preguntas frecuentes</h2>
+          <div class="mt-5 space-y-3" style="overflow-anchor: none;">
+            <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
+              <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
+                <span data-i18n="landing.faq1Q">¿Por qué solo por invitación?</span>
+                <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
+              </summary>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.faq1A">
+                Para iterar sin fricción y cuidar la experiencia mientras el producto crece con cabeza.
+              </p>
+            </details>
+            <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
+              <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
+                <span data-i18n="landing.faq2Q">¿Qué es público hoy?</span>
+                <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
+              </summary>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.faq2A">
+                Esta landing, la demo y la página de precios orientativa. La app completa necesita sesión.
+              </p>
+            </details>
+            <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
+              <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
+                <span data-i18n="landing.faq3Q">¿Cómo pido acceso?</span>
+                <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
+              </summary>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.faq3A">
+                Usa “Solicitar acceso” y cuenta tu caso. Respondemos cuando haya hueco.
+              </p>
+            </details>
+            <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
+              <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
+                <span data-i18n="landing.faq4Q">¿Qué sigue en desarrollo?</span>
+                <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
+              </summary>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.faq4A">
+                Todo lo de la hoja de ruta de abajo: enlaces públicos de portfolio, CV con export, salidas profesionales, flujo diario más mullido y cobros de verdad. Lo iremos contando cuando merezca la pena.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-3xl border border-gray-200/80 dark:border-gray-800 bg-white/55 dark:bg-gray-950/45 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-200/70 dark:border-gray-800/70 bg-white/60 dark:bg-gray-950/40 backdrop-blur flex flex-wrap items-end justify-between gap-3">
+          <div class="space-y-1">
+            <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase" data-i18n="landing.builtKicker">
+              Hecho con
+            </p>
+            <h2 class="m-0 text-lg font-semibold" data-i18n="landing.builtTitle">Astro, Tailwind, TypeScript y más.</h2>
+          </div>
+          <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-xl" data-i18n="landing.builtSubtitle">
+            El mismo stack que ves en el pie de página: rápido, tipado y con datos a salvo.
+          </p>
+        </div>
+
+        <div class="p-6">
+          <div class="relative overflow-hidden rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60">
+            <div class="pointer-events-none absolute inset-0">
+              <svg viewBox="0 0 100 100" class="w-full h-full" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="bw" x1="0" x2="1" y1="0" y2="0">
+                    <stop offset="0%" stop-color="rgb(99 102 241)" stop-opacity="0.45" />
+                    <stop offset="50%" stop-color="rgb(56 189 248)" stop-opacity="0.35" />
+                    <stop offset="100%" stop-color="rgb(244 63 94)" stop-opacity="0.40" />
+                  </linearGradient>
+                  <filter id="bwBlur" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="0.6" />
+                  </filter>
+                </defs>
+                <path
+                  d="M 18 16.7 C 30 16.7, 34 50, 50 50"
+                  stroke="url(#bw)"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                  fill="none"
+                  opacity="0.55"
+                  filter="url(#bwBlur)"
+                />
+                <path
+                  d="M 18 50 C 30 50, 34 50, 50 50"
+                  stroke="url(#bw)"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                  fill="none"
+                  opacity="0.65"
+                  filter="url(#bwBlur)"
+                />
+                <path
+                  d="M 18 83.3 C 30 83.3, 34 50, 50 50"
+                  stroke="url(#bw)"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                  fill="none"
+                  opacity="0.55"
+                  filter="url(#bwBlur)"
+                />
+                <path
+                  d="M 50 50 C 66 50, 70 16.7, 82 16.7"
+                  stroke="url(#bw)"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                  fill="none"
+                  opacity="0.55"
+                  filter="url(#bwBlur)"
+                />
+                <path
+                  d="M 50 50 C 66 50, 70 50, 82 50"
+                  stroke="url(#bw)"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                  fill="none"
+                  opacity="0.65"
+                  filter="url(#bwBlur)"
+                />
+                <path
+                  d="M 50 50 C 66 50, 70 83.3, 82 83.3"
+                  stroke="url(#bw)"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                  fill="none"
+                  opacity="0.55"
+                  filter="url(#bwBlur)"
+                />
+              </svg>
+            </div>
+
+            <div class="relative grid grid-cols-1 md:grid-cols-3 md:grid-rows-3 gap-4 p-5 items-center md:min-h-64">
+              <div class="grid grid-rows-3 gap-3 h-full">
+                <div class="inline-flex h-full items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm">
+                  <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 dark:bg-indigo-400/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/15 dark:border-indigo-400/15">⚡</span>
+                  <div class="min-w-0">
+                    <p class="m-0 text-sm font-semibold">Astro</p>
+                    <p class="mt-0.5 mb-0 text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.builtAstroDesc">UI y navegación</p>
+                  </div>
+                </div>
+                <div class="inline-flex h-full items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm">
+                  <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/10 dark:bg-sky-400/10 text-sky-700 dark:text-sky-300 border border-sky-500/15 dark:border-sky-400/15">🎨</span>
+                  <div class="min-w-0">
+                    <p class="m-0 text-sm font-semibold">Tailwind</p>
+                    <p class="mt-0.5 mb-0 text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.builtTailwindDesc">Sistema visual</p>
+                  </div>
+                </div>
+                <div class="inline-flex h-full items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm">
+                  <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/10 dark:bg-rose-400/10 text-rose-700 dark:text-rose-300 border border-rose-500/15 dark:border-rose-400/15">🛡️</span>
+                  <div class="min-w-0">
+                    <p class="m-0 text-sm font-semibold">Supabase</p>
+                    <p class="mt-0.5 mb-0 text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.builtSupabaseDesc">Auth y datos</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-center md:row-span-3">
+                <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/90 dark:bg-gray-950/80 px-6 py-5 shadow-sm text-center">
+                  <p class="m-0 text-sm font-semibold" data-i18n="landing.builtCenterLabel">SkillAtlas</p>
+                  <p class="mt-1 mb-0 text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.builtCenterHint">MVP vivo</p>
+                </div>
+              </div>
+
+              <div class="grid grid-rows-3 gap-3 h-full">
+                <div class="inline-flex h-full items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm justify-between">
+                  <p class="m-0 text-sm font-semibold" data-i18n="landing.builtMapTech">Tecnologías</p>
+                  <span class="text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.builtMapTechHint">mapa</span>
+                </div>
+                <div class="inline-flex h-full items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm justify-between">
+                  <p class="m-0 text-sm font-semibold" data-i18n="landing.builtMapProjects">Proyectos</p>
+                  <span class="text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.builtMapProjectsHint">evidencias</span>
+                </div>
+                <div class="inline-flex h-full items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm justify-between">
+                  <p class="m-0 text-sm font-semibold" data-i18n="landing.builtMapPortfolio">Portfolio</p>
+                  <span class="text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.builtMapPortfolioHint">publicación</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="rounded-3xl border border-gray-200/80 dark:border-gray-800 bg-linear-to-br from-gray-900 to-gray-800 dark:from-gray-950 dark:to-gray-900 px-8 py-10 text-center shadow-lg"
+      >
+        <h2 class="m-0 text-xl md:text-2xl font-semibold text-white" data-i18n="landing.ctaBottomTitle">¿Te cuadra el ritmo?</h2>
+        <p class="mt-3 mb-0 text-sm md:text-base text-gray-300 max-w-2xl mx-auto leading-relaxed" data-i18n="landing.ctaBottomBody">
+          Pide acceso, mira precios u holdea la demo. Vamos sin prisas, con buen criterio.
+        </p>
+        <div class="mt-6 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3">
+          <a
+            href="/request-access"
+            data-landing-request-access
+            class="inline-flex w-full sm:w-auto items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-100 no-underline"
+          >
+            <span data-i18n="landing.ctaBottomPrimary">Solicitar acceso</span>
+          </a>
+          <a
+            href="/pricing"
+            class="inline-flex w-full sm:w-auto items-center justify-center rounded-lg border border-white/25 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 no-underline"
+          >
+            <span data-i18n="landing.ctaBottomPricing">Ver precios</span>
+          </a>
+          <a
+            href="/demo"
+            data-landing-demo
+            class="inline-flex w-full sm:w-auto items-center justify-center rounded-lg border border-white/25 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 no-underline"
+          >
+            <span data-i18n="landing.ctaBottomDemo">Demo</span>
+          </a>
+        </div>
+      </section>
     </div>
   </section>
+
+  <style is:global>
+    @keyframes landingDotsFloat {
+      0% {
+        background-position:
+          0 0,
+          11px 11px;
+      }
+      100% {
+        background-position:
+          44px 28px,
+          55px 39px;
+      }
+    }
+
+    .landing-dots {
+      opacity: 0.55;
+      background-image: radial-gradient(rgba(15, 23, 42, 0.22) 1px, transparent 1.35px),
+        radial-gradient(rgba(79, 70, 229, 0.14) 1px, transparent 1.45px);
+      background-size: 22px 22px, 22px 22px;
+      background-position: 0 0, 11px 11px;
+      mask-image: radial-gradient(ellipse 120% 85% at 50% 20%, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.45) 52%, rgba(0, 0, 0, 0.12) 72%, transparent 88%);
+      -webkit-mask-image: radial-gradient(ellipse 120% 85% at 50% 20%, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.45) 52%, rgba(0, 0, 0, 0.12) 72%, transparent 88%);
+      mask-repeat: no-repeat;
+      -webkit-mask-repeat: no-repeat;
+      mask-size: 100% 100%;
+      -webkit-mask-size: 100% 100%;
+      animation: landingDotsFloat 22s linear infinite;
+      will-change: background-position;
+      transform: translateZ(0);
+    }
+
+    html.dark .landing-dots {
+      opacity: 0.5;
+      background-image: radial-gradient(rgba(226, 232, 240, 0.16) 1px, transparent 1.35px),
+        radial-gradient(rgba(56, 189, 248, 0.12) 1px, transparent 1.45px);
+    }
+
+    html[data-motion="reduced"] .landing-dots {
+      animation: none;
+    }
+
+    /* Softer toward viewport edges (pairs with full-bleed section) */
+    .landing-edge-vignette {
+      background: radial-gradient(
+        ellipse 115% 92% at 50% 36%,
+        transparent 0%,
+        transparent 32%,
+        rgb(255 255 255 / 0.35) 72%,
+        rgb(255 255 255 / 0.88) 100%
+      );
+    }
+
+    html.dark .landing-edge-vignette {
+      background: radial-gradient(
+        ellipse 115% 92% at 50% 36%,
+        transparent 0%,
+        transparent 28%,
+        rgb(3 7 18 / 0.5) 68%,
+        rgb(3 7 18 / 0.94) 100%
+      );
+    }
+  </style>
 </AppShell>

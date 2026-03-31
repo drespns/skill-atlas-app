@@ -2,6 +2,7 @@ import i18next from "i18next";
 import es from "../i18n/es.json";
 import en from "../i18n/en.json";
 import { getSupabaseBrowserClient } from "./client-supabase";
+import { isSkillAtlasAdmin } from "./admin-role";
 import { showToast } from "./ui-feedback";
 import { applyPrefs, loadPrefs, updatePrefs } from "./prefs";
 import "./command-palette";
@@ -318,6 +319,10 @@ async function initI18n() {
     },
   });
 
+  const notifyLangChanged = (lang: "es" | "en") => {
+    window.dispatchEvent(new CustomEvent("skillatlas:ui-lang-changed", { detail: { lang } }));
+  };
+
   const setLangAttr = (lng: string) => {
     document.documentElement.lang = lng?.startsWith("en") ? "en" : "es";
   };
@@ -419,11 +424,13 @@ async function initI18n() {
   };
 
   render();
+  notifyLangChanged(i18next.language.startsWith("en") ? "en" : "es");
 
   window.skillatlas = window.skillatlas ?? {};
   window.skillatlas.setUiLang = async (lng: "es" | "en") => {
     await i18next.changeLanguage(lng);
     render();
+    notifyLangChanged(lng);
   };
 
   langFlagBtns.forEach((btn) => {
@@ -434,6 +441,7 @@ async function initI18n() {
       await i18next.changeLanguage(next);
       updatePrefs({ lang: next });
       render();
+      notifyLangChanged(next);
     });
   });
 }
@@ -441,6 +449,8 @@ async function initI18n() {
 async function initAuthHeader() {
   const settingsLink = document.querySelector<HTMLAnchorElement>("[data-auth-header-settings]");
   const signOutBtn = document.querySelector<HTMLButtonElement>("[data-auth-header-signout]");
+  const publicHeaderPricing = document.querySelector<HTMLAnchorElement>("[data-public-header-pricing]");
+  const adminHeaderLink = document.querySelector<HTMLAnchorElement>("[data-admin-header-link]");
   const avatarWrap = document.querySelector<HTMLElement>("[data-auth-avatar-wrap]");
   const avatarImg = document.querySelector<HTMLImageElement>("[data-auth-avatar]");
   const authNavLinks = document.querySelectorAll<HTMLElement>("[data-auth-nav]");
@@ -451,6 +461,8 @@ async function initAuthHeader() {
   if (
     !settingsLink &&
     !signOutBtn &&
+    !publicHeaderPricing &&
+    !adminHeaderLink &&
     authNavLinks.length === 0 &&
     footerAuthNavLinks.length === 0 &&
     !homeLink
@@ -484,6 +496,17 @@ async function initAuthHeader() {
       el.classList.toggle("hidden", !isAuthed);
       el.classList.toggle("inline-flex", isAuthed);
     });
+
+    if (publicHeaderPricing) {
+      publicHeaderPricing.classList.add("hidden");
+      if (!isAuthed) publicHeaderPricing.classList.add("md:inline-flex");
+      else publicHeaderPricing.classList.remove("md:inline-flex");
+    }
+
+    if (adminHeaderLink) {
+      adminHeaderLink.classList.add("hidden");
+      adminHeaderLink.classList.remove("inline-flex");
+    }
     footerAuthNavLinks.forEach((el) => {
       el.classList.toggle("hidden", !isAuthed);
       el.classList.toggle("inline-flex", isAuthed);
@@ -567,6 +590,15 @@ async function initAuthHeader() {
     const user = data.session?.user ?? null;
     setVisibility(Boolean(user));
     updateLandingCtas(Boolean(user));
+
+    if (adminHeaderLink && supabase && user) {
+      const ok = await isSkillAtlasAdmin(supabase, user.id);
+      adminHeaderLink.classList.toggle("hidden", !ok);
+      adminHeaderLink.classList.toggle("inline-flex", ok);
+    } else if (adminHeaderLink) {
+      adminHeaderLink.classList.add("hidden");
+      adminHeaderLink.classList.remove("inline-flex");
+    }
     const meta = (user?.user_metadata ?? {}) as Record<string, any>;
     const lastProvider = (() => {
       try {

@@ -1,11 +1,19 @@
 import { getSupabaseBrowserClient } from "./client-supabase";
 import { getSessionUserId } from "./auth-session";
+import { isSkillAtlasAdmin } from "./admin-role";
 
 type PaletteItem = {
   id: string;
   label: string;
   hint?: string;
   href: string;
+};
+
+const PALETTE_ADMIN_ITEM: PaletteItem = {
+  id: "go-admin",
+  label: "Admin (solicitudes)",
+  href: "/admin",
+  hint: "/admin",
 };
 
 function esc(s: string) {
@@ -38,6 +46,7 @@ function initCommandPalette() {
   let activeIndex = 0;
 
   const authedItems: PaletteItem[] = [
+    { id: "go-pricing", label: "Precios", href: "/pricing", hint: "/pricing" },
     { id: "go-app", label: "Abrir app", href: "/app", hint: "/app" },
     { id: "go-technologies", label: "Tecnologías", href: "/technologies", hint: "/technologies" },
     { id: "go-projects", label: "Proyectos", href: "/projects", hint: "/projects" },
@@ -47,6 +56,7 @@ function initCommandPalette() {
   ];
 
   const unauthedItems: PaletteItem[] = [
+    { id: "go-pricing", label: "Precios", href: "/pricing", hint: "/pricing" },
     { id: "go-login", label: "Entrar (acceso privado)", href: "/login", hint: "/login" },
     { id: "go-demo", label: "Ver demo", href: "/demo", hint: "/demo" },
     {
@@ -130,9 +140,10 @@ function initCommandPalette() {
     if (supabase && isAuthed) {
       const userId = await getSessionUserId(supabase);
       if (userId) {
+        const adminPrefix = (await isSkillAtlasAdmin(supabase, userId)) ? [PALETTE_ADMIN_ITEM] : [];
         const cached = readCache(userId);
         if (cached) {
-          allItems = [...authedItems, ...cached];
+          allItems = [...adminPrefix, ...authedItems, ...cached];
           render();
           // background refresh
           setTimeout(() => void hydrateFromSupabase(supabase, userId), 0);
@@ -177,7 +188,8 @@ function initCommandPalette() {
       });
     }
     writeCache(userId, items);
-    allItems = [...authedItems, ...items];
+    const prefix = (await isSkillAtlasAdmin(supabase, userId)) ? [PALETTE_ADMIN_ITEM] : [];
+    allItems = [...prefix, ...authedItems, ...items];
     render();
   };
 
