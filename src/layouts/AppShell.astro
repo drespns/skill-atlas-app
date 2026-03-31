@@ -175,24 +175,31 @@ const FOOTER_BUILD_ICONS = [
         </a>
 
         <nav class="hidden md:flex flex-wrap gap-4 text-sm" data-i18n-scope="nav">
-          <a href="/" class={`hover:underline ${pathname === "/" ? "font-semibold" : ""}`}>
-            <span>Landing</span>
+          <a
+            href="/demo"
+            data-public-nav
+            class={`hover:underline ${isActive("/demo") ? "font-semibold" : ""}`}
+          >
+            <span>Demo</span>
           </a>
           <a
             href="/technologies"
-            class={`hover:underline ${isActive("/technologies") ? "font-semibold" : ""}`}
+            data-auth-nav
+            class={`hover:underline ${isActive("/technologies") ? "font-semibold" : ""} hidden`}
           >
             <span data-i18n="nav.technologies">Tecnologías</span>
           </a>
           <a
             href="/projects"
-            class={`hover:underline ${isActive("/projects") ? "font-semibold" : ""}`}
+            data-auth-nav
+            class={`hover:underline ${isActive("/projects") ? "font-semibold" : ""} hidden`}
           >
             <span data-i18n="nav.projects">Proyectos</span>
           </a>
           <a
             href="/portfolio"
-            class={`hover:underline ${isActive("/portfolio") ? "font-semibold" : ""}`}
+            data-auth-nav
+            class={`hover:underline ${isActive("/portfolio") ? "font-semibold" : ""} hidden`}
           >
             <span data-i18n="nav.portfolio">Portfolio</span>
           </a>
@@ -263,29 +270,6 @@ const FOOTER_BUILD_ICONS = [
             </svg>
             <span class="hidden lg:inline text-xs font-semibold text-gray-600 dark:text-gray-300">Ctrl K</span>
           </button>
-
-          <a
-            href="/login"
-            data-auth-header-login
-            class={`inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors ${isActive("/login") ? "ring-1 ring-gray-300 dark:ring-gray-700" : ""} hidden`}
-            aria-label="Login"
-            title="Login"
-          >
-            <svg
-              class="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-              <path d="M10 17l5-5-5-5" />
-              <path d="M15 12H3" />
-            </svg>
-          </a>
 
           <button
             type="button"

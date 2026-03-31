@@ -269,12 +269,13 @@ async function initI18n() {
 }
 
 async function initAuthHeader() {
-  const loginLink = document.querySelector<HTMLAnchorElement>("[data-auth-header-login]");
   const settingsLink = document.querySelector<HTMLAnchorElement>("[data-auth-header-settings]");
   const signOutBtn = document.querySelector<HTMLButtonElement>("[data-auth-header-signout]");
   const avatarWrap = document.querySelector<HTMLElement>("[data-auth-avatar-wrap]");
   const avatarImg = document.querySelector<HTMLImageElement>("[data-auth-avatar]");
-  if (!loginLink) return;
+  const authNavLinks = document.querySelectorAll<HTMLElement>("[data-auth-nav]");
+  const publicNavLinks = document.querySelectorAll<HTMLElement>("[data-public-nav]");
+  if (!settingsLink && !signOutBtn && authNavLinks.length === 0 && publicNavLinks.length === 0) return;
 
   const setAvatar = (url: string | null) => {
     if (!avatarWrap || !avatarImg) return;
@@ -290,10 +291,6 @@ async function initAuthHeader() {
   };
 
   const setVisibility = (isAuthed: boolean) => {
-    // Login
-    loginLink.classList.toggle("hidden", isAuthed);
-    loginLink.classList.toggle("inline-flex", !isAuthed);
-
     // Settings
     settingsLink?.classList.toggle("hidden", !isAuthed);
     settingsLink?.classList.toggle("inline-flex", isAuthed);
@@ -301,6 +298,16 @@ async function initAuthHeader() {
     // Sign out
     signOutBtn?.classList.toggle("hidden", !isAuthed);
     signOutBtn?.classList.toggle("inline-flex", isAuthed);
+
+    // Nav
+    authNavLinks.forEach((el) => {
+      el.classList.toggle("hidden", !isAuthed);
+      el.classList.toggle("inline-flex", isAuthed);
+    });
+    publicNavLinks.forEach((el) => {
+      el.classList.toggle("hidden", isAuthed);
+      el.classList.toggle("inline-flex", !isAuthed);
+    });
   };
 
   const supabase = getSupabaseBrowserClient();
@@ -308,16 +315,6 @@ async function initAuthHeader() {
     setVisibility(false);
     return;
   }
-
-  // If user clicks the login icon, remember current page so /login can bounce back.
-  loginLink.addEventListener("click", () => {
-    try {
-      const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-      sessionStorage.setItem("skillatlas_post_login_next", current);
-    } catch {
-      // ignore
-    }
-  });
 
   signOutBtn?.addEventListener("click", async () => {
     const supabase = getSupabaseBrowserClient();
