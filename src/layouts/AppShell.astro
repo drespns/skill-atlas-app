@@ -1,7 +1,6 @@
 ---
 import "../styles/global.css";
 import { repoUrl } from "../data";
-import clientScriptUrl from "../scripts/client.ts?url";
 import { GLOBAL_BANNER } from "../config/banner";
 
 const { title = "SkillAtlas" } = Astro.props;
@@ -9,7 +8,6 @@ const year = new Date().getFullYear();
 
 const pathname = Astro.url.pathname;
 const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
-const homeHref = pathname === "/" ? "/" : "/app";
 
 const APP_LOGO_SRC = "/favicon.svg";
 
@@ -115,8 +113,8 @@ const FOOTER_BUILD_ICONS = [
       <div
         data-global-banner
         data-banner-id={GLOBAL_BANNER.id}
-        data-banner-state="closed"
-        class="overflow-hidden border-b border-gray-200/80 dark:border-gray-800 backdrop-blur transition-[max-height,opacity,transform] duration-300 ease-out max-h-0 opacity-0 -translate-y-2 pointer-events-none bg-white/80 dark:bg-gray-950/75"
+        data-banner-state="open"
+        class="overflow-hidden border-b border-gray-200/80 dark:border-gray-800 backdrop-blur transition-[max-height,opacity,transform] duration-300 ease-out max-h-24 opacity-100 translate-y-0 pointer-events-auto bg-white/80 dark:bg-gray-950/75"
       >
         <div class="max-w-screen-2xl mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-2">
           <div class="flex flex-wrap items-center gap-2 min-w-0">
@@ -147,7 +145,7 @@ const FOOTER_BUILD_ICONS = [
           </button>
         </div>
       </div>
-      <div class="pointer-events-none absolute inset-0 -z-10 bg-linear-to-r from-indigo-200/40 via-transparent to-rose-200/40 dark:from-indigo-500/10 dark:to-rose-500/10 opacity-0" data-banner-glow></div>
+      <div class="pointer-events-none absolute inset-0 -z-10 bg-linear-to-r from-indigo-200/40 via-transparent to-rose-200/40 dark:from-indigo-500/10 dark:to-rose-500/10 opacity-100" data-banner-glow></div>
     </div>
 
     <header
@@ -156,7 +154,7 @@ const FOOTER_BUILD_ICONS = [
       style="padding: var(--app-header-py, 1rem) var(--app-header-px, 1.25rem);"
     >
       <div class="max-w-screen-2xl mx-auto flex items-center justify-between gap-4">
-        <a href={homeHref} class="flex items-center gap-3 no-underline">
+        <a href="/" data-home-link class="flex items-center gap-3 no-underline">
           <img src={APP_LOGO_SRC} alt="SkillAtlas" class="h-8 w-8 rounded-md" />
           <span class="font-bold text-lg hover:underline">SkillAtlas</span>
           <span
@@ -175,13 +173,6 @@ const FOOTER_BUILD_ICONS = [
         </a>
 
         <nav class="hidden md:flex flex-wrap gap-4 text-sm" data-i18n-scope="nav">
-          <a
-            href="/demo"
-            data-public-nav
-            class={`hover:underline ${isActive("/demo") ? "font-semibold" : ""}`}
-          >
-            <span>Demo</span>
-          </a>
           <a
             href="/technologies"
             data-auth-nav
@@ -413,16 +404,32 @@ const FOOTER_BUILD_ICONS = [
             class="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-gray-700 dark:text-gray-300"
             aria-label="Footer"
           >
-            <a href="/technologies" class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors">
+            <a
+              href="/technologies"
+              data-auth-footer-nav
+              class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
+            >
               <span data-i18n="nav.technologies"></span>
             </a>
-            <a href="/projects" class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors">
+            <a
+              href="/projects"
+              data-auth-footer-nav
+              class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
+            >
               <span data-i18n="nav.projects"></span>
             </a>
-            <a href="/portfolio" class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors">
+            <a
+              href="/portfolio"
+              data-auth-footer-nav
+              class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
+            >
               <span data-i18n="nav.portfolio"></span>
             </a>
-            <a href="/settings" class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors">
+            <a
+              href="/settings"
+              data-auth-footer-nav
+              class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
+            >
               <span data-i18n="nav.settings"></span>
             </a>
             <a
@@ -507,7 +514,9 @@ const FOOTER_BUILD_ICONS = [
       </div>
     </div>
 
-    <script type="module" src={clientScriptUrl}></script>
+    <script type="module">
+      import "../scripts/client.ts";
+    </script>
   </body>
 </html>
 

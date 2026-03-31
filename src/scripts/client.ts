@@ -274,8 +274,16 @@ async function initAuthHeader() {
   const avatarWrap = document.querySelector<HTMLElement>("[data-auth-avatar-wrap]");
   const avatarImg = document.querySelector<HTMLImageElement>("[data-auth-avatar]");
   const authNavLinks = document.querySelectorAll<HTMLElement>("[data-auth-nav]");
-  const publicNavLinks = document.querySelectorAll<HTMLElement>("[data-public-nav]");
-  if (!settingsLink && !signOutBtn && authNavLinks.length === 0 && publicNavLinks.length === 0) return;
+  const footerAuthNavLinks = document.querySelectorAll<HTMLElement>("[data-auth-footer-nav]");
+  const homeLink = document.querySelector<HTMLAnchorElement>("[data-home-link]");
+  if (
+    !settingsLink &&
+    !signOutBtn &&
+    authNavLinks.length === 0 &&
+    footerAuthNavLinks.length === 0 &&
+    !homeLink
+  )
+    return;
 
   const setAvatar = (url: string | null) => {
     if (!avatarWrap || !avatarImg) return;
@@ -304,10 +312,13 @@ async function initAuthHeader() {
       el.classList.toggle("hidden", !isAuthed);
       el.classList.toggle("inline-flex", isAuthed);
     });
-    publicNavLinks.forEach((el) => {
-      el.classList.toggle("hidden", isAuthed);
-      el.classList.toggle("inline-flex", !isAuthed);
+    footerAuthNavLinks.forEach((el) => {
+      el.classList.toggle("hidden", !isAuthed);
+      el.classList.toggle("inline-flex", isAuthed);
     });
+
+    // Home link: landing when public, /app when authed.
+    if (homeLink) homeLink.href = isAuthed ? "/app" : "/";
   };
 
   const supabase = getSupabaseBrowserClient();

@@ -1,6 +1,5 @@
 ---
 import AppShell from "../../layouts/AppShell.astro";
-import projectViewBootstrapUrl from "../../scripts/project-view-bootstrap.ts?url";
 import { dataSource } from "../../data";
 
 const title = "Proyecto";
@@ -17,7 +16,9 @@ const title = "Proyecto";
         >
           Cargando proyecto…
         </div>
-        <script type="module" src={projectViewBootstrapUrl}></script>
+        <script type="module">
+          import "../../scripts/project-view-bootstrap.ts";
+        </script>
       </>
     ) : (
       <section class="space-y-3">

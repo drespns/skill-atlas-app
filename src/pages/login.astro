@@ -1,7 +1,5 @@
 ---
 import AppShell from "../layouts/AppShell.astro";
-import loginAuthScriptUrl from "../scripts/login-auth.ts?url";
-import loginEarthScriptUrl from "../scripts/login-earth.ts?url";
 
 const title = "Login";
 ---
@@ -128,7 +126,9 @@ const title = "Login";
     </div>
   </section>
 
-  <script type="module" src={loginAuthScriptUrl}></script>
-  <script type="module" src={loginEarthScriptUrl}></script>
+  <script type="module">
+    import "../scripts/login-auth.ts";
+    import "../scripts/login-earth.ts";
+  </script>
 </AppShell>
 

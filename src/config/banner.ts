@@ -9,9 +9,9 @@ export type GlobalBanner = {
 
 // Banner global (sticky) para versión/noticias.
 export const GLOBAL_BANNER: GlobalBanner = {
-  id: "v0.20.0",
-  version: "0.20.0",
-  text: "v0.20.0 · Landing + demo pública. App privada (invites only) con banner global y guard de rutas.",
+  id: "v0.20.1",
+  version: "0.20.1",
+  text: "v0.20.1 · Fix producción: scripts como módulos JS (sin MIME .ts). UI y accesos coherentes.",
   href: "/demo",
   hrefLabel: "Ver demo",
   tone: "info",

@@ -61,28 +61,39 @@ function setupEarth(canvas: HTMLCanvasElement, container: HTMLElement) {
   const placeholderNight = createSolidTexture([5, 10, 30, 255]);
   const placeholderSpec = createSolidTexture([255, 255, 255, 255]);
 
-  const dayTex = loader.load("/static/earth/day.jpg", undefined, undefined, () => {
-    // eslint-disable-next-line no-console
-    console.warn("Failed loading /static/earth/day.jpg; using placeholder");
-  });
-  const nightTex = loader.load("/static/earth/night.jpg", undefined, undefined, () => {
-    // eslint-disable-next-line no-console
-    console.warn("Failed loading /static/earth/night.jpg; using placeholder");
-  });
-  const specTex = loader.load("/static/earth/specularClouds.jpg", undefined, undefined, () => {
-    // eslint-disable-next-line no-console
-    console.warn("Failed loading /static/earth/specularClouds.jpg; using placeholder");
-  });
+  const uDayTexture = new THREE.Uniform(placeholderDay);
+  const uNightTexture = new THREE.Uniform(placeholderNight);
+  const uSpecularCloudsTexture = new THREE.Uniform(placeholderSpec);
 
-  // Configure textures (matching the original project intent)
-  dayTex.colorSpace = THREE.SRGBColorSpace;
-  nightTex.colorSpace = THREE.SRGBColorSpace;
-  // Specular/clouds is data-like; keep linear (default). Still set filtering/aniso.
-  for (const t of [dayTex, nightTex, specTex]) {
-    t.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
-    t.minFilter = THREE.LinearMipmapLinearFilter;
-    t.magFilter = THREE.LinearFilter;
-  }
+  const loadImage = (
+    url: string,
+    onOk: (t: THREE.Texture) => void,
+    label: string,
+  ) => {
+    loader.load(
+      url,
+      (t) => {
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
+        t.minFilter = THREE.LinearMipmapLinearFilter;
+        t.magFilter = THREE.LinearFilter;
+        onOk(t);
+      },
+      undefined,
+      () => {
+        // eslint-disable-next-line no-console
+        console.warn(`Failed loading ${label}; using placeholder`);
+      },
+    );
+  };
+
+  loadImage("/static/earth/day.jpg", (t) => (uDayTexture.value = t), "/static/earth/day.jpg");
+  loadImage("/static/earth/night.jpg", (t) => (uNightTexture.value = t), "/static/earth/night.jpg");
+  loadImage(
+    "/static/earth/specularClouds.jpg",
+    (t) => (uSpecularCloudsTexture.value = t),
+    "/static/earth/specularClouds.jpg",
+  );
 
   const earthGeometry = new THREE.SphereGeometry(2, 64, 64);
   const sunDirection = new THREE.Vector3(0.6, 0.15, 1).normalize();
@@ -92,9 +103,9 @@ function setupEarth(canvas: HTMLCanvasElement, container: HTMLElement) {
     fragmentShader: earthFragmentShader,
     toneMapped: true,
     uniforms: {
-      uDayTexture: new THREE.Uniform(dayTex || placeholderDay),
-      uNightTexture: new THREE.Uniform(nightTex || placeholderNight),
-      uSpecularCloudsTexture: new THREE.Uniform(specTex || placeholderSpec),
+      uDayTexture,
+      uNightTexture,
+      uSpecularCloudsTexture,
       uSunDirection: new THREE.Uniform(sunDirection),
       uAtmosphereDayColor: new THREE.Uniform(new THREE.Color(earthParameters.atmosphereDayColor)),
       uAtmosphereTwilightColor: new THREE.Uniform(new THREE.Color(earthParameters.atmosphereTwilightColor)),

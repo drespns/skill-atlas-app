@@ -1,7 +1,7 @@
 {
   "name": "skill-atlas-app",
   "type": "module",
-  "version": "0.20.0",
+  "version": "0.20.1",
   "engines": {
     "node": ">=22.12.0"
   },
