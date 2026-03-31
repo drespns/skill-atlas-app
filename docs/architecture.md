@@ -39,7 +39,8 @@ Astro genera sitio **estatico** (`output: static`). Las paginas se prerenderizan
 - joins N:N:
   - `project_technologies`
   - `project_concepts`
-- embeds desde `project_embeds` ordenados por `sort_order`
+- evidencias (`project_embeds`: `kind` `iframe` | `link`, `url`, `title`, `sort_order`)
+- campos de historia en `projects`: `role`, `outcome` (texto nullable; ver **saas-006**)
 
 En **build estatico**, las lecturas usan el cliente server-side de Supabase (sin cookie de usuario). Si fallan (p. ej. RLS sin filas visibles para `anon`), las funciones de carga devuelven **arrays vacios** para no romper `astro build`. El contenido real del usuario se obtiene en el navegador tras iniciar sesion.
 
@@ -71,7 +72,8 @@ Scripts principales:
 - `technology-view-bootstrap.ts` -> montaje CSR del detalle tecnologia (Supabase)
 - `projects.ts` -> crear proyecto + CSR lista proyectos (Supabase)
 - `project-detail.ts` -> entrypoint detalle proyecto en paginas Astro con DOM estatico; delega en `project-detail/runner.ts`
-- `project-view-bootstrap.ts` -> montaje CSR del detalle proyecto (Supabase)
+- `project-view-bootstrap.ts` -> montaje CSR del detalle proyecto (Supabase); ver sección **Proyectos** abajo
+- `src/lib/evidence-url.ts` -> detección heurística de origen de URL y normalización de iframe (Tableau Public)
 - `auth-session.ts` -> `getSessionUserId()` para adjuntar `user_id` en inserts
 - `client-supabase.ts` -> `getSupabaseBrowserClient()` para scripts en navegador
 - `ui-feedback.ts` -> modales y toasts
@@ -88,7 +90,7 @@ Scripts principales:
 Además de tema, densidad, fuente, acento, movimiento, vistas lista/cards, iconos del header y visibilidad del selector de idioma:
 
 - **`settingsGridColumns`**: 1–4 columnas en viewport ≥ `md` (en móvil siempre 1). Selector en Preferencias.
-- **`settingsSectionOrder`**: orden de las tarjetas `prefs` | `shortcuts` | `account` | `portfolio` (arrastre desde el asa de 6 puntos en la parte superior de cada tarjeta).
+- **`settingsSectionOrder`**: orden de las tarjetas `prefs` | `shortcuts` | `portfolio` (sesión y acciones de cuenta van en la barra fija superior, sin arrastre).
 
 ### Perfil y stack de ayuda
 
@@ -124,7 +126,7 @@ Además de tema, densidad, fuente, acento, movimiento, vistas lista/cards, icono
 
 ## Roadmap (producto prioritario)
 
-Plan detallado para **multiusuario + portfolio por enlace compartido**: `docs/plan-saas-multi-tenant-portfolio.md`. Decision actual para la app interna: **CSR** (sin adapter SSR); el portfolio publico por token ira contra **RPC** (`docs/sql/saas-003-fn-portfolio-share.sql`) cuando se cablee la UI.
+Plan detallado para **multiusuario + portfolio por enlace compartido**: `docs/plan-saas-multi-tenant-portfolio.md`. Decision actual para la app interna: **CSR** (sin adapter SSR); el portfolio publico por token usa la RPC `skillatlas_portfolio_by_share_token` (`docs/sql/saas-003-fn-portfolio-share.sql`, **extendida** por `docs/sql/saas-006-projects-role-outcome.sql` con `role` y `outcome` por proyecto en el JSON).
 
 ## Decisiones UX (local-first)
 
@@ -142,6 +144,73 @@ Mejoras UX (Sprint A+):
 - Toggle Cards/Lista en páginas (sin pasar por Ajustes) y persistencia en prefs.
 - Preferencias de UI: mostrar/ocultar iconos del header y selector de idioma por **banderas** (con opción de ocultar el bloque en el header).
 - Listado de **atajos de teclado** documentado en la tarjeta correspondiente de Ajustes.
+
+## Proyectos: historia + evidencias (implementado)
+
+Modelo de producto: cada proyecto combina **historia** (contexto narrativo) y **evidencias** (piezas demostrables: enlaces o iframes). Las evidencias son el foco de la UX en detalle CSR; no hay subida de archivos en esta iteración.
+
+### Historia (`projects`)
+
+- **Título** y **descripción** (existentes).
+- **`role`**: rol o responsabilidad (p. ej. “Data analyst”).
+- **`outcome`**: resultado o impacto en texto libre.
+- Edición: modal **`projectEditModal`** (`src/scripts/ui-feedback.ts`) invocado desde **`initProjectEdit`** (`project-detail/project.ts`). Persistencia: `UPDATE projects` con `slug` en sesión.
+
+### Evidencias (`project_embeds`)
+
+- Cada fila: `kind` (`iframe` | `link`), `title`, `url`, `sort_order` (entero; orden visible con botones Subir/Bajar e intercambio de `sort_order` en BD).
+- **Plantillas rápidas**: chips (`src/config/evidence-templates.ts`, `initProjectEvidenceTemplates` en `project-detail/embeds.ts`) rellenan el input con URLs de ejemplo (segmentos en MAYÚSCULAS) para alinear el hint con Tableau, GitHub, etc.
+- **Añadir desde URL (rápido)**: input + “Revisar y añadir” → abre **`embedEditModal`** con URL rellena y tipo sugerido; confirmación inserta fila (`initProjectEvidenceQuickAdd` en `project-detail/embeds.ts`).
+- **Añadir (formulario completo)**: mismo modal desde cero (`initProjectEmbedAdd`).
+- **Edición / borrado / reordenación**: `initProjectEmbedEdit`, `initProjectEmbedRemove`, `initProjectEmbedMove`.
+- El modal de evidencia muestra **hint** según la URL (input en vivo): sugiere `iframe` vs `link`; el título puede quedar vacío y se usa la **etiqueta detectada** (p. ej. “GitHub”) al guardar.
+
+### Detección de URL (`src/lib/evidence-url.ts`)
+
+- **`detectEvidenceUrl(raw)`**: según `hostname`, devuelve `sourceKey`, `sourceLabel` (ES), `suggestedKind`, `hint`. Cubre entre otros: Tableau, Power BI (web), GitHub, Looker Studio, YouTube, Notion, Observable; resto → enlace por defecto con hint conservador.
+- **`embedIframeSrc(url)`**: aplica parámetros típicos de **Tableau Public** para embed; otros hosts pasan la URL tal cual (el usuario puede cambiar a “solo enlace” si el iframe falla).
+- **`evidenceSiteIconUrl(url)`**: URL de favicon vía servicio público (sin fetch al dominio del usuario); usado en lista de evidencias CSR, **`embedEditModal`** y **`EmbedCard.astro`**.
+- Uso: bootstrap CSR, modales, tarjetas numeradas con chip de `sourceLabel`; **`EmbedCard.astro`** (portfolio / mock) usa `embedIframeSrc` para iframes.
+
+### Superficies de UI
+
+| Superficie | Comportamiento |
+|------------|----------------|
+| `/projects/view?project=<slug>` | HTML generado por **`project-view-bootstrap.ts`**; orden secciones: cabecera (historia + pills tech), **Evidencias**, tecnologías, conceptos. |
+| `/projects` (CSR) | **`projects.ts`**: lista/cards; muestra **rol** si existe (línea secundaria). |
+| `/portfolio` (Supabase) | **CSR**: cards renderizadas en cliente con sesión (evita vacíos por RLS en build). Script: **`src/scripts/portfolio-projects.ts`**. |
+| `/projects/[projectId]` (mock) | Misma idea de historia en cabecera; sección “Evidencias”; sin detección en caliente (datos estáticos). |
+
+### Dominio TypeScript (`src/data`)
+
+- Tipo **`Project`** en `mock.ts` incluye `role` y `outcome` (strings; vacío si no hay dato).
+- **`supabaseProvider`** lee `role` y `outcome` en el `select` de proyectos.
+
+### Limitaciones y deuda conocida
+
+- Textos del detalle CSR y parte de la lista están **en español fijo** en HTML generado; **i18n** unificado queda para más adelante.
+- No hay **plantillas por tipo de proyecto** (metadato del proyecto); sí plantillas de **URL de evidencia** (chips). Preview **favicon** sí; **Open Graph / capturas** automáticas no.
+- **Archivos** (.pbix, PDF alojados, etc.): fuera de alcance; el producto asume URL pública o servicio que permita embed/enlace.
+
+## Portfolio (iteración CSR Supabase)
+
+En modo Supabase con RLS multi-tenant, el build estático no puede listar datos del usuario con la anon key. Por eso `/portfolio` hace:
+
+- Cabecera (perfil + stack de ayuda) en cliente: `portfolio-public-profile.ts`.
+- **Listado de proyectos** en cliente: `portfolio-projects.ts`:
+  - lee `projects`, `project_technologies`, `technologies`, `project_embeds`
+  - pinta cards con **historia** (rol/resultado), pills de tecnologías con icono y color suave, y evidencia primaria (iframe/enlace + chip de origen + favicon)
+  - filtro por tecnología sincronizado a `?tech=...`
+
+### Nota: Supabase client singleton
+
+Para evitar warnings de Supabase (`Multiple GoTrueClient instances detected`), `getSupabaseBrowserClient()` cachea un singleton en `src/scripts/client-supabase.ts` (una instancia por pestaña).
+
+### Siguiente iteración sugerida (producto)
+
+- ~~Plantillas de URL (chips Tableau / GitHub / …) y favicon en lista + modal~~ **Hecho** (`evidence-templates.ts`, `evidenceSiteIconUrl`).
+- Preview rico opcional (**og:image**, título de página) vía proxy o backend si se desea (CORS y rate limits).
+- Considerar columna opcional `source_key` en `project_embeds` si se quiere persistir la detección (hoy se recalcula desde `url`).
 
 ## Sprint B (import semi-automático de conceptos por tecnología) — **implementado (MVP)**
 

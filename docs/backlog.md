@@ -58,6 +58,37 @@ El bloque "single-account" y el script `rls-mvp-authenticated.sql` quedan como *
 1. ~~Auth magic link + gating CRUD en cliente~~ (`/settings`, scripts CRUD)
 2. ~~RLS transicion~~ -> `docs/sql/rls-mvp-authenticated.sql` (sustituir por multi-tenant segun plan SaaS)
 
+## Proyectos: historia + evidencias (iteración cerrada — documentado)
+
+**Estado:** implementado en código; **SQL `saas-006`** aplicado en Supabase (columnas `projects.role` / `projects.outcome` + RPC portfolio ampliada).
+
+**Incluye:**
+
+- Modelo **historia** (título, descripción, rol, resultado) + **evidencias** (lista ordenable de URLs como `iframe` o enlace).
+- **`src/lib/evidence-url.ts`**: detección heurística por host + hints en modal; normalización Tableau para embed.
+- Detalle CSR **`/projects/view`**: caja “añadir desde URL”, lista numerada con chip de tipo, modales `projectEditModal` / `embedEditModal` extendidos.
+- Lista CSR **`/projects`**: muestra rol cuando existe.
+- **`/portfolio`** y tipo **`Project`** en `src/data`: rol y outcome en tarjetas / contrato de datos.
+
+**Explícitamente fuera de esta iteración:** i18n de strings del detalle CSR, plantillas por tipo de proyecto, subida de archivos, preview OG/capturas.
+
+**Siguiente iteración sugerida (proyectos):** ~~plantillas de URL (chips) + favicon~~ **hecho**; preview rico (og:image, etc.); columna persistida `source_key` en embeds si hace falta reporting.
+
+---
+
+## Portfolio: cards CSR con sesión (iteración actual)
+
+**Objetivo:** que `/portfolio` muestre proyectos reales en modo Supabase (sin depender del build estático y la anon key bajo RLS).
+
+**Incluye:**
+
+- CSR en `/portfolio` para **cards de proyectos** (`src/scripts/portfolio-projects.ts`):
+  - chips de tecnologías con icono y color suave
+  - historia: rol + resultado/impacto
+  - evidencia primaria: iframe/enlace + chip de origen + favicon + contador
+  - filtro por tecnología (`?tech=...`)
+- Fix técnico: `getSupabaseBrowserClient()` cacheado (singleton) para evitar warnings de múltiples instancias GoTrue.
+
 ## Prioridad siguiente (tras SaaS + portfolio)
 
 1. Catalogo de conceptos asistido (**Sprint B** — **implementado** MVP; detalle en `docs/architecture.md` § Sprint B)

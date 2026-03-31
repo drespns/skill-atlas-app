@@ -21,6 +21,9 @@ Migracion multi-tenant y portfolio por token (scripts versionados):
 | 3 | `docs/sql/saas-003-fn-portfolio-share.sql` | RPC `skillatlas_portfolio_by_share_token(uuid)` (SECURITY DEFINER); `GRANT EXECUTE` a `anon` |
 | 4 (si aplica) | `docs/sql/saas-004-drop-global-slug-constraints.sql` | Quita UNIQUE solo sobre `slug` en `technologies` / `projects` si quedó del esquema inicial; necesario para que distintos usuarios puedan reutilizar el mismo slug |
 | 5 (recomendado si usas stack de ayuda en la nube) | `docs/sql/saas-005-portfolio-help-stack.sql` | Columna `portfolio_profiles.help_stack` (JSONB) para el «stack de ayuda» en Ajustes; la app hace upsert y tolera ausencia de columna con `select`/`upsert` reducido |
+| 6 | `docs/sql/saas-006-projects-role-outcome.sql` | Columnas `projects.role`, `projects.outcome`; **reemplaza** el cuerpo de `skillatlas_portfolio_by_share_token` para incluir `role` y `outcome` en cada objeto del array `projects` del JSON |
+
+**Nota saas-006:** si ya aplicaste `saas-003`, debes aplicar **saas-006** (o al menos el bloque `CREATE OR REPLACE FUNCTION` del script) para que la RPC y el esquema coincidan con lo que espera el frontend (`select` con `role`/`outcome` y consumidores del JSON del portfolio). En entornos nuevos: orden típico … → `saas-003` → … → `saas-006`.
 
 **Sintoma:** puedes crear solo Docker pero al añadir "Python" aparece error de slug duplicado aunque tu lista no muestre Python → casi seguro queda unicidad **global** en `slug`. Ejecuta `saas-004` y confirma que existen los indices `(user_id, slug)` de `saas-001`.
 
@@ -68,6 +71,42 @@ Notas:
 - `project_technologies` (N:N entre projects y technologies)
 - `project_concepts` (N:N entre projects y concepts)
 - `project_embeds.project_id -> projects.id` (1:N)
+
+### Tabla `projects` (campos relevantes al MVP actual)
+
+Además de `id`, `user_id`, `slug`, `title`, `description` (y timestamps si los hubiera):
+
+| Columna | Tipo | Uso |
+|---------|------|-----|
+| `role` | `text` nullable | Rol o responsabilidad en el proyecto (historia). |
+| `outcome` | `text` nullable | Resultado o impacto (historia). |
+
+Añadidas por **`docs/sql/saas-006-projects-role-outcome.sql`**. El cliente Supabase hace `UPDATE`/`SELECT` incluyendo estas columnas; sin migración, fallan esas queries.
+
+### Tabla `project_embeds` (evidencias)
+
+| Columna | Uso |
+|---------|-----|
+| `project_id` | FK al proyecto. |
+| `kind` | `iframe` o `link` (texto en BD; validación en app). |
+| `title` | Título visible. |
+| `url` | URL absoluta. |
+| `sort_order` | Orden dentro del proyecto (0, 1, 2…; unicidad recomendada `(project_id, sort_order)` vía `mvp-constraints.sql`). |
+
+La **detección** del “tipo de sitio” (Tableau, GitHub, etc.) **no se persiste**: se calcula en cliente desde `url` (`src/lib/evidence-url.ts`).
+
+### RPC `skillatlas_portfolio_by_share_token`
+
+Definida en **saas-003** y **actualizada** en **saas-006**. Cada elemento de `projects` en el JSON incluye, entre otros: `slug`, `title`, `description`, **`role`**, **`outcome`**, `technologyNames`, `primaryEmbed` (`kind`, `title`, `url`).
+
+## Nota sobre `/portfolio` (CSR)
+
+Con RLS multi-tenant (saas-002), el build estático no puede listar proyectos del usuario con `anon`. Por eso la pantalla `/portfolio` en modo Supabase:
+
+- carga el perfil público en cliente (`portfolio-public-profile.ts`)
+- carga el **listado de proyectos** en cliente con sesión (`portfolio-projects.ts`)
+
+No requiere cambios de esquema; usa las mismas tablas (`projects`, `project_embeds`, relaciones N:N) y se beneficia de `saas-006` (role/outcome).
 
 ## Slugs (clave para frontend)
 

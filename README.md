@@ -14,7 +14,7 @@ Aplicación web para **organizar conocimiento técnico** y **mostrar un portfoli
 ## Qué incluye hoy
 
 - **Flujo**: Tecnologías → Conceptos → Proyectos → Portfolio; conceptos siempre ligados a una tecnología; proyectos enlazan tecnologías y conceptos.
-- **Persistencia Supabase**: CRUD de tecnologías, conceptos y proyectos; asociaciones proyecto–tecnología y proyecto–concepto; embeds ordenables; perfil en `portfolio_profiles` (nombre, bio, stack de ayuda con migración `docs/sql/saas-005-portfolio-help-stack.sql`).
+- **Persistencia Supabase**: CRUD de tecnologías, conceptos y proyectos; asociaciones proyecto–tecnología y proyecto–concepto; **evidencias** por proyecto (`project_embeds`: enlace o iframe, ordenables); campos de **historia** en proyecto (`role`, `outcome` — migración `docs/sql/saas-006-projects-role-outcome.sql`); perfil en `portfolio_profiles` (nombre, bio, stack de ayuda con `docs/sql/saas-005-portfolio-help-stack.sql`).
 - **Autenticación**: `/login` con email/contraseña y OAuth (GitHub, LinkedIn OIDC); sesión y logout desde **Ajustes**.
 - **Ajustes** (`/settings`): preferencias de UI (tema, densidad, fuente, atajos), **dashboard** con rejilla configurable (1–4 columnas en escritorio), orden de tarjetas por arrastre, perfil público y stack de ayuda.
 - **Portfolio** (`/portfolio`): cabecera con nombre, bio y chips del stack de ayuda (Supabase + caché local).
