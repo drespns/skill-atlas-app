@@ -19,7 +19,7 @@ function isDensity(v: string): v is Density {
   return v === "comfortable" || v === "compact";
 }
 function isFont(v: string): v is FontPreset {
-  return v === "system" || v === "inter" || v === "mono";
+  return v === "system" || v === "inter" || v === "mono" || v === "serif";
 }
 function isAccent(v: string): v is Accent {
   return v === "indigo" || v === "emerald" || v === "rose" || v === "amber" || v === "sky" || v === "violet";
@@ -38,8 +38,11 @@ function isGridCols(v: string): v is SettingsGridColumns {
 }
 
 function initSettingsPrefs() {
+  const prefsCard = document.querySelector<HTMLElement>('[data-settings-section="prefs"]');
+  if (prefsCard && prefsCard.dataset.bound === "1") return;
   const theme = document.querySelector<HTMLSelectElement>("[data-pref-theme]");
   const font = document.querySelector<HTMLSelectElement>("[data-pref-font]");
+  const fontPicker = document.querySelector<HTMLElement>("[data-pref-font-picker]");
   const accent = document.querySelector<HTMLSelectElement>("[data-pref-accent]");
   const density = document.querySelector<HTMLSelectElement>("[data-pref-density]");
   const motion = document.querySelector<HTMLSelectElement>("[data-pref-motion]");
@@ -65,6 +68,8 @@ function initSettingsPrefs() {
   )
     return;
 
+  if (prefsCard) prefsCard.dataset.bound = "1";
+
   const render = () => {
     const p = loadPrefs();
     theme.value = p.themeMode;
@@ -77,6 +82,10 @@ function initSettingsPrefs() {
     projectsView.value = p.projectsView;
     showHeaderIcons.value = p.showHeaderIcons ? "yes" : "no";
     showLangSelector.value = p.showLangSelector ? "yes" : "no";
+    fontPicker?.querySelectorAll<HTMLButtonElement>("[data-pref-font-choice]").forEach((btn) => {
+      const active = btn.dataset.prefFontChoice === p.font;
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
   };
 
   render();
@@ -89,10 +98,24 @@ function initSettingsPrefs() {
     if (v === "auto") localStorage.removeItem("theme");
   });
 
+  if (fontPicker && fontPicker.dataset.bound !== "1") {
+    fontPicker.dataset.bound = "1";
+    fontPicker.querySelectorAll<HTMLButtonElement>("[data-pref-font-choice]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const v = btn.dataset.prefFontChoice;
+        if (!v || !isFont(v)) return;
+        updatePrefs({ font: v });
+        render();
+      });
+    });
+  }
+
+  // Keep the select (hidden) in sync for accessibility/fallback.
   font.addEventListener("change", () => {
     const v = font.value;
     if (!isFont(v)) return;
     updatePrefs({ font: v });
+    render();
   });
 
   accent.addEventListener("change", () => {
@@ -181,8 +204,9 @@ function initSettingsPrefs() {
   });
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initSettingsPrefs);
-} else {
-  initSettingsPrefs();
-}
+const boot = () => initSettingsPrefs();
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+else boot();
+
+document.addEventListener("astro:page-load", boot as any);
+document.addEventListener("astro:after-swap", boot as any);

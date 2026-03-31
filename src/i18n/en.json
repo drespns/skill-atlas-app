@@ -2,6 +2,9 @@
   "common": {
     "view": "View",
     "backToProjects": "Back to Projects",
+    "loadingProject": "Loading project…",
+    "loadingTechnology": "Loading technology…",
+    "supabaseViewOnly": "This view only applies with PUBLIC_DATA_SOURCE=supabase. Use the classic route in mock mode.",
     "embeds": "Embeds",
     "relatedConcepts": "Related concepts",
     "viewProject": "View project",
@@ -25,6 +28,12 @@
     "tagline": "A living map of technologies, concepts, and projects.",
     "openSource": "Open source",
     "builtWith": "Built with"
+  },
+  "home": {
+    "popoverLabel": "Navigation",
+    "chooseDestination": "Choose destination",
+    "openApp": "Open app",
+    "openLanding": "Open landing"
   },
   "nav": {
     "technologies": "Technologies",
@@ -113,7 +122,7 @@
       "layoutToolbarLabel": "Settings toolbar: session, theme, columns and account actions"
     },
     "title": "Settings",
-    "subtitle": "UI preferences and public profile are stored in this browser. Account auth uses Supabase.",
+    "subtitle": "Personalize the interface, your public profile and shortcuts. Syncs when you are signed in.",
     "publicName": "Public name",
     "publicBio": "Public bio",
     "shortcuts": {
@@ -128,7 +137,7 @@
     },
     "portfolio": {
       "sectionTitle": "Public portfolio",
-      "hint": "Shown at the top of Portfolio. Syncs to Supabase when signed in.",
+      "hint": "Text shown at the top of your public portfolio.",
       "save": "Save profile"
     },
     "helpStack": {
@@ -138,7 +147,7 @@
     "prefs": {
       "sectionTitle": "Preferences",
       "reset": "Reset",
-      "localFirstHint": "Stored in this browser (local-first). We can sync later.",
+      "localFirstHint": "Changes apply instantly across the app.",
       "theme": "Theme",
       "themeAuto": "Auto (system)",
       "themeLight": "Light",
@@ -175,7 +184,7 @@
       "sectionTitle": "Account",
       "emailLabel": "Email",
       "passwordLabel": "Password",
-      "passwordHint": "At least 6 characters (Supabase).",
+      "passwordHint": "At least 6 characters.",
       "signIn": "Sign in",
       "signUp": "Create account",
       "magicToggle": "Email magic link (counts toward hourly email cap)",

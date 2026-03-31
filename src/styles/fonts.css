@@ -1,0 +1,24 @@
+/*
+  Fonts (self-host ready).
+
+  You can add your own .woff2 files under /public/fonts and define @font-face here.
+  Example:
+
+  @font-face {
+    font-family: "MyFont";
+    src: url("/fonts/MyFont.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+*/
+
+:root {
+  --font-system: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans",
+    "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  /* Inter preset uses Inter if you self-host it; otherwise it falls back to system. */
+  --font-inter: Inter, var(--font-system);
+}
+

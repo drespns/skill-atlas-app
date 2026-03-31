@@ -15,7 +15,7 @@ function setFeedback(node: HTMLElement | null, message: string, kind: "ok" | "er
 function authErrorMessage(raw: string): string {
   const m = raw.toLowerCase();
   if (/rate limit|too many requests/i.test(raw)) {
-    return "Límite de envíos alcanzado (Supabase Auth). Espera unos minutos o usa login con contraseña.";
+    return "Límite de envíos alcanzado. Espera unos minutos o usa login con contraseña.";
   }
   if (m.includes("invalid login credentials")) {
     return "Correo o contraseña incorrectos.";
@@ -110,6 +110,12 @@ async function initLoginAuth() {
       return;
     }
 
+    try {
+      localStorage.setItem("skillatlas_last_auth_provider", "password");
+    } catch {
+      // ignore
+    }
+
     setFeedback(feedback, "Sesión iniciada.", "ok");
     showToast("Sesión iniciada.", "success");
     passwordInput.value = "";
@@ -124,6 +130,12 @@ async function initLoginAuth() {
 
       btn.disabled = true;
       setFeedback(feedback, `Abriendo ${provider}…`, "info");
+
+      try {
+        localStorage.setItem("skillatlas_last_auth_provider", provider);
+      } catch {
+        // ignore
+      }
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: provider as any,

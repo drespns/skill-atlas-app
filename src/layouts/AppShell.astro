@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import { ClientRouter } from "astro:transitions";
 import { repoUrl } from "../data";
 import { GLOBAL_BANNER } from "../config/banner";
 
@@ -26,6 +27,7 @@ const FOOTER_BUILD_ICONS = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>{title}</title>
+    <ClientRouter />
 
     <script is:inline>
       (() => {
@@ -114,20 +116,34 @@ const FOOTER_BUILD_ICONS = [
         data-global-banner
         data-banner-id={GLOBAL_BANNER.id}
         data-banner-state="open"
-        class="overflow-hidden border-b border-gray-200/80 dark:border-gray-800 backdrop-blur transition-[max-height,opacity,transform] duration-300 ease-out max-h-24 opacity-100 translate-y-0 pointer-events-auto bg-white/80 dark:bg-gray-950/75"
+        class="relative overflow-hidden border-b border-white/40 dark:border-white/10 backdrop-blur transition-[max-height,opacity,transform] duration-300 ease-out max-h-24 opacity-100 translate-y-0 pointer-events-auto bg-linear-to-r from-fuchsia-500/25 via-indigo-500/15 to-sky-400/20 dark:from-fuchsia-400/15 dark:via-indigo-400/10 dark:to-sky-300/10"
       >
+        <div
+          aria-hidden="true"
+          class="pointer-events-none absolute inset-0 opacity-70"
+          style="
+            background-image:
+              radial-gradient(12px 12px at 12% 35%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.0) 70%),
+              radial-gradient(10px 10px at 35% 65%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.0) 70%),
+              radial-gradient(8px 8px at 62% 30%, rgba(255,255,255,0.40) 0%, rgba(255,255,255,0.0) 70%),
+              radial-gradient(9px 9px at 78% 70%, rgba(255,255,255,0.42) 0%, rgba(255,255,255,0.0) 70%),
+              linear-gradient(90deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02));
+          "
+        ></div>
         <div class="max-w-screen-2xl mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-2">
           <div class="flex flex-wrap items-center gap-2 min-w-0">
-            <span class="text-[11px] font-semibold rounded-full px-2 py-0.5 border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/70">
+            <span class="text-[11px] font-semibold rounded-full px-2 py-0.5 border border-white/50 dark:border-white/15 bg-white/55 dark:bg-gray-950/40">
               {GLOBAL_BANNER.version}
             </span>
-            <span data-banner-text class="text-xs text-gray-700 dark:text-gray-200 truncate">{GLOBAL_BANNER.text}</span>
+            <span data-banner-text class="text-xs text-gray-900 dark:text-gray-100 truncate">{GLOBAL_BANNER.text}</span>
             {
               GLOBAL_BANNER.href ? (
                 <a
                   data-banner-link
                   href={GLOBAL_BANNER.href}
-                  class="text-xs font-semibold underline decoration-gray-300 hover:decoration-gray-600 dark:decoration-gray-700 dark:hover:decoration-gray-400"
+                  target={GLOBAL_BANNER.href.startsWith("http") ? "_blank" : undefined}
+                  rel={GLOBAL_BANNER.href.startsWith("http") ? "noreferrer" : undefined}
+                  class="text-xs font-semibold underline decoration-white/60 hover:decoration-white dark:decoration-white/40 dark:hover:decoration-white"
                 >
                   {GLOBAL_BANNER.hrefLabel ?? "Ver más"}
                 </a>
@@ -137,7 +153,7 @@ const FOOTER_BUILD_ICONS = [
           <button
             type="button"
             data-banner-close
-            class="text-xs font-semibold rounded-lg border border-gray-200/80 dark:border-gray-800 px-2.5 py-1 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+            class="text-xs font-semibold rounded-lg border border-white/50 dark:border-white/15 bg-white/40 dark:bg-gray-950/35 px-2.5 py-1 hover:bg-white/55 dark:hover:bg-gray-900/40 transition-colors"
             aria-label="Cerrar anuncio"
             title="Cerrar"
           >
@@ -154,43 +170,98 @@ const FOOTER_BUILD_ICONS = [
       style="padding: var(--app-header-py, 1rem) var(--app-header-px, 1.25rem);"
     >
       <div class="max-w-screen-2xl mx-auto flex items-center justify-between gap-4">
-        <a href="/" data-home-link class="flex items-center gap-3 no-underline">
-          <img src={APP_LOGO_SRC} alt="SkillAtlas" class="h-8 w-8 rounded-md" />
-          <span class="font-bold text-lg hover:underline">SkillAtlas</span>
-          <span
-            data-auth-avatar-wrap
-            class="hidden items-center justify-center ml-1"
-            aria-hidden="true"
-          >
-            <img
-              data-auth-avatar
-              alt=""
-              class="h-8 w-8 rounded-full border border-gray-200/80 dark:border-gray-800 object-cover"
-              loading="lazy"
-              referrerpolicy="no-referrer"
-            />
-          </span>
-        </a>
+        <div class="relative" data-home-wrap>
+          <a href="/" data-home-link class="flex items-center gap-3 no-underline">
+            <img src={APP_LOGO_SRC} alt="SkillAtlas" class="h-8 w-8 rounded-md" />
+            <span class="font-bold text-lg hover:underline">SkillAtlas</span>
+            <span
+              data-auth-avatar-wrap
+              class="hidden items-center justify-center ml-1"
+              aria-hidden="true"
+            >
+              <img
+                data-auth-avatar
+                alt=""
+                class="h-8 w-8 rounded-full border border-gray-200/80 dark:border-gray-800 object-cover"
+                loading="lazy"
+                referrerpolicy="no-referrer"
+              />
+            </span>
+          </a>
 
-        <nav class="hidden md:flex flex-wrap gap-4 text-sm" data-i18n-scope="nav">
+          <div
+            data-home-popover
+            class="hidden absolute left-0 top-full mt-2 w-56 rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur shadow-lg p-2 z-40"
+            role="dialog"
+            aria-label="Navigation"
+            data-i18n="home.popoverLabel"
+            data-i18n-attr="aria-label"
+          >
+            <p class="m-0 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              <span data-i18n="home.chooseDestination">Choose destination</span>
+            </p>
+            <a
+              href="/app"
+              data-home-popover-app
+              class="mt-1 flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="home.openApp">Open app</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">/app</span>
+            </a>
+            <a
+              href="/"
+              data-home-popover-landing
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="home.openLanding">Open landing</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">/</span>
+            </a>
+          </div>
+        </div>
+
+        <nav
+          data-header-nav
+          class="hidden md:flex flex-wrap gap-1 text-sm relative"
+          data-i18n-scope="nav"
+        >
+          <div
+            data-header-nav-indicator
+            class="pointer-events-none absolute -bottom-1 h-1 rounded-full opacity-0"
+            style="
+              background: hsl(var(--app-accent-hsl) / 0.95);
+              transform: translateX(0px);
+              width: 0px;
+              transition:
+                transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+                width 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+                opacity 160ms ease-out;
+            "
+            aria-hidden="true"
+          ></div>
           <a
             href="/technologies"
             data-auth-nav
-            class={`hover:underline ${isActive("/technologies") ? "font-semibold" : ""} hidden`}
+            data-header-nav-link
+            data-nav-active={isActive("/technologies") ? "true" : "false"}
+            class={`relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 ${isActive("/technologies") ? "font-semibold text-gray-900 dark:text-gray-50" : "text-gray-700 dark:text-gray-200"} hidden`}
           >
             <span data-i18n="nav.technologies">Tecnologías</span>
           </a>
           <a
             href="/projects"
             data-auth-nav
-            class={`hover:underline ${isActive("/projects") ? "font-semibold" : ""} hidden`}
+            data-header-nav-link
+            data-nav-active={isActive("/projects") ? "true" : "false"}
+            class={`relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 ${isActive("/projects") ? "font-semibold text-gray-900 dark:text-gray-50" : "text-gray-700 dark:text-gray-200"} hidden`}
           >
             <span data-i18n="nav.projects">Proyectos</span>
           </a>
           <a
             href="/portfolio"
             data-auth-nav
-            class={`hover:underline ${isActive("/portfolio") ? "font-semibold" : ""} hidden`}
+            data-header-nav-link
+            data-nav-active={isActive("/portfolio") ? "true" : "false"}
+            class={`relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 ${isActive("/portfolio") ? "font-semibold text-gray-900 dark:text-gray-50" : "text-gray-700 dark:text-gray-200"} hidden`}
           >
             <span data-i18n="nav.portfolio">Portfolio</span>
           </a>
@@ -222,20 +293,34 @@ const FOOTER_BUILD_ICONS = [
             <button
               type="button"
               data-lang-flag="es"
-              class="rounded-md px-2 py-1.5 text-lg leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
+              class="rounded-md px-2 py-1.5 leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
               aria-pressed="true"
               title="Español"
             >
-              🇪🇸
+              <img
+                data-flag-img="es"
+                src="/icons/flags/Spain.svg"
+                alt=""
+                class="h-5 w-5 rounded-sm"
+                loading="lazy"
+                decoding="async"
+              />
             </button>
             <button
               type="button"
               data-lang-flag="en"
-              class="rounded-md px-2 py-1.5 text-lg leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
+              class="rounded-md px-2 py-1.5 leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
               aria-pressed="false"
               title="English"
             >
-              🇬🇧
+              <img
+                data-flag-img="en"
+                src="/icons/flags/United_Kingdom.svg"
+                alt=""
+                class="h-5 w-5 rounded-sm"
+                loading="lazy"
+                decoding="async"
+              />
             </button>
           </div>
 
@@ -447,46 +532,40 @@ const FOOTER_BUILD_ICONS = [
             </a>
           </nav>
         </div>
-
-        <div
-          class="flex flex-col items-center gap-4 pt-6 border-t border-gray-200/70 dark:border-gray-800/80"
-          aria-hidden="true"
-        >
-          <p
-            class="m-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400"
-            data-i18n="footer.builtWith"
-          >
-          </p>
-          <div class="flex flex-wrap items-center justify-center gap-7 md:gap-10">
+      </div>
+      <p class="max-w-screen-2xl mx-auto mt-8 pt-6 border-t border-gray-200/60 dark:border-gray-800/80 text-center text-xs text-gray-500 dark:text-gray-500 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+        <span>© {year} SkillAtlas</span>
+        <span aria-hidden="true" class="opacity-50">|</span>
+        <span class="inline-flex items-center gap-2">
+          <span class="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-80" data-i18n="footer.builtWith"></span>
+          <span class="inline-flex items-center gap-1.5 opacity-70" aria-hidden="true">
             {
               FOOTER_BUILD_ICONS.map((ico) => (
                 <img
                   src={ico.src}
-                  alt={ico.label}
+                  alt=""
                   title={ico.label}
-                  class="h-8 w-auto max-h-8 max-w-24 object-contain opacity-90 dark:opacity-85"
+                  class="h-4 w-auto max-h-4 max-w-10 object-contain"
                   loading="lazy"
                 />
               ))
             }
             <img
               src="/icons/supabase-logo-icon.svg"
-              alt="Supabase"
+              alt=""
               title="Supabase"
-              class="h-9 w-auto max-h-9 object-contain opacity-90 dark:opacity-85"
+              class="h-4 w-auto max-h-4 object-contain"
               loading="lazy"
             />
-          </div>
-        </div>
-      </div>
-      <p class="max-w-screen-2xl mx-auto mt-8 pt-6 border-t border-gray-200/60 dark:border-gray-800/80 text-center text-xs text-gray-500 dark:text-gray-500">
-        © {year} SkillAtlas
+          </span>
+        </span>
       </p>
     </footer>
 
     <div
       data-command-palette
-      class="hidden fixed inset-0 z-50 items-start justify-center p-4 sm:p-6 bg-black/40"
+      class="hidden fixed inset-0 items-start justify-center p-4 sm:p-6 bg-black/40"
+      style="z-index: 2000;"
       aria-hidden="true"
     >
       <div

@@ -11,17 +11,19 @@ const title = "Tecnología";
     {dataSource === "supabase" ? (
       <>
         <div data-technology-csr-mount class="min-h-48 text-sm text-gray-600">
-          Cargando tecnología…
+          <span data-i18n="common.loadingTechnology">Loading technology…</span>
         </div>
         <script src="../../scripts/technology-view-bootstrap.ts"></script>
       </>
     ) : (
       <section class="space-y-3">
         <p class="text-sm text-gray-600">
-          Esta vista solo aplica con <code class="text-xs">PUBLIC_DATA_SOURCE=supabase</code>. Usa la ruta clásica en modo mock.
+          <span data-i18n="common.supabaseViewOnly">
+            This view only applies with <code class="text-xs">PUBLIC_DATA_SOURCE=supabase</code>. Use the classic route in mock mode.
+          </span>
         </p>
         <a href="/technologies" class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline">
-          Volver a Tecnologías
+          <span data-i18n="technologyDetail.backToTechnologies">Back to Technologies</span>
         </a>
       </section>
     )}

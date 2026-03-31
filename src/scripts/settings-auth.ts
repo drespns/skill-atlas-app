@@ -72,13 +72,15 @@ async function initSettingsAuth() {
   if (!supabase) {
     logoutBtn.disabled = true;
     refreshBtn.disabled = true;
-    setFeedback(feedback, "Faltan variables de entorno de Supabase.", "error");
+    setFeedback(feedback, "No se pudo inicializar el cliente de sesión.", "error");
     return;
   }
 
   await renderAuthState();
 
-  logoutBtn.addEventListener("click", async () => {
+  if (logoutBtn.dataset.bound !== "1") {
+    logoutBtn.dataset.bound = "1";
+    logoutBtn.addEventListener("click", async () => {
     logoutBtn.disabled = true;
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -90,22 +92,28 @@ async function initSettingsAuth() {
     setFeedback(feedback, "Sesión cerrada.", "ok");
     showToast("Sesión cerrada.", "success");
     await renderAuthState();
-  });
+    });
+  }
 
-  refreshBtn.addEventListener("click", async () => {
-    await renderAuthState();
-    setFeedback(feedback, "Estado de sesión actualizado.", "info");
-  });
+  if (refreshBtn.dataset.bound !== "1") {
+    refreshBtn.dataset.bound = "1";
+    refreshBtn.addEventListener("click", async () => {
+      await renderAuthState();
+      setFeedback(feedback, "Estado de sesión actualizado.", "info");
+    });
+  }
 
-  supabase.auth.onAuthStateChange(() => {
-    void renderAuthState();
-  });
+  if ((window as any).__skillatlasSettingsAuthListenerBound !== true) {
+    (window as any).__skillatlasSettingsAuthListenerBound = true;
+    supabase.auth.onAuthStateChange(() => {
+      void renderAuthState();
+    });
+  }
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
-    void initSettingsAuth();
-  });
-} else {
-  void initSettingsAuth();
-}
+const boot = () => void initSettingsAuth();
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+else boot();
+
+document.addEventListener("astro:page-load", boot as any);
+document.addEventListener("astro:after-swap", boot as any);

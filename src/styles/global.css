@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./fonts.css";
 
 /* Tailwind v4 + class-based dark mode */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -12,7 +13,7 @@ body {
   margin: 0;
 }
 
-/* Preferencias globales (local-first) */
+/* Preferencias globales (UI) */
 :root {
   --app-font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans",
     "Apple Color Emoji", "Segoe UI Emoji";
@@ -36,6 +37,45 @@ a {
 .app-accent-ring:focus-visible {
   outline: 2px solid hsl(var(--app-accent-hsl) / 0.65);
   outline-offset: 2px;
+}
+
+/* Headings */
+.app-h2 {
+  font-size: 1.125rem;
+  line-height: 1.4;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .app-h2 {
+    font-size: 1.25rem;
+  }
+}
+
+.app-h2-gradient {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--app-accent-hsl) / 0.98),
+    hsl(var(--app-accent-hsl) / 0.62)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.app-kicker {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(107 114 128);
+}
+
+html.dark .app-kicker {
+  color: rgb(156 163 175);
 }
 
 /* Motion */

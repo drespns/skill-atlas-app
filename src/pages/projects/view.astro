@@ -14,20 +14,22 @@ const title = "Proyecto";
           data-project-csr-mount
           class="min-h-48 text-sm text-gray-600"
         >
-          Cargando proyecto…
+          <span data-i18n="common.loadingProject">Loading project…</span>
         </div>
         <script src="../../scripts/project-view-bootstrap.ts"></script>
       </>
     ) : (
       <section class="space-y-3">
         <p class="text-sm text-gray-600">
-          Esta vista solo aplica con <code class="text-xs">PUBLIC_DATA_SOURCE=supabase</code>. Usa la ruta clásica de proyecto en modo mock.
+          <span data-i18n="common.supabaseViewOnly">
+            This view only applies with <code class="text-xs">PUBLIC_DATA_SOURCE=supabase</code>. Use the classic project route in mock mode.
+          </span>
         </p>
         <a
           href="/projects"
           class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline"
         >
-          Volver a Proyectos
+          <span data-i18n="common.backToProjects">Back to Projects</span>
         </a>
       </section>
     )}

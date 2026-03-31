@@ -1,139 +1,106 @@
-import { loadPrefs, updatePrefs, type SettingsSectionId } from "./prefs";
+import "gridstack/dist/gridstack.min.css";
+import { GridStack } from "gridstack";
+import { loadPrefs, updatePrefs, type SettingsLayoutItemV1, type SettingsSectionId } from "./prefs";
 
-const SECTION_SEL = "[data-settings-section]";
 const DASHBOARD_SEL = "[data-settings-dashboard]";
+const ITEM_SEL = ".grid-stack-item";
 
-let dashboardGridEl: HTMLElement | null = null;
-const dashboardMq = typeof window !== "undefined" ? window.matchMedia("(min-width: 768px)") : null;
+const mq = typeof window !== "undefined" ? window.matchMedia("(min-width: 768px)") : null;
 
-function applyDashboardLayout() {
-  const grid = dashboardGridEl;
-  if (!grid || !dashboardMq) return;
+function currentCols() {
   const cols = loadPrefs().settingsGridColumns ?? 2;
-  if (dashboardMq.matches) {
-    grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
-  } else {
-    grid.style.gridTemplateColumns = "repeat(1, minmax(0, 1fr))";
-  }
+  if (!mq) return cols;
+  return mq.matches ? cols : 1;
 }
 
-function reorderDom(grid: HTMLElement, order: SettingsSectionId[]) {
-  const byId = new Map<string, HTMLElement>();
-  grid.querySelectorAll<HTMLElement>(SECTION_SEL).forEach((el) => {
-    const id = el.dataset.settingsSection;
-    if (id) byId.set(id, el);
-  });
-  for (const id of order) {
-    const el = byId.get(id);
-    if (el) grid.appendChild(el);
-  }
+function defaultLayout(cols: number): SettingsLayoutItemV1[] {
+  // Simple starting point; users can freely rearrange.
+  return [
+    { id: "prefs", x: 0, y: 0, w: Math.max(1, Math.min(cols, 2)), h: 8 },
+    { id: "shortcuts", x: 0, y: 8, w: Math.max(1, Math.min(cols, 1)), h: 7 },
+    { id: "portfolio", x: 0, y: 15, w: cols, h: 10 },
+  ];
 }
 
-function readOrderFromDom(grid: HTMLElement): SettingsSectionId[] {
-  const out: SettingsSectionId[] = [];
-  grid.querySelectorAll<HTMLElement>(SECTION_SEL).forEach((el) => {
-    const id = el.dataset.settingsSection;
-    if (id === "prefs" || id === "shortcuts" || id === "portfolio") out.push(id);
-  });
+function readLayout(grid: GridStack): SettingsLayoutItemV1[] {
+  const out: SettingsLayoutItemV1[] = [];
+  const nodes = grid.engine.nodes ?? [];
+  for (const n of nodes) {
+    const id = (n.el?.getAttribute("data-gs-id") ?? "") as SettingsSectionId;
+    if (id !== "prefs" && id !== "shortcuts" && id !== "portfolio") continue;
+    out.push({ id, x: n.x ?? 0, y: n.y ?? 0, w: n.w ?? 1, h: n.h ?? 1 });
+  }
   return out;
 }
 
-function persistOrder(grid: HTMLElement) {
-  updatePrefs({ settingsSectionOrder: readOrderFromDom(grid) });
-}
-
-function initDrag(grid: HTMLElement) {
-  /** Dragstart `target` is the draggable node (the article), not the handle — use a flag set from the handle. */
-  const clearDragReady = () => {
-    grid.querySelectorAll<HTMLElement>(SECTION_SEL).forEach((s) => {
-      delete s.dataset.settingsDragReady;
-    });
-  };
-
-  document.addEventListener("pointerup", clearDragReady, true);
-
-  grid.querySelectorAll<HTMLElement>(SECTION_SEL).forEach((section) => {
-    section.setAttribute("draggable", "true");
-
-    section.querySelector<HTMLElement>("[data-settings-drag-handle]")?.addEventListener("pointerdown", (e) => {
-      if (e.button !== 0) return;
-      section.dataset.settingsDragReady = "1";
-    });
-
-    section.addEventListener("dragstart", (e) => {
-      if (section.dataset.settingsDragReady !== "1") {
-        e.preventDefault();
-        return;
-      }
-      delete section.dataset.settingsDragReady;
-      const dragId = section.dataset.settingsSection ?? null;
-      if (dragId) e.dataTransfer?.setData("text/plain", dragId);
-      e.dataTransfer!.effectAllowed = "move";
-      section.classList.add("opacity-60", "ring-2", "ring-gray-300", "dark:ring-gray-600");
-    });
-
-    section.addEventListener("dragend", () => {
-      section.classList.remove("opacity-60", "ring-2", "ring-gray-300", "dark:ring-gray-600");
-      clearDragReady();
-    });
-
-    section.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      e.dataTransfer!.dropEffect = "move";
-    });
-
-    section.addEventListener("drop", (e) => {
-      e.preventDefault();
-      const fromId = e.dataTransfer?.getData("text/plain");
-      const toId = section.dataset.settingsSection;
-      if (!fromId || !toId || fromId === toId) return;
-      const fromEl = grid.querySelector<HTMLElement>(`${SECTION_SEL}[data-settings-section="${fromId}"]`);
-      const toEl = grid.querySelector<HTMLElement>(`${SECTION_SEL}[data-settings-section="${toId}"]`);
-      if (!fromEl || !toEl) return;
-      const rect = toEl.getBoundingClientRect();
-      const before = e.clientY < rect.top + rect.height / 2;
-      if (before) {
-        grid.insertBefore(fromEl, toEl);
-      } else {
-        grid.insertBefore(fromEl, toEl.nextElementSibling);
-      }
-      persistOrder(grid);
-    });
-  });
+function enforcePortfolioFullWidth(grid: GridStack, cols: number) {
+  const el = grid.el?.querySelector<HTMLElement>(`${ITEM_SEL}[data-gs-id="portfolio"]`);
+  if (!el) return;
+  // Prevent width resize; allow moving + height resize.
+  el.setAttribute("data-gs-min-w", String(cols));
+  el.setAttribute("data-gs-max-w", String(cols));
+  grid.update(el, { x: 0, w: cols });
 }
 
 function initSettingsDashboard() {
-  const grid = document.querySelector<HTMLElement>(DASHBOARD_SEL);
-  if (!grid) return;
+  const wrap = document.querySelector<HTMLElement>(DASHBOARD_SEL);
+  if (!wrap) return;
+  if (wrap.dataset.bound === "1") return;
+  wrap.dataset.bound = "1";
 
-  dashboardGridEl = grid;
+  const cols = currentCols();
+
+  const grid = GridStack.init(
+    {
+      column: cols,
+      margin: 16,
+      float: true,
+      handle: "[data-settings-drag-handle]",
+      draggable: { handle: "[data-settings-drag-handle]" },
+      resizable: { handles: "all" },
+    },
+    wrap,
+  );
 
   const prefs = loadPrefs();
-  reorderDom(grid, prefs.settingsSectionOrder);
-  applyDashboardLayout();
-  dashboardMq?.addEventListener("change", applyDashboardLayout);
-  initDrag(grid);
+  const layout = prefs.settingsLayoutV1 ?? defaultLayout(cols);
+  grid.load(layout as any);
 
-  window.skillatlas = window.skillatlas ?? {};
-  window.skillatlas.applySettingsDashboard = () => {
-    const g = document.querySelector<HTMLElement>(DASHBOARD_SEL);
-    if (!g) return;
-    reorderDom(g, loadPrefs().settingsSectionOrder);
-    applyDashboardLayout();
+  enforcePortfolioFullWidth(grid, cols);
+
+  let t: number | null = null;
+  const persist = () => {
+    const colsNow = currentCols();
+    enforcePortfolioFullWidth(grid, colsNow);
+    const next = readLayout(grid).map((it) => (it.id === "portfolio" ? { ...it, x: 0, w: colsNow } : it));
+    updatePrefs({ settingsLayoutV1: next });
   };
 
-  window.addEventListener("storage", (e) => {
-    if (e.key === "skillatlas_prefs_v1") {
-      const g = document.querySelector<HTMLElement>(DASHBOARD_SEL);
-      if (!g) return;
-      reorderDom(g, loadPrefs().settingsSectionOrder);
-      applyDashboardLayout();
-    }
-  });
+  const persistDebounced = () => {
+    if (t) window.clearTimeout(t);
+    t = window.setTimeout(persist, 250);
+  };
+
+  grid.on("dragstop", persistDebounced);
+  grid.on("resizestop", persistDebounced);
+  grid.on("change", persistDebounced);
+
+  const apply = () => {
+    const c = currentCols();
+    grid.column(c);
+    enforcePortfolioFullWidth(grid, c);
+    persistDebounced();
+  };
+
+  mq?.addEventListener("change", apply);
+
+  window.skillatlas = window.skillatlas ?? {};
+  window.skillatlas.applySettingsDashboard = apply;
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initSettingsDashboard);
-} else {
-  initSettingsDashboard();
-}
+const boot = () => initSettingsDashboard();
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+else boot();
+
+document.addEventListener("astro:page-load", boot as any);
+document.addEventListener("astro:after-swap", boot as any);

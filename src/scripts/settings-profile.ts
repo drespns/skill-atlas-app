@@ -32,14 +32,46 @@ async function initSettingsProfile() {
   const saveBtn = document.querySelector<HTMLButtonElement>("[data-profile-save]");
   const hint = document.querySelector<HTMLElement>("[data-profile-feedback]");
   const cloudHint = document.querySelector<HTMLElement>("[data-profile-cloud-hint]");
+  const avatarFile = document.querySelector<HTMLInputElement>("[data-profile-avatar-file]");
+  const avatarPreview = document.querySelector<HTMLImageElement>("[data-profile-avatar-preview]");
+  const avatarFallback = document.querySelector<HTMLElement>("[data-profile-avatar-fallback]");
 
   if (!nameInput || !bioInput || !saveBtn) return;
+  const portfolioCard = document.querySelector<HTMLElement>('[data-settings-section="portfolio"]');
+  if (portfolioCard && portfolioCard.dataset.bound === "1") return;
+  if (portfolioCard) portfolioCard.dataset.bound = "1";
 
   const defaultName = nameInput.dataset.defaultPublicName ?? "";
   const defaultBio = bioInput.dataset.defaultPublicBio ?? "";
 
   const supabase = getSupabaseBrowserClient();
   const userId = supabase ? await getSessionUserId(supabase) : null;
+  let pendingAvatarFile: File | null = null;
+  let avatarUrl: string | null = null;
+
+  const setAvatarPreview = (url: string | null) => {
+    if (!avatarPreview) return;
+    if (url) {
+      avatarPreview.src = url;
+      avatarPreview.classList.remove("hidden");
+      avatarFallback?.classList.add("hidden");
+    } else {
+      avatarPreview.removeAttribute("src");
+      avatarPreview.classList.add("hidden");
+      avatarFallback?.classList.remove("hidden");
+    }
+  };
+
+  if (avatarFile && avatarFile.dataset.bound !== "1") {
+    avatarFile.dataset.bound = "1";
+    avatarFile.addEventListener("change", () => {
+      const f = avatarFile.files?.[0] ?? null;
+      if (!f) return;
+      pendingAvatarFile = f;
+      const url = URL.createObjectURL(f);
+      setAvatarPreview(url);
+    });
+  }
 
   const loadLocal = (): StoredPublicProfile => {
     const s = readStoredPublicProfile();
@@ -69,7 +101,7 @@ async function initSettingsProfile() {
 
     const resFull = await supabase
       .from("portfolio_profiles")
-      .select("display_name, bio, help_stack")
+      .select("display_name, bio, help_stack, avatar_url")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -102,32 +134,37 @@ async function initSettingsProfile() {
       };
       applyToForm(merged);
       writeStoredPublicProfile(merged);
-      if (cloudHint) {
-        cloudHint.textContent = "Cargado desde tu cuenta (Supabase).";
-        cloudHint.className = "m-0 text-xs text-gray-500 dark:text-gray-400";
+      if (cloudHint) cloudHint.textContent = "";
+
+      const a = (data as any).avatar_url;
+      avatarUrl = typeof a === "string" && a ? a : null;
+      if (!avatarUrl) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const meta = (sessionData.session?.user?.user_metadata ?? {}) as Record<string, any>;
+        avatarUrl =
+          (typeof meta.avatar_url === "string" && meta.avatar_url) ||
+          (typeof meta.picture === "string" && meta.picture) ||
+          null;
       }
+      setAvatarPreview(avatarUrl);
     } else {
       applyToForm(loadLocal());
       if (cloudHint) {
         if (error) {
-          cloudHint.textContent = "Perfil local; no se pudo leer la nube.";
-          cloudHint.className = "m-0 text-xs text-amber-600 dark:text-amber-400";
+          cloudHint.textContent = "";
         } else {
-          cloudHint.textContent =
-            "Aún no hay perfil en la nube. Pulsa «Guardar perfil» para crear tu fila en Supabase.";
-          cloudHint.className = "m-0 text-xs text-gray-500 dark:text-gray-400";
+          cloudHint.textContent = "";
         }
       }
     }
   } else {
     applyToForm(loadLocal());
-    if (cloudHint) {
-      cloudHint.textContent = "Inicia sesión para sincronizar nombre, bio y stack con Supabase.";
-      cloudHint.className = "m-0 text-xs text-gray-500 dark:text-gray-400";
-    }
+    if (cloudHint) cloudHint.textContent = "";
   }
 
-  saveBtn.addEventListener("click", async () => {
+  if (saveBtn.dataset.bound !== "1") {
+    saveBtn.dataset.bound = "1";
+    saveBtn.addEventListener("click", async () => {
     const publicName = nameInput.value.trim() || defaultName;
     const bio = bioInput.value.trim();
     const helpStack = collectHelpStackKeys();
@@ -136,7 +173,7 @@ async function initSettingsProfile() {
     applyToForm(payload);
 
     if (hint) {
-      hint.textContent = "Guardado en este navegador.";
+      hint.textContent = "Guardado.";
       hint.className = "m-0 text-xs text-green-600 dark:text-green-400";
       window.setTimeout(() => {
         hint.textContent = "";
@@ -144,11 +181,29 @@ async function initSettingsProfile() {
     }
 
     if (supabase && userId) {
+      let nextAvatarUrl: string | null = avatarUrl;
+      if (pendingAvatarFile) {
+        const ext = (pendingAvatarFile.name.split(".").pop() || "png").toLowerCase();
+        const safeExt = ["png", "jpg", "jpeg", "webp"].includes(ext) ? ext : "png";
+        const path = `${userId}/avatar.${safeExt}`;
+        const upload = await supabase.storage.from("portfolio_avatars").upload(path, pendingAvatarFile, {
+          upsert: true,
+          cacheControl: "3600",
+          contentType: pendingAvatarFile.type || undefined,
+        });
+        if (upload.error) {
+          showToast(upload.error.message ?? "No se pudo subir la imagen.", "error");
+          return;
+        }
+        nextAvatarUrl = path;
+      }
+
       const row: Record<string, unknown> = {
         user_id: userId,
         display_name: publicName,
         bio,
         help_stack: helpStack,
+        avatar_url: nextAvatarUrl,
       };
       const res = await supabase.from("portfolio_profiles").upsert(row, { onConflict: "user_id" });
       if (res.error) {
@@ -162,32 +217,36 @@ async function initSettingsProfile() {
               { onConflict: "user_id" },
             );
           if (res2.error) {
-            showToast(`Supabase: ${res2.error.message}`, "error");
+            showToast(res2.error.message ?? "No se pudo guardar.", "error");
             return;
           }
-          showToast("Perfil guardado (ejecuta docs/sql/saas-005 para sincronizar el stack en la nube).", "info");
+          showToast("Perfil guardado.", "success");
           return;
         }
-        showToast(`Supabase: ${res.error.message}`, "error");
+        showToast(res.error.message ?? "No se pudo guardar.", "error");
         return;
       }
-      showToast("Perfil guardado en la nube y en este navegador.", "success");
-      if (cloudHint) {
-        cloudHint.textContent = "Sincronizado con Supabase.";
-        cloudHint.className = "m-0 text-xs text-green-600 dark:text-green-400";
-      }
+      showToast("Perfil guardado.", "success");
+      if (cloudHint) cloudHint.textContent = "";
+      avatarUrl = nextAvatarUrl;
+      pendingAvatarFile = null;
     } else {
-      showToast("Perfil guardado en este navegador.", "success");
+      showToast("Perfil guardado.", "success");
     }
-  });
+    });
+  }
 
-  window.addEventListener("storage", (e) => {
-    if (e.key === PUBLIC_PROFILE_STORAGE_KEY) applyToForm(loadLocal());
-  });
+  if ((window as any).__skillatlasProfileStorageBound !== true) {
+    (window as any).__skillatlasProfileStorageBound = true;
+    window.addEventListener("storage", (e) => {
+      if (e.key === PUBLIC_PROFILE_STORAGE_KEY) applyToForm(loadLocal());
+    });
+  }
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => void initSettingsProfile());
-} else {
-  void initSettingsProfile();
-}
+const boot = () => void initSettingsProfile();
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+else boot();
+
+document.addEventListener("astro:page-load", boot as any);
+document.addEventListener("astro:after-swap", boot as any);

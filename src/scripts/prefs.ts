@@ -1,6 +1,6 @@
 export type ThemeMode = "auto" | "light" | "dark";
 export type Density = "comfortable" | "compact";
-export type FontPreset = "system" | "inter" | "mono";
+export type FontPreset = "system" | "inter" | "mono" | "serif";
 export type Accent = "indigo" | "emerald" | "rose" | "amber" | "sky" | "violet";
 export type Motion = "normal" | "reduced";
 export type DefaultView = "cards" | "list";
@@ -10,6 +10,15 @@ export const SETTINGS_SECTION_IDS = ["prefs", "shortcuts", "portfolio"] as const
 export type SettingsSectionId = (typeof SETTINGS_SECTION_IDS)[number];
 
 export type SettingsGridColumns = 1 | 2 | 3 | 4;
+
+export type SettingsLayoutItemV1 = {
+  id: SettingsSectionId;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+export type SettingsLayoutV1 = SettingsLayoutItemV1[];
 
 export type AppPrefsV1 = {
   v: 1;
@@ -27,6 +36,8 @@ export type AppPrefsV1 = {
   settingsGridColumns: SettingsGridColumns;
   /** Orden de las tarjetas en Ajustes. */
   settingsSectionOrder: SettingsSectionId[];
+  /** Layout 2D (GridStack) en /settings (opcional). */
+  settingsLayoutV1?: SettingsLayoutV1;
 };
 
 const STORAGE_KEY = "skillatlas_prefs_v1";
@@ -82,9 +93,41 @@ function normalizeSectionOrder(raw: unknown): SettingsSectionId[] {
   return out;
 }
 
+function normalizeSettingsLayout(raw: unknown): SettingsLayoutV1 | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const allowed = new Set<string>(SETTINGS_SECTION_IDS);
+  const seen = new Set<string>();
+  const out: SettingsLayoutItemV1[] = [];
+  for (const x of raw) {
+    if (!x || typeof x !== "object") continue;
+    const r = x as any;
+    if (typeof r.id !== "string" || !allowed.has(r.id) || seen.has(r.id)) continue;
+    const xi = Number(r.x);
+    const yi = Number(r.y);
+    const wi = Number(r.w);
+    const hi = Number(r.h);
+    if (![xi, yi, wi, hi].every((n) => Number.isFinite(n))) continue;
+    // basic sanity
+    if (wi < 1 || hi < 1) continue;
+    out.push({ id: r.id as SettingsSectionId, x: xi, y: yi, w: wi, h: hi });
+    seen.add(r.id);
+  }
+  return out.length > 0 ? out : undefined;
+}
+
 export function loadPrefs(): AppPrefsV1 {
+  const inferredLang: Lang = (() => {
+    try {
+      const navLang = (navigator.language || "").toLowerCase();
+      if (navLang.startsWith("es")) return "es";
+    } catch {
+      // ignore
+    }
+    return DEFAULT_PREFS.lang;
+  })();
+
   const parsed = safeParse(localStorage.getItem(STORAGE_KEY));
-  if (!parsed || typeof parsed !== "object") return migrateLegacyPrefs(DEFAULT_PREFS);
+  if (!parsed || typeof parsed !== "object") return migrateLegacyPrefs({ ...DEFAULT_PREFS, lang: inferredLang });
 
   const p = parsed as Partial<AppPrefsV1>;
   const base = p.v === 1 ? p : {};
@@ -94,6 +137,7 @@ export function loadPrefs(): AppPrefsV1 {
     v: 1,
     settingsGridColumns: clampSettingsColumns(base.settingsGridColumns ?? DEFAULT_PREFS.settingsGridColumns),
     settingsSectionOrder: normalizeSectionOrder(base.settingsSectionOrder ?? DEFAULT_PREFS.settingsSectionOrder),
+    settingsLayoutV1: normalizeSettingsLayout((base as any).settingsLayoutV1),
   };
 
   return migrateLegacyPrefs(merged);
@@ -125,6 +169,7 @@ export function updatePrefs(patch: Partial<Omit<AppPrefsV1, "v">>): AppPrefsV1 {
   const next: AppPrefsV1 = { ...current, ...patch, v: 1 };
   savePrefs(next);
   applyPrefs(next);
+  window.dispatchEvent(new CustomEvent("skillatlas:prefs-updated", { detail: next }));
   return next;
 }
 
@@ -154,10 +199,12 @@ export function applyPrefs(prefs: AppPrefsV1) {
   // Font
   const fontFamily =
     prefs.font === "mono"
-      ? 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
-      : prefs.font === "inter"
-        ? 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"'
-        : 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"';
+      ? "var(--font-mono)"
+      : prefs.font === "serif"
+        ? "var(--font-serif)"
+        : prefs.font === "inter"
+          ? "var(--font-inter)"
+          : "var(--font-system)";
   root.style.setProperty("--app-font-family", fontFamily);
 
   // Density (affects AppShell paddings)

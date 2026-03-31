@@ -25,7 +25,7 @@ const grip =
       </h1>
       <p class="text-sm text-gray-600 dark:text-gray-400 max-w-2xl">
         <span data-i18n="settings.subtitle">
-          Preferencias de interfaz y perfil público se guardan en este navegador. La cuenta depende de Supabase.
+          Personaliza la interfaz, tu perfil público y atajos. Se sincroniza con tu cuenta cuando hayas iniciado sesión.
         </span>
       </p>
     </header>
@@ -156,7 +156,7 @@ const grip =
       hidden
       class="flex flex-wrap items-center gap-2 rounded-lg border border-amber-200/80 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/25 px-3 py-2 text-sm text-amber-900 dark:text-amber-100"
     >
-      <span data-i18n="settings.auth.noSessionBanner">Para guardar en la nube, inicia sesión.</span>
+      <span data-i18n="settings.auth.noSessionBanner">Inicia sesión para sincronizar tus ajustes.</span>
       <a
         href="/login"
         class="font-semibold text-amber-800 dark:text-amber-200 underline underline-offset-2 hover:opacity-90"
@@ -169,13 +169,10 @@ const grip =
     <p data-auth-feedback class="text-xs text-gray-600 dark:text-gray-400 m-0 min-h-4"></p>
     </div>
 
-    <div
-      data-settings-dashboard
-      class="grid gap-6 auto-rows-min grid-cols-1"
-      style="grid-template-columns: repeat(1, minmax(0, 1fr));"
-    >
+    <div data-settings-dashboard class="grid-stack">
       <!-- prefs -->
-      <article data-settings-section="prefs" class={card}>
+      <div class="grid-stack-item" data-gs-id="prefs">
+        <article data-settings-section="prefs" class={`${card} grid-stack-item-content`}>
         <div class={dragBar}>
           <div
             class={grip}
@@ -201,8 +198,8 @@ const grip =
         </div>
         <div class="p-5 space-y-4 flex-1">
           <div class="flex items-center justify-between gap-3">
-            <h2 class="m-0 text-base font-semibold">
-              <span data-i18n="settings.prefs.sectionTitle">Preferencias</span>
+            <h2 class="app-h2">
+              <span class="app-h2-gradient" data-i18n="settings.prefs.sectionTitle">Preferencias</span>
             </h2>
             <button
               type="button"
@@ -225,17 +222,61 @@ const grip =
               </select>
             </label>
 
-            <label class="space-y-1">
+            <div class="space-y-1 sm:col-span-2">
               <span class="text-sm font-semibold" data-i18n="settings.prefs.font">Fuente</span>
-              <select
-                data-pref-font
-                class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
-              >
-                <option value="system" data-i18n="settings.prefs.fontSystem">Sistema</option>
-                <option value="inter" data-i18n="settings.prefs.fontInter">Inter</option>
-                <option value="mono" data-i18n="settings.prefs.fontMono">Mono</option>
+              <div data-pref-font-picker class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  data-pref-font-choice="system"
+                  aria-pressed="true"
+                  class="text-left rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <span style="font-family: var(--font-system);" data-i18n="settings.prefs.fontSystem">Sistema</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Aa</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  data-pref-font-choice="inter"
+                  aria-pressed="false"
+                  class="text-left rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <span style="font-family: var(--font-inter);" data-i18n="settings.prefs.fontInter">Inter</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Aa</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  data-pref-font-choice="serif"
+                  aria-pressed="false"
+                  class="text-left rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <span style="font-family: var(--font-serif);">Serif</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Aa</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  data-pref-font-choice="mono"
+                  aria-pressed="false"
+                  class="text-left rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <span style="font-family: var(--font-mono);" data-i18n="settings.prefs.fontMono">Mono</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Aa</span>
+                  </div>
+                </button>
+              </div>
+              <select data-pref-font class="hidden">
+                <option value="system">system</option>
+                <option value="inter">inter</option>
+                <option value="serif">serif</option>
+                <option value="mono">mono</option>
               </select>
-            </label>
+            </div>
 
             <label class="space-y-1">
               <span class="text-sm font-semibold" data-i18n="settings.prefs.accent">Acento</span>
@@ -296,20 +337,34 @@ const grip =
                 <button
                   type="button"
                   data-pref-lang-flag="es"
-                  class="rounded-md px-2.5 py-1.5 text-lg leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
+                  class="rounded-md px-2.5 py-1.5 leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
                   aria-pressed="true"
                   title="Español"
                 >
-                  🇪🇸
+                  <img
+                    data-flag-img="es"
+                    src="/icons/flags/Spain.svg"
+                    alt=""
+                    class="h-5 w-5 rounded-sm"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </button>
                 <button
                   type="button"
                   data-pref-lang-flag="en"
-                  class="rounded-md px-2.5 py-1.5 text-lg leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
+                  class="rounded-md px-2.5 py-1.5 leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
                   aria-pressed="false"
                   title="English"
                 >
-                  🇬🇧
+                  <img
+                    data-flag-img="en"
+                    src="/icons/flags/United_Kingdom.svg"
+                    alt=""
+                    class="h-5 w-5 rounded-sm"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </button>
               </div>
             </div>
@@ -341,16 +396,18 @@ const grip =
 
           <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
             <span data-i18n="settings.prefs.localFirstHint">
-              Se guardan en este navegador (local-first). Más adelante podremos sincronizarlas.
+              Cambios aplicados al instante en toda la app.
             </span>
           </p>
         </div>
-      </article>
+        </article>
+      </div>
 
       <!-- shortcuts -->
+      <div class="grid-stack-item" data-gs-id="shortcuts">
       <article
         data-settings-section="shortcuts"
-        class={`${card} bg-linear-to-br from-gray-50/80 to-white dark:from-gray-950 dark:to-gray-950`}
+        class={`${card} grid-stack-item-content bg-linear-to-br from-gray-50/80 to-white dark:from-gray-950 dark:to-gray-950`}
       >
         <div class={dragBar}>
           <div
@@ -376,8 +433,8 @@ const grip =
           </div>
         </div>
         <div class="p-5 space-y-4 flex-1">
-          <h2 class="m-0 text-base font-semibold">
-            <span data-i18n="settings.shortcuts.sectionTitle">Atajos de teclado</span>
+          <h2 class="app-h2">
+            <span class="app-h2-gradient" data-i18n="settings.shortcuts.sectionTitle">Atajos de teclado</span>
           </h2>
           <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
             <span data-i18n="settings.shortcuts.intro">Atajos activos en toda la app (salvo al escribir en un campo).</span
@@ -424,9 +481,11 @@ const grip =
           </ul>
         </div>
       </article>
+      </div>
 
       <!-- portfolio -->
-      <article data-settings-section="portfolio" class={card}>
+      <div class="grid-stack-item" data-gs-id="portfolio">
+      <article data-settings-section="portfolio" class={`${card} grid-stack-item-content`}>
         <div class={dragBar}>
           <div
             class={grip}
@@ -452,12 +511,12 @@ const grip =
         </div>
         <div class="p-5 space-y-4 flex-1">
           <div class="space-y-1">
-            <h2 class="m-0 text-base font-semibold">
-              <span data-i18n="settings.portfolio.sectionTitle">Portfolio público</span>
+            <h2 class="app-h2">
+              <span class="app-h2-gradient" data-i18n="settings.portfolio.sectionTitle">Portfolio público</span>
             </h2>
             <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
               <span data-i18n="settings.portfolio.hint"
-                >Texto que se muestra arriba en Portfolio. Con sesión se sincroniza con Supabase.</span
+                >Texto que se muestra arriba en tu portfolio público.</span
               >
             </p>
             <p data-profile-cloud-hint class="m-0 text-xs min-h-4 text-gray-500 dark:text-gray-400"></p>
@@ -475,6 +534,29 @@ const grip =
           </div>
 
           <div class="space-y-2">
+            <label class="text-sm font-semibold">Imagen de perfil</label>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div class="h-14 w-14 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 overflow-hidden shrink-0">
+                <img data-profile-avatar-preview alt="" class="h-full w-full object-cover hidden" loading="lazy" referrerpolicy="no-referrer" />
+                <div data-profile-avatar-fallback class="h-full w-full grid place-items-center text-xs font-semibold text-gray-500 dark:text-gray-400">
+                  SA
+                </div>
+              </div>
+              <div class="flex-1 min-w-0 space-y-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  data-profile-avatar-file
+                  class="w-full text-sm"
+                />
+                <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
+                  Por defecto se usa tu avatar de proveedor (GitHub/LinkedIn). Puedes subir uno aquí para reemplazarlo.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2">
             <label class="text-sm font-semibold" data-i18n="settings.publicBio">Bio pública</label>
             <textarea
               data-profile-public-bio
@@ -485,7 +567,7 @@ const grip =
           </div>
 
           <div class="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-            <h3 class="m-0 text-sm font-semibold">
+            <h3 class="app-kicker">
               <span data-i18n="settings.helpStack.title">Stack de ayuda</span>
             </h3>
             <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
@@ -524,6 +606,7 @@ const grip =
           </div>
         </div>
       </article>
+      </div>
     </div>
   </section>
 

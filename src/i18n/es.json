@@ -2,6 +2,9 @@
   "common": {
     "view": "Ver",
     "backToProjects": "Volver a Proyectos",
+    "loadingProject": "Cargando proyecto…",
+    "loadingTechnology": "Cargando tecnología…",
+    "supabaseViewOnly": "Esta vista solo aplica con PUBLIC_DATA_SOURCE=supabase. Usa la ruta clásica en modo mock.",
     "embeds": "Embeds",
     "relatedConcepts": "Conceptos relacionados",
     "viewProject": "Ver proyecto",
@@ -25,6 +28,12 @@
     "tagline": "Mapa vivo de tecnologías, conceptos y proyectos.",
     "openSource": "Código abierto",
     "builtWith": "Hecho con"
+  },
+  "home": {
+    "popoverLabel": "Navegación",
+    "chooseDestination": "Elegir destino",
+    "openApp": "Abrir app",
+    "openLanding": "Abrir landing"
   },
   "nav": {
     "technologies": "Tecnologías",
@@ -113,7 +122,7 @@
       "layoutToolbarLabel": "Sesión, tema, columnas y acciones de cuenta en Ajustes"
     },
     "title": "Ajustes",
-    "subtitle": "Preferencias de interfaz y perfil público se guardan en este navegador. La cuenta depende de Supabase.",
+    "subtitle": "Personaliza la interfaz, tu perfil público y atajos. Se sincroniza con tu cuenta cuando hayas iniciado sesión.",
     "publicName": "Nombre público",
     "publicBio": "Bio pública",
     "shortcuts": {
@@ -128,7 +137,7 @@
     },
     "portfolio": {
       "sectionTitle": "Portfolio público",
-      "hint": "Texto que se muestra arriba en Portfolio. Con sesión se sincroniza con Supabase.",
+      "hint": "Texto que se muestra arriba en tu portfolio público.",
       "save": "Guardar perfil"
     },
     "helpStack": {
@@ -138,7 +147,7 @@
     "prefs": {
       "sectionTitle": "Preferencias",
       "reset": "Restablecer",
-      "localFirstHint": "Se guardan en este navegador (local-first). Más adelante podremos sincronizarlas.",
+      "localFirstHint": "Cambios aplicados al instante en toda la app.",
       "theme": "Tema",
       "themeAuto": "Auto (sistema)",
       "themeLight": "Claro",
@@ -175,15 +184,15 @@
       "sectionTitle": "Cuenta",
       "emailLabel": "Correo",
       "passwordLabel": "Contraseña",
-      "passwordHint": "Mínimo 6 caracteres (Supabase).",
+      "passwordHint": "Mínimo 6 caracteres.",
       "signIn": "Iniciar sesión",
       "signUp": "Crear cuenta",
       "magicToggle": "Magic link por correo (cuenta para el límite de emails/hora)",
-      "magicHelp": "Útil si no quieres contraseña; en plan gratuito Supabase suele limitar pocos correos por hora.",
+      "magicHelp": "Útil si no quieres contraseña; puede haber límites de correos por hora.",
       "sendMagicLink": "Enviar magic link",
       "sessionActive": "Sesión activa",
       "noSession": "Sin sesión",
-      "noSessionBanner": "Para guardar en la nube, inicia sesión.",
+      "noSessionBanner": "Inicia sesión para sincronizar tus ajustes.",
       "goToLogin": "Ir a login",
       "currentUser": "Usuario actual",
       "refresh": "Refrescar estado",

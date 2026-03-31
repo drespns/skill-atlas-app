@@ -9,11 +9,11 @@ export type GlobalBanner = {
 
 // Banner global (sticky) para versión/noticias.
 export const GLOBAL_BANNER: GlobalBanner = {
-  id: "v0.20.3",
-  version: "0.20.3",
-  text: "v0.20.3 · Fix scripts en prod/dev: bundle Astro (sin ?url, sin .ts por URL).",
-  href: "/demo",
-  hrefLabel: "Ver demo",
+  id: "v0.30.0",
+  version: "0.30.0",
+  text: "v0.30.0 · Ajustes: grid 2D + sync prefs. View Transitions + Prefetch. Avatar de portfolio.",
+  href: "https://github.com/drespns/skill-atlas-app",
+  hrefLabel: "Repositorio",
   tone: "info",
 };
 

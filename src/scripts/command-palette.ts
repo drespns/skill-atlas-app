@@ -24,25 +24,37 @@ function isTypingInField(target: EventTarget | null) {
 function initCommandPalette() {
   const root = document.querySelector<HTMLElement>("[data-command-palette]");
   if (!root) return;
+  if (root.dataset.paletteBound === "1") return;
   const dialog = root.querySelector<HTMLElement>("[data-command-palette-dialog]");
   const input = root.querySelector<HTMLInputElement>("[data-command-palette-input]");
   const list = root.querySelector<HTMLElement>("[data-command-palette-list]");
   const closeBtn = root.querySelector<HTMLButtonElement>("[data-command-palette-close]");
   if (!dialog || !input || !list || !closeBtn) return;
+  root.dataset.paletteBound = "1";
 
   let open = false;
   let allItems: PaletteItem[] = [];
   let filtered: PaletteItem[] = [];
   let activeIndex = 0;
 
-  const staticItems: PaletteItem[] = [
+  const authedItems: PaletteItem[] = [
     { id: "go-app", label: "Abrir app", href: "/app", hint: "/app" },
     { id: "go-technologies", label: "Tecnologías", href: "/technologies", hint: "/technologies" },
     { id: "go-projects", label: "Proyectos", href: "/projects", hint: "/projects" },
     { id: "new-technology", label: "Crear tecnología", href: "/technologies?create=1", hint: "Acción" },
     { id: "new-project", label: "Crear proyecto", href: "/projects?create=1", hint: "Acción" },
     { id: "go-settings", label: "Ajustes", href: "/settings", hint: "/settings" },
-    { id: "go-login", label: "Login", href: "/login", hint: "/login" },
+  ];
+
+  const unauthedItems: PaletteItem[] = [
+    { id: "go-login", label: "Entrar (acceso privado)", href: "/login", hint: "/login" },
+    { id: "go-demo", label: "Ver demo", href: "/demo", hint: "/demo" },
+    {
+      id: "request-access",
+      label: "Solicitar acceso",
+      href: "mailto:drespns@gmail.com?subject=SkillAtlas%20%E2%80%94%20Solicitud%20de%20acceso",
+      hint: "Email",
+    },
   ];
 
   const cacheKey = (userId: string) => `skillatlas_cache_palette_v1:${userId}`;
@@ -109,15 +121,18 @@ function initCommandPalette() {
     input.value = "";
     activeIndex = 0;
 
-    allItems = [...staticItems];
-
     const supabase = getSupabaseBrowserClient();
-    if (supabase) {
+    const { data: sessionData } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+    const isAuthed = Boolean(sessionData?.session?.user);
+
+    allItems = isAuthed ? [...authedItems] : [...unauthedItems];
+
+    if (supabase && isAuthed) {
       const userId = await getSessionUserId(supabase);
       if (userId) {
         const cached = readCache(userId);
         if (cached) {
-          allItems = [...staticItems, ...cached];
+          allItems = [...authedItems, ...cached];
           render();
           // background refresh
           setTimeout(() => void hydrateFromSupabase(supabase, userId), 0);
@@ -162,7 +177,7 @@ function initCommandPalette() {
       });
     }
     writeCache(userId, items);
-    allItems = [...staticItems, ...items];
+    allItems = [...authedItems, ...items];
     render();
   };
 
@@ -221,9 +236,12 @@ function initCommandPalette() {
   });
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initCommandPalette);
-} else {
-  initCommandPalette();
-}
+const bootPalette = () => initCommandPalette();
+
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bootPalette);
+else bootPalette();
+
+// With <ClientRouter />, page navigations don't trigger DOMContentLoaded.
+document.addEventListener("astro:page-load", bootPalette as any);
+document.addEventListener("astro:after-swap", bootPalette as any);
 

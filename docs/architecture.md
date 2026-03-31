@@ -18,6 +18,19 @@ Para que funcione igual en **dev** y **producción** (Vercel), los scripts clien
 - Usar `<script src="../scripts/mi-script.ts"></script>` (sin `type="module"`).
 - Evitar servir `.ts` directamente por URL o usar `?url`, porque puede acabar en MIME incorrecto / imports a `.ts` en producción.
 
+### Navegación sin recarga (View Transitions + Prefetch)
+
+La app usa el router del navegador con **View Transitions** (`<ClientRouter />`) para que la navegación sea más fluida. Además, Astro hace **prefetch** de links (estrategia `viewport`) para reducir tiempos de carga.\n+\n+Esto implica que scripts cliente que antes dependían de `DOMContentLoaded` deben ser **idempotentes** y re-ejecutarse en eventos del router (`astro:page-load`, `astro:after-swap`).\n+
+### Geo / país del usuario (futuro)
+
+Ahora mismo, para elegir bandera/región usamos señales del navegador (**`navigator.language`** y fallback por **timezone**). Esto no garantiza ubicación física real.
+
+Si en el futuro queremos detección real por país, hay opciones:
+
+- **Headers Geo en el edge** (Vercel/Cloudflare) y render SSR/adapter (no aplica tal cual con `output: static` puro).
+- **Endpoint propio** (serverless) que devuelva país/region y el cliente consuma (con rate-limit/cache).
+- **Servicio externo** de geolocalización por IP (con cuidado de privacidad/consentimiento).
+
 ## Capa de datos
 
 `src/data/index.ts` es la entrada unica:
