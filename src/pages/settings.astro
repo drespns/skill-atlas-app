@@ -566,6 +566,53 @@ const grip =
             >{profile.bio}</textarea>
           </div>
 
+          <div class="space-y-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <h3 class="app-kicker">
+              <span data-i18n="settings.portfolio.publicUrlSectionKicker">URL pública</span>
+            </h3>
+            <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
+              <span data-i18n="settings.portfolio.publicUrlHint">
+                Publica tu portfolio en una dirección fácil de compartir. Requiere Supabase con la migración saas-011.
+              </span>
+            </p>
+            <label class="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                data-profile-share-enabled
+                class="rounded border-gray-300 dark:border-gray-600 shrink-0 mt-0.5"
+              />
+              <span class="text-sm text-gray-900 dark:text-gray-100" data-i18n="settings.portfolio.shareEnabledLabel">
+                Hacer visible mi portfolio públicamente
+              </span>
+            </label>
+            <div class="space-y-2" data-profile-slug-fields>
+              <span class="text-sm font-semibold" data-i18n="settings.portfolio.publicSlugLabel">Identificador en la URL</span>
+              <div class="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
+                <span class="text-sm text-gray-500 dark:text-gray-400 shrink-0 font-mono" data-profile-url-prefix>/portfolio/</span>
+                <input
+                  type="text"
+                  data-profile-public-slug
+                  inputmode="text"
+                  autocomplete="off"
+                  spellcheck="false"
+                  maxlength="32"
+                  placeholder="tu-nombre"
+                  class="flex-1 min-w-0 border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400/50 dark:focus:ring-gray-500/40"
+                />
+              </div>
+              <p class="m-0 text-xs text-gray-500 dark:text-gray-400 break-all" data-profile-public-url-preview></p>
+              <div class="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  data-profile-copy-public-url
+                  class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900"
+                >
+                  <span data-i18n="settings.portfolio.copyPublicUrl">Copiar enlace</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
             <h3 class="app-kicker">
               <span data-i18n="settings.helpStack.title">Stack de ayuda</span>

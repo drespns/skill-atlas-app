@@ -296,7 +296,18 @@
     "portfolio": {
       "sectionTitle": "Public portfolio",
       "hint": "Text shown at the top of your public portfolio.",
-      "save": "Save profile"
+      "save": "Save profile",
+      "publicUrlSectionKicker": "Public URL",
+      "publicUrlHint": "Share your portfolio at a stable link. You need a signed-in session and Supabase migration saas-011.",
+      "shareEnabledLabel": "Make my portfolio publicly visible",
+      "publicSlugLabel": "URL identifier",
+      "copyPublicUrl": "Copy link",
+      "slugInvalid": "To publish you need a valid identifier: 2–32 characters, lowercase letters, numbers or hyphens (no reserved words).",
+      "slugTaken": "That identifier is already taken. Try another.",
+      "copyNeedsValidSlug": "Choose a valid identifier before copying the link.",
+      "copySuccess": "Link copied.",
+      "copyFailed": "Could not copy to the clipboard.",
+      "savedProfileSlugNeedsMigration": "Profile saved. The public URL was not stored until you apply saas-011 in Supabase."
     },
     "helpStack": {
       "title": "Help stack",

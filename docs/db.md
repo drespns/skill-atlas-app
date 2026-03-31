@@ -26,6 +26,7 @@ Migracion multi-tenant y portfolio por token (scripts versionados):
 | 8 | `docs/sql/saas-008-portfolio-avatar.sql` | `portfolio_profiles.avatar_url` + bucket `portfolio_avatars` en Storage y políticas para que cada usuario gestione sus archivos |
 | 9 | `docs/sql/saas-009-access-requests.sql` | Tabla `access_requests` (INSERT permitido para `anon`/`auth`, sin SELECT) para el formulario público de `/request-access` |
 | 10 | `docs/sql/saas-010-admin-access-requests.sql` | Tabla `admin_users` (allowlist) + RLS admin-only para listar/gestionar `access_requests` desde `/admin` |
+| 11 | `docs/sql/saas-011-portfolio-public-slug.sql` | `portfolio_profiles.public_slug` (unico case-insensitive) + RPC `skillatlas_portfolio_by_public_slug(text)` (`GRANT` a `anon`) para `/portfolio/<slug>` |
 
 **Nota saas-006:** si ya aplicaste `saas-003`, debes aplicar **saas-006** (o al menos el bloque `CREATE OR REPLACE FUNCTION` del script) para que la RPC y el esquema coincidan con lo que espera el frontend (`select` con `role`/`outcome` y consumidores del JSON del portfolio). En entornos nuevos: orden típico … → `saas-003` → … → `saas-006`.
 
@@ -36,6 +37,7 @@ Migracion multi-tenant y portfolio por token (scripts versionados):
 - `user_id` PK (FK a `auth.users`)
 - `display_name`, `bio`
 - `share_enabled`, `share_token` (unico)
+- `public_slug` (tras **saas-011**): segmento de URL publica; unico por `lower(trim(...))` cuando no es NULL
 - `help_stack` (JSONB, tras **saas-005**): array de claves de herramientas (`src/config/help-stack.ts`)
 
 La **app aun no crea** la fila automaticamente al registrarse; hay que hacerlo en un siguiente paso (p. ej. primer login o trigger en auth). La RPC de saas-003 asume que existe fila cuando se activa comparticion.
@@ -102,6 +104,10 @@ La **detección** del “tipo de sitio” (Tableau, GitHub, etc.) **no se persis
 ### RPC `skillatlas_portfolio_by_share_token`
 
 Definida en **saas-003** y **actualizada** en **saas-006**. Cada elemento de `projects` en el JSON incluye, entre otros: `slug`, `title`, `description`, **`role`**, **`outcome`**, `technologyNames`, `primaryEmbed` (`kind`, `title`, `url`).
+
+### RPC `skillatlas_portfolio_by_public_slug`
+
+Definida en **saas-011**. Misma forma de payload que la RPC por token, mas `helpStack` (JSON array, desde `portfolio_profiles.help_stack`). Solo resuelve filas con `share_enabled = true` y `public_slug` coincidente (comparacion case-insensitive).
 
 ## Nota sobre `/portfolio` (CSR)
 

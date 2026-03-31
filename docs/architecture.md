@@ -88,6 +88,7 @@ En **build estatico**, las lecturas usan el cliente server-side de Supabase (sin
 | Detalle tecnologia | `/technologies/[techId]` (`techId` = slug) | `/technologies/view?tech=<slug>` + `technology-view-bootstrap.ts` |
 | Login | `/login` | `/login` (email/password + OAuth en cliente) |
 | Ajustes | `/settings` | `/settings` (sesión, preferencias UI, perfil público + stack de ayuda; sync `portfolio_profiles` en Supabase; auth en `/login`) |
+| Portfolio público (slug) | — | `/portfolio/<slug>` — **SSR/on-demand** (`prerender = false`): anon llama RPC `skillatlas_portfolio_by_public_slug`; configuración en Ajustes (`public_slug`, `share_enabled`, migración **saas-011**) |
 
 Los componentes `ProjectCard.astro` y `TechnologyCard.astro` enlazan a las rutas CSR cuando el data source es Supabase. `project-detail.ts` no inicializa formularios si existe `[data-project-csr-mount]` (evita doble enganche).
 
@@ -113,7 +114,7 @@ Scripts principales:
 - `ui-feedback.ts` -> modales y toasts
 - `login-auth.ts` -> login/signup email+password + OAuth en `/login`
 - `login-earth.ts` -> escena Three.js (Earth) en background del login
-- `settings-profile.ts` -> nombre/bio/stack de ayuda; `public-profile-local.ts` + upsert `portfolio_profiles`
+- `settings-profile.ts` -> nombre/bio/stack de ayuda; URL pública `/portfolio/<slug>` (`share_enabled`, `public_slug`); `public-profile-local.ts` + upsert `portfolio_profiles`
 - `portfolio-public-profile.ts` -> hidrata cabecera de `/portfolio` desde Supabase o localStorage; chips de **stack de ayuda**
 - `settings-dashboard.ts` -> grid de Ajustes: columnas configurables + orden de tarjetas (drag & drop) persistido en prefs
 
@@ -132,6 +133,7 @@ Además de tema, densidad, fuente, acento, movimiento, vistas lista/cards, icono
 - **Stack de ayuda**: lista de herramientas (productividad / IA) definidas en `src/config/help-stack.ts`; persistencia en columna **`help_stack`** (JSONB) tras `docs/sql/saas-005-portfolio-help-stack.sql`, con reintento del cliente si la columna aún no existe.
 - **Avatar**: `portfolio_profiles.avatar_url` + Storage bucket `portfolio_avatars` (migración `docs/sql/saas-008-portfolio-avatar.sql`). En cliente se sube la imagen y en `/portfolio` se hidrata (signed URL si aplica) con fallback al avatar del último provider OAuth.
 - **`portfolio-public-profile.ts`**: en `/portfolio` muestra nombre/bio y chips del stack (Supabase + fallback local).
+- **URL pública**: checkbox de visibilidad + slug (`src/lib/public-portfolio-slug.ts`); vista previa y copiar enlace; persistencia `portfolio_profiles.share_enabled` y `public_slug` (columna **saas-011**).
 
 ### Idioma (UI)
 
