@@ -1,0 +1,129 @@
+---
+import AppShell from "../layouts/AppShell.astro";
+
+const title = "Estudio";
+---
+
+<AppShell title={title}>
+  <div data-requires-auth class="hidden"></div>
+  <div data-study-root class="space-y-6">
+    <header class="space-y-1">
+      <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase" data-i18n="study.kicker">
+        Preparación
+      </p>
+      <h1 class="m-0 text-2xl font-semibold tracking-tight" data-i18n="study.title">Espacio de estudio</h1>
+      <p class="m-0 max-w-3xl text-sm text-gray-600 dark:text-gray-400" data-i18n="study.intro">
+        Primera iteración: fuentes y notas en tu navegador. El chat con IA sobre tus documentos vendrá cuando definamos modelo y límites.
+      </p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[min(70vh,36rem)]">
+      <aside class="lg:col-span-3 flex flex-col rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 shadow-sm overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200/80 dark:border-gray-800 flex items-center justify-between gap-2">
+          <h2 class="m-0 text-sm font-semibold" data-i18n="study.sourcesTitle">Fuentes</h2>
+          <button
+            type="button"
+            data-study-add-source
+            class="text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-900"
+          >
+            <span data-i18n="study.addSource">+ Añadir</span>
+          </button>
+        </div>
+        <div data-study-add-panel class="hidden border-b border-gray-200/80 dark:border-gray-800 p-3 space-y-2 bg-gray-50/80 dark:bg-gray-900/40">
+          <input
+            data-study-input-title
+            type="text"
+            class="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5"
+            placeholder=""
+            data-i18n="study.placeholderTitle"
+            data-i18n-attr="placeholder"
+          />
+          <input
+            data-study-input-url
+            type="url"
+            class="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5"
+            placeholder=""
+            data-i18n="study.placeholderUrl"
+            data-i18n-attr="placeholder"
+          />
+          <textarea
+            data-study-input-note
+            rows="3"
+            class="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 font-mono"
+            placeholder=""
+            data-i18n="study.placeholderNote"
+            data-i18n-attr="placeholder"
+          ></textarea>
+          <div class="flex gap-2 justify-end">
+            <button type="button" data-study-cancel-add class="text-xs font-semibold px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900">
+              <span data-i18n="study.cancel">Cancelar</span>
+            </button>
+            <button type="button" data-study-save-add class="text-xs font-semibold rounded-lg bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-3 py-1.5">
+              <span data-i18n="study.saveSource">Guardar</span>
+            </button>
+          </div>
+        </div>
+        <div data-study-sources class="flex-1 overflow-auto p-2 space-y-1 min-h-32"></div>
+        <p class="m-0 px-3 py-2 text-[11px] text-gray-500 dark:text-gray-400 border-t border-gray-200/80 dark:border-gray-800" data-i18n="study.sourcesHint">
+          Marca las fuentes que quieras tener en contexto para el siguiente paso (IA).
+        </p>
+      </aside>
+
+      <section class="lg:col-span-6 flex flex-col rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 shadow-sm overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200/80 dark:border-gray-800 flex items-center justify-between gap-2">
+          <h2 class="m-0 text-sm font-semibold" data-i18n="study.centerTitle">Estudio</h2>
+          <span data-study-context-badge class="text-[11px] text-gray-500 dark:text-gray-400">0 fuentes</span>
+        </div>
+        <div class="flex-1 flex flex-col p-4 min-h-48">
+          <div
+            class="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30 p-4 mb-3 text-sm text-gray-600 dark:text-gray-400"
+            data-i18n="study.chatPlaceholder"
+          >
+            Aquí irá el chat con contexto sobre tus fuentes (RAG + modelo). De momento usa el bloque de abajo para tus notas libres.
+          </div>
+          <label class="block flex-1 min-h-0">
+            <span class="sr-only" data-i18n="study.sessionNotesLabel">Notas de sesión</span>
+            <textarea
+              data-study-session-notes
+              class="w-full h-full min-h-40 text-sm rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 leading-relaxed"
+              placeholder=""
+              data-i18n="study.sessionNotesPlaceholder"
+              data-i18n-attr="placeholder"
+            ></textarea>
+          </label>
+        </div>
+      </section>
+
+      <aside class="lg:col-span-3 flex flex-col rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 shadow-sm overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200/80 dark:border-gray-800">
+          <h2 class="m-0 text-sm font-semibold" data-i18n="study.studioTitle">Salidas</h2>
+          <p class="m-0 mt-1 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="study.studioHint">
+            Generación asistida: próximas iteraciones.
+          </p>
+        </div>
+        <div class="p-3 grid grid-cols-2 gap-2">
+          <button type="button" data-study-out="summary" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 text-left">
+            <span data-i18n="study.outSummary">Resumen</span>
+          </button>
+          <button type="button" data-study-out="flashcards" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 text-left">
+            <span data-i18n="study.outFlashcards">Tarjetas</span>
+          </button>
+          <button type="button" data-study-out="quiz" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 text-left">
+            <span data-i18n="study.outQuiz">Cuestionario</span>
+          </button>
+          <button type="button" data-study-out="mindmap" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 text-left">
+            <span data-i18n="study.outMindmap">Mapa mental</span>
+          </button>
+          <button type="button" data-study-out="report" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 text-left">
+            <span data-i18n="study.outReport">Informe</span>
+          </button>
+          <button type="button" data-study-out="infographic" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 text-left">
+            <span data-i18n="study.outInfographic">Infografía</span>
+          </button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="../scripts/study-workspace.ts"></script>
+</AppShell>

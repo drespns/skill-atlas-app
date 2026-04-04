@@ -7,11 +7,21 @@ Orden priorizado para ganar profundidad sin dejar de pulir tecnologías/portfoli
 1. **Precios y posicionamiento** — Página pública `/pricing` (planes Starter / Pro / Team, comparativa, FAQ, toggle mensual/anual). CTAs alineados con acceso por invitación. Más adelante: Patreon u otros apoyos y facturación real (p. ej. Stripe) cuando cierres importes y condiciones legales.
 2. **Portfolio por enlace** — Ruta `/p/[token]` + RPC `skillatlas_portfolio_by_share_token` + UI (activar compartir, copiar enlace). Ver `docs/plan-saas-multi-tenant-portfolio.md`.
    - **Parcial (v0.45+):** URL legible **`/portfolio/<slug>`** + RPC `skillatlas_portfolio_by_public_slug` + Ajustes (`public_slug`, `share_enabled`, migración **saas-011**). El token `/p/...` sigue en roadmap si se unifica UX.
+   - **Implementado ahora:** ruta `/p/<token>` + bloque en Ajustes para copiar/regenerar token (revocable) usando `portfolio_profiles.share_token` (RPC `saas-003`).
 3. **CV / hoja de vida** — Por defecto **100 % privado** (previsualización y descarga); **opción explícita de enlace público** revocable (token o flag en perfil, RLS acorde). Varias plantillas; fuentes de datos: perfil, proyectos seleccionados, stack; export PDF (primero cliente/`print`; servidor opcional para pixel-perfect).
-   - **Parcial (v0.45+):** página **`/cv`** (solo sesión), selección de proyectos en prefs (`cvProjectSlugs`), impresión/PDF vía navegador; **sin** enlace público todavía.
+   - **Parcial (v0.45+):** `/cv` privado (editor + prefs `cvProfile`/`cvProjectSlugs`, preview, impresión en claro).
+   - **Siguiente/vertical actual:** enlace público revocable `/cv/p/<token>` (migración **saas-012** + RPC `skillatlas_cv_by_share_token`) y UI de activar/copiar/regenerar en `/cv`.
 4. **Salida profesional** — PDF de portfolio, previews OG por proyecto, export estático cuando tenga sentido.
+
+**Actualización (calidad de producto):**
+
+- **Onboarding/QA:** “modo tester” en Ajustes (checklist, seed demo, copiar debug info) persistido en prefs (`qaTesterMode`).
+- **Nota (pendiente):** el botón “Crear datos de prueba” puede fallar si tu DB tiene `concepts_progress_check` más estricto (ej. `progress` no acepta 0–100). Revisar y adaptar el seed a la constraint real.
+- **Portfolio OG:** meta tags OG/Twitter en `/portfolio/<slug>` y `/p/<token>` + endpoint de imagen `/og/portfolio.svg` (resuelve por RPC).
 5. **Trabajo diario** — Duplicar proyecto, plantillas de proyecto, actividad reciente en `/app`, búsqueda ampliada en el command palette.
-6. **Monetización** — Tras validar demanda: pasarela + tabla de suscripciones + límites por plan; mantener precio accesible como objetivo de producto.
+6. **Preparación para convocatorias** — Visión pública en `/prep`; modelo de “proyectos de estudio” (temario, fechas, material enlazado); inspiración tipo NotebookLM **sin** API pública de Google: integración por enlaces, exportaciones y flujos manuales.
+   - **Iteración v0 (hecho en código):** `/study` — UI 3 columnas (fuentes · estudio · salidas), fuentes y notas de sesión en `localStorage`; sin IA todavía. Siguiente: subida a Storage + extracción de texto + RAG + botones de salida reales.
+7. **Monetización** — Tras validar demanda: pasarela + tabla de suscripciones + límites por plan; mantener precio accesible como objetivo de producto.
 
 **Implementación reciente:** `/pricing` (`src/pages/pricing.astro`, `src/scripts/pricing-billing.ts`); enlaces en footer, landing y Ctrl+K. Textos i18n en `pricing.*` (`src/i18n/{es,en}.json`). **El header no enlaza a Precios** (v0.45+); acceso vía landing/hero/footer (authed) y palette.
 
@@ -21,7 +31,12 @@ Orden priorizado para ganar profundidad sin dejar de pulir tecnologías/portfoli
 
 - **Despliegue:** `@astrojs/vercel` (no `@astrojs/node`) para evitar 404 en Vercel; **`.vercel/`** en `.gitignore` (artefactos de build local).
 - **Portfolio público:** `saas-011` + `/portfolio/[slug]` + Ajustes (slug, compartir, copiar URL).
-- **CV:** `/cv` privado, prefs `cvProjectSlugs`, estilos de impresión `body.cv-print-mode`.
+- **CV:** `/cv` privado (solo sesión) con:
+  - preview modal (CTA “Preview”)
+  - datos del CV en prefs (`cvProfile`: titular, ubicación, email, links, resumen, experiencia/educación)
+  - selección y **orden** de proyectos (`cvProjectSlugs`, drag & drop)
+  - foto opcional + fuente (subida vs LinkedIn/proveedor) sin perder la subida
+  - impresión en claro (beforeprint + `@media print`)
 - **Landing:** scroll horizontal contenido con `overflow-x: hidden` en `html`/`body` (sin cambiar el full-bleed del hero).
 - **Header:** `syncHeaderNavActive()` + indicador `left`/`width`; sin Precios en nav; Admin separado de iconos con `flex-1` espaciador; estilos activos `.header-nav-link` / `.header-admin-link`.
 

@@ -20,6 +20,48 @@ export type SettingsLayoutItemV1 = {
 };
 export type SettingsLayoutV1 = SettingsLayoutItemV1[];
 
+export type CvLink = {
+  label: string;
+  url: string;
+};
+
+export type CvProfileV1 = {
+  headline?: string;
+  location?: string;
+  email?: string;
+  links?: CvLink[];
+  /** Resumen del CV (privado). Si falta, se usa `portfolio_profiles.bio` como fallback. */
+  summary?: string;
+  /** Mostrar chips del stack de ayuda en el CV. */
+  showHelpStack?: boolean;
+  /** Texto libre (líneas) para experiencia/logros. */
+  highlights?: string;
+  /** Mostrar foto (avatar de portfolio_profiles.avatar_url) en el CV. */
+  showPhoto?: boolean;
+  /** Fuente de la foto cuando hay varias opciones. */
+  photoSource?: "uploaded" | "linkedin" | "provider";
+  experiences?: CvExperienceV1[];
+  education?: CvEducationV1[];
+};
+
+export type CvExperienceV1 = {
+  company?: string;
+  role?: string;
+  location?: string;
+  start?: string;
+  end?: string;
+  bullets?: string;
+};
+
+export type CvEducationV1 = {
+  school?: string;
+  degree?: string;
+  location?: string;
+  start?: string;
+  end?: string;
+  details?: string;
+};
+
 export type AppPrefsV1 = {
   v: 1;
   themeMode: ThemeMode;
@@ -43,6 +85,14 @@ export type AppPrefsV1 = {
    * Ausente o `undefined`: todos los proyectos del usuario.
    */
   cvProjectSlugs?: string[];
+  /** Metadatos del CV (privado) en /cv. */
+  cvProfile?: CvProfileV1;
+  /** Modo tester (QA): habilita checklist, seed y debug UI en Ajustes. */
+  qaTesterMode?: boolean;
+  /** Onboarding tour: estado del wizard inicial. */
+  onboardingV1?: { done?: boolean; step?: number; completedIds?: string[] };
+  /** Onboarding spotlight (V2): progreso y completados. */
+  onboardingV2?: { done?: boolean; step?: number; completedIds?: string[]; dismissed?: boolean };
 };
 
 const STORAGE_KEY = "skillatlas_prefs_v1";
@@ -61,6 +111,10 @@ const DEFAULT_PREFS: AppPrefsV1 = {
   lang: "es",
   settingsGridColumns: 2,
   settingsSectionOrder: [...SETTINGS_SECTION_IDS],
+  cvProfile: {},
+  qaTesterMode: false,
+  onboardingV1: { done: false, step: 0, completedIds: [] },
+  onboardingV2: { done: false, step: 0, completedIds: [], dismissed: false },
 };
 
 function safeParse(raw: string | null): unknown {
@@ -130,6 +184,79 @@ function normalizeCvProjectSlugs(raw: unknown): string[] | undefined {
   return out.length > 0 ? Array.from(new Set(out)) : [];
 }
 
+function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const r = raw as any;
+  const headline = typeof r.headline === "string" ? r.headline.trim() : "";
+  const location = typeof r.location === "string" ? r.location.trim() : "";
+  const email = typeof r.email === "string" ? r.email.trim() : "";
+  const summary = typeof r.summary === "string" ? r.summary.trim() : "";
+  const highlights = typeof r.highlights === "string" ? r.highlights.trim() : "";
+  const showHelpStack = typeof r.showHelpStack === "boolean" ? r.showHelpStack : undefined;
+  const showPhoto = typeof r.showPhoto === "boolean" ? r.showPhoto : undefined;
+  const photoSource =
+    r.photoSource === "uploaded" || r.photoSource === "linkedin" || r.photoSource === "provider"
+      ? (r.photoSource as "uploaded" | "linkedin" | "provider")
+      : undefined;
+  const linksRaw = Array.isArray(r.links) ? r.links : [];
+  const links: CvLink[] = linksRaw
+    .map((x) => {
+      if (!x || typeof x !== "object") return null;
+      const rx = x as any;
+      const label = typeof rx.label === "string" ? rx.label.trim() : "";
+      const url = typeof rx.url === "string" ? rx.url.trim() : "";
+      if (!label && !url) return null;
+      return { label: label || url, url };
+    })
+    .filter((x): x is CvLink => Boolean(x?.url));
+  const out: CvProfileV1 = {};
+  if (headline) out.headline = headline;
+  if (location) out.location = location;
+  if (email) out.email = email;
+  if (summary) out.summary = summary;
+  if (highlights) out.highlights = highlights;
+  if (showHelpStack !== undefined) out.showHelpStack = showHelpStack;
+  if (showPhoto !== undefined) out.showPhoto = showPhoto;
+  if (photoSource !== undefined) out.photoSource = photoSource;
+  if (links.length > 0) out.links = links.slice(0, 6);
+
+  const expRaw = Array.isArray(r.experiences) ? r.experiences : [];
+  const experiences = expRaw
+    .map((x) => {
+      if (!x || typeof x !== "object") return null;
+      const rx = x as any;
+      const company = typeof rx.company === "string" ? rx.company.trim() : "";
+      const role = typeof rx.role === "string" ? rx.role.trim() : "";
+      const location = typeof rx.location === "string" ? rx.location.trim() : "";
+      const start = typeof rx.start === "string" ? rx.start.trim() : "";
+      const end = typeof rx.end === "string" ? rx.end.trim() : "";
+      const bullets = typeof rx.bullets === "string" ? rx.bullets.trim() : "";
+      if (!company && !role && !bullets) return null;
+      return { company, role, location, start, end, bullets } as CvExperienceV1;
+    })
+    .filter(Boolean) as CvExperienceV1[];
+  if (experiences.length > 0) out.experiences = experiences.slice(0, 12);
+
+  const eduRaw = Array.isArray(r.education) ? r.education : [];
+  const education = eduRaw
+    .map((x) => {
+      if (!x || typeof x !== "object") return null;
+      const rx = x as any;
+      const school = typeof rx.school === "string" ? rx.school.trim() : "";
+      const degree = typeof rx.degree === "string" ? rx.degree.trim() : "";
+      const location = typeof rx.location === "string" ? rx.location.trim() : "";
+      const start = typeof rx.start === "string" ? rx.start.trim() : "";
+      const end = typeof rx.end === "string" ? rx.end.trim() : "";
+      const details = typeof rx.details === "string" ? rx.details.trim() : "";
+      if (!school && !degree && !details) return null;
+      return { school, degree, location, start, end, details } as CvEducationV1;
+    })
+    .filter(Boolean) as CvEducationV1[];
+  if (education.length > 0) out.education = education.slice(0, 12);
+
+  return out;
+}
+
 export function loadPrefs(): AppPrefsV1 {
   const inferredLang: Lang = (() => {
     try {
@@ -154,6 +281,32 @@ export function loadPrefs(): AppPrefsV1 {
     settingsSectionOrder: normalizeSectionOrder(base.settingsSectionOrder ?? DEFAULT_PREFS.settingsSectionOrder),
     settingsLayoutV1: normalizeSettingsLayout((base as any).settingsLayoutV1),
     cvProjectSlugs: normalizeCvProjectSlugs((base as Partial<AppPrefsV1>).cvProjectSlugs),
+    cvProfile: normalizeCvProfile((base as Partial<AppPrefsV1>).cvProfile) ?? DEFAULT_PREFS.cvProfile,
+    qaTesterMode: typeof (base as any).qaTesterMode === "boolean" ? Boolean((base as any).qaTesterMode) : false,
+    onboardingV1: (() => {
+      const raw = (base as any)?.onboardingV1;
+      if (!raw || typeof raw !== "object") return { ...DEFAULT_PREFS.onboardingV1 };
+      const done = typeof raw.done === "boolean" ? Boolean(raw.done) : false;
+      const step = Number.isFinite(Number(raw.step)) ? Number(raw.step) : 0;
+      const completedIds = Array.isArray(raw.completedIds)
+        ? raw.completedIds.filter((x: unknown): x is string => typeof x === "string").map((s: string) => s.trim()).filter(Boolean)
+        : [];
+      return { done, step, completedIds: Array.from(new Set(completedIds)).slice(0, 20) };
+    })(),
+    onboardingV2: (() => {
+      const raw = (base as any)?.onboardingV2;
+      if (!raw || typeof raw !== "object") return { ...DEFAULT_PREFS.onboardingV2 };
+      const done = typeof raw.done === "boolean" ? Boolean(raw.done) : false;
+      const step = Number.isFinite(Number(raw.step)) ? Number(raw.step) : 0;
+      const completedIds = Array.isArray(raw.completedIds)
+        ? raw.completedIds
+            .filter((x: unknown): x is string => typeof x === "string")
+            .map((s: string) => s.trim())
+            .filter(Boolean)
+        : [];
+      const dismissed = typeof raw.dismissed === "boolean" ? Boolean(raw.dismissed) : false;
+      return { done, step, dismissed, completedIds: Array.from(new Set(completedIds)).slice(0, 30) };
+    })(),
   };
 
   return migrateLegacyPrefs(merged);

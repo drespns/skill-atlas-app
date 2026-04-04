@@ -34,9 +34,48 @@ body {
     display: none !important;
   }
 
+  @page {
+    size: A4;
+    margin: 14mm 14mm 16mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #111827 !important;
+    color-scheme: light !important;
+  }
+
   body.cv-print-mode [data-app-main] {
-    padding: 1.25rem !important;
+    padding: 0 !important;
     max-width: none !important;
+  }
+
+  /* Forzar bordes claros aunque el DOM tenga clases `dark:*`. */
+  body.cv-print-mode [data-cv-document],
+  body.cv-print-mode [data-cv-document] * {
+    border-color: rgb(229 231 235) !important;
+  }
+
+  .cv-doc-project {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  [data-cv-doc-helpstack] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  h2,
+  h3,
+  h4 {
+    page-break-after: avoid;
+  }
+
+  p {
+    orphans: 3;
+    widows: 3;
   }
 }
 

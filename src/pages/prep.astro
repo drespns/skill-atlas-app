@@ -1,0 +1,54 @@
+---
+import AppShell from "../layouts/AppShell.astro";
+---
+
+<AppShell title="Preparación">
+  <section class="max-w-3xl mx-auto space-y-8 py-4">
+    <header class="space-y-3">
+      <p class="m-0 text-xs font-semibold tracking-wide text-emerald-600 dark:text-emerald-400 uppercase" data-i18n="prep.kicker">
+        En construcción
+      </p>
+      <h1 class="m-0 text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-100" data-i18n="prep.title">
+        Preparación para convocatorias
+      </h1>
+      <p class="m-0 text-base text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="prep.intro">
+        Un espacio para estudiar con tu temario: resúmenes, preguntas y seguimiento — inspirado en lo útil de NotebookLM, sin pretender sustituirlo.
+      </p>
+    </header>
+
+    <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-6 space-y-4 shadow-sm">
+      <h2 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100" data-i18n="prep.sectionVisionTitle">
+        Qué estamos construyendo
+      </h2>
+      <ul class="m-0 pl-5 space-y-2 text-sm text-gray-700 dark:text-gray-300 leading-relaxed list-disc">
+        <li data-i18n="prep.bullet1">Proyectos personales de estudio (temario, convocatoria, fecha objetivo).</li>
+        <li data-i18n="prep.bullet2">Conectar con lo que ya tienes en SkillAtlas: tecnologías, conceptos y evidencias.</li>
+        <li data-i18n="prep.bullet3">Enlazar o adjuntar material externo (PDFs, notas) para repasar sin salir del flujo.</li>
+      </ul>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="prep.notebooklmNote">
+        NotebookLM no ofrece una API pública estable para “sincronizar” cuentas; lo razonable es integrar vía enlaces, exportaciones o flujos manuales que definamos contigo.
+      </p>
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+      <a
+        href="/request-access"
+        class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 no-underline"
+      >
+        <span data-i18n="prep.ctaAccess">Solicitar acceso</span>
+      </a>
+      <a
+        href="/study"
+        class="inline-flex items-center justify-center rounded-lg bg-emerald-700 dark:bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 dark:hover:bg-emerald-500 no-underline"
+      >
+        <span data-i18n="prep.ctaStudy">Abrir espacio de estudio</span>
+      </a>
+      <a
+        href="/"
+        class="inline-flex items-center justify-center rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+      >
+        <span data-i18n="prep.ctaBack">Volver al inicio</span>
+      </a>
+    </div>
+  </section>
+</AppShell>

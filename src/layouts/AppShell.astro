@@ -27,6 +27,7 @@ const FOOTER_BUILD_ICONS = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>{title}</title>
+    <slot name="head" />
     <ClientRouter />
 
     <script is:inline>
@@ -273,6 +274,15 @@ const FOOTER_BUILD_ICONS = [
           >
             <span data-i18n="nav.portfolio">Portfolio</span>
           </a>
+          <a
+            href="/study"
+            data-auth-nav
+            data-header-nav-link
+            data-nav-active={isActive("/study") ? "true" : "false"}
+            class="header-nav-link relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+          >
+            <span data-i18n="nav.study">Estudio</span>
+          </a>
         </nav>
 
         <div class="flex min-w-0 flex-1 items-center justify-end gap-3 md:min-w-0">
@@ -391,7 +401,7 @@ const FOOTER_BUILD_ICONS = [
           <a
             href="/settings"
             data-auth-header-settings
-            class={`header-settings-rainbow ${isActive("/settings") ? "header-settings-rainbow--active" : ""} inline-flex hidden`}
+            class={`header-settings-rainbow ${isActive("/settings") ? "header-settings-rainbow--active" : ""} hidden`}
             aria-label="Ajustes"
             title="Ajustes"
             data-i18n="nav.settings"
@@ -546,6 +556,13 @@ const FOOTER_BUILD_ICONS = [
               <span data-i18n="nav.portfolio"></span>
             </a>
             <a
+              href="/study"
+              data-auth-footer-nav
+              class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
+            >
+              <span data-i18n="nav.study"></span>
+            </a>
+            <a
               href="/settings"
               data-auth-footer-nav
               class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
@@ -629,6 +646,8 @@ const FOOTER_BUILD_ICONS = [
     </div>
 
     <script src="../scripts/client.ts"></script>
+    <script src="../scripts/onboarding-tour.ts"></script>
+    <script src="../scripts/onboarding-spotlight.ts"></script>
   </body>
 </html>
 

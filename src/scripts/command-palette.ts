@@ -47,9 +47,12 @@ function initCommandPalette() {
 
   const authedItems: PaletteItem[] = [
     { id: "go-pricing", label: "Precios", href: "/pricing", hint: "/pricing" },
+    { id: "go-prep", label: "Preparación (visión)", href: "/prep", hint: "/prep" },
     { id: "go-app", label: "Abrir app", href: "/app", hint: "/app" },
     { id: "go-technologies", label: "Tecnologías", href: "/technologies", hint: "/technologies" },
     { id: "go-projects", label: "Proyectos", href: "/projects", hint: "/projects" },
+    { id: "go-portfolio", label: "Portfolio", href: "/portfolio", hint: "/portfolio" },
+    { id: "go-study", label: "Estudio", href: "/study", hint: "/study" },
     { id: "go-cv", label: "CV", href: "/cv", hint: "/cv" },
     { id: "new-technology", label: "Crear tecnología", href: "/technologies?create=1", hint: "Acción" },
     { id: "new-project", label: "Crear proyecto", href: "/projects?create=1", hint: "Acción" },
@@ -58,6 +61,7 @@ function initCommandPalette() {
 
   const unauthedItems: PaletteItem[] = [
     { id: "go-pricing", label: "Precios", href: "/pricing", hint: "/pricing" },
+    { id: "go-prep", label: "Preparación (visión)", href: "/prep", hint: "/prep" },
     { id: "go-login", label: "Entrar (acceso privado)", href: "/login", hint: "/login" },
     { id: "go-demo", label: "Ver demo", href: "/demo", hint: "/demo" },
     {

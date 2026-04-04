@@ -11,7 +11,7 @@ SkillAtlas es un MVP para gestionar conocimiento tecnico y mostrar portfolio:
 - proyectos
 - embeds por proyecto
 - portfolio publico (sesion en `/portfolio`; URL publica legible `/portfolio/<slug>` con **saas-011**)
-- CV privado (`/cv`; seleccion de proyectos en prefs)
+- CV privado (`/cv`; seleccion/orden de proyectos + perfil del CV en prefs; preview modal; print en claro)
 
 ## Stack actual
 

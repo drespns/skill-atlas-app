@@ -382,6 +382,23 @@ import AppShell from "../layouts/AppShell.astro";
               Pasarela, suscripciones y límites por plan cuando la demanda lo merezca, sin perder de vista precios humanos.
             </p>
           </div>
+          <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-5 shadow-sm flex flex-col gap-3 sm:col-span-2 xl:col-span-1">
+            <div class="flex items-start justify-between gap-3">
+              <h3 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.rmPrepTitle">Preparación y temario</h3>
+              <span
+                class="shrink-0 rounded-full border border-emerald-200/80 dark:border-emerald-800/50 bg-emerald-50/80 dark:bg-emerald-950/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-900 dark:text-emerald-200"
+                data-i18n="landing.badgeDev"
+              >
+                En desarrollo
+              </span>
+            </div>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed flex-1" data-i18n="landing.rmPrepBody">
+              Proyectos de estudio, convocatorias y material enlazado; integración práctica con herramientas externas (sin depender de APIs inexistentes).
+            </p>
+            <a href="/prep" class="inline-flex w-fit items-center text-sm font-semibold text-emerald-700 dark:text-emerald-300 hover:underline underline-offset-4 no-underline">
+              <span data-i18n="landing.prepTeaserCta">Qué estamos preparando</span>
+            </a>
+          </div>
         </div>
       </section>
 
@@ -495,134 +512,167 @@ import AppShell from "../layouts/AppShell.astro";
       <section class="rounded-3xl border border-gray-200/80 dark:border-gray-800 bg-white/55 dark:bg-gray-950/45 shadow-sm overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-200/70 dark:border-gray-800/70 bg-white/60 dark:bg-gray-950/40 backdrop-blur flex flex-wrap items-end justify-between gap-3">
           <div class="space-y-1">
-            <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase" data-i18n="landing.builtKicker">
-              Hecho con
+            <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase" data-i18n="landing.workflowVizKicker">
+              Dentro de la app
             </p>
-            <h2 class="m-0 text-lg font-semibold" data-i18n="landing.builtTitle">Astro, Tailwind, TypeScript y más.</h2>
+            <h2 class="m-0 text-lg font-semibold" data-i18n="landing.workflowVizTitle">De la base al portfolio, y más allá.</h2>
           </div>
-          <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-xl" data-i18n="landing.builtSubtitle">
-            El mismo stack que ves en el pie de página: rápido, tipado y con datos a salvo.
+          <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-xl" data-i18n="landing.workflowVizSubtitle">
+            Flujo de trabajo real: mapa de habilidades, proyectos con evidencias, salidas públicas y preparación para convocatorias.
           </p>
         </div>
 
-        <div class="p-6">
-          <div class="relative overflow-hidden rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60">
+        <div class="p-6 space-y-5">
+          <div class="relative overflow-hidden rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-linear-to-br from-white/90 via-white/75 to-indigo-50/30 dark:from-gray-950/75 dark:via-gray-950/60 dark:to-indigo-950/20">
             <div class="pointer-events-none absolute inset-0">
-              <svg viewBox="0 0 100 100" class="w-full h-full" preserveAspectRatio="none" aria-hidden="true">
+              <svg viewBox="0 0 100 100" class="w-full h-full min-h-[min(52vh,28rem)]" preserveAspectRatio="none" aria-hidden="true">
                 <defs>
                   <linearGradient id="bw" x1="0" x2="1" y1="0" y2="0">
-                    <stop offset="0%" stop-color="rgb(99 102 241)" stop-opacity="0.45" />
-                    <stop offset="50%" stop-color="rgb(56 189 248)" stop-opacity="0.35" />
-                    <stop offset="100%" stop-color="rgb(244 63 94)" stop-opacity="0.40" />
+                    <stop offset="0%" stop-color="rgb(99 102 241)" stop-opacity="0.5" />
+                    <stop offset="50%" stop-color="rgb(56 189 248)" stop-opacity="0.4" />
+                    <stop offset="100%" stop-color="rgb(244 63 94)" stop-opacity="0.45" />
                   </linearGradient>
                   <filter id="bwBlur" x="-30%" y="-30%" width="160%" height="160%">
-                    <feGaussianBlur stdDeviation="0.6" />
+                    <feGaussianBlur stdDeviation="0.55" />
                   </filter>
                 </defs>
                 <path
-                  d="M 18 16.7 C 30 16.7, 34 50, 50 50"
+                  d="M 18 20 C 30 20, 38 50, 50 50"
                   stroke="url(#bw)"
-                  stroke-width="1.4"
+                  stroke-width="1.35"
                   stroke-linecap="round"
                   fill="none"
-                  opacity="0.55"
+                  opacity="0.58"
                   filter="url(#bwBlur)"
                 />
                 <path
-                  d="M 18 50 C 30 50, 34 50, 50 50"
+                  d="M 18 50 C 30 50, 38 50, 50 50"
                   stroke="url(#bw)"
-                  stroke-width="1.4"
+                  stroke-width="1.35"
                   stroke-linecap="round"
                   fill="none"
-                  opacity="0.65"
+                  opacity="0.68"
                   filter="url(#bwBlur)"
                 />
                 <path
-                  d="M 18 83.3 C 30 83.3, 34 50, 50 50"
+                  d="M 18 80 C 30 80, 38 50, 50 50"
                   stroke="url(#bw)"
-                  stroke-width="1.4"
+                  stroke-width="1.35"
                   stroke-linecap="round"
                   fill="none"
-                  opacity="0.55"
+                  opacity="0.58"
                   filter="url(#bwBlur)"
                 />
                 <path
-                  d="M 50 50 C 66 50, 70 16.7, 82 16.7"
+                  d="M 50 50 C 62 50, 70 16, 82 16"
                   stroke="url(#bw)"
-                  stroke-width="1.4"
+                  stroke-width="1.35"
                   stroke-linecap="round"
                   fill="none"
-                  opacity="0.55"
+                  opacity="0.58"
                   filter="url(#bwBlur)"
                 />
                 <path
-                  d="M 50 50 C 66 50, 70 50, 82 50"
+                  d="M 50 50 C 62 50, 70 38, 82 38"
                   stroke="url(#bw)"
-                  stroke-width="1.4"
+                  stroke-width="1.35"
                   stroke-linecap="round"
                   fill="none"
-                  opacity="0.65"
+                  opacity="0.58"
                   filter="url(#bwBlur)"
                 />
                 <path
-                  d="M 50 50 C 66 50, 70 83.3, 82 83.3"
+                  d="M 50 50 C 62 50, 70 62, 82 62"
                   stroke="url(#bw)"
-                  stroke-width="1.4"
+                  stroke-width="1.35"
                   stroke-linecap="round"
                   fill="none"
-                  opacity="0.55"
+                  opacity="0.68"
+                  filter="url(#bwBlur)"
+                />
+                <path
+                  d="M 50 50 C 62 50, 70 84, 82 84"
+                  stroke="url(#bw)"
+                  stroke-width="1.35"
+                  stroke-linecap="round"
+                  fill="none"
+                  opacity="0.58"
                   filter="url(#bwBlur)"
                 />
               </svg>
             </div>
 
-            <div class="relative grid grid-cols-1 md:grid-cols-3 md:grid-rows-3 gap-4 p-5 items-center md:min-h-64">
-              <div class="grid grid-rows-3 gap-3 h-full">
-                <div class="inline-flex h-full items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm">
-                  <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 dark:bg-indigo-400/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/15 dark:border-indigo-400/15">⚡</span>
-                  <div class="min-w-0">
-                    <p class="m-0 text-sm font-semibold">Astro</p>
-                    <p class="mt-0.5 mb-0 text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.builtAstroDesc">UI y navegación</p>
+            <div class="relative grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 p-5 items-stretch md:min-h-[22rem]">
+              <div class="grid grid-rows-3 gap-3 h-full min-h-[12rem]">
+                <div class="inline-flex h-full items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/85 dark:bg-gray-950/75 px-4 py-3 shadow-sm">
+                  <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 dark:bg-indigo-400/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/15 dark:border-indigo-400/15">◎</span>
+                  <div class="min-w-0 flex-1">
+                    <p class="m-0 text-sm font-semibold" data-i18n="landing.workflowLeft1Title">Tecnologías</p>
+                    <p class="mt-0.5 mb-0 text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.workflowLeft1Hint">mapa de stack</p>
                   </div>
                 </div>
-                <div class="inline-flex h-full items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm">
-                  <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/10 dark:bg-sky-400/10 text-sky-700 dark:text-sky-300 border border-sky-500/15 dark:border-sky-400/15">🎨</span>
-                  <div class="min-w-0">
-                    <p class="m-0 text-sm font-semibold">Tailwind</p>
-                    <p class="mt-0.5 mb-0 text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.builtTailwindDesc">Sistema visual</p>
+                <div class="inline-flex h-full items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/85 dark:bg-gray-950/75 px-4 py-3 shadow-sm">
+                  <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/10 dark:bg-sky-400/10 text-sky-700 dark:text-sky-300 border border-sky-500/15 dark:border-sky-400/15">◇</span>
+                  <div class="min-w-0 flex-1">
+                    <p class="m-0 text-sm font-semibold" data-i18n="landing.workflowLeft2Title">Conceptos</p>
+                    <p class="mt-0.5 mb-0 text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.workflowLeft2Hint">progreso por tecnología</p>
                   </div>
                 </div>
-                <div class="inline-flex h-full items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm">
-                  <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/10 dark:bg-rose-400/10 text-rose-700 dark:text-rose-300 border border-rose-500/15 dark:border-rose-400/15">🛡️</span>
-                  <div class="min-w-0">
-                    <p class="m-0 text-sm font-semibold">Supabase</p>
-                    <p class="mt-0.5 mb-0 text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.builtSupabaseDesc">Auth y datos</p>
+                <div class="inline-flex h-full items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/85 dark:bg-gray-950/75 px-4 py-3 shadow-sm">
+                  <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-violet-500/10 dark:bg-violet-400/10 text-violet-700 dark:text-violet-300 border border-violet-500/15 dark:border-violet-400/15">⚙</span>
+                  <div class="min-w-0 flex-1">
+                    <p class="m-0 text-sm font-semibold" data-i18n="landing.workflowLeft3Title">Ajustes</p>
+                    <p class="mt-0.5 mb-0 text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.workflowLeft3Hint">perfil, privacidad, stack</p>
                   </div>
                 </div>
               </div>
 
-              <div class="flex items-center justify-center md:row-span-3">
-                <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/90 dark:bg-gray-950/80 px-6 py-5 shadow-sm text-center">
-                  <p class="m-0 text-sm font-semibold" data-i18n="landing.builtCenterLabel">SkillAtlas</p>
-                  <p class="mt-1 mb-0 text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.builtCenterHint">MVP vivo</p>
+              <div class="flex items-center justify-center md:min-w-[9.5rem]">
+                <div class="rounded-2xl border border-indigo-200/70 dark:border-indigo-900/50 bg-white/95 dark:bg-gray-950/90 px-5 py-5 shadow-md text-center ring-1 ring-indigo-500/10 dark:ring-indigo-400/10">
+                  <p class="m-0 text-sm font-semibold" data-i18n="landing.workflowCenterLabel">SkillAtlas</p>
+                  <p class="mt-1 mb-0 text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.workflowCenterHint">tu espacio de trabajo</p>
                 </div>
               </div>
 
-              <div class="grid grid-rows-3 gap-3 h-full">
-                <div class="inline-flex h-full items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm justify-between">
-                  <p class="m-0 text-sm font-semibold" data-i18n="landing.builtMapTech">Tecnologías</p>
-                  <span class="text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.builtMapTechHint">mapa</span>
+              <div class="grid grid-rows-4 gap-2.5 h-full min-h-[16rem]">
+                <div class="inline-flex h-full min-h-0 items-center rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/85 dark:bg-gray-950/75 px-4 py-2.5 shadow-sm justify-between gap-2">
+                  <p class="m-0 text-sm font-semibold" data-i18n="landing.workflowRight1Title">Proyectos</p>
+                  <span class="text-xs text-gray-600 dark:text-gray-400 shrink-0" data-i18n="landing.workflowRight1Hint">evidencias</span>
                 </div>
-                <div class="inline-flex h-full items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm justify-between">
-                  <p class="m-0 text-sm font-semibold" data-i18n="landing.builtMapProjects">Proyectos</p>
-                  <span class="text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.builtMapProjectsHint">evidencias</span>
+                <div class="inline-flex h-full min-h-0 items-center rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/85 dark:bg-gray-950/75 px-4 py-2.5 shadow-sm justify-between gap-2">
+                  <p class="m-0 text-sm font-semibold" data-i18n="landing.workflowRight2Title">Portfolio</p>
+                  <span class="text-xs text-gray-600 dark:text-gray-400 shrink-0" data-i18n="landing.workflowRight2Hint">enlace público</span>
                 </div>
-                <div class="inline-flex h-full items-center gap-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-4 py-3 shadow-sm justify-between">
-                  <p class="m-0 text-sm font-semibold" data-i18n="landing.builtMapPortfolio">Portfolio</p>
-                  <span class="text-xs text-gray-600 dark:text-gray-400" data-i18n="landing.builtMapPortfolioHint">publicación</span>
+                <div class="inline-flex h-full min-h-0 items-center rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/85 dark:bg-gray-950/75 px-4 py-2.5 shadow-sm justify-between gap-2">
+                  <p class="m-0 text-sm font-semibold" data-i18n="landing.workflowRight3Title">CV</p>
+                  <span class="text-xs text-gray-600 dark:text-gray-400 shrink-0" data-i18n="landing.workflowRight3Hint">preview · PDF</span>
+                </div>
+                <div class="inline-flex h-full min-h-0 items-center rounded-2xl border border-emerald-200/80 dark:border-emerald-900/45 bg-emerald-50/50 dark:bg-emerald-950/25 px-4 py-2.5 shadow-sm justify-between gap-2">
+                  <p class="m-0 text-sm font-semibold text-emerald-900 dark:text-emerald-100" data-i18n="landing.workflowRight4Title">Preparación</p>
+                  <span class="text-xs text-emerald-800/90 dark:text-emerald-200/90 shrink-0" data-i18n="landing.workflowRight4Hint">convocatorias</span>
                 </div>
               </div>
             </div>
+          </div>
+
+          <div class="rounded-2xl border border-emerald-200/70 dark:border-emerald-900/40 bg-linear-to-r from-emerald-50/80 via-white/80 to-sky-50/60 dark:from-emerald-950/30 dark:via-gray-950/50 dark:to-sky-950/20 p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="space-y-1 min-w-0">
+              <p class="m-0 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300" data-i18n="landing.prepTeaserKicker">
+                Próxima pieza
+              </p>
+              <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.prepTeaserTitle">
+                Proyectos de estudio y temario (tipo NotebookLM, a tu manera)
+              </p>
+              <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="landing.prepTeaserBody">
+                Para preparar oposiciones o exámenes técnicos: temario, seguimiento y material enlazado — sin sustituir a NotebookLM; integración razonable por enlaces y exportaciones.
+              </p>
+            </div>
+            <a
+              href="/prep"
+              class="inline-flex shrink-0 items-center justify-center rounded-xl bg-emerald-700 dark:bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 dark:hover:bg-emerald-500 no-underline"
+            >
+              <span data-i18n="landing.prepTeaserCta">Qué estamos preparando</span>
+            </a>
           </div>
         </div>
       </section>

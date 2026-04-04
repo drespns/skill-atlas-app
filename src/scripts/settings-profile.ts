@@ -46,6 +46,15 @@ async function initSettingsProfile() {
   const slugInput = document.querySelector<HTMLInputElement>("[data-profile-public-slug]");
   const urlPreview = document.querySelector<HTMLElement>("[data-profile-public-url-preview]");
   const copyBtn = document.querySelector<HTMLButtonElement>("[data-profile-copy-public-url]");
+  const tokenWrap = document.querySelector<HTMLElement>("[data-portfolio-token-share]");
+  const tokenUrlInput = document.querySelector<HTMLInputElement>("[data-portfolio-token-url]");
+  const tokenCopyBtn = document.querySelector<HTMLButtonElement>("[data-portfolio-token-copy]");
+  const tokenRotateBtn = document.querySelector<HTMLButtonElement>("[data-portfolio-token-rotate]");
+  const cvShareWrap = document.querySelector<HTMLElement>("[data-cv-share]");
+  const cvShareEnabledCb = document.querySelector<HTMLInputElement>("[data-cv-share-enabled]");
+  const cvShareUrlInput = document.querySelector<HTMLInputElement>("[data-cv-share-url]");
+  const cvShareCopyBtn = document.querySelector<HTMLButtonElement>("[data-cv-share-copy]");
+  const cvShareRotateBtn = document.querySelector<HTMLButtonElement>("[data-cv-share-rotate]");
 
   if (!nameInput || !bioInput || !saveBtn) return;
   const portfolioCard = document.querySelector<HTMLElement>('[data-settings-section="portfolio"]');
@@ -96,6 +105,9 @@ async function initSettingsProfile() {
   const userId = supabase ? await getSessionUserId(supabase) : null;
   let pendingAvatarFile: File | null = null;
   let avatarUrl: string | null = null;
+  let portfolioShareToken: string | null = null;
+  let cvShareEnabled: boolean | null = null;
+  let cvShareToken: string | null = null;
 
   if (!userId || !supabase) {
     if (shareCb) shareCb.disabled = true;
@@ -159,19 +171,32 @@ async function initSettingsProfile() {
       avatar_url?: string | null;
       share_enabled?: boolean | null;
       public_slug?: string | null;
+      share_token?: string | null;
+      cv_share_enabled?: boolean | null;
+      cv_share_token?: string | null;
     } | null = null;
     let error: { message?: string; code?: string } | null = null;
 
     let resOpt = await supabase
       .from("portfolio_profiles")
-      .select("display_name, bio, help_stack, avatar_url, share_enabled, public_slug")
+      .select(
+        "display_name, bio, help_stack, avatar_url, share_enabled, share_token, public_slug, cv_share_enabled, cv_share_token",
+      )
       .eq("user_id", userId)
       .maybeSingle();
 
     if (resOpt.error && /public_slug|42703|column/i.test(resOpt.error.message ?? "")) {
       resOpt = await supabase
         .from("portfolio_profiles")
-        .select("display_name, bio, help_stack, avatar_url, share_enabled")
+        .select("display_name, bio, help_stack, avatar_url, share_enabled, share_token, cv_share_enabled, cv_share_token")
+        .eq("user_id", userId)
+        .maybeSingle();
+    }
+
+    if (resOpt.error && /cv_share_|share_token|column/i.test(resOpt.error.message ?? "")) {
+      resOpt = await supabase
+        .from("portfolio_profiles")
+        .select("display_name, bio, help_stack, avatar_url, share_enabled, share_token")
         .eq("user_id", userId)
         .maybeSingle();
     }
@@ -179,7 +204,7 @@ async function initSettingsProfile() {
     if (resOpt.error && /help_stack|column/i.test(resOpt.error.message ?? "")) {
       const resBasic = await supabase
         .from("portfolio_profiles")
-        .select("display_name, bio, share_enabled")
+        .select("display_name, bio, share_enabled, share_token")
         .eq("user_id", userId)
         .maybeSingle();
       data = resBasic.data;
@@ -210,6 +235,15 @@ async function initSettingsProfile() {
       const slugStr = data.public_slug != null ? String(data.public_slug).trim() : "";
       applyShareToForm(Boolean(data.share_enabled), slugStr);
 
+      portfolioShareToken =
+        typeof (data as any).share_token === "string" && (data as any).share_token ? String((data as any).share_token) : null;
+
+      cvShareEnabled = typeof (data as any).cv_share_enabled === "boolean" ? Boolean((data as any).cv_share_enabled) : null;
+      cvShareToken =
+        typeof (data as any).cv_share_token === "string" && (data as any).cv_share_token
+          ? String((data as any).cv_share_token)
+          : null;
+
       const a = (data as { avatar_url?: string | null }).avatar_url;
       avatarUrl = typeof a === "string" && a ? a : null;
       if (!avatarUrl) {
@@ -236,6 +270,161 @@ async function initSettingsProfile() {
     applyToForm(loadLocal());
     applyShareToForm(false, "");
     if (cloudHint) cloudHint.textContent = "";
+  }
+
+  const updateCvShareUrl = () => {
+    if (!cvShareUrlInput) return;
+    cvShareUrlInput.value = cvShareToken ? `${window.location.origin}/cv/p/${cvShareToken}` : "";
+  };
+
+  if (
+    cvShareWrap &&
+    cvShareEnabledCb &&
+    cvShareUrlInput &&
+    cvShareCopyBtn &&
+    cvShareRotateBtn &&
+    supabase &&
+    userId &&
+    (cvShareEnabled !== null || Boolean(cvShareToken))
+  ) {
+    cvShareWrap.classList.remove("hidden");
+    cvShareEnabledCb.checked = Boolean(cvShareEnabled);
+    updateCvShareUrl();
+
+    if (cvShareEnabledCb.dataset.bound !== "1") {
+      cvShareEnabledCb.dataset.bound = "1";
+      cvShareEnabledCb.addEventListener("change", async () => {
+        const nextEnabled = Boolean(cvShareEnabledCb.checked);
+        const nextToken = cvShareToken ?? crypto.randomUUID();
+        try {
+          const up1 = await supabase
+            .from("portfolio_profiles")
+            .upsert({ user_id: userId, cv_share_enabled: nextEnabled, cv_share_token: nextToken } as any, {
+              onConflict: "user_id",
+            })
+            .select("cv_share_enabled, cv_share_token")
+            .maybeSingle();
+          if (up1.error) {
+            if (/duplicate key|unique/i.test(up1.error.message ?? "")) {
+              const retryToken = crypto.randomUUID();
+              const up2 = await supabase
+                .from("portfolio_profiles")
+                .upsert({ user_id: userId, cv_share_enabled: nextEnabled, cv_share_token: retryToken } as any, {
+                  onConflict: "user_id",
+                })
+                .select("cv_share_enabled, cv_share_token")
+                .maybeSingle();
+              if (up2.error) throw up2.error;
+              cvShareEnabled =
+                typeof (up2.data as any)?.cv_share_enabled === "boolean" ? (up2.data as any).cv_share_enabled : nextEnabled;
+              cvShareToken = typeof (up2.data as any)?.cv_share_token === "string" ? (up2.data as any).cv_share_token : retryToken;
+            } else {
+              throw up1.error;
+            }
+          } else {
+            cvShareEnabled =
+              typeof (up1.data as any)?.cv_share_enabled === "boolean" ? (up1.data as any).cv_share_enabled : nextEnabled;
+            cvShareToken = typeof (up1.data as any)?.cv_share_token === "string" ? (up1.data as any).cv_share_token : nextToken;
+          }
+          updateCvShareUrl();
+          showToast(
+            nextEnabled
+              ? tt("cv.publicShareEnabledToast", "Enlace público activado.")
+              : tt("cv.publicShareDisabledToast", "Enlace público desactivado."),
+            "success",
+          );
+        } catch (e: any) {
+          cvShareEnabledCb.checked = Boolean(cvShareEnabled);
+          showToast(e?.message ?? tt("cv.publicShareSaveError", "No se pudo guardar."), "error");
+        }
+      });
+    }
+
+    if (cvShareCopyBtn.dataset.bound !== "1") {
+      cvShareCopyBtn.dataset.bound = "1";
+      cvShareCopyBtn.addEventListener("click", async () => {
+        const url = cvShareUrlInput.value.trim();
+        if (!url) {
+          showToast(tt("cv.publicShareNoUrl", "Activa el enlace para poder copiarlo."), "warning");
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(url);
+          showToast(tt("cv.publicShareCopied", "Enlace copiado."), "success");
+        } catch {
+          showToast(tt("settings.portfolio.copyFailed", "No se pudo copiar al portapapeles."), "error");
+        }
+      });
+    }
+
+    if (cvShareRotateBtn.dataset.bound !== "1") {
+      cvShareRotateBtn.dataset.bound = "1";
+      cvShareRotateBtn.addEventListener("click", async () => {
+        try {
+          const next = crypto.randomUUID();
+          const up = await supabase
+            .from("portfolio_profiles")
+            .upsert({ user_id: userId, cv_share_token: next } as any, { onConflict: "user_id" })
+            .select("cv_share_token")
+            .maybeSingle();
+          if (up.error) throw up.error;
+          const got = (up.data as any)?.cv_share_token;
+          cvShareToken = typeof got === "string" && got ? got : next;
+          updateCvShareUrl();
+          showToast(tt("cv.publicShareRotated", "Enlace regenerado."), "success");
+        } catch (e: any) {
+          showToast(e?.message ?? tt("cv.publicShareRotateError", "No se pudo regenerar."), "error");
+        }
+      });
+    }
+  }
+
+  const updatePortfolioTokenUrl = () => {
+    if (!tokenUrlInput) return;
+    tokenUrlInput.value = portfolioShareToken ? `${window.location.origin}/p/${portfolioShareToken}` : "";
+  };
+
+  if (tokenWrap && tokenUrlInput && tokenCopyBtn && tokenRotateBtn && supabase && userId && portfolioShareToken) {
+    tokenWrap.classList.remove("hidden");
+    updatePortfolioTokenUrl();
+
+    if (tokenCopyBtn.dataset.bound !== "1") {
+      tokenCopyBtn.dataset.bound = "1";
+      tokenCopyBtn.addEventListener("click", async () => {
+        const url = tokenUrlInput.value.trim();
+        if (!url) {
+          showToast(tt("settings.portfolio.tokenNoUrl", "No hay enlace todavía."), "warning");
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(url);
+          showToast(tt("settings.portfolio.copySuccess", "Enlace copiado."), "success");
+        } catch {
+          showToast(tt("settings.portfolio.copyFailed", "No se pudo copiar al portapapeles."), "error");
+        }
+      });
+    }
+
+    if (tokenRotateBtn.dataset.bound !== "1") {
+      tokenRotateBtn.dataset.bound = "1";
+      tokenRotateBtn.addEventListener("click", async () => {
+        try {
+          const next = crypto.randomUUID();
+          const up = await supabase
+            .from("portfolio_profiles")
+            .upsert({ user_id: userId, share_token: next } as any, { onConflict: "user_id" })
+            .select("share_token")
+            .maybeSingle();
+          if (up.error) throw up.error;
+          const got = (up.data as any)?.share_token;
+          portfolioShareToken = typeof got === "string" && got ? got : next;
+          updatePortfolioTokenUrl();
+          showToast(tt("settings.portfolio.tokenRotated", "Enlace regenerado."), "success");
+        } catch (e: any) {
+          showToast(e?.message ?? tt("settings.portfolio.tokenRotateError", "No se pudo regenerar."), "error");
+        }
+      });
+    }
   }
 
   if (saveBtn.dataset.bound !== "1") {

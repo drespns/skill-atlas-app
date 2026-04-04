@@ -4,12 +4,12 @@ export const prerender = false;
 import AppShell from "../../layouts/AppShell.astro";
 import { supabaseAnonRpc } from "../../lib/server-supabase-rpc";
 
-const raw = Astro.params.slug;
-const slug = typeof raw === "string" ? raw : "";
+const raw = Astro.params.token;
+const token = typeof raw === "string" ? raw : "";
 
 type RpcPayload = { displayName?: string; bio?: string } | null;
 
-const rpcRes = slug ? await supabaseAnonRpc<RpcPayload>("skillatlas_portfolio_by_public_slug", { p_slug: slug }) : null;
+const rpcRes = token ? await supabaseAnonRpc<RpcPayload>("skillatlas_portfolio_by_share_token", { p_token: token }) : null;
 const payload = rpcRes?.data ?? null;
 
 const displayName = (payload as any)?.displayName ? String((payload as any).displayName).trim() : "";
@@ -17,7 +17,7 @@ const bio = (payload as any)?.bio ? String((payload as any).bio).trim() : "";
 const ogTitle = displayName ? `${displayName} · Portfolio` : "Portfolio · SkillAtlas";
 const ogDesc = (bio || "Portfolio público en SkillAtlas.").slice(0, 200);
 const origin = Astro.url.origin || "";
-const ogImage = slug ? `${origin}/og/portfolio.svg?slug=${encodeURIComponent(slug)}` : `${origin}/og/portfolio.svg`;
+const ogImage = token ? `${origin}/og/portfolio.svg?token=${encodeURIComponent(token)}` : `${origin}/og/portfolio.svg`;
 ---
 
 <AppShell title="Portfolio">
@@ -31,7 +31,7 @@ const ogImage = slug ? `${origin}/og/portfolio.svg?slug=${encodeURIComponent(slu
     <meta name="twitter:description" content={ogDesc} />
     <meta name="twitter:image" content={ogImage} />
   </Fragment>
-  <section class="space-y-6 max-w-screen-2xl mx-auto" data-public-portfolio-page data-public-portfolio-slug={slug}>
+  <section class="space-y-6 max-w-screen-2xl mx-auto" data-public-portfolio-page data-public-portfolio-token={token}>
     <header class="space-y-3">
       <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div class="flex items-start gap-4 min-w-0">
@@ -55,10 +55,7 @@ const ogImage = slug ? `${origin}/og/portfolio.svg?slug=${encodeURIComponent(slu
             </div>
           </div>
           <div class="space-y-1 min-w-0">
-            <h1
-              class="m-0 text-2xl font-semibold text-gray-900 dark:text-gray-100"
-              data-public-portfolio-name
-            >
+            <h1 class="m-0 text-2xl font-semibold text-gray-900 dark:text-gray-100" data-public-portfolio-name>
               Portfolio
             </h1>
             <p class="text-sm text-gray-600 dark:text-gray-400" data-public-portfolio-bio></p>
@@ -99,5 +96,6 @@ const ogImage = slug ? `${origin}/og/portfolio.svg?slug=${encodeURIComponent(slu
     </div>
   </section>
 
-  <script src="../../scripts/public-portfolio-by-slug.ts"></script>
+  <script src="../../scripts/public-portfolio-by-token.ts"></script>
 </AppShell>
+

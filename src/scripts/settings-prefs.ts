@@ -197,6 +197,7 @@ function initSettingsPrefs() {
       lang: "es",
       settingsGridColumns: 2,
       settingsSectionOrder: [...SETTINGS_SECTION_IDS],
+      qaTesterMode: false,
     });
     render();
     window.skillatlas?.applySettingsDashboard?.();

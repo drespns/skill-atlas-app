@@ -1,7 +1,9 @@
 import i18next from "i18next";
+import { getHelpStackItem, HELP_STACK_ITEMS } from "../config/help-stack";
 import { getSupabaseBrowserClient } from "./client-supabase";
 import { getSessionUserId } from "./auth-session";
 import { loadPrefs, updatePrefs } from "./prefs";
+import { showToast } from "./ui-feedback";
 
 function tt(key: string, fallback: string): string {
   const v = i18next.t(key);
@@ -26,12 +28,84 @@ function esc(s: string): string {
 }
 
 type ProjectRow = {
+  id: string;
   slug: string;
   title: string;
   description: string | null;
   role: string | null;
   outcome: string | null;
 };
+
+type CvProfile = {
+  headline?: string;
+  location?: string;
+  email?: string;
+  links?: { label: string; url: string }[];
+  summary?: string;
+  showHelpStack?: boolean;
+  highlights?: string;
+  showPhoto?: boolean;
+  experiences?: CvExperience[];
+  education?: CvEducation[];
+};
+
+type CvExperience = {
+  company?: string;
+  role?: string;
+  location?: string;
+  start?: string;
+  end?: string;
+  bullets?: string;
+};
+
+type CvEducation = {
+  school?: string;
+  degree?: string;
+  location?: string;
+  start?: string;
+  end?: string;
+  details?: string;
+};
+
+function normalizeUrl(raw: string): string {
+  const s = raw.trim();
+  if (!s) return "";
+  if (/^https?:\/\//i.test(s)) return s;
+  return `https://${s}`;
+}
+
+function normalizeEmail(raw: string): string {
+  return raw.trim();
+}
+
+function isProbablyEmail(s: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+}
+
+function initPrintThemeLock() {
+  if ((window as any).__skillatlasCvPrintThemeLock === true) return;
+  (window as any).__skillatlasCvPrintThemeLock = true;
+  let hadDark = false;
+  const before = () => {
+    hadDark = document.documentElement.classList.contains("dark");
+    document.documentElement.classList.remove("dark");
+    document.documentElement.dataset.theme = "light";
+    document.documentElement.style.colorScheme = "light";
+  };
+  const after = () => {
+    if (hadDark) document.documentElement.classList.add("dark");
+  };
+  window.addEventListener("beforeprint", before);
+  window.addEventListener("afterprint", after);
+}
+
+function linesToBullets(raw: string): string[] {
+  return (raw ?? "")
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => s.replace(/^-+\s*/, ""));
+}
 
 async function boot() {
   const mount = document.querySelector("[data-cv-mount]");
@@ -41,6 +115,7 @@ async function boot() {
   }
 
   document.body.classList.add("cv-print-mode");
+  initPrintThemeLock();
 
   if (mount.dataset.bound === "1") return;
   mount.dataset.bound = "1";
@@ -51,11 +126,50 @@ async function boot() {
   const listEl = document.querySelector<HTMLElement>("[data-cv-project-list]");
   const docEl = document.querySelector<HTMLElement>("[data-cv-document]");
   const docName = document.querySelector<HTMLElement>("[data-cv-doc-name]");
+  const docHeadline = document.querySelector<HTMLElement>("[data-cv-doc-headline]");
+  const docContact = document.querySelector<HTMLElement>("[data-cv-doc-contact]");
   const docBio = document.querySelector<HTMLElement>("[data-cv-doc-bio]");
+  const docHelpStack = document.querySelector<HTMLElement>("[data-cv-doc-helpstack]");
   const docProjects = document.querySelector<HTMLElement>("[data-cv-doc-projects]");
+  const docHighlightsSection = document.querySelector<HTMLElement>("[data-cv-doc-highlights-section]");
+  const docHighlights = document.querySelector<HTMLElement>("[data-cv-doc-highlights]");
+  const docPhoto = document.querySelector<HTMLImageElement>("[data-cv-doc-photo]");
+  const docExperienceSection = document.querySelector<HTMLElement>("[data-cv-doc-experience-section]");
+  const docExperience = document.querySelector<HTMLElement>("[data-cv-doc-experience]");
+  const docEducationSection = document.querySelector<HTMLElement>("[data-cv-doc-education-section]");
+  const docEducation = document.querySelector<HTMLElement>("[data-cv-doc-education]");
   const printBtn = document.querySelector<HTMLButtonElement>("[data-cv-print]");
   const selAll = document.querySelector<HTMLButtonElement>("[data-cv-select-all]");
   const selNone = document.querySelector<HTMLButtonElement>("[data-cv-select-none]");
+  const expAddBtn = document.querySelector<HTMLButtonElement>("[data-cv-exp-add]");
+  const eduAddBtn = document.querySelector<HTMLButtonElement>("[data-cv-edu-add]");
+  const expList = document.querySelector<HTMLElement>("[data-cv-exp-list]");
+  const eduList = document.querySelector<HTMLElement>("[data-cv-edu-list]");
+  const headlineInput = document.querySelector<HTMLInputElement>("[data-cv-headline]");
+  const locationInput = document.querySelector<HTMLInputElement>("[data-cv-location]");
+  const emailInput = document.querySelector<HTMLInputElement>("[data-cv-email]");
+  const linkInputs = document.querySelectorAll<HTMLInputElement>("input[data-cv-link-url]");
+  const summaryInput = document.querySelector<HTMLTextAreaElement>("[data-cv-summary]");
+  const showHelpStackCb = document.querySelector<HTMLInputElement>("[data-cv-show-helpstack]");
+  const highlightsInput = document.querySelector<HTMLTextAreaElement>("[data-cv-highlights]");
+  const fullNameInput = document.querySelector<HTMLInputElement>("[data-cv-full-name]");
+  const publicBioInput = document.querySelector<HTMLTextAreaElement>("[data-cv-public-bio]");
+  const avatarFileInput = document.querySelector<HTMLInputElement>("[data-cv-avatar-file]");
+  const showPhotoCb = document.querySelector<HTMLInputElement>("[data-cv-show-photo]");
+  const photoUseLinkedinBtn = document.querySelector<HTMLButtonElement>("[data-cv-photo-use-linkedin]");
+  const photoUseUploadedBtn = document.querySelector<HTMLButtonElement>("[data-cv-photo-use-uploaded]");
+
+  const cvShareWrap = document.querySelector<HTMLElement>("[data-cv-share]");
+  const cvShareEnabledCb = document.querySelector<HTMLInputElement>("[data-cv-share-enabled]");
+  const cvShareUrlInput = document.querySelector<HTMLInputElement>("[data-cv-share-url]");
+  const cvShareCopyBtn = document.querySelector<HTMLButtonElement>("[data-cv-share-copy]");
+  const cvShareRotateBtn = document.querySelector<HTMLButtonElement>("[data-cv-share-rotate]");
+
+  const previewOpenBtn = document.querySelector<HTMLButtonElement>("[data-cv-preview-open]");
+  const previewModal = document.querySelector<HTMLElement>("[data-cv-preview-modal]");
+  const previewCloseBtn = document.querySelector<HTMLButtonElement>("[data-cv-preview-close]");
+  const previewBody = document.querySelector<HTMLElement>("[data-cv-preview-body]");
+  const docHost = document.querySelector<HTMLElement>("[data-cv-doc-host]");
 
   if (!loadingEl || !listEl || !docEl || !docName || !docBio || !docProjects) return;
 
@@ -72,14 +186,12 @@ async function boot() {
 
   loadingEl.textContent = tt("cv.loading", "Cargando…");
 
-  const [projRes, profileRes, ptRes, techRes] = await Promise.all([
+  const [projRes, techRes] = await Promise.all([
     supabase
       .from("projects")
-      .select("slug, title, description, role, outcome")
+      .select("id, slug, title, description, role, outcome")
       .eq("user_id", userId)
       .order("title"),
-    supabase.from("portfolio_profiles").select("display_name, bio").eq("user_id", userId).maybeSingle(),
-    supabase.from("project_technologies").select("project_id, technology_id"),
     supabase.from("technologies").select("id, name").eq("user_id", userId),
   ]);
 
@@ -94,8 +206,142 @@ async function boot() {
   }
 
   const projects = (projRes.data ?? []) as ProjectRow[];
-  const displayName = (profileRes.data?.display_name ?? "").trim() || tt("cv.defaultName", "Sin nombre");
-  const bio = (profileRes.data?.bio ?? "").trim();
+
+  // Profile + help stack (tolerate missing column help_stack)
+  let displayName = tt("cv.defaultName", "Sin nombre");
+  let bio = "";
+  let helpStackKeys: string[] = [];
+  let avatarPath: string | null = null;
+  let avatarSignedUrl: string | null = null;
+  let cvShareEnabled: boolean | null = null;
+  let cvShareToken: string | null = null;
+  const profFull = await supabase
+    .from("portfolio_profiles")
+    .select("display_name, bio, help_stack, avatar_url, cv_share_enabled, cv_share_token")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (profFull.error && /column|help_stack|cv_share_/i.test(profFull.error.message ?? "")) {
+    const profBasic = await supabase
+      .from("portfolio_profiles")
+      .select("display_name, bio")
+      .eq("user_id", userId)
+      .maybeSingle();
+    displayName = (profBasic.data?.display_name ?? "").trim() || displayName;
+    bio = (profBasic.data?.bio ?? "").trim();
+  } else {
+    displayName = (profFull.data?.display_name ?? "").trim() || displayName;
+    bio = (profFull.data?.bio ?? "").trim();
+    const hsRaw = (profFull.data as any)?.help_stack;
+    if (Array.isArray(hsRaw)) {
+      helpStackKeys = hsRaw.filter((x: unknown): x is string => typeof x === "string");
+    }
+    const a = (profFull.data as any)?.avatar_url;
+    avatarPath = typeof a === "string" && a ? a : null;
+
+    const se = (profFull.data as any)?.cv_share_enabled;
+    const st = (profFull.data as any)?.cv_share_token;
+    cvShareEnabled = typeof se === "boolean" ? se : null;
+    cvShareToken = typeof st === "string" && st ? st : null;
+  }
+
+  if (avatarPath) {
+    const signed = await supabase.storage.from("portfolio_avatars").createSignedUrl(avatarPath, 60 * 60);
+    avatarSignedUrl = signed.data?.signedUrl ?? null;
+  }
+
+  // Provider avatar fallback (LinkedIn/GitHub)
+  const { data: sess } = await supabase.auth.getSession();
+  const meta = (sess.session?.user?.user_metadata ?? {}) as Record<string, any>;
+  const linkedinAvatar = typeof meta.picture === "string" && meta.picture ? meta.picture : null;
+  const githubAvatar = typeof meta.avatar_url === "string" && meta.avatar_url ? meta.avatar_url : null;
+
+  const updateShareUrl = () => {
+    if (!cvShareUrlInput) return;
+    if (!cvShareToken) {
+      cvShareUrlInput.value = "";
+      return;
+    }
+    cvShareUrlInput.value = `${window.location.origin}/cv/p/${cvShareToken}`;
+  };
+
+  if (cvShareWrap && cvShareEnabledCb && cvShareUrlInput && cvShareCopyBtn && cvShareRotateBtn) {
+    // If columns exist (we have a value or token), show block. Otherwise keep hidden.
+    const supported = cvShareEnabled !== null || Boolean(cvShareToken);
+    if (supported) {
+      cvShareWrap.classList.remove("hidden");
+      cvShareEnabledCb.checked = Boolean(cvShareEnabled);
+      updateShareUrl();
+
+      cvShareEnabledCb.addEventListener("change", async () => {
+        try {
+          const nextEnabled = Boolean(cvShareEnabledCb.checked);
+          // Ensure token exists client-side (DB uniqueness protects collisions; retry once on conflict).
+          const nextToken = cvShareToken ?? crypto.randomUUID();
+          const up1 = await supabase
+            .from("portfolio_profiles")
+            .upsert({ user_id: userId, cv_share_enabled: nextEnabled, cv_share_token: nextToken } as any, {
+              onConflict: "user_id",
+            })
+            .select("cv_share_enabled, cv_share_token")
+            .maybeSingle();
+          if (up1.error) {
+            // Likely missing columns or token conflict
+            if (/duplicate key|unique/i.test(up1.error.message ?? "")) {
+              const retryToken = crypto.randomUUID();
+              const up2 = await supabase
+                .from("portfolio_profiles")
+                .upsert({ user_id: userId, cv_share_enabled: nextEnabled, cv_share_token: retryToken } as any, {
+                  onConflict: "user_id",
+                })
+                .select("cv_share_enabled, cv_share_token")
+                .maybeSingle();
+              if (up2.error) throw up2.error;
+              cvShareEnabled = typeof (up2.data as any)?.cv_share_enabled === "boolean" ? (up2.data as any).cv_share_enabled : nextEnabled;
+              cvShareToken = typeof (up2.data as any)?.cv_share_token === "string" ? (up2.data as any).cv_share_token : retryToken;
+            } else {
+              throw up1.error;
+            }
+          } else {
+            cvShareEnabled = typeof (up1.data as any)?.cv_share_enabled === "boolean" ? (up1.data as any).cv_share_enabled : nextEnabled;
+            cvShareToken = typeof (up1.data as any)?.cv_share_token === "string" ? (up1.data as any).cv_share_token : nextToken;
+          }
+          updateShareUrl();
+          showToast(nextEnabled ? tt("cv.publicShareEnabledToast", "Enlace público activado.") : tt("cv.publicShareDisabledToast", "Enlace público desactivado."), "success");
+        } catch (e: any) {
+          showToast(e?.message ?? tt("cv.publicShareSaveError", "No se pudo guardar."), "error");
+          cvShareEnabledCb.checked = Boolean(cvShareEnabled);
+        }
+      });
+
+      cvShareCopyBtn.addEventListener("click", async () => {
+        const url = cvShareUrlInput.value.trim();
+        if (!url) {
+          showToast(tt("cv.publicShareNoUrl", "Activa el enlace para poder copiarlo."), "warning");
+          return;
+        }
+        await navigator.clipboard.writeText(url);
+        showToast(tt("cv.publicShareCopied", "Enlace copiado."), "success");
+      });
+
+      cvShareRotateBtn.addEventListener("click", async () => {
+        try {
+          const next = crypto.randomUUID();
+          const up = await supabase
+            .from("portfolio_profiles")
+            .upsert({ user_id: userId, cv_share_token: next } as any, { onConflict: "user_id" })
+            .select("cv_share_token")
+            .maybeSingle();
+          if (up.error) throw up.error;
+          const got = (up.data as any)?.cv_share_token;
+          cvShareToken = typeof got === "string" && got ? got : next;
+          updateShareUrl();
+          showToast(tt("cv.publicShareRotated", "Enlace regenerado."), "success");
+        } catch (e: any) {
+          showToast(e?.message ?? tt("cv.publicShareRotateError", "No se pudo regenerar."), "error");
+        }
+      });
+    }
+  }
 
   const techName = new Map<string, string>();
   for (const t of techRes.data ?? []) {
@@ -104,14 +350,15 @@ async function boot() {
 
   const techsByProject = new Map<string, string[]>();
   const projectIdBySlug = new Map<string, string>();
-  const idRes = await supabase.from("projects").select("id, slug").eq("user_id", userId);
-  if (!idRes.error && idRes.data) {
-    for (const row of idRes.data) {
-      if (row.slug && row.id) projectIdBySlug.set(row.slug, row.id);
-    }
-  }
+  const projectIds = projects.map((p) => p.id).filter(Boolean);
+  for (const p of projects) projectIdBySlug.set(p.slug, p.id);
 
-  for (const r of ptRes.data ?? []) {
+  const ptRes =
+    projectIds.length > 0
+      ? await supabase.from("project_technologies").select("project_id, technology_id").in("project_id", projectIds)
+      : { data: [], error: null as any };
+
+  for (const r of (ptRes.data ?? []) as any[]) {
     const pid = r.project_id as string | undefined;
     const tid = r.technology_id as string | undefined;
     if (!pid || !tid) continue;
@@ -123,37 +370,254 @@ async function boot() {
   }
 
   let prefs = loadPrefs();
+  const defaultOrder = projects.map((p) => p.slug);
   let selectedSlugs = new Set<string>();
+  let selectedOrder: string[] = [];
+  let cvProfile: CvProfile = (prefs as any).cvProfile ?? {};
+  cvProfile = { showHelpStack: true, showPhoto: true, experiences: [], education: [], ...cvProfile };
+  if (!cvProfile.photoSource) {
+    cvProfile.photoSource = avatarSignedUrl ? "uploaded" : linkedinAvatar ? "linkedin" : "provider";
+  }
+
+  const applyProfileToInputs = () => {
+    if (fullNameInput) fullNameInput.value = displayName;
+    if (publicBioInput) publicBioInput.value = bio;
+    if (headlineInput) headlineInput.value = (cvProfile.headline ?? "").toString();
+    if (locationInput) locationInput.value = (cvProfile.location ?? "").toString();
+    if (emailInput) emailInput.value = (cvProfile.email ?? "").toString();
+    if (summaryInput) summaryInput.value = (cvProfile.summary ?? "").toString();
+    if (showHelpStackCb) showHelpStackCb.checked = Boolean(cvProfile.showHelpStack ?? true);
+    if (highlightsInput) highlightsInput.value = (cvProfile.highlights ?? "").toString();
+    if (showPhotoCb) showPhotoCb.checked = Boolean(cvProfile.showPhoto ?? true);
+    if (photoUseLinkedinBtn) photoUseLinkedinBtn.classList.add("hidden");
+    if (photoUseUploadedBtn) photoUseUploadedBtn.classList.add("hidden");
+    if (photoUseLinkedinBtn && linkedinAvatar) photoUseLinkedinBtn.classList.remove("hidden");
+    if (photoUseUploadedBtn && avatarSignedUrl) photoUseUploadedBtn.classList.remove("hidden");
+    linkInputs.forEach((inp) => {
+      const idx = Number(inp.dataset.cvLinkUrl ?? "0");
+      const url = cvProfile.links?.[idx]?.url ?? "";
+      inp.value = url;
+    });
+  };
+
+  const persistProfile = () => {
+    prefs = updatePrefs({ cvProfile } as any);
+  };
+
+  const saveBaseProfile = async (patch: { display_name?: string; bio?: string; avatar_url?: string | null }) => {
+    const row: Record<string, unknown> = { user_id: userId, ...patch };
+    const res = await supabase.from("portfolio_profiles").upsert(row, { onConflict: "user_id" });
+    if (res.error) {
+      showToast(res.error.message ?? "No se pudo guardar.", "error");
+      return false;
+    }
+    return true;
+  };
+
+  const uploadAvatar = async (file: File) => {
+    const ext = (file.name.split(".").pop() || "png").toLowerCase();
+    const safeExt = ["png", "jpg", "jpeg", "webp"].includes(ext) ? ext : "png";
+    const path = `${userId}/avatar.${safeExt}`;
+    const up = await supabase.storage.from("portfolio_avatars").upload(path, file, {
+      upsert: true,
+      cacheControl: "3600",
+      contentType: file.type || undefined,
+    });
+    if (up.error) {
+      showToast(up.error.message ?? "No se pudo subir la imagen.", "error");
+      return null;
+    }
+    const ok = await saveBaseProfile({ avatar_url: path });
+    if (!ok) return null;
+    const signed = await supabase.storage.from("portfolio_avatars").createSignedUrl(path, 60 * 60);
+    avatarPath = path;
+    avatarSignedUrl = signed.data?.signedUrl ?? null;
+    showToast(tt("cv.photoSaved", "Foto guardada."), "success");
+    return path;
+  };
+
+  const renderExperienceEditor = () => {
+    if (!expList) return;
+    const exp = Array.isArray(cvProfile.experiences) ? cvProfile.experiences : [];
+    expList.innerHTML = exp
+      .map((x, idx) => {
+        const company = esc((x.company ?? "").toString());
+        const role = esc((x.role ?? "").toString());
+        const location = esc((x.location ?? "").toString());
+        const start = esc((x.start ?? "").toString());
+        const end = esc((x.end ?? "").toString());
+        const bullets = esc((x.bullets ?? "").toString());
+        return `<div class="rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/50 dark:bg-gray-950/40 p-4 space-y-3" data-cv-exp-row="${idx}">
+          <div class="flex items-center justify-between gap-3">
+            <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">${role || company || esc(tt("cv.newExperience", "Nueva experiencia"))}</p>
+            <button type="button" class="text-xs font-semibold text-rose-700 dark:text-rose-300 hover:underline" data-cv-exp-del="${idx}">${esc(tt("cv.remove", "Quitar"))}</button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label class="space-y-1">
+              <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.expRole", "Rol"))}</span>
+              <input class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-exp-field="role" data-idx="${idx}" value="${role}" />
+            </label>
+            <label class="space-y-1">
+              <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.expCompany", "Empresa"))}</span>
+              <input class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-exp-field="company" data-idx="${idx}" value="${company}" />
+            </label>
+            <label class="space-y-1">
+              <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.expLocation", "Ubicación"))}</span>
+              <input class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-exp-field="location" data-idx="${idx}" value="${location}" />
+            </label>
+            <div class="grid grid-cols-2 gap-3">
+              <label class="space-y-1">
+                <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.expStart", "Inicio"))}</span>
+                <input class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-exp-field="start" data-idx="${idx}" value="${start}" placeholder="2024" />
+              </label>
+              <label class="space-y-1">
+                <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.expEnd", "Fin"))}</span>
+                <input class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-exp-field="end" data-idx="${idx}" value="${end}" placeholder="${esc(tt("cv.present", "Actual"))}" />
+              </label>
+            </div>
+            <label class="space-y-1 md:col-span-2">
+              <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.expBullets", "Bullets"))}</span>
+              <textarea rows="4" class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-exp-field="bullets" data-idx="${idx}">${bullets}</textarea>
+            </label>
+          </div>
+        </div>`;
+      })
+      .join("");
+  };
+
+  const renderEducationEditor = () => {
+    if (!eduList) return;
+    const edu = Array.isArray(cvProfile.education) ? cvProfile.education : [];
+    eduList.innerHTML = edu
+      .map((x, idx) => {
+        const school = esc((x.school ?? "").toString());
+        const degree = esc((x.degree ?? "").toString());
+        const location = esc((x.location ?? "").toString());
+        const start = esc((x.start ?? "").toString());
+        const end = esc((x.end ?? "").toString());
+        const details = esc((x.details ?? "").toString());
+        return `<div class="rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/50 dark:bg-gray-950/40 p-4 space-y-3" data-cv-edu-row="${idx}">
+          <div class="flex items-center justify-between gap-3">
+            <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">${degree || school || esc(tt("cv.newEducation", "Nueva educación"))}</p>
+            <button type="button" class="text-xs font-semibold text-rose-700 dark:text-rose-300 hover:underline" data-cv-edu-del="${idx}">${esc(tt("cv.remove", "Quitar"))}</button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label class="space-y-1">
+              <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.eduDegree", "Título"))}</span>
+              <input class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-edu-field="degree" data-idx="${idx}" value="${degree}" />
+            </label>
+            <label class="space-y-1">
+              <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.eduSchool", "Centro"))}</span>
+              <input class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-edu-field="school" data-idx="${idx}" value="${school}" />
+            </label>
+            <label class="space-y-1">
+              <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.eduLocation", "Ubicación"))}</span>
+              <input class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-edu-field="location" data-idx="${idx}" value="${location}" />
+            </label>
+            <div class="grid grid-cols-2 gap-3">
+              <label class="space-y-1">
+                <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.eduStart", "Inicio"))}</span>
+                <input class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-edu-field="start" data-idx="${idx}" value="${start}" placeholder="2020" />
+              </label>
+              <label class="space-y-1">
+                <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.eduEnd", "Fin"))}</span>
+                <input class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-edu-field="end" data-idx="${idx}" value="${end}" placeholder="2024" />
+              </label>
+            </div>
+            <label class="space-y-1 md:col-span-2">
+              <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.eduDetails", "Detalles"))}</span>
+              <textarea rows="3" class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-edu-field="details" data-idx="${idx}">${details}</textarea>
+            </label>
+          </div>
+        </div>`;
+      })
+      .join("");
+  };
 
   const applySelectionFromPrefs = () => {
     const raw = prefs.cvProjectSlugs;
     selectedSlugs.clear();
     if (raw === undefined) {
-      for (const p of projects) selectedSlugs.add(p.slug);
-    } else {
-      for (const s of raw) {
-        if (projects.some((p) => p.slug === s)) selectedSlugs.add(s);
-      }
+      selectedOrder = [...defaultOrder];
+      for (const s of selectedOrder) selectedSlugs.add(s);
+      return;
     }
+    const allowed = new Set(defaultOrder);
+    selectedOrder = raw.filter((s) => allowed.has(s));
+    for (const s of selectedOrder) selectedSlugs.add(s);
   };
 
   applySelectionFromPrefs();
 
   const persistSelection = () => {
-    if (selectedSlugs.size === projects.length) {
-      prefs = updatePrefs({ cvProjectSlugs: undefined });
-      return;
-    }
-    const order = projects.filter((p) => selectedSlugs.has(p.slug)).map((p) => p.slug);
-    prefs = updatePrefs({ cvProjectSlugs: order });
+    // Keep order consistent with selection
+    selectedOrder = selectedOrder.filter((s) => selectedSlugs.has(s));
+    for (const s of selectedSlugs) if (!selectedOrder.includes(s)) selectedOrder.push(s);
+
+    const allSelected = selectedOrder.length === defaultOrder.length;
+    const isDefaultOrder =
+      allSelected && selectedOrder.every((s, i) => s === defaultOrder[i]);
+
+    prefs = updatePrefs({ cvProjectSlugs: isDefaultOrder ? undefined : selectedOrder });
   };
 
   const renderDocument = () => {
     docName.textContent = displayName;
-    docBio.textContent = bio || tt("cv.noBio", "");
-    docBio.classList.toggle("hidden", !bio);
+    const headline = (cvProfile.headline ?? "").trim();
+    const location = (cvProfile.location ?? "").trim();
+    const email = normalizeEmail((cvProfile.email ?? "").trim());
+    const links = Array.isArray(cvProfile.links) ? cvProfile.links : [];
+    const summary = (cvProfile.summary ?? "").trim();
+    const showHelp = cvProfile.showHelpStack ?? true;
 
-    const chosen = projects.filter((p) => selectedSlugs.has(p.slug));
+    if (docHeadline) {
+      docHeadline.textContent = headline;
+      docHeadline.classList.toggle("hidden", !headline);
+    }
+    if (docContact) {
+      const chips: string[] = [];
+      if (location) chips.push(`<span class="inline-flex items-center gap-1"><span class="text-gray-400">📍</span> ${esc(location)}</span>`);
+      if (email && isProbablyEmail(email)) {
+        chips.push(`<a class="no-underline hover:underline" href="mailto:${esc(email)}">${esc(email)}</a>`);
+      }
+      for (const l of links) {
+        const url = normalizeUrl(String(l?.url ?? ""));
+        if (!url) continue;
+        const label = String(l?.label ?? "").trim() || url;
+        chips.push(`<a class="no-underline hover:underline" href="${esc(url)}" target="_blank" rel="noreferrer">${esc(label)}</a>`);
+      }
+      docContact.innerHTML = chips.length > 0 ? chips.join(`<span class="text-gray-300 dark:text-gray-700">•</span>`) : "";
+      docContact.classList.toggle("hidden", chips.length === 0);
+    }
+
+    const finalSummary = summary || bio || tt("cv.noBio", "");
+    docBio.textContent = finalSummary;
+    docBio.classList.toggle("hidden", !finalSummary);
+
+    if (docHelpStack) {
+      const allowed = new Set(HELP_STACK_ITEMS.map((i) => i.key));
+      const uniq = Array.from(new Set(helpStackKeys)).filter((k) => allowed.has(k));
+      const visible = showHelp && uniq.length > 0;
+      docHelpStack.classList.toggle("hidden", !visible);
+      docHelpStack.classList.toggle("flex", visible);
+      if (visible) {
+        docHelpStack.innerHTML = uniq
+          .map((k) => {
+            const it = getHelpStackItem(k);
+            if (!it) return "";
+            return `<span class="inline-flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 px-3 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200">
+              <img src="${esc(it.icon)}" alt="" class="h-4 w-4" loading="lazy" decoding="async" />
+              ${esc(it.label)}
+            </span>`;
+          })
+          .join("");
+      } else {
+        docHelpStack.innerHTML = "";
+      }
+    }
+
+    const bySlug = new Map(projects.map((p) => [p.slug, p]));
+    const chosen = selectedOrder.map((s) => bySlug.get(s)).filter(Boolean) as ProjectRow[];
     if (chosen.length === 0) {
       docProjects.innerHTML = `<p class="m-0 text-sm text-gray-500 dark:text-gray-400">${esc(tt("cv.noProjectsSelected", "No hay proyectos seleccionados."))}</p>`;
     } else {
@@ -185,14 +649,119 @@ async function boot() {
         })
         .join("");
     }
+
+    // Highlights (experience / achievements)
+    const lines = linesToBullets(cvProfile.highlights ?? "");
+    if (docHighlightsSection && docHighlights) {
+      const show = lines.length > 0;
+      docHighlightsSection.classList.toggle("hidden", !show);
+      docHighlights.innerHTML = show ? lines.map((s) => `<li>${esc(s)}</li>`).join("") : "";
+    }
+
+    // Photo (prefer uploaded; else LinkedIn; else provider)
+    if (docPhoto) {
+      const source = cvProfile.photoSource ?? (avatarSignedUrl ? "uploaded" : linkedinAvatar ? "linkedin" : "provider");
+      const url =
+        source === "uploaded"
+          ? avatarSignedUrl
+          : source === "linkedin"
+            ? linkedinAvatar
+            : githubAvatar ?? linkedinAvatar;
+      const show = Boolean(cvProfile.showPhoto ?? true) && Boolean(url);
+      docPhoto.classList.toggle("hidden", !show);
+      if (show && url) docPhoto.src = url;
+      else docPhoto.removeAttribute("src");
+    }
+
+    // Experience
+    if (docExperienceSection && docExperience) {
+      const exp = Array.isArray(cvProfile.experiences) ? cvProfile.experiences : [];
+      const show = exp.length > 0;
+      docExperienceSection.classList.toggle("hidden", !show);
+      docExperience.innerHTML = show
+        ? exp
+            .map((x) => {
+              const company = (x.company ?? "").trim();
+              const role = (x.role ?? "").trim();
+              const loc = (x.location ?? "").trim();
+              const start = (x.start ?? "").trim();
+              const end = (x.end ?? "").trim();
+              const when = [start, end].filter(Boolean).join(" – ");
+              const bullets = linesToBullets(x.bullets ?? "");
+              const bulletsHtml =
+                bullets.length > 0
+                  ? `<ul class="mt-2 space-y-1 pl-5 text-sm text-gray-700 dark:text-gray-300">${bullets
+                      .map((b) => `<li>${esc(b)}</li>`)
+                      .join("")}</ul>`
+                  : "";
+              return `<section class="cv-doc-project">
+                <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <div class="min-w-0">
+                    <p class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100">${esc(role || company || tt("cv.untitled", "—"))}</p>
+                    <p class="m-0 text-sm text-gray-600 dark:text-gray-400">${esc([company, loc].filter(Boolean).join(" · "))}</p>
+                  </div>
+                  <p class="m-0 text-xs font-semibold text-gray-500 dark:text-gray-400">${esc(when)}</p>
+                </div>
+                ${bulletsHtml}
+              </section>`;
+            })
+            .join("")
+        : "";
+    }
+
+    // Education
+    if (docEducationSection && docEducation) {
+      const edu = Array.isArray(cvProfile.education) ? cvProfile.education : [];
+      const show = edu.length > 0;
+      docEducationSection.classList.toggle("hidden", !show);
+      docEducation.innerHTML = show
+        ? edu
+            .map((x) => {
+              const school = (x.school ?? "").trim();
+              const degree = (x.degree ?? "").trim();
+              const loc = (x.location ?? "").trim();
+              const start = (x.start ?? "").trim();
+              const end = (x.end ?? "").trim();
+              const when = [start, end].filter(Boolean).join(" – ");
+              const details = linesToBullets(x.details ?? "");
+              const detailsHtml =
+                details.length > 0
+                  ? `<ul class="mt-2 space-y-1 pl-5 text-sm text-gray-700 dark:text-gray-300">${details
+                      .map((b) => `<li>${esc(b)}</li>`)
+                      .join("")}</ul>`
+                  : "";
+              return `<section class="cv-doc-project">
+                <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <div class="min-w-0">
+                    <p class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100">${esc(degree || school || tt("cv.untitled", "—"))}</p>
+                    <p class="m-0 text-sm text-gray-600 dark:text-gray-400">${esc([school, loc].filter(Boolean).join(" · "))}</p>
+                  </div>
+                  <p class="m-0 text-xs font-semibold text-gray-500 dark:text-gray-400">${esc(when)}</p>
+                </div>
+                ${detailsHtml}
+              </section>`;
+            })
+            .join("")
+        : "";
+    }
     docEl.classList.remove("hidden");
   };
 
   const renderList = () => {
-    listEl.innerHTML = projects
-      .map((p) => {
+    const bySlug = new Map(projects.map((p) => [p.slug, p]));
+    const visibleOrder =
+      selectedOrder.length > 0 ? selectedOrder : defaultOrder.filter((s) => selectedSlugs.has(s));
+
+    listEl.innerHTML = visibleOrder
+      .map((slug) => {
+        const p = bySlug.get(slug);
+        if (!p) return "";
         const on = selectedSlugs.has(p.slug);
-        return `<li class="flex items-start gap-3 rounded-lg border border-gray-200/70 dark:border-gray-800/80 bg-white/50 dark:bg-gray-950/40 px-3 py-2">
+        return `<li data-cv-row="${esc(p.slug)}" draggable="true"
+          class="flex items-start gap-3 rounded-lg border border-gray-200/70 dark:border-gray-800/80 bg-white/50 dark:bg-gray-950/40 px-3 py-2">
+          <button type="button" aria-label="Arrastrar" title="Arrastrar"
+            class="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-grab active:cursor-grabbing select-none"
+            data-cv-drag="${esc(p.slug)}">⋮⋮</button>
           <input type="checkbox" class="mt-1 rounded border-gray-300 dark:border-gray-600" data-cv-pick="${esc(p.slug)}" ${on ? "checked" : ""} />
           <div class="min-w-0 flex-1">
             <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">${esc(p.title)}</p>
@@ -209,6 +778,43 @@ async function boot() {
         if (inp.checked) selectedSlugs.add(slug);
         else selectedSlugs.delete(slug);
         persistSelection();
+        renderList();
+        renderDocument();
+      });
+    });
+
+    // Drag & drop reorder (selected list)
+    listEl.querySelectorAll<HTMLElement>("li[data-cv-row]").forEach((row) => {
+      row.addEventListener("dragstart", (e) => {
+        const slug = row.getAttribute("data-cv-row") ?? "";
+        if (!slug) return;
+        e.dataTransfer?.setData("text/plain", slug);
+        e.dataTransfer?.setDragImage(row, 12, 12);
+        row.classList.add("opacity-70");
+      });
+      row.addEventListener("dragend", () => row.classList.remove("opacity-70"));
+      row.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        row.classList.add("ring-2", "ring-indigo-400/40", "dark:ring-indigo-300/25");
+      });
+      row.addEventListener("dragleave", () => {
+        row.classList.remove("ring-2", "ring-indigo-400/40", "dark:ring-indigo-300/25");
+      });
+      row.addEventListener("drop", (e) => {
+        e.preventDefault();
+        row.classList.remove("ring-2", "ring-indigo-400/40", "dark:ring-indigo-300/25");
+        const from = e.dataTransfer?.getData("text/plain") ?? "";
+        const to = row.getAttribute("data-cv-row") ?? "";
+        if (!from || !to || from === to) return;
+        const cur = [...selectedOrder];
+        const fromIdx = cur.indexOf(from);
+        const toIdx = cur.indexOf(to);
+        if (fromIdx < 0 || toIdx < 0) return;
+        cur.splice(fromIdx, 1);
+        cur.splice(toIdx, 0, from);
+        selectedOrder = cur;
+        persistSelection();
+        renderList();
         renderDocument();
       });
     });
@@ -216,7 +822,209 @@ async function boot() {
   };
 
   renderList();
+  applyProfileToInputs();
+  renderExperienceEditor();
+  renderEducationEditor();
   renderDocument();
+
+  const bindProfileInput = () => {
+    let t: number | null = null;
+    const schedule = () => {
+      if (t) window.clearTimeout(t);
+      t = window.setTimeout(() => {
+        persistProfile();
+        renderDocument();
+      }, 200);
+    };
+
+    headlineInput?.addEventListener("input", () => {
+      cvProfile = { ...cvProfile, headline: headlineInput.value.trim() };
+      schedule();
+    });
+    locationInput?.addEventListener("input", () => {
+      cvProfile = { ...cvProfile, location: locationInput.value.trim() };
+      schedule();
+    });
+    emailInput?.addEventListener("input", () => {
+      cvProfile = { ...cvProfile, email: emailInput.value.trim() };
+      schedule();
+    });
+    summaryInput?.addEventListener("input", () => {
+      cvProfile = { ...cvProfile, summary: summaryInput.value.trim() };
+      schedule();
+    });
+    showHelpStackCb?.addEventListener("change", () => {
+      cvProfile = { ...cvProfile, showHelpStack: Boolean(showHelpStackCb.checked) };
+      schedule();
+    });
+    showPhotoCb?.addEventListener("change", () => {
+      cvProfile = { ...cvProfile, showPhoto: Boolean(showPhotoCb.checked) };
+      schedule();
+    });
+    highlightsInput?.addEventListener("input", () => {
+      cvProfile = { ...cvProfile, highlights: highlightsInput.value };
+      schedule();
+    });
+
+    // Base profile (Ajustes) sync
+    fullNameInput?.addEventListener("blur", async () => {
+      const next = fullNameInput.value.trim();
+      if (!next) return;
+      const ok = await saveBaseProfile({ display_name: next });
+      if (ok) {
+        displayName = next;
+        showToast(tt("cv.savedToSettings", "Guardado en Ajustes."), "success");
+        renderDocument();
+      }
+    });
+    publicBioInput?.addEventListener("blur", async () => {
+      const next = publicBioInput.value.trim();
+      const ok = await saveBaseProfile({ bio: next });
+      if (ok) {
+        bio = next;
+        showToast(tt("cv.savedToSettings", "Guardado en Ajustes."), "success");
+        renderDocument();
+      }
+    });
+
+    avatarFileInput?.addEventListener("change", async () => {
+      const f = avatarFileInput.files?.[0] ?? null;
+      if (!f) return;
+      await uploadAvatar(f);
+      renderDocument();
+    });
+
+    // Delegated Experience/Education bindings
+    expList?.addEventListener("input", (e) => {
+      const el = e.target as HTMLInputElement | HTMLTextAreaElement | null;
+      const field = (el as any)?.dataset?.cvExpField as string | undefined;
+      const idx = Number((el as any)?.dataset?.idx ?? "");
+      if (!el || !field || !Number.isFinite(idx)) return;
+      const exp = Array.isArray(cvProfile.experiences) ? [...cvProfile.experiences] : [];
+      const row = { ...(exp[idx] ?? {}) } as any;
+      row[field] = el.value;
+      exp[idx] = row;
+      cvProfile = { ...cvProfile, experiences: exp };
+      schedule();
+      renderExperienceEditor();
+    });
+    expList?.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement | null)?.closest("[data-cv-exp-del]") as HTMLElement | null;
+      if (!btn) return;
+      const idx = Number(btn.getAttribute("data-cv-exp-del") ?? "");
+      if (!Number.isFinite(idx)) return;
+      const exp = Array.isArray(cvProfile.experiences) ? [...cvProfile.experiences] : [];
+      exp.splice(idx, 1);
+      cvProfile = { ...cvProfile, experiences: exp };
+      schedule();
+      renderExperienceEditor();
+      renderDocument();
+    });
+
+    eduList?.addEventListener("input", (e) => {
+      const el = e.target as HTMLInputElement | HTMLTextAreaElement | null;
+      const field = (el as any)?.dataset?.cvEduField as string | undefined;
+      const idx = Number((el as any)?.dataset?.idx ?? "");
+      if (!el || !field || !Number.isFinite(idx)) return;
+      const edu = Array.isArray(cvProfile.education) ? [...cvProfile.education] : [];
+      const row = { ...(edu[idx] ?? {}) } as any;
+      row[field] = el.value;
+      edu[idx] = row;
+      cvProfile = { ...cvProfile, education: edu };
+      schedule();
+      renderEducationEditor();
+    });
+    eduList?.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement | null)?.closest("[data-cv-edu-del]") as HTMLElement | null;
+      if (!btn) return;
+      const idx = Number(btn.getAttribute("data-cv-edu-del") ?? "");
+      if (!Number.isFinite(idx)) return;
+      const edu = Array.isArray(cvProfile.education) ? [...cvProfile.education] : [];
+      edu.splice(idx, 1);
+      cvProfile = { ...cvProfile, education: edu };
+      schedule();
+      renderEducationEditor();
+      renderDocument();
+    });
+    linkInputs.forEach((inp) => {
+      inp.addEventListener("input", () => {
+        const idx = Number(inp.dataset.cvLinkUrl ?? "0");
+        const urls = Array.from(linkInputs).map((x) => x.value.trim());
+        const labels = [
+          tt("cv.linkLabel1", "LinkedIn"),
+          tt("cv.linkLabel2", "GitHub"),
+          tt("cv.linkLabel3", "Portfolio"),
+        ];
+        const nextLinks = urls
+          .map((u, i) => ({ label: labels[i] ?? `Link ${i + 1}`, url: u }))
+          .filter((x) => x.url.trim().length > 0);
+        cvProfile = { ...cvProfile, links: nextLinks };
+        // keep current edit responsive
+        if (!Number.isNaN(idx)) void idx;
+        schedule();
+      });
+    });
+  };
+
+  bindProfileInput();
+
+  // Photo source toggles (CV-only; does not overwrite uploaded avatar)
+  photoUseLinkedinBtn?.addEventListener("click", () => {
+    if (!linkedinAvatar) return;
+    cvProfile = { ...cvProfile, photoSource: "linkedin", showPhoto: true };
+    persistProfile();
+    applyProfileToInputs();
+    renderDocument();
+  });
+  photoUseUploadedBtn?.addEventListener("click", () => {
+    if (!avatarSignedUrl) return;
+    cvProfile = { ...cvProfile, photoSource: "uploaded", showPhoto: true };
+    persistProfile();
+    applyProfileToInputs();
+    renderDocument();
+  });
+
+  // Preview modal (moves the document into a full-screen dialog)
+  const openPreview = () => {
+    if (!previewModal || !previewBody || !docEl) return;
+    previewBody.innerHTML = "";
+    previewBody.appendChild(docEl);
+    previewModal.classList.remove("hidden");
+    previewModal.classList.add("flex");
+    document.body.style.overflow = "hidden";
+  };
+  const closePreview = () => {
+    if (!previewModal || !docHost || !docEl) return;
+    previewModal.classList.add("hidden");
+    previewModal.classList.remove("flex");
+    docHost.appendChild(docEl);
+    document.body.style.overflow = "";
+  };
+  previewOpenBtn?.addEventListener("click", openPreview);
+  previewCloseBtn?.addEventListener("click", closePreview);
+  previewModal?.addEventListener("click", (e) => {
+    if (e.target === previewModal) closePreview();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closePreview();
+  });
+
+  expAddBtn?.addEventListener("click", () => {
+    const exp = Array.isArray(cvProfile.experiences) ? [...cvProfile.experiences] : [];
+    exp.push({ role: "", company: "", location: "", start: "", end: "", bullets: "" });
+    cvProfile = { ...cvProfile, experiences: exp };
+    persistProfile();
+    renderExperienceEditor();
+    renderDocument();
+  });
+  eduAddBtn?.addEventListener("click", () => {
+    const edu = Array.isArray(cvProfile.education) ? [...cvProfile.education] : [];
+    edu.push({ degree: "", school: "", location: "", start: "", end: "", details: "" });
+    cvProfile = { ...cvProfile, education: edu };
+    persistProfile();
+    renderEducationEditor();
+    renderDocument();
+  });
 
   selAll?.addEventListener("click", () => {
     for (const p of projects) selectedSlugs.add(p.slug);
