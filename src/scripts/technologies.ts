@@ -209,6 +209,8 @@ async function initTechnologyActions() {
   }
 
   for (const button of deleteButtons) {
+    if (button.dataset.skillatlasTechDeleteBound === "1") continue;
+    button.dataset.skillatlasTechDeleteBound = "1";
     button.addEventListener("click", async () => {
       const techId = button.dataset.techId;
       const techName = button.dataset.techName ?? techId ?? "";
@@ -451,4 +453,5 @@ if (document.readyState === "loading") {
 }
 
 document.addEventListener("astro:page-load", bootTechnologiesPage);
+document.addEventListener("astro:after-swap", bootTechnologiesPage);
 

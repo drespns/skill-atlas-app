@@ -50,4 +50,5 @@ if (document.readyState === "loading") {
 }
 
 document.addEventListener("astro:page-load", initViewToggle);
+document.addEventListener("astro:after-swap", initViewToggle);
 

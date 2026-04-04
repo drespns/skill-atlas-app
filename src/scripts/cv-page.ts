@@ -1046,3 +1046,4 @@ const start = () => void boot();
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
 else start();
 document.addEventListener("astro:page-load", start as any);
+document.addEventListener("astro:after-swap", start as any);

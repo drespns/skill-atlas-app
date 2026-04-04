@@ -191,3 +191,4 @@ function init() {
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
 else init();
 document.addEventListener("astro:page-load", init);
+document.addEventListener("astro:after-swap", init);

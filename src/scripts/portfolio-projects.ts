@@ -7,6 +7,12 @@ import {
 } from "../lib/evidence-url";
 import { getSupabaseBrowserClient } from "./client-supabase";
 import { getSessionUserId } from "./auth-session";
+import i18next from "i18next";
+
+function tt(key: string, fallback: string, opts?: Record<string, unknown>) {
+  const v = i18next.t(key, (opts ?? {}) as any);
+  return typeof v === "string" && v.length > 0 && v !== key ? v : fallback;
+}
 
 function esc(s: string) {
   return s
@@ -110,11 +116,120 @@ function renderCard(options: {
   </article>`;
 }
 
+function readSelectedTechsFromUrl(): Set<string> {
+  const params = new URLSearchParams(window.location.search);
+  return new Set(
+    params
+      .getAll("tech")
+      .map((t) => t.trim())
+      .filter(Boolean),
+  );
+}
+
+function updatePortfolioTechSummary(el: HTMLElement, selected: Set<string>) {
+  if (selected.size === 0) {
+    el.textContent = tt("portfolio.allTechnologies", "Todas");
+  } else if (selected.size === 1) {
+    el.textContent = [...selected][0];
+  } else {
+    el.textContent = tt("portfolio.techFilterSummaryN", `${selected.size} tecnologías`, { count: selected.size });
+  }
+}
+
+function initPortfolioTechFilterPopover(techNamesAll: string[]) {
+  const root = document.querySelector<HTMLElement>("[data-portfolio-tech-filter-root]");
+  if (!root) return;
+
+  const trigger = root.querySelector<HTMLButtonElement>("[data-portfolio-tech-trigger]");
+  const panel = root.querySelector<HTMLElement>("[data-portfolio-tech-panel]");
+  const list = root.querySelector<HTMLElement>("[data-portfolio-tech-checkboxes]");
+  const applyBtn = root.querySelector<HTMLButtonElement>("[data-portfolio-tech-apply]");
+  const clearBtn = root.querySelector<HTMLButtonElement>("[data-portfolio-tech-clear]");
+  const summary = root.querySelector<HTMLElement>("[data-portfolio-tech-summary]");
+  if (!trigger || !panel || !list || !applyBtn || !clearBtn || !summary) return;
+
+  panel.setAttribute("aria-label", tt("portfolio.techFilterPanelLabel", "Filtro por tecnología"));
+
+  const selected = readSelectedTechsFromUrl();
+  updatePortfolioTechSummary(summary, selected);
+
+  if (techNamesAll.length === 0) {
+    list.innerHTML = `<p class="m-0 text-xs text-gray-500 dark:text-gray-400">${esc(tt("portfolio.techFilterNoTechs", "No hay tecnologías en el portfolio."))}</p>`;
+    trigger.disabled = true;
+    summary.textContent = "—";
+    return;
+  }
+
+  trigger.disabled = false;
+
+  list.innerHTML = techNamesAll
+    .map(
+      (name) =>
+        `<label class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm select-none hover:bg-gray-50 dark:hover:bg-gray-900/60">
+        <input type="checkbox" value="${esc(name)}" data-portfolio-tech-cb class="rounded border-gray-300 dark:border-gray-600" ${selected.has(name) ? "checked" : ""} />
+        <span class="text-gray-900 dark:text-gray-100">${esc(name)}</span>
+      </label>`,
+    )
+    .join("");
+
+  const closePanel = () => {
+    panel.hidden = true;
+    trigger.setAttribute("aria-expanded", "false");
+  };
+
+  const openPanel = () => {
+    const s = readSelectedTechsFromUrl();
+    list.querySelectorAll<HTMLInputElement>("input[data-portfolio-tech-cb]").forEach((cb) => {
+      cb.checked = s.has(cb.value);
+    });
+    panel.hidden = false;
+    trigger.setAttribute("aria-expanded", "true");
+  };
+
+  if (root.dataset.skillatlasTechFilterInit !== "1") {
+    root.dataset.skillatlasTechFilterInit = "1";
+
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (panel.hidden) openPanel();
+      else closePanel();
+    });
+
+    clearBtn.addEventListener("click", () => {
+      list.querySelectorAll<HTMLInputElement>("input[data-portfolio-tech-cb]").forEach((cb) => {
+        cb.checked = false;
+      });
+    });
+
+    applyBtn.addEventListener("click", () => {
+      const chosen = new Set<string>();
+      list.querySelectorAll<HTMLInputElement>("input[data-portfolio-tech-cb]:checked").forEach((cb) => chosen.add(cb.value));
+      const url = new URL(window.location.href);
+      url.searchParams.delete("tech");
+      for (const t of chosen) url.searchParams.append("tech", t);
+      window.location.href = url.toString();
+    });
+
+    document.addEventListener("click", (e) => {
+      if (panel.hidden) return;
+      if (!root.contains(e.target as Node)) closePanel();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !panel.hidden) closePanel();
+    });
+  }
+}
+
 async function run() {
   const mount = document.querySelector<HTMLElement>("[data-portfolio-projects-csr-mount]");
-  const techSelect = document.querySelector<HTMLSelectElement>("[data-portfolio-tech-select]");
   const loadingEl = document.querySelector<HTMLElement>("[data-portfolio-loading]");
   if (!mount) return;
+
+  if (loadingEl) {
+    loadingEl.classList.remove("hidden");
+    loadingEl.textContent = "Cargando proyectos con tu sesión…";
+  }
 
   const stopLoading = () => {
     if (!loadingEl) return;
@@ -179,35 +294,31 @@ async function run() {
   }
 
   const techNamesAll = Array.from(new Set(techs.map((t) => t.name))).sort((a, b) => a.localeCompare(b, "es"));
-  const selected = new URLSearchParams(window.location.search).get("tech") ?? "all";
-
-  if (techSelect) {
-    techSelect.innerHTML =
-      `<option value="all"${selected === "all" || selected === "" ? " selected" : ""}>Todas</option>` +
-      techNamesAll
-        .map((name) => `<option value="${esc(name)}"${selected === name ? " selected" : ""}>${esc(name)}</option>`)
-        .join("");
-    techSelect.disabled = false;
-    techSelect.addEventListener("change", () => {
-      const next = techSelect.value;
-      const url = new URL(window.location.href);
-      if (!next || next === "all") url.searchParams.delete("tech");
-      else url.searchParams.set("tech", next);
-      window.location.href = url.toString();
-    });
-    const form = document.querySelector<HTMLFormElement>("[data-portfolio-filter]");
-    form?.querySelector<HTMLButtonElement>("[type=submit]")?.setAttribute("disabled", "true");
-  }
+  const selectedTechs = readSelectedTechsFromUrl();
 
   const filtered =
-    selected && selected !== "all"
-      ? projects.filter((p) => (techNamesByProject.get(p.id) ?? []).includes(selected))
-      : projects;
+    selectedTechs.size === 0
+      ? projects
+      : projects.filter((p) => {
+          const names = techNamesByProject.get(p.id) ?? [];
+          return names.some((n) => selectedTechs.has(n));
+        });
+
+  initPortfolioTechFilterPopover(techNamesAll);
 
   if (filtered.length === 0) {
+    const isFilterEmpty = projects.length > 0 && selectedTechs.size > 0;
     mount.innerHTML = `<div class="col-span-full border border-gray-200/80 dark:border-gray-800 rounded-xl p-5 bg-white/60 dark:bg-gray-950/40">
-      <p class="m-0 text-sm text-gray-600 dark:text-gray-400">Aún no hay proyectos para mostrar.</p>
-      <a href="/projects?create=1" class="inline-flex mt-3 rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 no-underline">Crear proyecto</a>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400">${
+        isFilterEmpty
+          ? esc(tt("portfolio.techFilterNoMatch", "Ningún proyecto coincide con el filtro."))
+          : "Aún no hay proyectos para mostrar."
+      }</p>
+      ${
+        isFilterEmpty
+          ? `<a href="/portfolio" class="inline-flex mt-3 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm font-semibold no-underline">${esc(tt("portfolio.allTechnologies", "Todas"))}</a>`
+          : `<a href="/projects?create=1" class="inline-flex mt-3 rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 no-underline">Crear proyecto</a>`
+      }
     </div>`;
     stopLoading();
     return;
@@ -228,9 +339,17 @@ async function run() {
   stopLoading();
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => void run());
-} else {
+function schedulePortfolioProjects() {
+  if (!document.querySelector<HTMLElement>("[data-portfolio-projects-csr-mount]")) return;
   void run();
 }
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", schedulePortfolioProjects);
+} else {
+  schedulePortfolioProjects();
+}
+
+document.addEventListener("astro:page-load", schedulePortfolioProjects);
+document.addEventListener("astro:after-swap", schedulePortfolioProjects);
 

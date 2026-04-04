@@ -27,6 +27,37 @@ Orden priorizado para ganar profundidad sin dejar de pulir tecnologías/portfoli
 
 ---
 
+## Plan de implementación por iteración (acordado — abril 2026)
+
+**Enfoque:** ir por **puntos numerados**; después de cada uno, **pruebas manuales** (tú) y corrección de regresiones antes del siguiente. El roadmap global de producto de arriba **sigue valiendo**; este bloque fija el **orden práctico** con prioridad UX.
+
+**Relación con las “fases” del plan UX (resumen):** puntos **1–4** ≈ pulir app diaria + confianza; **5–6** ≈ dashboard + onboarding; **7–9** ≈ portfolio público + salida profesional + plantillas; **10** ≈ largo plazo (tech notes, estudio/RAG, etc.).
+
+### Lista ordenada (checklist de trabajo)
+
+1. **Navegación CSR + View Transitions** — Revisar pantallas que cargan datos en el cliente (listas, detalles) y las transiciones entre páginas: que no se queden en “Cargando…”, que no mezclen datos de otra URL, que el salto entre vistas sea coherente. **Lista viva:** ir anotando pantallas que fallen al usar la app en el día a día.
+   - **Iteración abr. 2026:** ampliado `astro:after-swap` (y programación segura) en portfolio autenticado, cabecera de perfil del portfolio, listas proyectos/tecnologías, `/app`, toggle vista, estudio, CV y portfolios públicos por token/slug; filtro por tecnología en portfolio(s) con **un solo** `change` listener; eliminar tecnología sin doble enganche al disparar el boot dos veces. Detalle técnico en `docs/architecture.md` (párrafo View Transitions).
+
+2. **Command palette (el que ya tienes)** — Hoy: **Ctrl+K**, **/** (cuando el foco no está en un campo de texto) y **botón en la cabecera** (icono de búsqueda, `data-command-palette-trigger` en `AppShell.astro`, p. ej. “Buscar (Ctrl+K)”). **No es** crear un segundo sistema; **sí es** hacerlo más potente: buscar proyectos/tecnologías, más acciones rápidas, mejor textos/i18n.
+
+3. **Burbujas flotantes (FAB / launcher)** — **Nuevo patrón:** zona fija (p. ej. esquina inferior derecha), estilo “widget” de chat: al pulsar, panel con **animación** (modal o toast grande) con **atajos** (la referencia detallada sigue en **Ajustes**). **Extensible** a más burbujas en línea (futuro: asistente / IA, ayuda contextual). **Opcional:** que se puedan **arrastrar** para cambiar sitio. La checklist corta post-login (punto 6) puede vivir aquí en el MVP.
+
+4. **Detalles de confianza** — Toasts, mensajes tras guardar/borrar, errores legibles: se implementa con criterio técnico y se ajusta cuando tengas más horas de uso sobre la web.
+
+5. **Dashboard (`/app`)** — **Actividad y/o accesos recientes** (últimos proyectos o tecnologías, enlaces útiles) para que la entrada a la app tenga “vida” y punto de retorno al trabajo.
+
+6. **Checklist muy corta post-login** — Onboarding mínimo (pocos pasos). **MVP:** integrado con las **burbujas** del punto 3 (segunda burbuja o sección dentro del mismo panel).
+
+7. **Portfolio público** — **Jerarquía y perfilado** para el visitante: lectura clara, móvil, orden visual de historia + evidencias + stack (sin mezclar con refactors grandes de la app interna hasta estar listos).
+
+8. **Impresión profesional** — PDF de portfolio donde encaje, previews **OG por proyecto** o piezas compartibles, export estático si aplica (alineado con “salida profesional” del roadmap global).
+
+9. **Más plantillas** — **CV** y **presentación del portfolio** (varias jerarquías / layouts), sin perder el modelo de datos actual salvo que haga falta.
+
+10. **Largo plazo** — **Tech Note** por tecnología, mejoras del import de conceptos (DB tiers/categorías, i18n), `/study` + Storage/RAG, duplicar proyecto / plantillas de proyecto, monetización, etc., según el roadmap global y el tiempo disponible.
+
+---
+
 ## Release v0.45.0 (resumen)
 
 - **Despliegue:** `@astrojs/vercel` (no `@astrojs/node`) para evitar 404 en Vercel; **`.vercel/`** en `.gitignore` (artefactos de build local).

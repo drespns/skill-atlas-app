@@ -218,13 +218,16 @@ async function run() {
       techNamesAll
         .map((name) => `<option value="${esc(name)}"${selected === name ? " selected" : ""}>${esc(name)}</option>`)
         .join("");
-    techSelect.addEventListener("change", () => {
-      const next = techSelect.value;
-      const url = new URL(window.location.href);
-      if (!next || next === "all") url.searchParams.delete("tech");
-      else url.searchParams.set("tech", next);
-      window.location.href = url.toString();
-    });
+    if (techSelect.dataset.skillatlasPublicFilterBound !== "1") {
+      techSelect.dataset.skillatlasPublicFilterBound = "1";
+      techSelect.addEventListener("change", () => {
+        const next = techSelect.value;
+        const url = new URL(window.location.href);
+        if (!next || next === "all") url.searchParams.delete("tech");
+        else url.searchParams.set("tech", next);
+        window.location.href = url.toString();
+      });
+    }
   }
 
   const filtered =
@@ -253,3 +256,4 @@ if (document.readyState === "loading") document.addEventListener("DOMContentLoad
 else boot();
 
 document.addEventListener("astro:page-load", boot);
+document.addEventListener("astro:after-swap", boot);

@@ -128,8 +128,16 @@ async function run() {
   renderHelpStack(helpKeys);
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => void run());
-} else {
+function schedulePortfolioPublicProfile() {
+  if (!document.querySelector("[data-portfolio-public-name]")) return;
   void run();
 }
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", schedulePortfolioPublicProfile);
+} else {
+  schedulePortfolioPublicProfile();
+}
+
+document.addEventListener("astro:page-load", schedulePortfolioPublicProfile);
+document.addEventListener("astro:after-swap", schedulePortfolioPublicProfile);

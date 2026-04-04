@@ -386,4 +386,5 @@ if (document.readyState === "loading") {
 }
 
 document.addEventListener("astro:page-load", bootProjectsPage);
+document.addEventListener("astro:after-swap", bootProjectsPage);
 

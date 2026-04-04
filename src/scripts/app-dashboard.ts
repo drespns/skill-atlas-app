@@ -61,9 +61,17 @@ async function hydrateDashboard() {
   setList("[data-dashboard-technologies-list]", technologies);
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => void hydrateDashboard());
-} else {
+function scheduleAppDashboard() {
+  if (!document.querySelector("[data-dashboard-count-projects]")) return;
   void hydrateDashboard();
 }
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", scheduleAppDashboard);
+} else {
+  scheduleAppDashboard();
+}
+
+document.addEventListener("astro:page-load", scheduleAppDashboard);
+document.addEventListener("astro:after-swap", scheduleAppDashboard);
 

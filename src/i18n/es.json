@@ -388,7 +388,14 @@
     "filterByTechnology": "Tecnología",
     "allTechnologies": "Todas",
     "filter": "Filtrar",
-    "helpStackLabel": "Stack de ayuda"
+    "helpStackLabel": "Stack de ayuda",
+    "techFilterHint": "Marca una o varias tecnologías y pulsa «Aplicar».",
+    "techFilterApply": "Aplicar",
+    "techFilterClear": "Todas",
+    "techFilterSummaryN": "{{count}} tecnologías",
+    "techFilterNoTechs": "No hay tecnologías en el portfolio.",
+    "techFilterNoMatch": "Ningún proyecto coincide con el filtro. Prueba con otras tecnologías o «Todas».",
+    "techFilterPanelLabel": "Filtro por tecnología"
   },
   "projectDetail": {
     "editProject": "Editar proyecto",

@@ -2,11 +2,24 @@ import { getSupabaseBrowserClient } from "./client-supabase";
 import { getSessionUserId } from "./auth-session";
 import { isSkillAtlasAdmin } from "./admin-role";
 
+type PaletteSection = "admin" | "nav" | "actions" | "tech" | "project";
+
 type PaletteItem = {
   id: string;
   label: string;
   hint?: string;
   href: string;
+  /** Texto extra para búsqueda (p. ej. slug). */
+  searchBlob?: string;
+  section?: PaletteSection;
+};
+
+const SECTION_LABEL: Record<PaletteSection, string> = {
+  admin: "Admin",
+  nav: "Navegación",
+  actions: "Acciones rápidas",
+  tech: "Tus tecnologías",
+  project: "Tus proyectos",
 };
 
 const PALETTE_ADMIN_ITEM: PaletteItem = {
@@ -14,6 +27,7 @@ const PALETTE_ADMIN_ITEM: PaletteItem = {
   label: "Admin (solicitudes)",
   href: "/admin",
   hint: "/admin",
+  section: "admin",
 };
 
 function esc(s: string) {
@@ -45,34 +59,42 @@ function initCommandPalette() {
   let filtered: PaletteItem[] = [];
   let activeIndex = 0;
 
-  const authedItems: PaletteItem[] = [
-    { id: "go-pricing", label: "Precios", href: "/pricing", hint: "/pricing" },
-    { id: "go-prep", label: "Preparación (visión)", href: "/prep", hint: "/prep" },
-    { id: "go-app", label: "Abrir app", href: "/app", hint: "/app" },
-    { id: "go-technologies", label: "Tecnologías", href: "/technologies", hint: "/technologies" },
-    { id: "go-projects", label: "Proyectos", href: "/projects", hint: "/projects" },
-    { id: "go-portfolio", label: "Portfolio", href: "/portfolio", hint: "/portfolio" },
-    { id: "go-study", label: "Estudio", href: "/study", hint: "/study" },
-    { id: "go-cv", label: "CV", href: "/cv", hint: "/cv" },
-    { id: "new-technology", label: "Crear tecnología", href: "/technologies?create=1", hint: "Acción" },
-    { id: "new-project", label: "Crear proyecto", href: "/projects?create=1", hint: "Acción" },
-    { id: "go-settings", label: "Ajustes", href: "/settings", hint: "/settings" },
+  const authedNavItems: PaletteItem[] = [
+    { id: "go-landing", label: "Inicio · landing pública", href: "/", hint: "/", section: "nav" },
+    { id: "go-pricing", label: "Precios", href: "/pricing", hint: "/pricing", section: "nav" },
+    { id: "go-prep", label: "Preparación (visión)", href: "/prep", hint: "/prep", section: "nav" },
+    { id: "go-app", label: "Abrir app", href: "/app", hint: "/app", section: "nav" },
+    { id: "go-technologies", label: "Tecnologías", href: "/technologies", hint: "/technologies", section: "nav" },
+    { id: "go-projects", label: "Proyectos", href: "/projects", hint: "/projects", section: "nav" },
+    { id: "go-portfolio", label: "Portfolio", href: "/portfolio", hint: "/portfolio", section: "nav" },
+    { id: "go-study", label: "Estudio", href: "/study", hint: "/study", section: "nav" },
+    { id: "go-cv", label: "CV", href: "/cv", hint: "/cv", section: "nav" },
+    { id: "go-settings", label: "Ajustes", href: "/settings", hint: "/settings", section: "nav" },
   ];
 
+  const authedActionItems: PaletteItem[] = [
+    { id: "new-technology", label: "Crear tecnología", href: "/technologies?create=1", hint: "Acción", section: "actions" },
+    { id: "new-project", label: "Crear proyecto", href: "/projects?create=1", hint: "Acción", section: "actions" },
+  ];
+
+  const authedItems: PaletteItem[] = [...authedNavItems, ...authedActionItems];
+
   const unauthedItems: PaletteItem[] = [
-    { id: "go-pricing", label: "Precios", href: "/pricing", hint: "/pricing" },
-    { id: "go-prep", label: "Preparación (visión)", href: "/prep", hint: "/prep" },
-    { id: "go-login", label: "Entrar (acceso privado)", href: "/login", hint: "/login" },
-    { id: "go-demo", label: "Ver demo", href: "/demo", hint: "/demo" },
+    { id: "go-landing", label: "Inicio · landing", href: "/", hint: "/", section: "nav" },
+    { id: "go-pricing", label: "Precios", href: "/pricing", hint: "/pricing", section: "nav" },
+    { id: "go-prep", label: "Preparación (visión)", href: "/prep", hint: "/prep", section: "nav" },
+    { id: "go-login", label: "Entrar (acceso privado)", href: "/login", hint: "/login", section: "nav" },
+    { id: "go-demo", label: "Ver demo", href: "/demo", hint: "/demo", section: "nav" },
     {
       id: "request-access",
       label: "Solicitar acceso",
       href: "/request-access",
       hint: "/request-access",
+      section: "nav",
     },
   ];
 
-  const cacheKey = (userId: string) => `skillatlas_cache_palette_v1:${userId}`;
+  const cacheKey = (userId: string) => `skillatlas_cache_palette_v2:${userId}`;
   const readCache = (userId: string) => {
     try {
       const raw = sessionStorage.getItem(cacheKey(userId));
@@ -93,11 +115,17 @@ function initCommandPalette() {
     }
   };
 
+  const itemMatchesQuery = (it: PaletteItem, q: string) => {
+    if (!q) return true;
+    const blob = `${it.label} ${it.hint ?? ""} ${it.searchBlob ?? ""}`.toLowerCase();
+    return blob.includes(q);
+  };
+
+  const sectionOf = (it: PaletteItem): PaletteSection => it.section ?? "nav";
+
   const render = () => {
     const q = input.value.trim().toLowerCase();
-    filtered = q
-      ? allItems.filter((it) => (it.label + " " + (it.hint ?? "")).toLowerCase().includes(q))
-      : allItems;
+    filtered = allItems.filter((it) => itemMatchesQuery(it, q));
     activeIndex = Math.min(activeIndex, Math.max(0, filtered.length - 1));
 
     if (filtered.length === 0) {
@@ -105,18 +133,28 @@ function initCommandPalette() {
       return;
     }
 
-    list.innerHTML = filtered
-      .map((it, idx) => {
-        const active = idx === activeIndex;
-        return `<button type="button" data-palette-item="${esc(it.id)}"
+    const showSectionHeaders = !q;
+    const parts: string[] = [];
+    filtered.forEach((it, idx) => {
+      if (showSectionHeaders) {
+        const sec = sectionOf(it);
+        const prevSec = idx > 0 ? sectionOf(filtered[idx - 1]!) : null;
+        if (idx === 0 || prevSec !== sec) {
+          parts.push(
+            `<div class="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">${esc(SECTION_LABEL[sec])}</div>`,
+          );
+        }
+      }
+      const active = idx === activeIndex;
+      parts.push(`<button type="button" data-palette-item="${esc(it.id)}"
           class="w-full text-left px-3 py-2 rounded-lg ${active ? "bg-gray-100 dark:bg-gray-900" : "hover:bg-gray-50 dark:hover:bg-gray-900/50"}">
           <div class="flex items-center justify-between gap-3">
             <span class="font-semibold">${esc(it.label)}</span>
-            ${it.hint ? `<span class="text-xs text-gray-500 dark:text-gray-400">${esc(it.hint)}</span>` : ""}
+            ${it.hint ? `<span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">${esc(it.hint)}</span>` : ""}
           </div>
-        </button>`;
-      })
-      .join("");
+        </button>`);
+    });
+    list.innerHTML = parts.join("");
 
     list.querySelectorAll<HTMLButtonElement>("[data-palette-item]").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -150,10 +188,9 @@ function initCommandPalette() {
         if (cached) {
           allItems = [...adminPrefix, ...authedItems, ...cached];
           render();
-          // background refresh
-          setTimeout(() => void hydrateFromSupabase(supabase, userId), 0);
+          setTimeout(() => void hydrateFromSupabase(supabase, userId, adminPrefix.length > 0), 0);
         } else {
-          await hydrateFromSupabase(supabase, userId);
+          await hydrateFromSupabase(supabase, userId, adminPrefix.length > 0);
         }
       }
     }
@@ -170,30 +207,38 @@ function initCommandPalette() {
     root.classList.remove("flex");
   };
 
-  const hydrateFromSupabase = async (supabase: any, userId: string) => {
+  const hydrateFromSupabase = async (supabase: any, userId: string, isAdmin: boolean) => {
     const [techRes, projRes] = await Promise.all([
-      supabase.from("technologies").select("slug, name").order("name").limit(50),
-      supabase.from("projects").select("slug, title").order("title").limit(50),
+      supabase.from("technologies").select("slug, name").order("name").limit(100),
+      supabase.from("projects").select("slug, title").order("title").limit(100),
     ]);
     const items: PaletteItem[] = [];
     for (const t of techRes.data ?? []) {
+      const slug = String(t.slug ?? "");
+      const name = String(t.name ?? "");
       items.push({
-        id: `tech:${t.slug}`,
-        label: t.name,
+        id: `tech:${slug}`,
+        label: name,
         hint: "Tecnología",
-        href: `/technologies/view?tech=${encodeURIComponent(t.slug)}`,
+        href: `/technologies/view?tech=${encodeURIComponent(slug)}`,
+        section: "tech",
+        searchBlob: `${slug} ${name}`.toLowerCase(),
       });
     }
     for (const p of projRes.data ?? []) {
+      const slug = String(p.slug ?? "");
+      const title = String(p.title ?? "");
       items.push({
-        id: `proj:${p.slug}`,
-        label: p.title,
+        id: `proj:${slug}`,
+        label: title,
         hint: "Proyecto",
-        href: `/projects/view?project=${encodeURIComponent(p.slug)}`,
+        href: `/projects/view?project=${encodeURIComponent(slug)}`,
+        section: "project",
+        searchBlob: `${slug} ${title}`.toLowerCase(),
       });
     }
     writeCache(userId, items);
-    const prefix = (await isSkillAtlasAdmin(supabase, userId)) ? [PALETTE_ADMIN_ITEM] : [];
+    const prefix = isAdmin ? [PALETTE_ADMIN_ITEM] : [];
     allItems = [...prefix, ...authedItems, ...items];
     render();
   };

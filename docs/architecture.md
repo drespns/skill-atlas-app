@@ -35,7 +35,9 @@ Para que funcione igual en **dev** y **producción** (Vercel), los scripts clien
 
 La app usa el router del navegador con **View Transitions** (`<ClientRouter />`) para que la navegación sea más fluida. Además, Astro hace **prefetch** de links (estrategia `viewport`) para reducir tiempos de carga.
 
-Esto implica que scripts cliente que antes dependían de `DOMContentLoaded` deben ser **idempotentes** y re-ejecutarse en eventos del router (`astro:page-load`, `astro:after-swap`).
+Esto implica que scripts cliente que antes dependían de `DOMContentLoaded` deben ser **idempotentes** y re-ejecutarse en eventos del router (`astro:page-load`, `astro:after-swap`). En la práctica conviene registrar **ambos** (y `DOMContentLoaded` en la primera carga): en algunos casos solo uno de los eventos del router refleja el DOM ya sustituido.
+
+**Auditoría (abr. 2026, punto 1 backlog):** además de los bootstraps CSR de `/projects/view` y `/technologies/view`, quedaron alineados con `astro:after-swap` (y guards anti-listeners duplicados donde aplica) entre otros: `portfolio-projects.ts`, `portfolio-public-profile.ts`, `projects.ts`, `technologies.ts`, `app-dashboard.ts`, `view-toggle.ts`, `study-workspace.ts`, `cv-page.ts`, `public-portfolio-by-token.ts`, `public-portfolio-by-slug.ts`. Otros módulos (`client.ts`, `command-palette.ts`, Ajustes, admin, etc.) ya seguían este patrón.
 
 **Cabecera y estado activo:** el HTML prerenderizado solo refleja la ruta del **build** de esa página. Tras navegar en cliente, `src/scripts/client.ts` ejecuta **`syncHeaderNavActive()`** para alinear `data-nav-active` en cada `[data-header-nav-link]` y `[data-admin-header-link]` con `location.pathname` (misma regla que `isActive` en `AppShell.astro`).
 
@@ -239,7 +241,8 @@ Implementación (Sprint A):
 - Cache de navegación ligera para CSR lists en `sessionStorage` (TTL 2 min) en `src/scripts/{projects,technologies}.ts`.
 
 Mejoras UX (Sprint A+):
-- Botón visible para Command Palette en header (además de `Ctrl+K` y tecla `/` fuera de campos de texto).
+- **Command Palette:** el **botón en cabecera** ya existe (`[data-command-palette-trigger]` en `AppShell.astro`, mismo flujo que `Ctrl+K` y `/` fuera de campos de texto). La evolución prevista es **enriquecer** la paleta (búsqueda de entidades, más acciones), no duplicarla. Ver **Plan de implementación por iteración** en `docs/backlog.md`.
+- **Burbujas flotantes (FAB):** patrón planificado para atajos visibles y onboarding corto (y extensiones futuras); detalle en el mismo apartado del backlog.
 - Toggle Cards/Lista en páginas (sin pasar por Ajustes) y persistencia en prefs.
 - Preferencias de UI: mostrar/ocultar iconos del header y selector de idioma por **banderas** (con opción de ocultar el bloque en el header).
 - Listado de **atajos de teclado** documentado en la tarjeta correspondiente de Ajustes.
