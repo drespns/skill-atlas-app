@@ -9,6 +9,10 @@ import {
 } from "./technology-detail/concept-list-html";
 import { hasConceptSeed } from "./technology-detail/concept-seeds";
 
+function escAttr(s: string | null | undefined) {
+  return esc((s ?? "").replace(/\r\n|\r|\n/g, " "));
+}
+
 const tabActiveClass =
   "px-3 py-1.5 text-sm rounded-lg ring-2 ring-gray-900 dark:ring-gray-100 bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900 font-semibold";
 const tabIdleClass =
@@ -18,42 +22,54 @@ export async function bootstrapTechnologyDetailPage() {
   const mount = document.querySelector<HTMLElement>("[data-technology-csr-mount]");
   if (!mount) return;
 
-  const params = new URLSearchParams(window.location.search);
-  const slug = params.get("tech")?.trim() ?? "";
-  if (!slug) {
-    mount.innerHTML = `<section class="space-y-3"><p class="text-sm text-gray-600 dark:text-gray-300">Falta el parámetro <code>tech</code> en la URL.</p>
+  const timeoutId = window.setTimeout(() => {
+    const slugT = new URLSearchParams(window.location.search).get("tech")?.trim() ?? "";
+    mount.innerHTML = `<section class="space-y-2" data-technology-detail-slug="${escAttr(slugT)}"><h1 class="text-2xl font-semibold m-0">Tecnología</h1>
+      <p class="text-sm text-red-600 dark:text-red-400 m-0">Tiempo de espera agotado al cargar el detalle.</p>
+      <p class="text-xs text-gray-600 dark:text-gray-400 m-0">Prueba a recargar y, si persiste, revisa la consola.</p>
+      <a href="/technologies" class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Volver a Tecnologías</a>
+    </section>`;
+    console.error("bootstrapTechnologyDetailPage: timeout exceeded");
+  }, 15000);
+
+  let slug = "";
+  try {
+    const params = new URLSearchParams(window.location.search);
+    slug = params.get("tech")?.trim() ?? "";
+    if (!slug) {
+      mount.innerHTML = `<section class="space-y-3" data-technology-view="missing-tech-param"><p class="text-sm text-gray-600 dark:text-gray-300">Falta el parámetro <code>tech</code> en la URL.</p>
       <a href="/technologies" class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Volver a Tecnologías</a></section>`;
-    return;
-  }
+      return;
+    }
 
-  const supabase = getSupabaseBrowserClient();
-  if (!supabase) {
-    mount.innerHTML = `<p class="text-red-600 dark:text-red-400 text-sm">No hay cliente Supabase.</p>`;
-    return;
-  }
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      mount.innerHTML = `<section class="space-y-3" data-technology-detail-slug="${escAttr(slug)}"><p class="text-red-600 dark:text-red-400 text-sm m-0">No hay cliente Supabase.</p></section>`;
+      return;
+    }
 
-  const userId = await getSessionUserId(supabase);
-  if (!userId) {
-    mount.innerHTML = `<section class="space-y-3"><p class="text-amber-700 dark:text-amber-400 text-sm">Inicia sesión en Ajustes para ver esta tecnología.</p>
+    const userId = await getSessionUserId(supabase);
+    if (!userId) {
+      mount.innerHTML = `<section class="space-y-3" data-technology-detail-slug="${escAttr(slug)}"><p class="text-amber-700 dark:text-amber-400 text-sm">Inicia sesión en Ajustes para ver esta tecnología.</p>
       <a href="/settings" class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Ir a Ajustes</a></section>`;
-    return;
-  }
+      return;
+    }
 
-  const techRes = await supabase
-    .from("technologies")
-    .select("id, slug, name")
-    .eq("slug", slug)
-    .maybeSingle();
+    const techRes = await supabase
+      .from("technologies")
+      .select("id, slug, name")
+      .eq("slug", slug)
+      .maybeSingle();
 
-  if (techRes.error || !techRes.data) {
-    mount.innerHTML = `<section class="space-y-3"><h1 class="text-2xl font-semibold m-0">Tecnología</h1>
+    if (techRes.error || !techRes.data) {
+      mount.innerHTML = `<section class="space-y-3" data-technology-detail-slug="${escAttr(slug)}"><h1 class="text-2xl font-semibold m-0">Tecnología</h1>
       <p class="text-sm text-gray-600 dark:text-gray-300">No se encontró la tecnología.</p>
       <div class="flex flex-wrap gap-2"><a href="/technologies" class="inline-flex rounded-lg border px-3 py-2 text-sm no-underline">Volver a Tecnologías</a>
       <a href="/projects" class="inline-flex rounded-lg border px-3 py-2 text-sm no-underline">Proyectos</a></div></section>`;
-    return;
-  }
+      return;
+    }
 
-  const technology = techRes.data as { id: string; slug: string; name: string };
+    const technology = techRes.data as { id: string; slug: string; name: string };
 
   const [conceptsRes, ptForTechRes, allTechRes, allProjectsRes, allPtRes, allPcRes] = await Promise.all([
     supabase
@@ -134,7 +150,7 @@ export async function bootstrapTechnologyDetailPage() {
         <a href="/projects" class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline mt-3">Ir a Proyectos</a>
       </div>`;
 
-  mount.innerHTML = `<section class="space-y-6" data-technology-page data-technology-id="${esc(technology.id)}" data-related-project-count="${relatedProjects.length}">
+  mount.innerHTML = `<section class="space-y-6" data-technology-page data-technology-id="${esc(technology.id)}" data-technology-detail-slug="${escAttr(technology.slug)}" data-related-project-count="${relatedProjects.length}">
     <header class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
       <div><h1 class="m-0 text-2xl font-semibold">${esc(technology.name)}</h1>
       <p data-tech-summary class="mt-2 text-sm text-gray-600 dark:text-gray-300">${esc(summaryText(techConcepts, relatedProjects.length))}</p></div>
@@ -208,13 +224,68 @@ export async function bootstrapTechnologyDetailPage() {
     </section>
   </section>`;
 
-  await runTechnologyDetailInits();
+    await runTechnologyDetailInits();
+  } catch (err) {
+    console.error("bootstrapTechnologyDetailPage error", err);
+    const slugErr =
+      slug || new URLSearchParams(window.location.search).get("tech")?.trim() || "";
+    mount.innerHTML = `<section class="space-y-3" data-technology-detail-slug="${escAttr(slugErr)}"><h1 class="text-2xl font-semibold m-0">Tecnología</h1>
+      <p class="text-sm text-red-600 dark:text-red-400">Error cargando el detalle de la tecnología.</p>
+      <a href="/technologies" class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Volver a Tecnologías</a>
+    </section>`;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+window.skillatlas = window.skillatlas ?? {};
+window.skillatlas.bootstrapTechnologyDetailPage = bootstrapTechnologyDetailPage;
+
+let technologyViewBootLock = false;
+
+function renderedTechnologySlugInMount(mount: HTMLElement): string {
+  return (
+    mount
+      .querySelector<HTMLElement>("[data-technology-detail-slug]")
+      ?.getAttribute("data-technology-detail-slug")
+      ?.trim() ?? ""
+  );
+}
+
+function queueTechnologyViewBootstrapOnce() {
+  if (technologyViewBootLock) return;
+  technologyViewBootLock = true;
+  void (async () => {
+    try {
+      await bootstrapTechnologyDetailPage();
+    } finally {
+      technologyViewBootLock = false;
+    }
+  })();
+}
+
+function scheduleTechnologyViewBootstrap() {
+  const mount = document.querySelector<HTMLElement>("[data-technology-csr-mount]");
+  if (!mount) return;
+
+  const slug = new URLSearchParams(window.location.search).get("tech")?.trim() ?? "";
+  if (!slug) {
+    if (mount.querySelector("[data-technology-view=\"missing-tech-param\"]")) return;
+    queueTechnologyViewBootstrapOnce();
+    return;
+  }
+
+  const renderedSlug = renderedTechnologySlugInMount(mount);
+  if (renderedSlug === slug) return;
+
+  queueTechnologyViewBootstrapOnce();
 }
 
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
-    void bootstrapTechnologyDetailPage();
-  });
+  document.addEventListener("DOMContentLoaded", scheduleTechnologyViewBootstrap);
 } else {
-  void bootstrapTechnologyDetailPage();
+  scheduleTechnologyViewBootstrap();
 }
+
+document.addEventListener("astro:page-load", scheduleTechnologyViewBootstrap);
+document.addEventListener("astro:after-swap", scheduleTechnologyViewBootstrap);

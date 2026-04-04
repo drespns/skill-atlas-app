@@ -22,7 +22,7 @@ const FOOTER_BUILD_ICONS = [
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang="es" data-sa-banner-hydrated="0">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
@@ -52,6 +52,7 @@ const FOOTER_BUILD_ICONS = [
         const motion = prefs?.motion ?? "normal";
         const technologiesView = prefs?.technologiesView ?? "cards";
         const projectsView = prefs?.projectsView ?? "cards";
+        const projectEvidenceLayout = prefs?.projectEvidenceLayout === "grid" ? "grid" : "large";
         const showHeaderIcons = prefs?.showHeaderIcons ?? true;
         const showLangSelector = prefs?.showLangSelector ?? true;
         const lang = prefs?.lang ?? "es";
@@ -69,6 +70,7 @@ const FOOTER_BUILD_ICONS = [
         root.dataset.motion = motion;
         root.dataset.technologiesView = technologiesView;
         root.dataset.projectsView = projectsView;
+        root.dataset.projectEvidenceLayout = projectEvidenceLayout;
         root.dataset.showHeaderIcons = showHeaderIcons ? "true" : "false";
         root.dataset.showLangSelector = showLangSelector ? "true" : "false";
         root.dataset.langPref = lang;
@@ -107,12 +109,24 @@ const FOOTER_BUILD_ICONS = [
         root.style.setProperty("--app-motion", motion);
       })();
     </script>
+    <script is:inline define:vars={{ skillatlasBannerId: GLOBAL_BANNER.id }}>
+      try {
+        document.documentElement.dataset.saBannerDismissed =
+          localStorage.getItem(`skillatlas_banner_dismissed:${skillatlasBannerId}`) === "1" ? "1" : "0";
+      } catch {
+        document.documentElement.dataset.saBannerDismissed = "0";
+      }
+    </script>
   </head>
   <body
     class="bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100 min-h-svh flex flex-col"
     style="font-family: var(--app-font-family);"
   >
-    <div data-global-banner-wrap class="sticky top-0 z-1001">
+    <div
+      data-global-banner-wrap
+      class="sticky top-0 z-1001"
+      transition:persist="skillatlas-global-banner"
+    >
       <div
         data-global-banner
         data-banner-id={GLOBAL_BANNER.id}
@@ -296,20 +310,6 @@ const FOOTER_BUILD_ICONS = [
           </a>
           <span class="hidden min-h-0 min-w-4 flex-1 basis-0 md:block" aria-hidden="true"></span>
           <div class="flex shrink-0 items-center gap-2" data-header-icons>
-          <button
-            type="button"
-            data-banner-reopen
-            class="hidden sm:inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
-            aria-label="Mostrar anuncio"
-            title="Mostrar anuncio"
-          >
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M3 11v3a1 1 0 0 0 1 1h3" />
-              <path d="M21 13v-3a1 1 0 0 0-1-1h-3" />
-              <path d="M7 15l-3 3-3-3" />
-              <path d="M17 9l3-3 3 3" />
-            </svg>
-          </button>
           <div
             data-lang-flags
             class="hidden sm:inline-flex items-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 p-0.5 gap-0.5"
@@ -430,19 +430,6 @@ const FOOTER_BUILD_ICONS = [
                 <path d="M16 18v4" />
               </svg>
             </span>
-          </a>
-
-          <a
-            href={repoUrl}
-            target="_blank"
-            rel="noreferrer"
-            class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
-            aria-label="Ver repositorio en GitHub"
-            title="GitHub"
-            data-i18n="common.githubRepo"
-            data-i18n-attr="aria-label"
-          >
-            <img src="/icons/GitHub.svg" alt="" class="h-5 w-5" />
           </a>
 
           <button
@@ -609,6 +596,18 @@ const FOOTER_BUILD_ICONS = [
               class="h-4 w-auto max-h-4 object-contain"
               loading="lazy"
             />
+            <a
+              href={repoUrl}
+              target="_blank"
+              rel="noreferrer"
+              class="inline-flex items-center justify-center rounded-md border border-gray-200/80 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              aria-label="Ver repositorio en GitHub"
+              title="GitHub"
+              data-i18n="common.githubRepo"
+              data-i18n-attr="aria-label,title"
+            >
+              <img src="/icons/GitHub.svg" alt="" class="h-4 w-4" loading="lazy" />
+            </a>
           </span>
         </span>
       </p>

@@ -3,6 +3,7 @@ import { getSessionUserId } from "../auth-session";
 import { showToast, technologyPickerModal } from "../ui-feedback";
 import { getSeedCatalogEntries } from "../technology-detail/concept-seeds";
 import { getProjectDbId, getTechnologyDbId } from "./helpers";
+import { refreshProjectDetailPage } from "./refresh-ui";
 
 export async function initProjectTechnologyForm(supabase: any, projectSlug: string) {
   const form = document.querySelector<HTMLFormElement>("[data-project-tech-form]");
@@ -80,7 +81,7 @@ export async function initProjectTechnologyForm(supabase: any, projectSlug: stri
           return;
         }
         showToast("Tecnología asociada.", "success");
-        window.location.reload();
+        await refreshProjectDetailPage();
         return;
       }
 
@@ -114,7 +115,7 @@ export async function initProjectTechnologyForm(supabase: any, projectSlug: stri
         window.location.href = `/technologies/view?tech=${encodeURIComponent(result.slug)}&seed=1${tier}`;
         return;
       }
-      window.location.reload();
+      await refreshProjectDetailPage();
     } catch (e: any) {
       const msg = e?.message ? String(e.message) : "Error inesperado.";
       feedback.textContent = `Error: ${msg}`;
@@ -175,7 +176,7 @@ export async function initProjectTechnologyRemove(supabase: any, projectSlug: st
         feedback.className = "text-sm text-green-600";
       }
       showToast("Tecnología quitada.", "success");
-      window.location.reload();
+      await refreshProjectDetailPage();
     });
   }
 }

@@ -1,5 +1,23 @@
 import { showToast } from "../ui-feedback";
 import { getProjectDbId } from "./helpers";
+import { refreshProjectDetailPage } from "./refresh-ui";
+
+export function initProjectConceptsDialog() {
+  const dialog = document.querySelector<HTMLDialogElement>("[data-project-concepts-dialog]");
+  const openBtn = document.querySelector<HTMLButtonElement>("[data-project-concepts-modal-open]");
+  const closeBtn = document.querySelector<HTMLButtonElement>("[data-project-concepts-dialog-close]");
+  if (!dialog || !openBtn) return;
+
+  openBtn.addEventListener("click", () => {
+    if (typeof dialog.showModal === "function") dialog.showModal();
+  });
+
+  closeBtn?.addEventListener("click", () => dialog.close());
+
+  dialog.addEventListener("click", (e) => {
+    if (e.target === dialog) dialog.close();
+  });
+}
 
 export async function initProjectConceptForm(supabase: any, projectSlug: string) {
   const form = document.querySelector<HTMLFormElement>("[data-project-concept-form]");
@@ -63,6 +81,6 @@ export async function initProjectConceptForm(supabase: any, projectSlug: string)
     feedback.textContent = "Concepto asociado correctamente.";
     feedback.className = "text-sm text-green-600";
     showToast("Concepto asociado.", "success");
-    window.location.reload();
+    await refreshProjectDetailPage();
   });
 }

@@ -40,8 +40,8 @@ async function initProjectForm() {
   const roleInput = form.querySelector<HTMLInputElement>("[name='role']");
   const outcomeInput = form.querySelector<HTMLInputElement>("[name='outcome']");
   const feedback = form.querySelector<HTMLElement>("[data-project-feedback]");
-  const submitBtn = form.querySelector<HTMLButtonElement>("[type='submit']");
-  if (!titleInput || !descInput || !feedback || !submitBtn) return;
+  const submitButtons = Array.from(form.querySelectorAll<HTMLButtonElement>("button[type='submit']"));
+  if (!titleInput || !descInput || !feedback || submitButtons.length === 0) return;
 
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
@@ -53,7 +53,9 @@ async function initProjectForm() {
   if (!userId) {
     feedback.textContent = "Inicia sesión en Ajustes para crear proyectos.";
     feedback.className = "text-sm text-amber-600";
-    submitBtn.disabled = true;
+    submitButtons.forEach((b) => {
+      b.disabled = true;
+    });
     titleInput.disabled = true;
     descInput.disabled = true;
     return;
@@ -72,13 +74,18 @@ async function initProjectForm() {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const sub = (event as SubmitEvent).submitter as HTMLButtonElement | null;
+    const openAfterSave = sub?.dataset?.projectSaveOpen === "1";
+
     const title = titleInput.value.trim();
     const description = descInput.value.trim();
     const role = (roleInput?.value ?? "").trim();
     const outcome = (outcomeInput?.value ?? "").trim();
     if (!title) return;
 
-    submitBtn.disabled = true;
+    submitButtons.forEach((b) => {
+      b.disabled = true;
+    });
     feedback.textContent = "Guardando proyecto...";
     feedback.className = "text-sm text-gray-600";
 
@@ -92,13 +99,17 @@ async function initProjectForm() {
     if (duplicate.error) {
       feedback.textContent = `Error validando duplicado: ${duplicate.error.message}`;
       feedback.className = "text-sm text-red-600";
-      submitBtn.disabled = false;
+      submitButtons.forEach((b) => {
+        b.disabled = false;
+      });
       return;
     }
     if (duplicate.data) {
       feedback.textContent = "Ya existe un proyecto con ese título/slug.";
       feedback.className = "text-sm text-amber-600";
-      submitBtn.disabled = false;
+      submitButtons.forEach((b) => {
+        b.disabled = false;
+      });
       return;
     }
 
@@ -108,18 +119,28 @@ async function initProjectForm() {
     if (insertRes.error) {
       feedback.textContent = `Error al guardar: ${insertRes.error.message}`;
       feedback.className = "text-sm text-red-600";
-      submitBtn.disabled = false;
+      submitButtons.forEach((b) => {
+        b.disabled = false;
+      });
+      return;
+    }
+
+    showToast("Proyecto creado correctamente.", "success");
+    if (openAfterSave) {
+      if (window.skillatlas?.clearProjectsCache) window.skillatlas.clearProjectsCache();
+      window.location.assign(`/projects/view?project=${encodeURIComponent(slug)}`);
       return;
     }
 
     feedback.textContent = "Proyecto creado correctamente.";
     feedback.className = "text-sm text-green-600";
-    showToast("Proyecto creado correctamente.", "success");
     titleInput.value = "";
     descInput.value = "";
     if (roleInput) roleInput.value = "";
     if (outcomeInput) outcomeInput.value = "";
-    submitBtn.disabled = false;
+    submitButtons.forEach((b) => {
+      b.disabled = false;
+    });
     if (window.skillatlas?.clearProjectsCache) window.skillatlas.clearProjectsCache();
     if (window.skillatlas?.bootstrapProjectsList) {
       await window.skillatlas.bootstrapProjectsList();

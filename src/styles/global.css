@@ -27,6 +27,93 @@ body {
   color: rgb(249 250 251);
 }
 
+/* Banner cerrado en localStorage: ocultar antes de hidratar JS (evita flash en carga y View Transitions). */
+html[data-sa-banner-dismissed="1"][data-sa-banner-hydrated="0"] [data-global-banner-wrap] {
+  max-height: 0 !important;
+  overflow: hidden !important;
+  transition: none !important;
+}
+
+/* Modal conceptos (proyecto): solo con [open]; si no, `display:flex` anulaba el `display:none` del UA y el modal se veía siempre. */
+dialog[data-project-concepts-dialog].project-concepts-dialog:not([open]) {
+  display: none !important;
+}
+
+dialog[data-project-concepts-dialog].project-concepts-dialog[open] {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  box-sizing: border-box;
+  width: min(92vw, 42rem);
+  max-width: min(92vw, 42rem);
+  max-height: min(88vh, 44rem);
+  max-height: min(88dvh, 44rem);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+dialog[data-project-concepts-dialog].project-concepts-dialog[open] .project-concepts-dialog__inner {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+[data-project-concepts-dialog]::backdrop {
+  background: rgb(0 0 0 / 0.5);
+  backdrop-filter: blur(4px);
+}
+
+/* Detalle de proyecto (CSR): lista de evidencias — columna ancha vs cuadrícula compacta */
+.project-embeds-list[data-layout="large"] {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.project-embeds-list[data-layout="grid"] {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .project-embeds-list[data-layout="grid"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .project-embeds-list[data-layout="grid"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.project-embeds-list[data-layout="grid"] .project-embed-iframe {
+  max-height: 11rem;
+}
+
+.project-embeds-list[data-layout="grid"] .project-embeds-actions {
+  padding-left: 0;
+}
+
+.project-embeds-list[data-layout="grid"] .project-embeds-list__item > div:first-child {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.project-embeds-list[data-layout="grid"] .project-embeds-list__item > div:first-child > span:first-child {
+  align-self: flex-start;
+}
+
 @media print {
   body.cv-print-mode [data-app-header],
   body.cv-print-mode [data-global-banner-wrap],

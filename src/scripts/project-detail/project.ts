@@ -1,4 +1,5 @@
 import { confirmModal, projectEditModal, showToast } from "../ui-feedback";
+import { refreshProjectDetailPage } from "./refresh-ui";
 
 export async function initProjectEdit(supabase: any, projectSlug: string) {
   const button = document.querySelector<HTMLButtonElement>("[data-project-edit-open]");
@@ -60,7 +61,7 @@ export async function initProjectEdit(supabase: any, projectSlug: string) {
       feedback.className = "text-sm text-green-600";
     }
     showToast("Proyecto actualizado.", "success");
-    window.location.reload();
+    await refreshProjectDetailPage();
   });
 }
 

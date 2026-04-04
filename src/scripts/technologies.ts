@@ -1,7 +1,8 @@
 import { getTechnologyIconSrc } from "../config/icons";
 import { getSupabaseBrowserClient } from "./client-supabase";
 import { getSessionUserId } from "./auth-session";
-import { confirmModal, showToast, technologyEditModal } from "./ui-feedback";
+import i18next from "i18next";
+import { confirmModal, showToast } from "./ui-feedback";
 import { loadPrefs } from "./prefs";
 import { getSeedCatalogEntries } from "./technology-detail/concept-seeds";
 
@@ -192,68 +193,19 @@ async function initTechnologyForm() {
 
 async function initTechnologyActions() {
   const feedback = document.querySelector<HTMLElement>("[data-tech-feedback]");
-  const editButtons = document.querySelectorAll<HTMLButtonElement>("[data-tech-edit]");
   const deleteButtons = document.querySelectorAll<HTMLButtonElement>("[data-tech-delete]");
-  if (editButtons.length === 0 && deleteButtons.length === 0) return;
+  if (deleteButtons.length === 0) return;
 
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return;
   const userId = await getSessionUserId(supabase);
   if (!userId) {
     if (feedback) {
-      feedback.textContent = "Inicia sesión en Ajustes para editar o eliminar tecnologías.";
+      feedback.textContent = "Inicia sesión en Ajustes para eliminar tecnologías.";
       feedback.className = "text-sm text-amber-600 m-0";
     }
-    editButtons.forEach((btn) => (btn.disabled = true));
     deleteButtons.forEach((btn) => (btn.disabled = true));
     return;
-  }
-
-  for (const button of editButtons) {
-    button.addEventListener("click", async () => {
-      const techId = button.dataset.techId;
-      const currentName = button.dataset.techName ?? "";
-      if (!techId) return;
-
-      const nextName = (
-        await technologyEditModal({
-          title: "Editar tecnología",
-          initialName: currentName,
-        })
-      )?.trim();
-      if (!nextName || nextName === currentName) return;
-      const nextSlug = toSlug(nextName);
-
-      button.disabled = true;
-      if (feedback) {
-        feedback.textContent = "Actualizando tecnología...";
-        feedback.className = "text-sm text-gray-600 m-0";
-      }
-
-      const updateRes = await supabase
-        .from("technologies")
-        .update({ name: nextName, slug: nextSlug, icon_key: nextSlug })
-        .eq("slug", techId);
-
-      if (updateRes.error) {
-        if (feedback) {
-          feedback.textContent = `Error al actualizar: ${updateRes.error.message}`;
-          feedback.className = "text-sm text-red-600 m-0";
-        }
-        showToast("Error al actualizar tecnología.", "error");
-        button.disabled = false;
-        return;
-      }
-
-      showToast("Tecnología actualizada correctamente.", "success");
-      if (window.skillatlas?.clearTechnologiesCache) window.skillatlas.clearTechnologiesCache();
-      if (window.skillatlas?.bootstrapTechnologiesGrid) {
-        await window.skillatlas.bootstrapTechnologiesGrid();
-        void initTechnologyActions();
-      } else {
-        window.location.reload();
-      }
-    });
   }
 
   for (const button of deleteButtons) {
@@ -289,6 +241,10 @@ async function initTechnologyActions() {
       }
 
       showToast("Tecnología eliminada.", "success");
+      if (feedback) {
+        feedback.textContent = "";
+        feedback.className = "text-sm text-gray-600 m-0";
+      }
       if (window.skillatlas?.clearTechnologiesCache) window.skillatlas.clearTechnologiesCache();
       if (window.skillatlas?.bootstrapTechnologiesGrid) {
         await window.skillatlas.bootstrapTechnologiesGrid();
@@ -414,17 +370,15 @@ async function bootstrapTechnologiesGrid() {
                 ? `<img src="${escHtml(iconSrc)}" alt="" class="h-5 w-5 shrink-0" loading="lazy" />`
                 : "";
               const href = `/technologies/view?tech=${encodeURIComponent(tech.slug)}`;
+              const conceptsLabel = i18next.t("technologies.concepts");
               return `<div class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
                 <div class="flex items-center justify-between gap-4">
-                  <a href="${href}" class="flex items-center gap-2 min-w-0 no-underline hover:underline">
+                  <a href="${href}" class="flex items-center gap-2 min-w-0 flex-1 rounded-lg -mx-2 px-2 py-2 no-underline hover:bg-gray-50 dark:hover:bg-gray-900/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400">
                     ${iconHtml}
                     <span class="font-semibold truncate">${escHtml(tech.name)}</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap shrink-0">${conceptsCount} ${escHtml(conceptsLabel)}</span>
                   </a>
-                  <div class="flex items-center gap-2 shrink-0">
-                    <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">${conceptsCount} conceptos</span>
-                    <button type="button" data-tech-edit data-tech-id="${escHtml(tech.slug)}" data-tech-name="${escHtml(tech.name)}" class="btn-secondary text-xs">Editar</button>
-                    <button type="button" data-tech-delete data-tech-id="${escHtml(tech.slug)}" data-tech-name="${escHtml(tech.name)}" class="inline-flex items-center justify-center rounded-lg border border-red-200 text-red-700 px-3 py-2 text-xs font-semibold hover:bg-red-50">Eliminar</button>
-                  </div>
+                  <button type="button" data-tech-delete data-tech-id="${escHtml(tech.slug)}" data-tech-name="${escHtml(tech.name)}" class="inline-flex items-center justify-center rounded-lg border border-red-200 text-red-700 px-3 py-2 text-xs font-semibold hover:bg-red-50 shrink-0">Eliminar</button>
                 </div>
               </div>`;
             })
@@ -438,19 +392,18 @@ async function bootstrapTechnologiesGrid() {
               ? `<img src="${escHtml(iconSrc)}" alt="" class="h-5 w-5 shrink-0" loading="lazy" />`
               : "";
             const href = `/technologies/view?tech=${encodeURIComponent(tech.slug)}`;
-            return `<div class="space-y-2">
-              <article class="border border-gray-200/80 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 flex flex-col gap-3 shadow-sm">
-                <div class="flex items-baseline justify-between gap-3">
-                  <div class="flex items-center gap-2 min-w-0">${iconHtml}<h3 class="m-0 text-base font-semibold truncate">${escHtml(tech.name)}</h3></div>
-                  <span class="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 whitespace-nowrap">${conceptsCount} conceptos</span>
+            const viewLabel = escHtml(i18next.t("technologies.viewDetail"));
+            const conceptsLabel = escHtml(i18next.t("technologies.concepts"));
+            return `<article class="border border-gray-200/80 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 flex flex-col gap-3 shadow-sm">
+                <a href="${href}" class="flex items-baseline justify-between gap-3 min-w-0 no-underline rounded-lg -m-1 p-1 hover:bg-gray-50 dark:hover:bg-gray-900/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400">
+                  <div class="flex items-center gap-2 min-w-0">${iconHtml}<h3 class="m-0 text-base font-semibold truncate text-gray-900 dark:text-gray-100">${escHtml(tech.name)}</h3></div>
+                  <span class="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 whitespace-nowrap shrink-0">${conceptsCount} ${conceptsLabel}</span>
+                </a>
+                <div class="flex flex-wrap items-center gap-2">
+                  <a href="${href}" class="btn-primary no-underline flex-1 min-w-28 text-center">${viewLabel}</a>
+                  <button type="button" data-tech-delete data-tech-id="${escHtml(tech.slug)}" data-tech-name="${escHtml(tech.name)}" class="inline-flex items-center justify-center rounded-lg border border-red-200 text-red-700 px-3 py-2 text-xs font-semibold hover:bg-red-50">Eliminar</button>
                 </div>
-                <a href="${href}" class="btn-primary no-underline">Ver</a>
-              </article>
-              <div class="flex items-center gap-2">
-                <button type="button" data-tech-edit data-tech-id="${escHtml(tech.slug)}" data-tech-name="${escHtml(tech.name)}" class="btn-secondary text-xs">Editar</button>
-                <button type="button" data-tech-delete data-tech-id="${escHtml(tech.slug)}" data-tech-name="${escHtml(tech.name)}" class="inline-flex items-center justify-center rounded-lg border border-red-200 text-red-700 px-3 py-2 text-xs font-semibold hover:bg-red-50">Eliminar</button>
-              </div>
-            </div>`;
+              </article>`;
           })
           .join("");
   mount.innerHTML = html;

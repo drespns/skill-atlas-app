@@ -1,8 +1,14 @@
 import { EVIDENCE_QUICK_TEMPLATES } from "../config/evidence-templates";
-import { detectEvidenceUrl, embedIframeSrc, evidenceSiteIconUrl } from "../lib/evidence-url";
+import {
+  detectEvidenceUrl,
+  embedIframeSrc,
+  evidenceSiteIconUrl,
+  IFRAME_EMBED_ALLOW,
+} from "../lib/evidence-url";
 import { getSupabaseBrowserClient } from "./client-supabase";
 import { getSessionUserId } from "./auth-session";
 import { runProjectDetailInits } from "./project-detail/runner";
+import { loadPrefs } from "./prefs";
 
 function esc(s: string | null | undefined) {
   return (s ?? "")
@@ -51,7 +57,8 @@ export async function bootstrapProjectDetailPage() {
 
   // Evita que la UI se quede eterna si alguna consulta queda colgada.
   const timeoutId = window.setTimeout(() => {
-    mount.innerHTML = `<section class="space-y-2"><h1 class="text-2xl font-semibold m-0">Proyecto</h1>
+    const slugT = new URLSearchParams(window.location.search).get("project")?.trim() ?? "";
+    mount.innerHTML = `<section class="space-y-2" data-project-detail-slug="${escAttr(slugT)}"><h1 class="text-2xl font-semibold m-0">Proyecto</h1>
       <p class="text-sm text-red-600 m-0">Tiempo de espera agotado al cargar el detalle.</p>
       <p class="text-xs text-gray-600 m-0">Prueba a recargar y, si persiste, revisa datos (especialmente evidencias) y la consola.</p>
       <a href="/projects" class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Volver a Proyectos</a>
@@ -59,24 +66,25 @@ export async function bootstrapProjectDetailPage() {
     console.error("bootstrapProjectDetailPage: timeout exceeded");
   }, 15000);
 
+  let slug = "";
   try {
     const params = new URLSearchParams(window.location.search);
-    const slug = params.get("project")?.trim() ?? "";
+    slug = params.get("project")?.trim() ?? "";
     if (!slug) {
-      mount.innerHTML = `<section class="space-y-3"><p class="text-sm text-gray-600">Falta el parámetro <code>project</code> en la URL.</p>
+      mount.innerHTML = `<section class="space-y-3" data-project-view="missing-project-param"><p class="text-sm text-gray-600">Falta el parámetro <code>project</code> en la URL.</p>
         <a href="/projects" class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Volver a Proyectos</a></section>`;
       return;
     }
 
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    mount.innerHTML = `<p class="text-red-600 text-sm">No hay cliente Supabase.</p>`;
+    mount.innerHTML = `<section class="space-y-3" data-project-detail-slug="${escAttr(slug)}"><p class="text-red-600 text-sm m-0">No hay cliente Supabase.</p></section>`;
     return;
   }
 
   const userId = await getSessionUserId(supabase);
   if (!userId) {
-    mount.innerHTML = `<section class="space-y-3"><p class="text-amber-700 text-sm">Inicia sesión en Ajustes para ver este proyecto.</p>
+    mount.innerHTML = `<section class="space-y-3" data-project-detail-slug="${escAttr(slug)}"><p class="text-amber-700 text-sm">Inicia sesión en Ajustes para ver este proyecto.</p>
       <a href="/settings" class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Ir a Ajustes</a></section>`;
     return;
   }
@@ -88,7 +96,7 @@ export async function bootstrapProjectDetailPage() {
     .maybeSingle();
 
   if (projRes.error || !projRes.data) {
-    mount.innerHTML = `<section class="space-y-3"><h1 class="text-2xl font-semibold m-0">Proyecto</h1>
+    mount.innerHTML = `<section class="space-y-3" data-project-detail-slug="${escAttr(slug)}"><h1 class="text-2xl font-semibold m-0">Proyecto</h1>
       <p class="text-sm text-gray-600">No se encontró el proyecto.</p>
       <div class="flex flex-wrap gap-2"><a href="/projects" class="inline-flex rounded-lg border px-3 py-2 text-sm no-underline">Volver a Proyectos</a>
       <a href="/technologies" class="inline-flex rounded-lg border px-3 py-2 text-sm no-underline">Tecnologías</a></div></section>`;
@@ -192,6 +200,8 @@ export async function bootstrapProjectDetailPage() {
           .join("")
       : `<option value="">No hay conceptos disponibles</option>`;
 
+  const evidenceLayout = loadPrefs().projectEvidenceLayout === "grid" ? "grid" : "large";
+
   const templateChipsHtml = EVIDENCE_QUICK_TEMPLATES.map(
     (t) =>
       `<button type="button" data-project-evidence-template data-starter-url="${escAttr(t.starterUrl)}" title="Rellenar ejemplo (${escAttr(t.label)}); sustituye las partes en mayúsculas" class="inline-flex rounded-full border border-emerald-200/90 dark:border-emerald-800/80 bg-white dark:bg-gray-950 px-2.5 py-1 text-[11px] font-semibold text-emerald-900 dark:text-emerald-200 hover:bg-emerald-100/50 dark:hover:bg-emerald-950/40">${esc(t.label)}</button>`,
@@ -212,10 +222,10 @@ export async function bootstrapProjectDetailPage() {
         : "";
       const iframe =
         embedKind === "iframe"
-          ? `<iframe class="w-full aspect-video rounded-lg border border-gray-200/80 dark:border-gray-800" src="${esc(embedIframeSrc(embedUrl))}" title="${esc(embedTitle)}" loading="lazy"></iframe>`
+          ? `<iframe class="project-embed-iframe w-full aspect-video rounded-lg border border-gray-200/80 dark:border-gray-800" src="${esc(embedIframeSrc(embedUrl))}" title="${esc(embedTitle)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="${escAttr(IFRAME_EMBED_ALLOW)}" allowfullscreen></iframe>`
           : `<a class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline" href="${esc(embedUrl)}" target="_blank" rel="noreferrer">Abrir enlace</a>`;
-      return `<li class="list-none space-y-2">
-        <div class="flex flex-wrap items-start gap-3">
+      return `<li class="project-embeds-list__item list-none space-y-2 min-w-0">
+        <div class="flex flex-wrap items-start gap-3 min-w-0">
           <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-xs font-bold text-gray-700 dark:text-gray-200">${idx + 1}</span>
           <article class="min-w-0 flex-1 border border-gray-200/80 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 flex flex-col gap-3 shadow-sm">
             <div class="flex flex-wrap items-start gap-2 gap-y-1">
@@ -229,7 +239,7 @@ export async function bootstrapProjectDetailPage() {
             ${iframe}
           </article>
         </div>
-        <div class="flex flex-wrap items-center gap-2 pl-11">
+        <div class="project-embeds-actions flex flex-wrap items-center gap-2 pl-11">
           <button type="button" data-project-embed-edit data-embed-id="${esc(embed.id)}" data-embed-kind="${esc(embedKind)}" data-embed-title="${esc(embedTitle)}" data-embed-url="${esc(embedUrl)}" class="inline-flex rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">Editar</button>
           <button type="button" data-project-embed-remove data-embed-id="${esc(embed.id)}" class="inline-flex rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">Eliminar</button>
           <button type="button" data-project-embed-move data-embed-id="${esc(embed.id)}" data-direction="up" class="inline-flex rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50" ${idx === 0 ? "disabled" : ""}>Subir</button>
@@ -239,14 +249,22 @@ export async function bootstrapProjectDetailPage() {
     })
     .join("");
 
+  const evidenceLayoutToggleHtml = `<div class="inline-flex items-center rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/70 p-0.5 gap-0.5 shadow-sm" data-project-evidence-layout-toggle role="group" aria-label="Vista de evidencias">
+    <button type="button" data-evidence-layout="large" aria-pressed="${evidenceLayout === "large" ? "true" : "false"}" class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-gray-100 dark:hover:bg-gray-900 ${evidenceLayout === "large" ? "bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-inner" : "text-gray-600 dark:text-gray-400"}">Grandes</button>
+    <button type="button" data-evidence-layout="grid" aria-pressed="${evidenceLayout === "grid" ? "true" : "false"}" class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-gray-100 dark:hover:bg-gray-900 ${evidenceLayout === "grid" ? "bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-inner" : "text-gray-600 dark:text-gray-400"}">Cuadrícula</button>
+  </div>`;
+
   const relatedHtml = relatedConcepts
     .map((c) => {
       const tn = techIdToName.get(c.technology_id) ?? "";
       const pc = progressBadgeClass(c.progress);
       const pl = progressLabel(c.progress);
-      return `<div class="flex items-start justify-between gap-4 border border-gray-200 rounded-xl p-3">
-        <div class="min-w-0"><p class="m-0 font-semibold">${esc(c.title)}</p><p class="mt-1 text-xs text-gray-600">${esc(tn)}</p></div>
-        <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${pc}">${pl}</span>
+      return `<div class="flex items-start justify-between gap-3 min-w-0 border border-gray-200 dark:border-gray-800 rounded-xl p-3 bg-white/50 dark:bg-gray-950/50">
+        <div class="min-w-0 flex-1 overflow-hidden pr-1">
+          <p class="m-0 font-semibold text-gray-900 dark:text-gray-100 break-words">${esc(c.title)}</p>
+          <p class="mt-1 text-xs text-gray-600 dark:text-gray-400 truncate" title="${escAttr(tn)}">${esc(tn)}</p>
+        </div>
+        <span class="inline-flex shrink-0 items-center self-start rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ${pc}">${pl}</span>
       </div>`;
     })
     .join("");
@@ -256,12 +274,61 @@ export async function bootstrapProjectDetailPage() {
       ? `<p class="m-0 text-sm text-amber-800 dark:text-amber-200 rounded-lg border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/30 px-3 py-2">Aún no hay evidencias. Pega una URL arriba o usa el formulario completo.</p>`
       : "";
 
-  const techRow =
-    linkedTechs.length > 0
-      ? `<div class="flex flex-wrap gap-2 pt-2">${techPillsHtml}</div>`
-      : `<p class="m-0 pt-2 text-xs text-gray-600 dark:text-gray-400">Aún no has asociado tecnologías.</p>`;
+  const relatedListModal =
+    relatedConcepts.length > 0
+      ? relatedHtml
+      : `<p class="m-0 text-xs text-gray-500 dark:text-gray-400">Ningún concepto vinculado todavía.</p>`;
 
-  mount.innerHTML = `<section class="space-y-6" data-project-id="${esc(project.slug)}" data-project-title="${esc(project.title)}" data-project-description="${esc(project.description ?? "")}" data-project-role="${escAttr(role)}" data-project-outcome="${escAttr(outcome)}">
+  const techStackBlock = `<div class="space-y-3 pt-2 border-t border-dashed border-gray-200/80 dark:border-gray-800/80">
+      <div class="flex flex-wrap gap-2">${linkedTechs.length > 0 ? techPillsHtml : `<p class="m-0 text-xs text-gray-500 dark:text-gray-400">Aún no has asociado tecnologías.</p>`}</div>
+      <div class="flex flex-wrap items-center gap-2 gap-y-2">
+        <button type="button" data-project-tech-picker-open class="inline-flex items-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-950/90 px-2.5 py-1.5 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">+ Añadir tecnología</button>
+        ${
+          allTechRows.length === 0
+            ? `<span class="text-xs text-amber-700 dark:text-amber-200">Crea tecnologías desde la sección Tecnologías o al asociar aquí.</span>`
+            : ""
+        }
+        ${
+          availableTechs.length === 0 && linkedTechs.length > 0 && allTechRows.length > 0
+            ? `<span class="text-xs text-gray-500 dark:text-gray-400">Todas tus tecnologías están ya en este proyecto.</span>`
+            : ""
+        }
+      </div>
+      <form data-project-tech-form class="m-0 p-0 block">
+        <p data-project-tech-feedback class="text-xs text-gray-600 dark:text-gray-400 m-0 min-h-4"></p>
+      </form>
+      <div class="pt-2 mt-1 border-t border-gray-200/60 dark:border-gray-800/60 space-y-1">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Conceptos relacionados</span>
+          <button type="button" data-project-concepts-modal-open class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Gestionar</button>
+        </div>
+        <p class="m-0 text-[11px] leading-snug text-gray-500 dark:text-gray-400">${relatedConcepts.length} vinculados${availableConcepts.length ? ` · ${availableConcepts.length} disponibles para añadir` : ""}</p>
+      </div>
+    </div>`;
+
+  const conceptsDialogHtml = `<dialog data-project-concepts-dialog class="project-concepts-dialog rounded-2xl border border-gray-200/90 dark:border-gray-700/90 bg-white dark:bg-gray-950 p-0 text-gray-900 dark:text-gray-100 shadow-2xl ring-1 ring-black/5 dark:ring-white/10">
+      <div data-project-concepts-dialog-inner class="project-concepts-dialog__inner flex flex-col gap-4 p-5 sm:p-6">
+        <header class="flex items-start justify-between gap-4 min-w-0 border-b border-gray-100 dark:border-gray-800/80 pb-4">
+          <div class="min-w-0 flex-1 space-y-1">
+            <h2 class="m-0 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-50">Conceptos del proyecto</h2>
+            <p class="m-0 text-xs text-gray-500 dark:text-gray-400 leading-snug">Vincula conceptos de las tecnologías ya asociadas al proyecto.</p>
+          </div>
+          <button type="button" data-project-concepts-dialog-close class="shrink-0 flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200/80 dark:border-gray-700 text-base leading-none text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors" aria-label="Cerrar">×</button>
+        </header>
+        <div class="space-y-2 min-w-0" data-project-concepts-modal-list>${relatedListModal}</div>
+        <form data-project-concept-form data-project-id="${esc(project.slug)}" class="m-0 min-w-0 space-y-3 rounded-xl border border-gray-100 dark:border-gray-800/80 bg-gray-50/80 dark:bg-gray-900/40 p-4">
+          <p class="m-0 text-sm font-semibold text-gray-800 dark:text-gray-200">Añadir concepto</p>
+          <p class="m-0 text-xs text-gray-500 dark:text-gray-400 -mt-1">Solo aparecen conceptos de las tecnologías del proyecto.</p>
+          <div class="flex flex-col gap-2 min-w-0 sm:flex-row sm:items-stretch">
+            <select name="conceptId" class="min-w-0 w-full flex-1 max-w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 bg-white dark:bg-gray-950 text-sm text-gray-900 dark:text-gray-100" required>${conceptOptions}</select>
+            <button type="submit" class="inline-flex shrink-0 justify-center rounded-xl bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 sm:w-auto ${availableConcepts.length === 0 ? "opacity-60 cursor-not-allowed" : ""}" ${availableConcepts.length === 0 ? "disabled" : ""}>Asociar</button>
+          </div>
+          <p data-project-concept-feedback class="text-xs text-gray-600 dark:text-gray-400 m-0 min-h-4"></p>
+        </form>
+      </div>
+    </dialog>`;
+
+  mount.innerHTML = `<section class="space-y-6" data-project-id="${esc(project.slug)}" data-project-detail-slug="${escAttr(project.slug)}" data-project-title="${esc(project.title)}" data-project-description="${esc(project.description ?? "")}" data-project-role="${escAttr(role)}" data-project-outcome="${escAttr(outcome)}">
     <header class="space-y-3">
       <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div class="min-w-0 flex-1 space-y-2">
@@ -277,7 +344,7 @@ export async function bootstrapProjectDetailPage() {
               <dd class="m-0 mt-1 text-gray-600 dark:text-gray-400">${outcome ? esc(outcome) : "—"}</dd>
             </div>
           </dl>
-          ${techRow}
+          ${techStackBlock}
         </div>
         <div class="flex flex-col items-stretch gap-2 lg:w-64">
           <a href="/projects" class="inline-flex justify-center rounded-lg border bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold no-underline">Volver a Proyectos</a>
@@ -289,9 +356,14 @@ export async function bootstrapProjectDetailPage() {
     </header>
 
     <section class="space-y-4" aria-labelledby="project-evidence-heading">
-      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
-        <h2 id="project-evidence-heading" class="m-0 text-lg font-semibold">Evidencias</h2>
-        <span class="text-xs text-gray-500 dark:text-gray-400">${embeds.length} en la lista (orden arrastrable con Subir/Bajar)</span>
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div class="min-w-0 space-y-1">
+          <h2 id="project-evidence-heading" class="m-0 text-lg font-semibold">Evidencias</h2>
+          <span class="text-xs text-gray-500 dark:text-gray-400">${embeds.length} en la lista · reordenar con Subir/Bajar</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+          ${evidenceLayoutToggleHtml}
+        </div>
       </div>
       <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-3xl">Lo central del proyecto: enlaces y vistas embebidas. Detectamos el tipo de URL para sugerir iframe o enlace.</p>
 
@@ -311,46 +383,20 @@ export async function bootstrapProjectDetailPage() {
         <button type="button" data-project-embed-add class="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">Añadir evidencia (formulario completo)</button>
       </div>
       ${emptyEvidence}
-      <ol class="m-0 p-0 space-y-6">${embedsHtml || ""}</ol>
+      <ol class="project-embeds-list m-0 p-0 list-none" data-project-embeds-list data-layout="${evidenceLayout}">${embedsHtml || ""}</ol>
     </section>
 
-    <section class="space-y-3">
-      <div class="flex flex-wrap items-end justify-between gap-2">
-        <h2 class="m-0 text-base font-semibold">Tecnologías del proyecto</h2>
-        <button type="button" data-project-tech-picker-open class="inline-flex rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">Añadir tecnología…</button>
-      </div>
-      <form data-project-tech-form class="border border-gray-200 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 space-y-3">
-        ${
-          allTechRows.length === 0
-            ? `<div class="space-y-2">
-                <p class="m-0 text-sm text-amber-700 dark:text-amber-200">No tienes tecnologías todavía. Crea una para poder asociarla al proyecto.</p>
-                <button type="button" data-project-tech-picker-open class="inline-flex rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-xs font-semibold text-white dark:text-gray-900">Crear primera tecnología</button>
-              </div>`
-            : availableTechs.length === 0
-              ? `<p class="m-0 text-sm text-gray-600 dark:text-gray-400">Ya tienes asociadas todas tus tecnologías a este proyecto.</p>`
-              : `<p class="m-0 text-sm text-gray-600 dark:text-gray-400">Usa «Añadir tecnología…» para buscar por nombre y asociar (o crear una nueva).</p>`
-        }
-        <p data-project-tech-feedback class="text-sm text-gray-600 m-0"></p>
-      </form>
-    </section>
-    <section class="space-y-3">
-      <h2 class="m-0 text-base font-semibold">Conceptos relacionados</h2>
-      <form data-project-concept-form data-project-id="${esc(project.slug)}" class="border border-gray-200 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 space-y-3">
-        <p class="m-0 text-sm font-semibold">Añadir concepto (filtrado por tecnologías del proyecto)</p>
-        <div class="flex flex-col md:flex-row gap-2">
-          <select name="conceptId" class="flex-1 border rounded-lg px-3 py-2 bg-white dark:bg-gray-950" required>${conceptOptions}</select>
-          <button type="submit" class="inline-flex rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 ${availableConcepts.length === 0 ? "opacity-60" : ""}" ${availableConcepts.length === 0 ? "disabled" : ""}>Asociar</button>
-        </div>
-        <p data-project-concept-feedback class="text-sm text-gray-600 m-0"></p>
-      </form>
-      <div class="space-y-2">${relatedHtml}</div>
-    </section>
+    ${conceptsDialogHtml}
   </section>`;
 
     await runProjectDetailInits(supabase, project.slug);
   } catch (err) {
     console.error("bootstrapProjectDetailPage error", err);
-    mount.innerHTML = `<section class="space-y-3"><h1 class="text-2xl font-semibold m-0">Proyecto</h1>
+    const slugErr =
+      slug ||
+      new URLSearchParams(window.location.search).get("project")?.trim() ||
+      "";
+    mount.innerHTML = `<section class="space-y-3" data-project-detail-slug="${escAttr(slugErr)}"><h1 class="text-2xl font-semibold m-0">Proyecto</h1>
       <p class="text-sm text-red-600">Error cargando el detalle del proyecto.</p>
       <p class="text-xs text-gray-600">Si esto afecta a una evidencia, revisa los datos en Supabase (url/title) y la consola del navegador.</p>
       <a href="/projects" class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Volver a Proyectos</a>
@@ -360,6 +406,56 @@ export async function bootstrapProjectDetailPage() {
   }
 }
 
-// Entry point del script CSR: la página `src/pages/projects/view.astro` carga este módulo
-// como `script type="module" src="...ts?url"`, así que necesitamos ejecutar la bootstrap aquí.
-bootstrapProjectDetailPage();
+// Registro para mutaciones (embeds, etc.) sin recargar toda la página.
+window.skillatlas = window.skillatlas ?? {};
+window.skillatlas.bootstrapProjectDetailPage = bootstrapProjectDetailPage;
+
+// El módulo solo se evalúa una vez; con View Transitions hay que volver a bootstrap en cada navegación.
+let projectViewBootLock = false;
+
+function renderedProjectSlugInMount(mount: HTMLElement): string {
+  const byDetail = mount.querySelector<HTMLElement>("[data-project-detail-slug]");
+  const fromDetail = byDetail?.getAttribute("data-project-detail-slug")?.trim();
+  if (fromDetail) return fromDetail;
+
+  const byId = mount.querySelector<HTMLElement>("section[data-project-id]");
+  return byId?.getAttribute("data-project-id")?.trim() ?? "";
+}
+
+function queueProjectViewBootstrapOnce() {
+  if (projectViewBootLock) return;
+  projectViewBootLock = true;
+  void (async () => {
+    try {
+      await bootstrapProjectDetailPage();
+    } finally {
+      projectViewBootLock = false;
+    }
+  })();
+}
+
+function scheduleProjectViewBootstrap() {
+  const mount = document.querySelector<HTMLElement>("[data-project-csr-mount]");
+  if (!mount) return;
+
+  const slug = new URLSearchParams(window.location.search).get("project")?.trim() ?? "";
+  if (!slug) {
+    if (mount.querySelector("[data-project-view=\"missing-project-param\"]")) return;
+    queueProjectViewBootstrapOnce();
+    return;
+  }
+
+  const renderedSlug = renderedProjectSlugInMount(mount);
+  if (renderedSlug === slug) return;
+
+  queueProjectViewBootstrapOnce();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", scheduleProjectViewBootstrap);
+} else {
+  scheduleProjectViewBootstrap();
+}
+
+document.addEventListener("astro:page-load", scheduleProjectViewBootstrap);
+document.addEventListener("astro:after-swap", scheduleProjectViewBootstrap);

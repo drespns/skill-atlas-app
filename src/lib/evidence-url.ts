@@ -84,7 +84,7 @@ export function detectEvidenceUrl(raw: string): EvidenceUrlDetection {
       sourceKey: "youtube",
       sourceLabel: "YouTube",
       suggestedKind: "iframe",
-      hint: "Para vídeos, a veces conviene el enlace directo si el iframe da problemas.",
+      hint: "Las URLs de reproducción (watch?v=, youtu.be/…) se convierten a /embed/ automáticamente para el iframe.",
     };
   }
 
@@ -122,9 +122,50 @@ export function normalizeTableauEmbedUrl(url: string): string {
   return next;
 }
 
+function isYouTubeHostname(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  return h === "youtu.be" || h === "youtube.com" || h.endsWith(".youtube.com");
+}
+
+/** Extrae el id de vídeo de enlaces watch, youtu.be, embed, shorts o live. */
+export function extractYouTubeVideoId(url: string): string | null {
+  try {
+    const u = new URL(url.trim());
+    const host = u.hostname.replace(/^www\./, "").toLowerCase();
+    if (host === "youtu.be") {
+      const id = u.pathname.split("/").filter(Boolean)[0];
+      return id ? decodeURIComponent(id.split("?")[0]) : null;
+    }
+    if (isYouTubeHostname(host)) {
+      const v = u.searchParams.get("v");
+      if (v) return v;
+      const parts = u.pathname.split("/").filter(Boolean);
+      if (parts[0] === "embed" && parts[1]) return parts[1].split("?")[0];
+      if (parts[0] === "shorts" && parts[1]) return parts[1].split("?")[0];
+      if (parts[0] === "live" && parts[1]) return parts[1].split("?")[0];
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Convierte enlaces de YouTube a `https://www.youtube.com/embed/ID` (obligatorio para iframes). */
+export function normalizeYouTubeEmbedUrl(url: string): string {
+  const id = extractYouTubeVideoId(url);
+  if (!id) return url;
+  return `https://www.youtube.com/embed/${encodeURIComponent(id)}`;
+}
+
+/** Atributo `allow` recomendado para iframes (YouTube y otros embeds). */
+export const IFRAME_EMBED_ALLOW =
+  "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen";
+
 export function embedIframeSrc(url: string): string {
   const h = hostOf(url);
-  if (h?.includes("tableau")) return normalizeTableauEmbedUrl(url);
+  if (!h) return url;
+  if (h.includes("tableau")) return normalizeTableauEmbedUrl(url);
+  if (h === "youtu.be" || isYouTubeHostname(h)) return normalizeYouTubeEmbedUrl(url);
   return url;
 }
 

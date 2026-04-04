@@ -1,6 +1,6 @@
 ---
 import type { ProjectEmbed } from "../data";
-import { embedIframeSrc, evidenceSiteIconUrl } from "../lib/evidence-url";
+import { embedIframeSrc, evidenceSiteIconUrl, IFRAME_EMBED_ALLOW } from "../lib/evidence-url";
 
 const { embed } = Astro.props as { embed: ProjectEmbed };
 const iconSrc = evidenceSiteIconUrl(embed.url);
@@ -30,7 +30,7 @@ const iconSrc = evidenceSiteIconUrl(embed.url);
       loading="lazy"
       referrerpolicy="strict-origin-when-cross-origin"
       allowfullscreen
-      allow="fullscreen; clipboard-read; clipboard-write"
+      allow={IFRAME_EMBED_ALLOW}
     />
   ) : (
     <a

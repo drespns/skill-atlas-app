@@ -1,5 +1,10 @@
 import { getTechnologyIconSrc } from "../config/icons";
-import { detectEvidenceUrl, embedIframeSrc, evidenceSiteIconUrl } from "../lib/evidence-url";
+import {
+  detectEvidenceUrl,
+  embedIframeSrc,
+  evidenceSiteIconUrl,
+  IFRAME_EMBED_ALLOW,
+} from "../lib/evidence-url";
 import { getSupabaseBrowserClient } from "./client-supabase";
 import { getSessionUserId } from "./auth-session";
 
@@ -72,7 +77,7 @@ function renderCard(options: {
 
     const body =
       primaryEmbed.kind === "iframe"
-        ? `<iframe class="w-full aspect-video rounded-lg border border-gray-200/80 dark:border-gray-800" src="${esc(embedIframeSrc(primaryEmbed.url))}" title="${esc(primaryEmbed.title)}" loading="lazy"></iframe>`
+        ? `<iframe class="w-full aspect-video rounded-lg border border-gray-200/80 dark:border-gray-800" src="${esc(embedIframeSrc(primaryEmbed.url))}" title="${esc(primaryEmbed.title)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="${esc(IFRAME_EMBED_ALLOW)}" allowfullscreen></iframe>`
         : `<a class="inline-flex items-center justify-center rounded-lg border border-gray-200/80 dark:border-gray-800 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline" href="${esc(primaryEmbed.url)}" target="_blank" rel="noreferrer">Abrir evidencia</a>`;
 
     return `<div class="space-y-2">${chip}<h3 class="m-0 text-sm font-semibold">${esc(primaryEmbed.title)}</h3>${body}</div>`;

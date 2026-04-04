@@ -3,6 +3,7 @@ import { getSessionUserId } from "../auth-session";
 import { showToast } from "../ui-feedback";
 import { initConceptActions } from "./concept-actions";
 import { initConceptImport } from "./concept-import";
+import { refreshTechnologyDetailPage } from "./refresh-ui";
 
 export async function initConceptForm() {
   const form = document.querySelector<HTMLFormElement>("[data-concept-form]");
@@ -99,7 +100,7 @@ export async function initConceptForm() {
     feedback.textContent = "Concepto creado correctamente.";
     feedback.className = "text-sm text-green-600";
     showToast("Concepto creado correctamente.", "success");
-    window.location.reload();
+    await refreshTechnologyDetailPage();
   });
 }
 

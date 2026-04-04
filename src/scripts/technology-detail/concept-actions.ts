@@ -1,6 +1,7 @@
 import { getSupabaseBrowserClient } from "../client-supabase";
 import { getSessionUserId } from "../auth-session";
 import { conceptEditModal, confirmModal, showToast } from "../ui-feedback";
+import { refreshTechnologyDetailPage } from "./refresh-ui";
 
 export async function initConceptActions() {
   const editButtons = document.querySelectorAll<HTMLButtonElement>("[data-concept-edit]");
@@ -63,7 +64,7 @@ export async function initConceptActions() {
       }
 
       showToast("Concepto actualizado correctamente.", "success");
-      window.location.reload();
+      await refreshTechnologyDetailPage();
     });
   }
 
@@ -99,7 +100,7 @@ export async function initConceptActions() {
       }
 
       showToast("Concepto eliminado.", "success");
-      window.location.reload();
+      await refreshTechnologyDetailPage();
     });
   }
 }

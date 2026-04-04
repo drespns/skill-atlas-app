@@ -1,4 +1,4 @@
-import { initProjectConceptForm } from "./concepts";
+import { initProjectConceptForm, initProjectConceptsDialog } from "./concepts";
 import {
   initProjectEvidenceQuickAdd,
   initProjectEvidenceTemplates,
@@ -6,6 +6,7 @@ import {
   initProjectEmbedEdit,
   initProjectEmbedMove,
   initProjectEmbedRemove,
+  initProjectEvidenceLayoutToggle,
 } from "./embeds";
 import { initProjectDelete, initProjectEdit } from "./project";
 import { initProjectTechnologyForm, initProjectTechnologyRemove } from "./technologies";
@@ -14,8 +15,10 @@ export async function runProjectDetailInits(supabase: any, projectSlug: string) 
   await initProjectEdit(supabase, projectSlug);
   await initProjectTechnologyForm(supabase, projectSlug);
   await initProjectTechnologyRemove(supabase, projectSlug);
+  initProjectConceptsDialog();
   await initProjectConceptForm(supabase, projectSlug);
   initProjectEvidenceTemplates();
+  initProjectEvidenceLayoutToggle();
   await initProjectEvidenceQuickAdd(supabase, projectSlug);
   await initProjectEmbedAdd(supabase, projectSlug);
   await initProjectEmbedEdit(supabase, projectSlug);
@@ -33,7 +36,7 @@ export function disableProjectDetailUi(message: string) {
   });
   document
     .querySelectorAll<HTMLButtonElement>(
-      "[data-project-edit-open],[data-project-delete],[data-project-tech-picker-open],[data-project-tech-remove],[data-project-embed-add],[data-project-evidence-quick-open],[data-project-evidence-template],[data-project-embed-edit],[data-project-embed-remove],[data-project-embed-move]",
+      "[data-project-edit-open],[data-project-delete],[data-project-tech-picker-open],[data-project-tech-remove],[data-project-concepts-modal-open],[data-project-concepts-dialog-close],[data-project-embed-add],[data-project-evidence-quick-open],[data-project-evidence-template],[data-project-embed-edit],[data-project-embed-remove],[data-project-embed-move],[data-evidence-layout]",
     )
     .forEach((btn) => (btn.disabled = true));
   document

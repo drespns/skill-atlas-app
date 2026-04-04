@@ -368,7 +368,8 @@
   "technologies": {
     "title": "Tecnologías",
     "concepts": "conceptos",
-    "newPlaceholder": "Ej. SQL, Python, DAX..."
+    "newPlaceholder": "Ej. SQL, Python, DAX...",
+    "viewDetail": "Ver"
   },
   "projects": {
     "title": "Proyectos",
@@ -377,6 +378,7 @@
     "projectTitlePlaceholder": "Título del proyecto",
     "projectDescPlaceholder": "Descripción breve",
     "saveProject": "Guardar proyecto",
+    "saveProjectAndOpen": "Guardar e ir a detalles",
     "emptyTitle": "Aún no tienes proyectos.",
     "emptyBody": "En el MVP puedes empezar desde aquí."
   },

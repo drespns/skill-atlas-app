@@ -4,6 +4,8 @@ export type FontPreset = "system" | "inter" | "mono" | "serif";
 export type Accent = "indigo" | "emerald" | "rose" | "amber" | "sky" | "violet";
 export type Motion = "normal" | "reduced";
 export type DefaultView = "cards" | "list";
+/** Vista de la lista de evidencias en detalle de proyecto (CSR). */
+export type ProjectEvidenceLayout = "large" | "grid";
 export type Lang = "es" | "en";
 
 export const SETTINGS_SECTION_IDS = ["prefs", "shortcuts", "portfolio"] as const;
@@ -71,6 +73,8 @@ export type AppPrefsV1 = {
   motion: Motion;
   technologiesView: DefaultView;
   projectsView: DefaultView;
+  /** Evidencias en /projects/view: fila completa vs cuadrícula compacta. */
+  projectEvidenceLayout: ProjectEvidenceLayout;
   showHeaderIcons: boolean;
   showLangSelector: boolean;
   lang: Lang;
@@ -106,6 +110,7 @@ const DEFAULT_PREFS: AppPrefsV1 = {
   motion: "normal",
   technologiesView: "cards",
   projectsView: "cards",
+  projectEvidenceLayout: "large",
   showHeaderIcons: true,
   showLangSelector: true,
   lang: "es",
@@ -307,6 +312,8 @@ export function loadPrefs(): AppPrefsV1 {
       const dismissed = typeof raw.dismissed === "boolean" ? Boolean(raw.dismissed) : false;
       return { done, step, dismissed, completedIds: Array.from(new Set(completedIds)).slice(0, 30) };
     })(),
+    projectEvidenceLayout:
+      (base as Partial<AppPrefsV1>).projectEvidenceLayout === "grid" ? "grid" : "large",
   };
 
   return migrateLegacyPrefs(merged);
@@ -352,6 +359,7 @@ export function applyPrefs(prefs: AppPrefsV1) {
   root.dataset.motion = prefs.motion;
   root.dataset.technologiesView = prefs.technologiesView;
   root.dataset.projectsView = prefs.projectsView;
+  root.dataset.projectEvidenceLayout = prefs.projectEvidenceLayout;
   root.dataset.showHeaderIcons = prefs.showHeaderIcons ? "true" : "false";
   root.dataset.showLangSelector = prefs.showLangSelector ? "true" : "false";
   root.dataset.langPref = prefs.lang;

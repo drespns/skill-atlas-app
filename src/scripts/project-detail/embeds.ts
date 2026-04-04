@@ -1,6 +1,8 @@
 import { detectEvidenceUrl } from "../../lib/evidence-url";
 import { embedEditModal, showToast } from "../ui-feedback";
+import { loadPrefs, updatePrefs, type ProjectEvidenceLayout } from "../prefs";
 import { getProjectDbId } from "./helpers";
+import { refreshProjectDetailPage } from "./refresh-ui";
 
 async function insertProjectEmbed(
   supabase: any,
@@ -116,7 +118,7 @@ export async function initProjectEvidenceQuickAdd(supabase: any, projectSlug: st
     if (!result) return;
 
     const ok = await insertProjectEmbed(supabase, projectSlug, result, feedback);
-    if (ok) window.location.reload();
+    if (ok) await refreshProjectDetailPage();
   });
 }
 
@@ -142,7 +144,7 @@ export async function initProjectEmbedAdd(supabase: any, projectSlug: string) {
 
     const ok = await insertProjectEmbed(supabase, projectSlug, result, feedback);
     button.disabled = false;
-    if (ok) window.location.reload();
+    if (ok) await refreshProjectDetailPage();
   });
 }
 
@@ -248,7 +250,7 @@ export async function initProjectEmbedRemove(supabase: any) {
         feedback.className = "text-sm text-green-600";
       }
       showToast("Evidencia eliminada.", "success");
-      window.location.reload();
+      await refreshProjectDetailPage();
     });
   }
 }
@@ -312,26 +314,47 @@ export async function initProjectEmbedMove(supabase: any, projectSlug: string) {
       const current = rows[index];
       const target = rows[targetIndex];
 
-      const firstUpdate = await supabase
+      // Índice único (project_id, sort_order): un swap en dos updates deja un duplicado momentáneo.
+      // 1) Mover "current" a un sort_order libre (max+1). 2) "target" → sort de current. 3) "current" → sort de target.
+      const maxOrder = rows.reduce((m, r) => Math.max(m, r.sort_order), -1);
+      const tempOrder = maxOrder + 1;
+
+      const step1 = await supabase
         .from("project_embeds")
-        .update({ sort_order: target.sort_order })
-        .eq("id", current.id);
-      if (firstUpdate.error) {
+        .update({ sort_order: tempOrder })
+        .eq("id", current.id)
+        .eq("project_id", projectDbId);
+      if (step1.error) {
         if (feedback) {
-          feedback.textContent = `Error al mover: ${firstUpdate.error.message}`;
+          feedback.textContent = `Error al mover: ${step1.error.message}`;
           feedback.className = "text-sm text-red-600";
         }
         button.disabled = false;
         return;
       }
 
-      const secondUpdate = await supabase
+      const step2 = await supabase
         .from("project_embeds")
         .update({ sort_order: current.sort_order })
-        .eq("id", target.id);
-      if (secondUpdate.error) {
+        .eq("id", target.id)
+        .eq("project_id", projectDbId);
+      if (step2.error) {
         if (feedback) {
-          feedback.textContent = `Error al mover: ${secondUpdate.error.message}`;
+          feedback.textContent = `Error al mover: ${step2.error.message}`;
+          feedback.className = "text-sm text-red-600";
+        }
+        button.disabled = false;
+        return;
+      }
+
+      const step3 = await supabase
+        .from("project_embeds")
+        .update({ sort_order: target.sort_order })
+        .eq("id", current.id)
+        .eq("project_id", projectDbId);
+      if (step3.error) {
+        if (feedback) {
+          feedback.textContent = `Error al mover: ${step3.error.message}`;
           feedback.className = "text-sm text-red-600";
         }
         button.disabled = false;
@@ -343,7 +366,42 @@ export async function initProjectEmbedMove(supabase: any, projectSlug: string) {
         feedback.className = "text-sm text-green-600";
       }
       showToast("Orden actualizado.", "success");
-      window.location.reload();
+      await refreshProjectDetailPage();
     });
   }
+}
+
+function isProjectEvidenceLayout(v: string | null): v is ProjectEvidenceLayout {
+  return v === "large" || v === "grid";
+}
+
+export function initProjectEvidenceLayoutToggle() {
+  const group = document.querySelector<HTMLElement>("[data-project-evidence-layout-toggle]");
+  const list = document.querySelector<HTMLElement>("[data-project-embeds-list]");
+  if (!group || !list || group.dataset.skillatlasBound === "1") return;
+  group.dataset.skillatlasBound = "1";
+
+  const applyLayout = (layout: ProjectEvidenceLayout) => {
+    list.dataset.layout = layout;
+    list.setAttribute("data-layout", layout);
+    group.querySelectorAll<HTMLButtonElement>("[data-evidence-layout]").forEach((btn) => {
+      const v = btn.getAttribute("data-evidence-layout");
+      const pressed = v === layout;
+      btn.setAttribute("aria-pressed", String(pressed));
+      btn.classList.toggle("bg-gray-100", pressed);
+      btn.classList.toggle("dark:bg-gray-900", pressed);
+      btn.classList.toggle("shadow-inner", pressed);
+    });
+  };
+
+  applyLayout(loadPrefs().projectEvidenceLayout);
+
+  group.addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-evidence-layout]");
+    if (!btn) return;
+    const v = btn.getAttribute("data-evidence-layout");
+    if (!v || !isProjectEvidenceLayout(v)) return;
+    updatePrefs({ projectEvidenceLayout: v });
+    applyLayout(v);
+  });
 }
