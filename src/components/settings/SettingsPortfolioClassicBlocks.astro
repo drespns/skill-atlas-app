@@ -5,7 +5,7 @@
 ---
 
 <section
-  id="classic-portfolio-links"
+  id="portfolio-links"
   data-settings-section="portfolio_links"
   data-settings-panel
   hidden
@@ -32,6 +32,9 @@
         Hacer visible mi portfolio públicamente
       </span>
     </label>
+    <p class="m-0 text-xs text-gray-500 dark:text-gray-400 leading-relaxed" data-i18n="settings.portfolio.applyPublicLinksHint">
+      La casilla y el identificador no se guardan solos: pulsa Aplicar para publicar o dejar de publicar.
+    </p>
     <div class="space-y-2" data-profile-slug-fields>
       <span class="text-sm font-semibold" data-i18n="settings.portfolio.publicSlugLabel">Identificador en la URL</span>
       <div class="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
@@ -60,6 +63,13 @@
             <rect x="9" y="9" width="13" height="13" rx="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
           </svg>
+        </button>
+        <button
+          type="button"
+          data-profile-apply-public-links
+          class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400 transition-colors"
+        >
+          <span data-i18n="settings.portfolio.applyPublicLinks">Aplicar visibilidad y slug</span>
         </button>
       </div>
     </div>
@@ -109,7 +119,7 @@
 </section>
 
 <section
-  id="classic-portfolio-display"
+  id="portfolio-display"
   data-settings-section="portfolio_display"
   data-settings-panel
   hidden
@@ -181,7 +191,7 @@
 </section>
 
 <section
-  id="classic-portfolio-presentation"
+  id="portfolio-presentation"
   data-settings-section="portfolio_presentation"
   data-settings-panel
   hidden
@@ -279,7 +289,7 @@
 </section>
 
 <section
-  id="classic-cv-public"
+  id="cv-public"
   data-settings-section="cv_public"
   data-settings-panel
   hidden
@@ -336,7 +346,7 @@
 </section>
 
 <section
-  id="classic-qa"
+  id="qa"
   data-settings-section="qa"
   data-settings-panel
   hidden

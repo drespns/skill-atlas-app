@@ -150,14 +150,12 @@ function initSettingsPrefs() {
     el.addEventListener("change", () => {
       const v = el.value === "yes";
       updatePrefs({ showHeaderIcons: v });
-      window.location.reload();
     });
   });
   showLangSelectorEls.forEach((el) => {
     el.addEventListener("change", () => {
       const v = el.value === "yes";
       updatePrefs({ showLangSelector: v });
-      window.location.reload();
     });
   });
 
@@ -194,12 +192,12 @@ function initSettingsPrefs() {
         showLangSelector: false,
         lang: "es",
         settingsSidebarSide: "left" as SettingsSidebarSide,
-        settingsActiveSection: "classic-prefs",
+        settingsActiveSection: "prefs",
         qaTesterMode: false,
       });
       render();
       await window.skillatlas?.setUiLang?.("es");
-      window.dispatchEvent(new CustomEvent("skillatlas:settings-panel", { detail: { id: "classic-prefs" } }));
+      window.dispatchEvent(new CustomEvent("skillatlas:settings-panel", { detail: { id: "prefs" } }));
     });
   });
 }

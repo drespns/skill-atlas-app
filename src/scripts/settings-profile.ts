@@ -59,6 +59,7 @@ async function initSettingsProfile() {
   const slugInputs = document.querySelectorAll<HTMLInputElement>("[data-profile-public-slug]");
   const urlPreviews = document.querySelectorAll<HTMLElement>("[data-profile-public-url-preview]");
   const copyBtns = document.querySelectorAll<HTMLButtonElement>("[data-profile-copy-public-url]");
+  const applyPublicLinksBtns = document.querySelectorAll<HTMLButtonElement>("[data-profile-apply-public-links]");
   const tokenWraps = document.querySelectorAll<HTMLElement>("[data-portfolio-token-share]");
   const tokenUrlInputs = document.querySelectorAll<HTMLInputElement>("[data-portfolio-token-url]");
   const tokenCopyBtns = document.querySelectorAll<HTMLButtonElement>("[data-portfolio-token-copy]");
@@ -194,6 +195,9 @@ async function initSettingsProfile() {
     featuredTas.forEach((el) => {
       el.disabled = true;
     });
+    applyPublicLinksBtns.forEach((el) => {
+      el.disabled = true;
+    });
   }
 
   const setAvatarPreview = (url: string | null) => {
@@ -209,6 +213,47 @@ async function initSettingsProfile() {
         avatarFallback?.classList.remove("hidden");
       }
     });
+  };
+
+  /** Storage path `userId/file.ext` needs a signed URL for <img src>. */
+  const resolveAvatarSrcForPreview = async (raw: string | null): Promise<string | null> => {
+    if (!raw) return null;
+    if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+    if (!supabase || !raw.includes("/")) return null;
+    try {
+      const { data } = await supabase.storage.from("portfolio_avatars").createSignedUrl(raw, 60 * 60);
+      return data?.signedUrl ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  const syncAvatarPreviewFromState = async () => {
+    if (!avatarUrl) {
+      setAvatarPreview(null);
+      return;
+    }
+    const src = await resolveAvatarSrcForPreview(avatarUrl);
+    if (src) {
+      setAvatarPreview(src);
+      return;
+    }
+    if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://")) {
+      setAvatarPreview(avatarUrl);
+      return;
+    }
+    const { data: sessionData } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
+    const meta = (sessionData?.session?.user?.user_metadata ?? {}) as Record<string, unknown>;
+    const fb =
+      (typeof meta.avatar_url === "string" && meta.avatar_url) ||
+      (typeof meta.picture === "string" && meta.picture) ||
+      null;
+    setAvatarPreview(fb);
+  };
+
+  const afterProfilePersisted = async () => {
+    await syncAvatarPreviewFromState();
+    window.dispatchEvent(new Event("skillatlas:portfolio-profile-updated"));
   };
 
   avatarFiles.forEach((avatarFile) => {
@@ -371,7 +416,7 @@ async function initSettingsProfile() {
           (typeof meta.picture === "string" && meta.picture) ||
           null;
       }
-      setAvatarPreview(avatarUrl);
+      await syncAvatarPreviewFromState();
 
       layoutSels.forEach((layoutSel) => {
         if (!layoutSel.disabled) {
@@ -461,7 +506,7 @@ async function initSettingsProfile() {
   };
 
   if (supabase && userId && (cvShareEnabled !== null || Boolean(cvShareToken))) {
-    cvShareWraps.forEach((cvShareWrap) => {
+    cvShareWraps.forEach((cvShareWrap, i) => {
       const cvShareEnabledCb = cvShareEnabledCbs[i];
       const cvShareUrlInput = cvShareUrlInputs[i];
       const cvShareCopyBtn = cvShareCopyBtns[i];
@@ -642,6 +687,66 @@ async function initSettingsProfile() {
     });
   });
 
+  applyPublicLinksBtns.forEach((btn) => {
+    if (btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", async () => {
+      if (!supabase || !userId) {
+        showToast(tt("settings.portfolio.applyNeedsSession", "Inicia sesión para aplicar estos cambios."), "error");
+        return;
+      }
+      const shareOn = shareCbs[0]?.checked ?? false;
+      const slugNorm = normalizePublicSlug(slugPrimary());
+      const slugToSave = isValidPublicSlug(slugNorm) ? slugNorm : null;
+      if (shareOn && !slugToSave) {
+        showToast(
+          tt(
+            "settings.portfolio.slugInvalid",
+            "Para publicar necesitas un identificador válido: 2–32 caracteres, minúsculas, números o guiones (sin reservadas).",
+          ),
+          "error",
+        );
+        return;
+      }
+      const payload: Record<string, unknown> = {
+        user_id: userId,
+        share_enabled: shareOn,
+        public_slug: slugToSave,
+      };
+      if (portfolioShareToken) payload.share_token = portfolioShareToken;
+      if (cvShareToken) payload.cv_share_token = cvShareToken;
+      if (cvShareEnabled !== null) payload.cv_share_enabled = cvShareEnabled;
+
+      let res = await supabase.from("portfolio_profiles").upsert(payload, { onConflict: "user_id" });
+      if (res.error) {
+        const msg = res.error.message ?? "";
+        const code = (res.error as { code?: string }).code;
+        if (code === "23505") {
+          showToast(tt("settings.portfolio.slugTaken", "Ese identificador ya está en uso. Prueba otro."), "error");
+          return;
+        }
+        if (msg.includes("public_slug")) {
+          const { public_slug: _ps, ...rest } = payload;
+          res = await supabase.from("portfolio_profiles").upsert(rest, { onConflict: "user_id" });
+        }
+      }
+      if (res.error) {
+        showToast(
+          res.error.message ?? tt("settings.portfolio.publicLinksSaveError", "No se pudo guardar la visibilidad ni el slug."),
+          "error",
+        );
+        return;
+      }
+      applyShareToForm(shareOn, slugToSave ?? "");
+      if (shareOn && portfolioShareToken) {
+        tokenWraps.forEach((w) => w.classList.remove("hidden"));
+        updatePortfolioTokenUrl();
+      }
+      showToast(tt("settings.portfolio.publicLinksSaved", "Visibilidad y enlace públicos guardados."), "success");
+      window.dispatchEvent(new Event("skillatlas:portfolio-profile-updated"));
+    });
+  });
+
   saveBtns.forEach((saveBtn) => {
     if (saveBtn.dataset.bound === "1") return;
     saveBtn.dataset.bound = "1";
@@ -761,6 +866,9 @@ async function initSettingsProfile() {
           public_header_style: publicHeaderStyleSave,
           featured_project_slugs: featuredSaved,
         };
+        if (portfolioShareToken) row.share_token = portfolioShareToken;
+        if (cvShareToken) row.cv_share_token = cvShareToken;
+        if (cvShareEnabled !== null) row.cv_share_enabled = cvShareEnabled;
 
         const tryUpsert = async (r: Record<string, unknown>) =>
           supabase.from("portfolio_profiles").upsert(r, { onConflict: "user_id" });
@@ -793,6 +901,7 @@ async function initSettingsProfile() {
               avatarUrl = nextAvatarUrl;
               pendingAvatarFile = null;
               updatePublicUrlPreview();
+              await afterProfilePersisted();
               return;
             }
           }
@@ -823,6 +932,7 @@ async function initSettingsProfile() {
               avatarUrl = nextAvatarUrl;
               pendingAvatarFile = null;
               updatePublicUrlPreview();
+              await afterProfilePersisted();
               return;
             }
           }
@@ -856,23 +966,33 @@ async function initSettingsProfile() {
               avatarUrl = nextAvatarUrl;
               pendingAvatarFile = null;
               updatePublicUrlPreview();
+              await afterProfilePersisted();
               return;
             }
           }
           const noColumn = msg.includes("help_stack") || (msg.includes("column") && !msg.includes("public_slug"));
           if (noColumn) {
-            const res2 = await supabase
-              .from("portfolio_profiles")
-              .upsert(
-                { user_id: userId, display_name: publicName, bio },
-                { onConflict: "user_id" },
-              );
+            const minimal: Record<string, unknown> = {
+              user_id: userId,
+              display_name: publicName,
+              bio,
+              avatar_url: nextAvatarUrl,
+              share_enabled: shareOn,
+              public_slug: slugToSave,
+            };
+            if (portfolioShareToken) minimal.share_token = portfolioShareToken;
+            if (cvShareToken) minimal.cv_share_token = cvShareToken;
+            if (cvShareEnabled !== null) minimal.cv_share_enabled = cvShareEnabled;
+            const res2 = await supabase.from("portfolio_profiles").upsert(minimal, { onConflict: "user_id" });
             if (res2.error) {
               showToast(res2.error.message ?? "No se pudo guardar.", "error");
               return;
             }
             showToast("Perfil guardado.", "success");
+            avatarUrl = nextAvatarUrl;
+            pendingAvatarFile = null;
             updatePublicUrlPreview();
+            await afterProfilePersisted();
             return;
           }
           showToast(res.error.message ?? "No se pudo guardar.", "error");
@@ -885,6 +1005,7 @@ async function initSettingsProfile() {
         avatarUrl = nextAvatarUrl;
         pendingAvatarFile = null;
         updatePublicUrlPreview();
+        await afterProfilePersisted();
       } else {
         showToast("Perfil guardado.", "success");
       }

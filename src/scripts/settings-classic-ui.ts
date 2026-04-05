@@ -1,6 +1,7 @@
 import i18next from "i18next";
 import {
   loadPrefs,
+  migrateSettingsPanelHashFragment,
   updatePrefs,
   type SettingsPanelId,
   type SettingsSidebarSide,
@@ -12,7 +13,7 @@ function sidebarLabel(side: SettingsSidebarSide): string {
   return typeof v === "string" && v.length > 0 && v !== key ? v : side === "right" ? "Barra: derecha" : "Barra: izquierda";
 }
 
-const DEFAULT_PANEL_ID = "classic-prefs";
+const DEFAULT_PANEL_ID = "prefs";
 
 function prefersReducedMotion(): boolean {
   if (document.documentElement.dataset.motion === "reduced") return true;
@@ -31,7 +32,8 @@ function panelIds(root: HTMLElement): string[] {
 
 function resolvePanelId(panelsRoot: HTMLElement, requested: string): SettingsPanelId {
   const ids = panelIds(panelsRoot);
-  return (ids.includes(requested) ? requested : DEFAULT_PANEL_ID) as SettingsPanelId;
+  const migrated = migrateSettingsPanelHashFragment(requested) ?? requested;
+  return (ids.includes(migrated) ? migrated : DEFAULT_PANEL_ID) as SettingsPanelId;
 }
 
 /** Sin animación: actualiza DOM, hash opcional, prefs opcional. */
@@ -148,7 +150,13 @@ function transitionToPanel(
 
 function readHashPanel(): string | null {
   const h = window.location.hash.replace(/^#/, "").trim();
-  return h || null;
+  if (!h) return null;
+  const next = migrateSettingsPanelHashFragment(h);
+  if (!next) return null;
+  if (next !== h) {
+    history.replaceState(null, "", `#${next}`);
+  }
+  return next;
 }
 
 function applySidebarLayout() {
@@ -249,8 +257,9 @@ function initSettingsShell() {
     const ce = e as CustomEvent<{ id?: string }>;
     const id = ce.detail?.id;
     if (typeof id !== "string") return;
+    const migrated = migrateSettingsPanelHashFragment(id) ?? id;
     clearPanelsRootMotionStyles(panelsRoot);
-    showPanelImmediate(panelsRoot, resolvePanelId(panelsRoot, id), nav, {
+    showPanelImmediate(panelsRoot, resolvePanelId(panelsRoot, migrated), nav, {
       syncHash: true,
       persistPrefs: false,
     });

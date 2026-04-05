@@ -15,6 +15,8 @@ declare global {
       bootstrapTechnologyDetailPage?: () => Promise<void>;
       clearProjectsCache?: () => void;
       setUiLang?: (lng: "es" | "en") => Promise<void>;
+      refreshI18nDom?: () => void;
+      refreshAuthHeader?: () => Promise<void>;
     };
   }
 }
@@ -195,18 +197,16 @@ function initHeaderNavIndicator() {
   });
 }
 
-function initHeaderIconVisibility() {
+function refreshHeaderIconsFromPrefs() {
   const wrap = document.querySelector<HTMLElement>("[data-header-icons]");
   if (!wrap) return;
-  try {
-    const prefsRaw = localStorage.getItem("skillatlas_prefs_v1");
-    const prefs = prefsRaw ? (JSON.parse(prefsRaw) as any) : null;
-    const show = prefs?.showHeaderIcons ?? true;
-    wrap.classList.toggle("hidden", !show);
-    wrap.classList.toggle("flex", Boolean(show));
-  } catch {
-    // ignore
-  }
+  const show = loadPrefs().showHeaderIcons;
+  wrap.classList.toggle("hidden", !show);
+  wrap.classList.toggle("flex", Boolean(show));
+}
+
+function initHeaderIconVisibility() {
+  refreshHeaderIconsFromPrefs();
 }
 
 function applyGlobalBannerOpen(root: HTMLElement, glow: HTMLElement | null) {
@@ -351,9 +351,6 @@ async function initAuthGuard() {
 }
 
 async function initI18n() {
-  const langFlags = document.querySelector<HTMLElement>("[data-lang-flags]");
-  const langFlagBtns = document.querySelectorAll<HTMLButtonElement>("[data-lang-flag]");
-
   /**
    * i18next setup.
    * For MVP we keep translations inline to avoid extra files.
@@ -437,7 +434,7 @@ async function initI18n() {
       img.src = "/icons/flags/United_Kingdom.svg";
     });
 
-    langFlagBtns.forEach((btn) => {
+    document.querySelectorAll<HTMLButtonElement>("[data-lang-flag]").forEach((btn) => {
       const active = btn.dataset.langFlag === lng;
       btn.setAttribute("aria-pressed", active ? "true" : "false");
     });
@@ -446,9 +443,15 @@ async function initI18n() {
       btn.setAttribute("aria-pressed", active ? "true" : "false");
     });
     const show = loadPrefs().showLangSelector;
+    const langFlags = document.querySelector<HTMLElement>("[data-lang-flags]");
     if (langFlags) {
-      langFlags.classList.toggle("hidden", !show);
-      langFlags.classList.toggle("sm:inline-flex", Boolean(show));
+      if (!show) {
+        langFlags.classList.add("hidden");
+        langFlags.classList.remove("sm:inline-flex");
+      } else {
+        langFlags.classList.remove("hidden");
+        langFlags.classList.add("sm:inline-flex");
+      }
     }
     document.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
       const key = el.getAttribute("data-i18n");
@@ -480,8 +483,17 @@ async function initI18n() {
     render();
     notifyLangChanged(lng);
   };
+  window.skillatlas.refreshI18nDom = render;
 
-  langFlagBtns.forEach((btn) => {
+  if (!(window as unknown as { __skillatlasPrefsChrome?: boolean }).__skillatlasPrefsChrome) {
+    (window as unknown as { __skillatlasPrefsChrome?: boolean }).__skillatlasPrefsChrome = true;
+    window.addEventListener("skillatlas:prefs-updated", () => {
+      window.skillatlas?.refreshI18nDom?.();
+      refreshHeaderIconsFromPrefs();
+    });
+  }
+
+  document.querySelectorAll<HTMLButtonElement>("[data-lang-flag]").forEach((btn) => {
     if (btn.dataset.bound === "1") return;
     btn.dataset.bound = "1";
     btn.addEventListener("click", async () => {
@@ -656,20 +668,53 @@ async function initAuthHeader() {
     const githubAvatar = typeof meta.avatar_url === "string" && meta.avatar_url ? meta.avatar_url : null;
     const linkedinAvatar = typeof meta.picture === "string" && meta.picture ? meta.picture : null;
 
-    const avatarUrl =
+    const oauthAvatar =
       lastProvider === "linkedin_oidc"
         ? linkedinAvatar ?? githubAvatar
         : lastProvider === "github"
           ? githubAvatar ?? linkedinAvatar
           : githubAvatar ?? linkedinAvatar;
-    setAvatar(avatarUrl);
+
+    let portfolioAvatar: string | null = null;
+    if (user) {
+      try {
+        const { data: prof } = await supabase
+          .from("portfolio_profiles")
+          .select("avatar_url")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        const raw = prof?.avatar_url;
+        if (typeof raw === "string" && raw) {
+          if (raw.startsWith("http://") || raw.startsWith("https://")) {
+            portfolioAvatar = raw;
+          } else if (raw.includes("/")) {
+            const signed = await supabase.storage.from("portfolio_avatars").createSignedUrl(raw, 3600);
+            portfolioAvatar = signed.data?.signedUrl ?? null;
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+
+    setAvatar(portfolioAvatar ?? oauthAvatar);
 
   };
+
+  window.skillatlas = window.skillatlas ?? {};
+  window.skillatlas.refreshAuthHeader = render;
 
   await render();
   supabase.auth.onAuthStateChange(() => {
     void render();
   });
+
+  if (!(window as unknown as { __skillatlasHeaderProfileListener?: boolean }).__skillatlasHeaderProfileListener) {
+    (window as unknown as { __skillatlasHeaderProfileListener?: boolean }).__skillatlasHeaderProfileListener = true;
+    window.addEventListener("skillatlas:portfolio-profile-updated", () => {
+      void window.skillatlas?.refreshAuthHeader?.();
+    });
+  }
 }
 
 function initLayoutVars() {

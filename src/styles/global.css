@@ -616,3 +616,167 @@ section[data-portfolio-preview-page][data-public-presentation-theme="reader"] {
   }
 }
 
+/* --- Landing (/) motion & polish --- */
+@keyframes landing-orb-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(2%, -1.5%) scale(1.03);
+  }
+  66% {
+    transform: translate(-1.5%, 2%) scale(0.98);
+  }
+}
+
+.landing-hero-blob {
+  animation: landing-orb-drift 20s ease-in-out infinite;
+  will-change: transform;
+}
+
+.landing-hero-blob--2 {
+  animation-duration: 26s;
+  animation-delay: -6s;
+}
+
+.landing-hero-blob--3 {
+  animation-duration: 22s;
+  animation-delay: -11s;
+}
+
+@keyframes landing-hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.landing-hero-enter {
+  animation: landing-hero-enter 0.78s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--le-delay, 0ms);
+}
+
+.landing-hero-pulse-dot {
+  animation: landing-pulse-dot 2.4s ease-in-out infinite;
+}
+
+@keyframes landing-pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.92);
+  }
+}
+
+html.landing-enhanced [data-landing-reveal]:not(.landing-reveal-visible) {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--lr-delay, 0ms);
+}
+
+html.landing-enhanced [data-landing-reveal].landing-reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#landing-flow-path {
+  transition: stroke-dashoffset 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#landing-flow-path.landing-flow-path-drawn {
+  stroke-dashoffset: 0 !important;
+}
+
+.landing-preview-mock {
+  transition:
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.45s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .landing-preview-mock:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow:
+      0 24px 48px -24px rgb(15 23 42 / 0.18),
+      0 0 0 1px rgb(99 102 241 / 0.12);
+  }
+
+  html.dark .landing-preview-mock:hover {
+    box-shadow:
+      0 24px 48px -24px rgb(0 0 0 / 0.45),
+      0 0 0 1px rgb(129 140 248 / 0.18);
+  }
+}
+
+.landing-flow-card {
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .landing-flow-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px -18px rgb(15 23 42 / 0.25);
+  }
+
+  html.dark .landing-flow-card:hover {
+    box-shadow: 0 12px 28px -18px rgb(0 0 0 / 0.5);
+  }
+}
+
+.landing-pill-card {
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .landing-pill-card:hover {
+    transform: translateY(-2px);
+  }
+}
+
+html[data-motion="reduced"] .landing-hero-blob,
+html[data-motion="reduced"] .landing-hero-enter,
+html[data-motion="reduced"] .landing-hero-pulse-dot {
+  animation: none !important;
+}
+
+html[data-motion="reduced"].landing-enhanced [data-landing-reveal] {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-hero-blob,
+  .landing-hero-enter,
+  .landing-hero-pulse-dot {
+    animation: none !important;
+  }
+
+  html.landing-enhanced [data-landing-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  #landing-flow-path {
+    transition: none;
+  }
+}
+

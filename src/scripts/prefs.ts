@@ -13,19 +13,39 @@ export type SettingsSidebarSide = "left" | "right";
 
 /** IDs de panel en `/settings` (hash `#…` y prefs). */
 export const SETTINGS_PANEL_IDS = [
-  "classic-prefs",
-  "classic-shortcuts",
-  "classic-portfolio-profile",
-  "classic-portfolio-links",
-  "classic-portfolio-display",
-  "classic-portfolio-presentation",
-  "classic-cv-public",
-  "classic-qa",
+  "prefs",
+  "shortcuts",
+  "portfolio-profile",
+  "portfolio-links",
+  "portfolio-display",
+  "portfolio-presentation",
+  "cv-public",
+  "qa",
 ] as const;
 export type SettingsPanelId = (typeof SETTINGS_PANEL_IDS)[number];
 
+/** Hash antiguo `#classic-*` → id actual (prefs y URLs guardadas). */
+export const LEGACY_SETTINGS_PANEL_ID: Record<string, SettingsPanelId> = {
+  "classic-prefs": "prefs",
+  "classic-shortcuts": "shortcuts",
+  "classic-portfolio-profile": "portfolio-profile",
+  "classic-portfolio-links": "portfolio-links",
+  "classic-portfolio-display": "portfolio-display",
+  "classic-portfolio-presentation": "portfolio-presentation",
+  "classic-cv-public": "cv-public",
+  "classic-qa": "qa",
+};
+
 export function isSettingsPanelId(s: string): s is SettingsPanelId {
   return (SETTINGS_PANEL_IDS as readonly string[]).includes(s);
+}
+
+export function migrateSettingsPanelHashFragment(raw: string): SettingsPanelId | null {
+  const t = raw.trim();
+  if (!t) return null;
+  if (isSettingsPanelId(t)) return t;
+  const mapped = LEGACY_SETTINGS_PANEL_ID[t];
+  return mapped ?? null;
 }
 
 export type CvLink = {
@@ -140,7 +160,9 @@ function normalizeSettingsSidebarSide(raw: unknown): SettingsSidebarSide {
 
 function normalizeSettingsActiveSection(raw: unknown): SettingsPanelId | undefined {
   if (typeof raw !== "string") return undefined;
-  return isSettingsPanelId(raw) ? raw : undefined;
+  if (isSettingsPanelId(raw)) return raw;
+  const migrated = LEGACY_SETTINGS_PANEL_ID[raw];
+  return migrated && isSettingsPanelId(migrated) ? migrated : undefined;
 }
 
 function normalizeCvProjectSlugs(raw: unknown): string[] | undefined {
