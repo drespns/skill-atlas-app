@@ -1,0 +1,27 @@
+---
+/** Modal de vista previa del CV. */
+---
+
+<div
+  data-cv-preview-modal
+  class="fixed inset-0 z-1000 hidden items-center justify-center p-4 bg-black/40 backdrop-blur-sm print:hidden"
+  role="dialog"
+  aria-modal="true"
+  aria-label="CV preview"
+  data-i18n="cv.previewDialogLabel"
+  data-i18n-attr="aria-label"
+>
+  <div class="w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-xl">
+    <div class="px-4 py-3 border-b border-gray-200/80 dark:border-gray-800 flex items-center justify-between">
+      <p class="m-0 text-sm font-semibold" data-i18n="cv.previewTitle">Preview</p>
+      <button
+        type="button"
+        data-cv-preview-close
+        class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-2.5 py-1.5 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900"
+      >
+        <span data-i18n="common.close">Cerrar</span>
+      </button>
+    </div>
+    <div data-cv-preview-body class="p-4 overflow-auto max-h-[calc(90vh-3.25rem)]"></div>
+  </div>
+</div>

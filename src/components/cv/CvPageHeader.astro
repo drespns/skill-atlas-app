@@ -1,0 +1,42 @@
+---
+export interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+
+<header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between print:hidden">
+  <div class="space-y-1">
+    <p class="app-kicker m-0">
+      <span data-i18n="cv.kicker">Documento privado</span>
+    </p>
+    <h1 class="m-0 text-2xl font-semibold tracking-tight">
+      <span data-i18n="cv.pageTitle">{title}</span>
+    </h1>
+    <p class="m-0 max-w-2xl text-sm text-gray-600 dark:text-gray-400" data-i18n="cv.intro">
+      Vista previa local de tu CV. Nadie puede ver esta página sin tu sesión.
+    </p>
+    <p class="m-0 max-w-2xl text-sm font-semibold text-gray-800 dark:text-gray-200" data-i18n="cv.introNext">
+      Más adelante: plantillas y exportación.
+    </p>
+  </div>
+  <div class="flex flex-wrap items-center gap-2">
+    <button
+      type="button"
+      data-cv-preview-open
+      class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 shadow-sm"
+    >
+      <span data-i18n="cv.preview">Preview</span>
+    </button>
+    <button
+      type="button"
+      data-cv-print
+      class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900"
+    >
+      <span data-i18n="cv.printOrPdf">Imprimir / PDF</span>
+    </button>
+    <p class="m-0 w-full text-xs text-gray-500 dark:text-gray-400 sm:w-auto" data-i18n="cv.printHint">
+      Usa “Guardar como PDF” en el diálogo de impresión del navegador.
+    </p>
+  </div>
+</header>

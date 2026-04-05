@@ -780,3 +780,33 @@ html[data-motion="reduced"].landing-enhanced [data-landing-reveal] {
   }
 }
 
+/* Recorrido guiado (spotlight): más contraste en modo oscuro */
+.sa-guided-tour-backdrop {
+  background-color: rgb(0 0 0 / 0.48);
+}
+
+.dark .sa-guided-tour-backdrop {
+  background-color: rgb(0 0 0 / 0.78);
+}
+
+.sa-guided-tour-hole {
+  --sa-hole-dim: rgb(0 0 0 / 0.42);
+  --sa-hole-ring: rgb(99 102 241 / 0.72);
+  --sa-hole-glow: rgb(129 140 248 / 0.35);
+  box-shadow:
+    0 0 0 3px var(--sa-hole-ring),
+    0 0 24px 2px var(--sa-hole-glow),
+    0 0 0 9999px var(--sa-hole-dim);
+}
+
+.dark .sa-guided-tour-hole {
+  --sa-hole-dim: rgb(0 0 0 / 0.88);
+  --sa-hole-ring: rgb(196 181 253 / 0.98);
+  --sa-hole-glow: rgb(167 139 250 / 0.55);
+  box-shadow:
+    0 0 0 3px var(--sa-hole-ring),
+    0 0 0 1px rgb(255 255 255 / 0.22),
+    0 0 28px 4px var(--sa-hole-glow),
+    0 0 0 9999px var(--sa-hole-dim);
+}
+

@@ -1,0 +1,323 @@
+---
+export interface Props {
+  pathname: string;
+}
+const { pathname } = Astro.props;
+const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+const APP_LOGO_SRC = "/favicon.svg";
+---
+
+<header
+  class="border-b border-gray-200/80 dark:border-gray-800"
+  data-app-header
+  style="padding: var(--app-header-py, 1rem) var(--app-header-px, 1.25rem);"
+>
+  <div class="max-w-screen-2xl mx-auto flex w-full min-w-0 items-center gap-4">
+    <div class="relative flex shrink-0 items-center gap-2 md:gap-3 min-w-0" data-home-wrap data-header-brand>
+      <a
+        href="/"
+        data-home-link
+        class="flex min-w-0 items-center gap-2 md:gap-3 no-underline rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+      >
+        <img src={APP_LOGO_SRC} alt="SkillAtlas" class="h-8 w-8 shrink-0 rounded-md" />
+        <span class="font-bold text-lg hover:underline truncate">SkillAtlas</span>
+      </a>
+      <a
+        href="/settings#portfolio-profile"
+        data-auth-header-profile
+        data-auth-avatar-wrap
+        class="hidden shrink-0 items-center justify-center rounded-full no-underline ring-2 ring-transparent hover:ring-indigo-500/35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+        data-i18n="common.openPublicProfileSettings"
+        data-i18n-attr="aria-label,title"
+      >
+        <img
+          data-auth-avatar
+          alt=""
+          class="h-8 w-8 rounded-full border border-gray-200/80 dark:border-gray-800 object-cover"
+          loading="lazy"
+          referrerpolicy="no-referrer"
+        />
+      </a>
+
+      <div
+        data-home-popover
+        class="hidden absolute left-0 top-full mt-2 w-56 rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur shadow-lg p-2 z-40"
+        role="dialog"
+        aria-label="Navigation"
+        data-i18n="home.popoverLabel"
+        data-i18n-attr="aria-label"
+      >
+        <p class="m-0 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <span data-i18n="home.chooseDestination">Choose destination</span>
+        </p>
+        <a
+          href="/app"
+          data-home-popover-app
+          class="mt-1 flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+        >
+          <span data-i18n="home.openApp">Open app</span>
+          <span class="text-xs text-gray-500 dark:text-gray-400">/app</span>
+        </a>
+        <a
+          href="/"
+          data-home-popover-landing
+          class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+        >
+          <span data-i18n="home.openLanding">Open landing</span>
+          <span class="text-xs text-gray-500 dark:text-gray-400">/</span>
+        </a>
+      </div>
+    </div>
+
+    <nav
+      data-header-nav
+      class="hidden md:flex md:flex-1 flex-wrap items-center justify-center gap-1 text-sm relative min-w-0"
+      data-i18n-scope="nav"
+    >
+      <div
+        data-header-nav-indicator
+        class="pointer-events-none absolute left-0 -bottom-1 h-1 rounded-full opacity-0"
+        style="
+              background: hsl(var(--app-accent-hsl) / 0.95);
+              width: 0px;
+              transition:
+                left 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+                width 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+                opacity 160ms ease-out;
+            "
+        aria-hidden="true"
+      >
+      </div>
+      <a
+        href="/cv"
+        data-auth-nav
+        data-header-nav-link
+        data-nav-active={isActive("/cv") ? "true" : "false"}
+        class="header-nav-link relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+      >
+        <span data-i18n="nav.cv">CV</span>
+      </a>
+      <a
+        href="/technologies"
+        data-auth-nav
+        data-header-nav-link
+        data-nav-active={isActive("/technologies") ? "true" : "false"}
+        class="header-nav-link relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+      >
+        <span data-i18n="nav.technologies">Tecnologías</span>
+      </a>
+      <a
+        href="/projects"
+        data-auth-nav
+        data-header-nav-link
+        data-nav-active={isActive("/projects") ? "true" : "false"}
+        class="header-nav-link relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+      >
+        <span data-i18n="nav.projects">Proyectos</span>
+      </a>
+      <a
+        href="/portfolio"
+        data-auth-nav
+        data-header-nav-link
+        data-nav-active={isActive("/portfolio") ? "true" : "false"}
+        class="header-nav-link relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+      >
+        <span data-i18n="nav.portfolio">Portfolio</span>
+      </a>
+      <a
+        href="/study"
+        data-auth-nav
+        data-header-nav-link
+        data-nav-active={isActive("/study") ? "true" : "false"}
+        class="header-nav-link relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+      >
+        <span data-i18n="nav.study">Estudio</span>
+      </a>
+    </nav>
+
+    <div class="flex min-w-0 flex-1 items-center justify-end gap-3 md:min-w-0">
+      <a
+        href="/admin"
+        data-admin-header-link
+        data-nav-active={isActive("/admin") ? "true" : "false"}
+        class="header-admin-link relative shrink-0 px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+      >
+        <span data-i18n="nav.admin">Admin</span>
+      </a>
+      <span class="hidden min-h-0 min-w-4 flex-1 basis-0 md:block" aria-hidden="true"></span>
+      <div class="flex shrink-0 items-center gap-2 md:gap-2.5" data-header-icons>
+        <button
+          type="button"
+          data-command-palette-trigger
+          class="inline-flex items-center gap-2 rounded-xl border-2 border-indigo-500/90 bg-indigo-600 px-2.5 py-2 sm:px-3.5 sm:py-2.5 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-400/25 hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-600/35 dark:border-indigo-400/80 dark:bg-indigo-600 dark:ring-indigo-400/20 dark:shadow-indigo-950/50 dark:hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 transition-[box-shadow,background-color,transform] motion-reduce:transition-none"
+          data-i18n="common.commandPaletteAria"
+          data-i18n-attr="aria-label,title"
+        >
+          <svg
+            class="h-5 w-5 shrink-0 opacity-95"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          <span class="hidden sm:inline text-sm font-semibold tracking-tight" data-i18n="common.commandPaletteTriggerLabel">Buscar</span>
+          <kbd
+            class="hidden md:inline-flex items-center gap-0.5 rounded-md border border-white/25 bg-white/15 px-1.5 py-0.5 text-[10px] font-mono font-bold leading-none text-white/95"
+            aria-hidden="true"
+          >
+            <span class="hidden lg:inline">Ctrl</span><span class="lg:hidden">⌘</span><span class="opacity-90">K</span>
+          </kbd>
+        </button>
+
+        <div
+          data-lang-flags
+          class="hidden items-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 p-0.5 gap-0.5"
+          role="group"
+          aria-label="Idioma"
+          data-i18n="common.language"
+          data-i18n-attr="aria-label"
+        >
+          <button
+            type="button"
+            data-lang-flag="es"
+            class="rounded-md px-2 py-1.5 leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
+            aria-pressed="true"
+            title="Español"
+          >
+            <img
+              data-flag-img="es"
+              src="/icons/flags/Spain.svg"
+              alt=""
+              class="h-5 w-5 rounded-sm"
+              loading="lazy"
+              decoding="async"
+            />
+          </button>
+          <button
+            type="button"
+            data-lang-flag="en"
+            class="rounded-md px-2 py-1.5 leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
+            aria-pressed="false"
+            title="English"
+          >
+            <img
+              data-flag-img="en"
+              src="/icons/flags/United_Kingdom.svg"
+              alt=""
+              class="h-5 w-5 rounded-sm"
+              loading="lazy"
+              decoding="async"
+            />
+          </button>
+        </div>
+
+        <button
+          type="button"
+          data-auth-header-signout
+          class="hidden items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+          aria-label="Cerrar sesión"
+          title="Cerrar sesión"
+        >
+          <svg
+            class="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <path d="M16 17l5-5-5-5" />
+            <path d="M21 12H9" />
+          </svg>
+        </button>
+
+        <a
+          href="/settings"
+          data-auth-header-settings
+          class={`header-settings-rainbow ${isActive("/settings") ? "header-settings-rainbow--active" : ""} hidden`}
+          aria-label="Ajustes"
+          title="Ajustes"
+          data-i18n="nav.settings"
+          data-i18n-attr="aria-label,title"
+        >
+          <span class="header-settings-rainbow__inner">
+            <svg
+              class="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M21 4H14" />
+              <path d="M10 4H3" />
+              <path d="M21 12H12" />
+              <path d="M8 12H3" />
+              <path d="M21 20H16" />
+              <path d="M12 20H3" />
+              <path d="M14 2v4" />
+              <path d="M8 10v4" />
+              <path d="M16 18v4" />
+            </svg>
+          </span>
+        </a>
+
+        <button
+          type="button"
+          data-theme-toggle
+          class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+          aria-label="Cambiar tema"
+          title="Tema"
+          aria-pressed="false"
+          data-i18n="common.toggleTheme"
+          data-i18n-attr="aria-label,title"
+        >
+          <span class="sr-only" data-i18n="common.toggleTheme">Cambiar tema</span>
+          <svg
+            data-icon-sun
+            class="h-5 w-5 hidden dark:block"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="M4.93 4.93l1.41 1.41"></path>
+            <path d="M17.66 17.66l1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="M6.34 17.66l-1.41 1.41"></path>
+            <path d="M19.07 4.93l-1.41 1.41"></path>
+          </svg>
+          <svg
+            data-icon-moon
+            class="h-5 w-5 block dark:hidden"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>

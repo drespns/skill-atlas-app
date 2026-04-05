@@ -1,0 +1,137 @@
+---
+import { repoUrl } from "../../data";
+
+const year = new Date().getFullYear();
+const APP_LOGO_SRC = "/favicon.svg";
+
+const FOOTER_BUILD_ICONS = [
+  { src: "/icons/Astro.svg", label: "Astro" },
+  { src: "/icons/Tailwind CSS.svg", label: "Tailwind CSS" },
+  { src: "/icons/TypeScript.svg", label: "TypeScript" },
+  { src: "/icons/Vite.js.svg", label: "Vite" },
+] as const;
+---
+
+<footer
+  class="mt-auto border-t border-gray-200/80 dark:border-gray-800 bg-linear-to-b from-transparent to-gray-50/90 dark:to-gray-950/90"
+  style="padding: 2rem var(--app-main-px, 1.25rem) 1.75rem;"
+  aria-label="Site"
+>
+  <div class="max-w-screen-2xl mx-auto flex flex-col gap-8">
+    <div class="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+      <div class="space-y-2 max-w-md">
+        <div class="flex items-center gap-2">
+          <img src={APP_LOGO_SRC} alt="" class="h-7 w-7 rounded-md opacity-90" />
+          <span class="font-bold text-base tracking-tight">SkillAtlas</span>
+        </div>
+        <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="footer.tagline"></p>
+      </div>
+      <nav
+        class="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+        aria-label="Footer"
+      >
+        <a
+          href="/pricing"
+          data-public-footer-pricing
+          class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
+        >
+          <span data-i18n="nav.pricing"></span>
+        </a>
+        <a
+          href="/cv"
+          data-auth-footer-nav
+          class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
+        >
+          <span data-i18n="nav.cv"></span>
+        </a>
+        <a
+          href="/technologies"
+          data-auth-footer-nav
+          class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
+        >
+          <span data-i18n="nav.technologies"></span>
+        </a>
+        <a
+          href="/projects"
+          data-auth-footer-nav
+          class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
+        >
+          <span data-i18n="nav.projects"></span>
+        </a>
+        <a
+          href="/portfolio"
+          data-auth-footer-nav
+          class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
+        >
+          <span data-i18n="nav.portfolio"></span>
+        </a>
+        <a
+          href="/study"
+          data-auth-footer-nav
+          class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
+        >
+          <span data-i18n="nav.study"></span>
+        </a>
+        <a
+          href="/settings"
+          data-auth-footer-nav
+          class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
+        >
+          <span data-i18n="nav.settings"></span>
+        </a>
+        <a
+          href={repoUrl}
+          target="_blank"
+          rel="noreferrer"
+          class="inline-flex items-center gap-1.5 hover:text-gray-900 dark:hover:text-white no-underline transition-colors"
+        >
+          <span data-i18n="footer.openSource"></span>
+          <svg class="h-3.5 w-3.5 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </a>
+      </nav>
+    </div>
+  </div>
+  <p class="max-w-screen-2xl mx-auto mt-8 pt-6 border-t border-gray-200/60 dark:border-gray-800/80 text-center text-xs text-gray-500 dark:text-gray-500 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+    <span>© {year} SkillAtlas</span>
+    <span aria-hidden="true" class="opacity-50">|</span>
+    <span class="inline-flex items-center gap-2">
+      <span class="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-80" data-i18n="footer.builtWith"></span>
+      <span class="inline-flex items-center gap-1.5 opacity-70" aria-hidden="true">
+        {
+          FOOTER_BUILD_ICONS.map((ico) => (
+            <img
+              src={ico.src}
+              alt=""
+              title={ico.label}
+              class="h-4 w-auto max-h-4 max-w-10 object-contain"
+              loading="lazy"
+            />
+          ))
+        }
+        <img
+          src="/icons/supabase-logo-icon.svg"
+          alt=""
+          title="Supabase"
+          class="h-4 w-auto max-h-4 object-contain"
+          loading="lazy"
+        />
+        <a
+          href={repoUrl}
+          target="_blank"
+          rel="noreferrer"
+          class="inline-flex items-center justify-center rounded-md border border-gray-200/80 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          aria-label="Ver repositorio en GitHub"
+          title="GitHub"
+          data-i18n="common.githubRepo"
+          data-i18n-attr="aria-label,title"
+        >
+          <img src="/icons/GitHub.svg" alt="" class="h-4 w-4" loading="lazy" />
+        </a>
+      </span>
+    </span>
+  </p>
+</footer>

@@ -6,10 +6,10 @@ Astro genera sitio **estatico** (`output: static`). Las paginas se prerenderizan
 
 - Render: Astro pages (`src/pages`)
 - UI reusable: `src/components`
-- Shell global: `src/layouts/AppShell.astro`
+- Shell global: `src/layouts/AppShell.astro` (compone piezas en `src/components/shell/*`; ver `docs/code-locations.md`)
 - Data access facade: `src/data/index.ts`
 - Providers: mock y supabase
-- Scripts cliente por pantalla: `src/scripts/*.ts` y subcarpetas (`project-detail/`, `technology-detail/`)
+- Scripts cliente por pantalla: `src/scripts/<dominio>/*.ts` (p. ej. `login/`, `portfolio/`, `settings/`), más `core/`, `shell/`, `client-shell/`, `projects/project-detail/`, `technologies/technology-detail/`. El bootstrap global del layout vive en `client.ts` + `client-shell/*` + `shell/command-palette.ts`.
 - **Despliegue Vercel**: `astro.config.mjs` usa `@astrojs/vercel` para que las rutas **on-demand** (p. ej. `/portfolio/[slug]` con `prerender = false`) generen la salida que Vercel espera. El adapter `@astrojs/node` sirve para un **proceso Node propio** (`node ./dist/server/entry.mjs`); en Vercel sin ese proceso el sitio puede responder **404** en todas las rutas.
 
 ### Acceso privado + solicitudes (invite-only)
@@ -31,6 +31,8 @@ Para que funcione igual en **dev** y **producción** (Vercel), los scripts clien
 - Usar `<script src="../scripts/mi-script.ts"></script>` (sin `type="module"`).
 - Evitar servir `.ts` directamente por URL o usar `?url`, porque puede acabar en MIME incorrecto / imports a `.ts` en producción.
 
+**Imports entre módulos `.ts` del cliente:** en `tsconfig.json` hay `compilerOptions.paths` (`@scripts/*`, `@config/*`, `@lib/*`, `@shaders/*`, `@i18n/*`, `@components/*`, …). Los archivos bajo `src/scripts/**` deben usarlos en lugar de rutas relativas largas; Vite los resuelve en dev y build (ver [Import aliases](https://docs.astro.build/es/guides/typescript/#import-aliases) en la documentación de Astro).
+
 ### Navegación sin recarga (View Transitions + Prefetch)
 
 La app usa el router del navegador con **View Transitions** (`<ClientRouter />`) para que la navegación sea más fluida. Además, Astro hace **prefetch** de links (estrategia `viewport`) para reducir tiempos de carga.
@@ -39,7 +41,7 @@ Esto implica que scripts cliente que antes dependían de `DOMContentLoaded` debe
 
 **Auditoría (abr. 2026, punto 1 backlog):** además de los bootstraps CSR de `/projects/view` y `/technologies/view`, quedaron alineados con `astro:after-swap` (y guards anti-listeners duplicados donde aplica) entre otros: `portfolio-projects.ts`, `portfolio-public-profile.ts`, `projects.ts`, `technologies.ts`, `app-dashboard.ts`, `view-toggle.ts`, `study-workspace.ts`, `cv-page.ts`, `public-portfolio-by-token.ts`, `public-portfolio-by-slug.ts`. Otros módulos (`client.ts`, `command-palette.ts`, Ajustes, admin, etc.) ya seguían este patrón.
 
-**Cabecera y estado activo:** el HTML prerenderizado solo refleja la ruta del **build** de esa página. Tras navegar en cliente, `src/scripts/client.ts` ejecuta **`syncHeaderNavActive()`** para alinear `data-nav-active` en cada `[data-header-nav-link]` y `[data-admin-header-link]` con `location.pathname` (misma regla que `isActive` en `AppShell.astro`).
+**Cabecera y estado activo:** el HTML prerenderizado solo refleja la ruta del **build** de esa página. Tras navegar en cliente, el boot (`client.ts`) llama a **`syncHeaderNavActive()`** (`client-shell/header-nav.ts`) para alinear `data-nav-active` en cada `[data-header-nav-link]` y `[data-admin-header-link]` con `location.pathname` (misma regla que `isActive` en `AppHeader.astro`).
 
 **Indicador subrayado (nav):** el subrayado animado usa **`left` + `width`** en el elemento `[data-header-nav-indicator]` (anclado con `left-0` en el `<nav>`), no `translateX` horizontal, para evitar desalineación con **flex + `justify-center`** y con la animación de ancho al hacer hover.
 
@@ -47,7 +49,7 @@ Esto implica que scripts cliente que antes dependían de `DOMContentLoaded` debe
 
 **Portfolio público (visitante):** el HTML de cada proyecto en `/portfolio/<slug>`, `/p/<token>` y el preview CSR de `/portfolio` se genera con **`renderPortfolioVisitorCard`** (`src/lib/public-portfolio-project-card.ts`): jerarquía fija título → tecnologías → bloque historia → descripción → sección evidencia (varias incrustaciones si el RPC las devuelve); copy vía i18n `portfolio.public.*`. La lógica compartida de RPC + barra de controles (vista cuadrícula/lista, tope de evidencias, “menos animación”) está en **`public-portfolio-public-page.ts`**; preferencias del visitante en **`localStorage`** (`src/lib/public-portfolio-guest-prefs.ts`, clave por slug o token; en preview autenticado `preview:session`). Valores por defecto del autor: columnas `portfolio_profiles` + RPC tras **saas-013** (layout, evidencias, CTA) y **saas-014** (tema visual `public_theme`, densidad `public_density`, acento hex opcional, cabecera `public_header_style`, slugs destacados y su orden en el JSON); utilidades **`src/lib/portfolio-presentation.ts`** + `data-public-presentation-*` en el DOM; animación ligera y `prefers-reduced-motion` (`global.css`).
 
-**Dashboard (`/app`):** `src/scripts/recent-activity.ts` guarda en `localStorage` (clave `skillatlas_recent_activity_v1`) las últimas aperturas de detalle **proyecto** y **tecnología**; la escritura ocurre en `project-view-bootstrap.ts` y `technology-view-bootstrap.ts` tras cargar el recurso con éxito. `app-dashboard.ts` renderiza esas listas con marca de tiempo relativa, hidrata conteos y listas alfabéticas (8 ítems) vía Supabase cuando hay cliente y sesión, y escucha `skillatlas:auth-nav-updated` para refrescar. **Nota de producto:** si hiciera falta continuidad entre dispositivos, habría que persistir el historial en servidor (p. ej. prefs sync o tabla dedicada), no solo en `localStorage`.
+**Dashboard (`/app`):** `src/scripts/app/recent-activity.ts` guarda en `localStorage` (clave `skillatlas_recent_activity_v1`) las últimas aperturas de detalle **proyecto** y **tecnología**; la escritura ocurre en `projects/project-view-bootstrap.ts` y `technologies/technology-view-bootstrap.ts` tras cargar el recurso con éxito. `app/app-dashboard.ts` renderiza esas listas con marca de tiempo relativa, hidrata conteos y listas alfabéticas (8 ítems) vía Supabase cuando hay cliente y sesión, y escucha `skillatlas:auth-nav-updated` para refrescar. **Nota de producto:** si hiciera falta continuidad entre dispositivos, habría que persistir el historial en servidor (p. ej. prefs sync o tabla dedicada), no solo en `localStorage`.
 
 ### Geo / país del usuario (futuro)
 
@@ -143,7 +145,7 @@ Scripts principales:
 Además de tema, densidad, fuente, acento, movimiento, vistas lista/cards, iconos del header y visibilidad del selector de idioma:
 
 - **`settingsSidebarSide`**: barra lateral de navegación en `/settings` a izquierda o derecha.
-- **`settingsActiveSection`**: última sección de Ajustes abierta. IDs de panel (hash `#…`): `prefs`, `shortcuts`, `portfolio-profile`, `portfolio-links`, `portfolio-display`, `portfolio-presentation`, `cv-public`, `qa` (lista canónica en `SETTINGS_PANEL_IDS` en `src/scripts/prefs.ts`). Si la URL o prefs guardadas usan el prefijo antiguo `#classic-*`, el cliente **normaliza** a los ids nuevos (`migrateSettingsPanelHashFragment`, `replaceState` en `settings-classic-ui.ts`).
+- **`settingsActiveSection`**: última sección de Ajustes abierta. IDs de panel (hash `#…`): `prefs`, `shortcuts`, `portfolio-profile`, `portfolio-links`, `portfolio-display`, `portfolio-presentation`, `cv-public`, `qa` (lista canónica en `SETTINGS_PANEL_IDS` en `src/scripts/core/prefs.ts`). Si la URL o prefs guardadas usan el prefijo antiguo `#classic-*`, el cliente **normaliza** a los ids nuevos (`migrateSettingsPanelHashFragment`, `replaceState` en `settings/settings-classic-ui.ts`).
 - **`cvProjectSlugs`** (opcional): array de slugs de proyectos incluidos en `/cv`; ausente = todos; vacío = ninguno; el orden del array es el orden del CV (drag & drop en el editor). Persistido en `user_prefs` y caché local `skillatlas_prefs_v1`.
 - **`cvProfile`** (opcional): datos privados del CV guardados en prefs: `headline`, `location`, `email`, `links`, `summary`, `highlights`, `experiences[]`, `education[]`, `showHelpStack`, `showPhoto` y `photoSource` (subida vs LinkedIn/proveedor).
 - **`qaTesterMode`** (opcional): habilita UI de **Onboarding/QA** (checklist, seed demo, copiar debug info) en `/settings`. La checklist se guarda localmente en `localStorage` (`skillatlas_qa_v1`).
@@ -151,7 +153,7 @@ Además de tema, densidad, fuente, acento, movimiento, vistas lista/cards, icono
 ### Onboarding/QA (tester mode)
 
 - UI en Ajustes → sección **Onboarding / QA** (`#qa`): toggle “modo tester”, checklist rápida, botón de **seed demo** y “copiar debug info”.
-- Implementación: `src/scripts/settings-qa.ts` + persistencia en prefs (`user_prefs`).
+- Implementación: `src/scripts/settings/settings-qa.ts` + persistencia en prefs (`user_prefs`).
 
 ## OG previews (portfolio público)
 
@@ -181,7 +183,7 @@ Además de tema, densidad, fuente, acento, movimiento, vistas lista/cards, icono
 
 - Selector global en header: **banderas** 🇪🇸 / 🇬🇧 (sustituye al `<select>`); misma idea en Preferencias de Ajustes.
 
-### Footer (`AppShell.astro`)
+### Footer (`src/components/shell/AppFooter.astro`)
 
 - Bloque “Hecho con” con logos (Astro, Tailwind, TypeScript, Vite, Supabase) y navegación secundaria.
 
@@ -219,7 +221,7 @@ Decisiones (2026-03-31):
 
 Implicaciones técnicas:
 
-- Banner global sticky con versión/noticias (en `AppShell.astro`, config en `src/config/banner.ts`, cierre persistente y botón de re-apertura en header).
+- Banner global sticky con versión/noticias (`AppGlobalBanner.astro` + `client-shell/global-banner.ts`, config `src/config/banner.ts`, cierre persistente y botón de re-apertura en header).
 - Navegación cruzada:
   - desde la app: link a `/` (landing)
   - desde landing: CTA “Entrar” condicionado a sesión/invitación
@@ -239,12 +241,12 @@ Plan detallado para **multiusuario + portfolio por enlace compartido**: `docs/pl
 - Documentación: **1 Tech Note por tecnología** (markdown) además de conceptos.
 
 Implementación (Sprint A):
-- Preferencias guardadas en `localStorage` (`skillatlas_prefs_v1`) y aplicadas en `AppShell.astro` (script inline en `<head>`) + `src/scripts/client.ts`.
-- UI en `/settings` con `src/scripts/settings-prefs.ts` + `settings-classic-ui.ts` (navegación lateral y un panel visible por sección; hash `#prefs`, `#portfolio-links`, etc.; compatibilidad con bookmarks `#classic-*` vía migración en cliente).
-- Cache de navegación ligera para CSR lists en `sessionStorage` (TTL 2 min) en `src/scripts/{projects,technologies}.ts`.
+- Preferencias guardadas en `localStorage` (`skillatlas_prefs_v1`) y aplicadas en `AppShellHeadBootstrap.astro` (script inline en `<head>`) + `client.ts` / `client-shell/prefs-bootstrap.ts`.
+- UI en `/settings` con `src/scripts/settings/settings-prefs.ts` + `src/scripts/settings/settings-classic-ui.ts` (navegación lateral y un panel visible por sección; hash `#prefs`, `#portfolio-links`, etc.; compatibilidad con bookmarks `#classic-*` vía migración en cliente).
+- Cache de navegación ligera para CSR lists en `sessionStorage` (TTL 2 min) en `src/scripts/projects/projects.ts` y `src/scripts/technologies/technologies.ts`.
 
 Mejoras UX (Sprint A+):
-- **Command Palette:** el **botón en cabecera** ya existe (`[data-command-palette-trigger]` en `AppShell.astro`, mismo flujo que `Ctrl+K` y `/` fuera de campos de texto). La evolución prevista es **enriquecer** la paleta (búsqueda de entidades, más acciones), no duplicarla. Ver **Plan de implementación por iteración** en `docs/backlog.md`.
+- **Command Palette:** el **botón en cabecera** ya existe (`[data-command-palette-trigger]` en `AppHeader.astro`, mismo flujo que `Ctrl+K` y `/` fuera de campos de texto). La evolución prevista es **enriquecer** la paleta (búsqueda de entidades, más acciones), no duplicarla. Ver **Plan de implementación por iteración** en `docs/backlog.md`.
 - **Burbujas flotantes (FAB):** patrón planificado para atajos visibles y onboarding corto (y extensiones futuras); detalle en el mismo apartado del backlog.
 - Toggle Cards/Lista en páginas (sin pasar por Ajustes) y persistencia en prefs.
 - Preferencias de UI: mostrar/ocultar iconos del header y selector de idioma por **banderas** (con opción de ocultar el bloque en el header).
@@ -259,7 +261,7 @@ Modelo de producto: cada proyecto combina **historia** (contexto narrativo) y **
 - **Título** y **descripción** (existentes).
 - **`role`**: rol o responsabilidad (p. ej. “Data analyst”).
 - **`outcome`**: resultado o impacto en texto libre.
-- Edición: modal **`projectEditModal`** (`src/scripts/ui-feedback.ts`) invocado desde **`initProjectEdit`** (`project-detail/project.ts`). Persistencia: `UPDATE projects` con `slug` en sesión.
+- Edición: modal **`projectEditModal`** (`src/scripts/core/ui-feedback.ts`) invocado desde **`initProjectEdit`** (`projects/project-detail/project.ts`). Persistencia: `UPDATE projects` con `slug` en sesión.
 
 ### Evidencias (`project_embeds`)
 
@@ -283,7 +285,7 @@ Modelo de producto: cada proyecto combina **historia** (contexto narrativo) y **
 |------------|----------------|
 | `/projects/view?project=<slug>` | HTML generado por **`project-view-bootstrap.ts`**; orden secciones: cabecera (historia + pills tech), **Evidencias**, tecnologías, conceptos. |
 | `/projects` (CSR) | **`projects.ts`**: lista/cards; muestra **rol** si existe (línea secundaria). |
-| `/portfolio` (Supabase) | **CSR**: cards renderizadas en cliente con sesión (evita vacíos por RLS en build). Script: **`src/scripts/portfolio-projects.ts`**. |
+| `/portfolio` (Supabase) | **CSR**: cards renderizadas en cliente con sesión (evita vacíos por RLS en build). Script: **`src/scripts/portfolio/portfolio-projects.ts`**. |
 | `/projects/[projectId]` (mock) | Misma idea de historia en cabecera; sección “Evidencias”; sin detección en caliente (datos estáticos). |
 
 ### Dominio TypeScript (`src/data`)
@@ -309,7 +311,7 @@ En modo Supabase con RLS multi-tenant, el build estático no puede listar datos 
 
 ### Nota: Supabase client singleton
 
-Para evitar warnings de Supabase (`Multiple GoTrueClient instances detected`), `getSupabaseBrowserClient()` cachea un singleton en `src/scripts/client-supabase.ts` (una instancia por pestaña).
+Para evitar warnings de Supabase (`Multiple GoTrueClient instances detected`), `getSupabaseBrowserClient()` cachea un singleton en `src/scripts/core/client-supabase.ts` (una instancia por pestaña).
 
 ### Siguiente iteración sugerida (producto)
 
@@ -370,5 +372,5 @@ Implementados en `IMPORT_QUALITY` dentro de `concept-import.ts` (longitud min/ma
 
 - Shaders: `src/shaders/{earth,atmosphere}/*.glsl`
 - Texturas: `public/static/earth/{day,night,specularClouds}.jpg`
-- Script: `src/scripts/login-earth.ts` (usa `three` + `OrbitControls`)
+- Script: `src/scripts/login/login-earth.ts` (usa `three` + `OrbitControls`)
 

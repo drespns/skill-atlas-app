@@ -19,8 +19,8 @@ SkillAtlas es un MVP para gestionar conocimiento tecnico y mostrar portfolio:
 - Tailwind CSS v4
 - Supabase (PostgreSQL + RLS; transicion `docs/sql/rls-mvp-authenticated.sql`; SaaS multi-tenant `docs/sql/saas-001` … `saas-014` — ver `docs/db.md`)
 - Despliegue **Vercel:** `@astrojs/vercel` en `astro.config.mjs` (rutas on-demand); no commitear `.vercel/` ni `dist/`
-- TypeScript para scripts cliente
-- Cliente Supabase en el navegador: `getSupabaseBrowserClient()` en `src/scripts/client-supabase.ts` (evitar repetir `createClient` en cada script)
+- TypeScript para scripts cliente; imports con aliases de `tsconfig.json` (`@scripts/*`, `@lib/*`, `@config/*`, …) dentro de `src/scripts/**`
+- Cliente Supabase en el navegador: `getSupabaseBrowserClient()` en `src/scripts/core/client-supabase.ts` (evitar repetir `createClient` en cada script)
 
 ## Auth (login convencional)
 
@@ -81,14 +81,14 @@ UI/UX:
 
 - `src/data/index.ts`
 - `src/data/providers/supabaseProvider.ts`
-- `src/scripts/ui-feedback.ts`
-- `src/scripts/client.ts` (header auth + vars layout)
-- `src/pages/login.astro` + `src/scripts/login-auth.ts`
-- `src/scripts/login-earth.ts` + `src/shaders/*` + assets en `public/static/earth/*`
+- `src/scripts/core/ui-feedback.ts`
+- `src/scripts/client.ts` (orquesta boot global) y `src/scripts/client-shell/*` (banner, nav, prefs, i18n, auth header); mapa en `docs/code-locations.md`
+- `src/pages/login.astro` + `src/scripts/login/login-auth.ts`
+- `src/scripts/login/login-earth.ts` + `src/shaders/*` + assets en `public/static/earth/*`
 - `src/pages/technologies/[techId].astro` y `src/pages/technologies/view.astro`
 - `src/pages/projects/[projectId].astro` y `src/pages/projects/view.astro`
-- `src/scripts/project-view-bootstrap.ts`, `src/scripts/technology-view-bootstrap.ts`
-- `src/scripts/settings-profile.ts`, `src/scripts/cv-page.ts`, `src/lib/public-portfolio-slug.ts` (perfil, CV, slug publico)
+- `src/scripts/projects/project-view-bootstrap.ts`, `src/scripts/technologies/technology-view-bootstrap.ts`
+- `src/scripts/settings/settings-profile.ts`, `src/scripts/cv/cv-page.ts`, `src/lib/public-portfolio-slug.ts` (perfil, CV, slug publico)
 
 ## Regla de trabajo recomendada
 

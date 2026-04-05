@@ -1,0 +1,34 @@
+---
+/** Modal de command palette; lógica en `shell/command-palette.ts` + trigger en `client-shell/command-palette-trigger.ts`. */
+---
+
+<div
+  data-command-palette
+  class="hidden fixed inset-0 items-start justify-center p-4 sm:p-6 bg-black/40"
+  style="z-index: 2000;"
+  aria-hidden="true"
+>
+  <div
+    data-command-palette-dialog
+    class="w-full max-w-xl rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-xl overflow-hidden"
+  >
+    <div class="flex items-center gap-2 p-3 border-b border-gray-100 dark:border-gray-800">
+      <input
+        data-command-palette-input
+        class="w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2 text-sm app-accent-ring"
+        placeholder="Buscar… (Ctrl+K)"
+        data-i18n="common.commandPalettePlaceholder"
+        data-i18n-attr="placeholder"
+      />
+      <button
+        type="button"
+        data-command-palette-close
+        class="btn-secondary text-sm"
+        data-i18n="common.close"
+      >
+        Cerrar
+      </button>
+    </div>
+    <div data-command-palette-list class="p-2 max-h-[60vh] overflow-auto"></div>
+  </div>
+</div>

@@ -1,0 +1,46 @@
+---
+
+---
+
+<header class="text-center max-w-3xl mx-auto space-y-6 pt-2 md:pt-4">
+  <p
+    class="m-0 inline-flex items-center rounded-full border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/70 px-3 py-1 text-xs font-semibold tracking-wide text-gray-600 dark:text-gray-300"
+  >
+    <span data-i18n="pricing.heroEyebrow">SkillAtlas</span>
+  </p>
+  <h1 class="m-0 text-3xl md:text-5xl font-semibold tracking-tight text-gray-900 dark:text-gray-50 leading-[1.12]">
+    <span data-i18n="pricing.heroTitle">Planes claros para organizar tu conocimiento y tu portfolio.</span>
+  </h1>
+  <p class="m-0 text-base md:text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
+    <span data-i18n="pricing.heroSubtitle">Invitaciones limitadas hoy. Precios pensados para profesionales que quieren consistencia, no solo otro tablero vacío.</span>
+  </p>
+
+  <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1">
+    <span
+      id="pricing-billing-label"
+      class="text-xs font-medium text-gray-500 dark:text-gray-400"
+      data-i18n="pricing.billingLabel">Facturación</span>
+    <div
+      role="group"
+      aria-labelledby="pricing-billing-label"
+      class="inline-flex rounded-xl border border-gray-200/80 dark:border-gray-800 bg-gray-100/90 dark:bg-gray-900/90 p-1 gap-0.5"
+    >
+      <button
+        type="button"
+        data-pricing-period="month"
+        class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 transition-colors bg-white dark:bg-gray-900 shadow-sm"
+        aria-pressed="true"
+      >
+        <span data-i18n="pricing.billingMonthly">Mensual</span>
+      </button>
+      <button
+        type="button"
+        data-pricing-period="year"
+        class="rounded-lg px-4 py-2 text-sm font-semibold transition-colors text-gray-500 dark:text-gray-400"
+        aria-pressed="false"
+      >
+        <span data-i18n="pricing.billingYearly">Anual</span>
+      </button>
+    </div>
+  </div>
+</header>

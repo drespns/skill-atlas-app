@@ -23,7 +23,7 @@ Orden priorizado para ganar profundidad sin dejar de pulir tecnologías/portfoli
    - **Iteración v0 (hecho en código):** `/study` — UI 3 columnas (fuentes · estudio · salidas), fuentes y notas de sesión en `localStorage`; sin IA todavía. Siguiente: subida a Storage + extracción de texto + RAG + botones de salida reales.
 7. **Monetización** — Tras validar demanda: pasarela + tabla de suscripciones + límites por plan; mantener precio accesible como objetivo de producto.
 
-**Implementación reciente:** `/pricing` (`src/pages/pricing.astro`, `src/scripts/pricing-billing.ts`); enlaces en footer, landing y Ctrl+K. Textos i18n en `pricing.*` (`src/i18n/{es,en}.json`). **El header no enlaza a Precios** (v0.45+); acceso vía landing/hero/footer (authed) y palette.
+**Implementación reciente:** `/pricing` (`src/pages/pricing.astro`, `src/scripts/pricing/pricing-billing.ts`); enlaces en footer, landing y Ctrl+K. Textos i18n en `pricing.*` (`src/i18n/{es,en}.json`). **El header no enlaza a Precios** (v0.45+); acceso vía landing/hero/footer (authed) y palette.
 
 ---
 
@@ -39,21 +39,24 @@ Orden priorizado para ganar profundidad sin dejar de pulir tecnologías/portfoli
    - **Iteración abr. 2026:** ampliado `astro:after-swap` (y programación segura) en portfolio autenticado, cabecera de perfil del portfolio, listas proyectos/tecnologías, `/app`, toggle vista, estudio, CV y portfolios públicos por token/slug; filtro por tecnología en portfolio(s) con **un solo** `change` listener; eliminar tecnología sin doble enganche al disparar el boot dos veces. Detalle técnico en `docs/architecture.md` (párrafo View Transitions).
 
 2. **Command palette (el que ya tienes)** — Hoy: **Ctrl+K**, **/** (cuando el foco no está en un campo de texto) y **botón en la cabecera** (icono de búsqueda, `data-command-palette-trigger` en `AppShell.astro`, p. ej. “Buscar (Ctrl+K)”). **No es** crear un segundo sistema; **sí es** hacerlo más potente: buscar proyectos/tecnologías, más acciones rápidas, mejor textos/i18n.
+   - **Sprint B (abr. 2026):** títulos de sección y estado vacío “sin resultados” pasan por **i18n** (`common.palette*` en `command-palette.ts`).
 
 3. **Burbujas flotantes (FAB / launcher)** — **Nuevo patrón:** zona fija (p. ej. esquina inferior derecha), estilo “widget” de chat: al pulsar, panel con **animación** (modal o toast grande) con **atajos** (la referencia detallada sigue en **Ajustes**). **Extensible** a más burbujas en línea (futuro: asistente / IA, ayuda contextual). La checklist corta post-login (punto 6) vive aquí en el MVP.
    - **Implementado (abr. 2026):** panel con pestañas (atajos · checklist · teaser IA), checklist persistida en `localStorage`, invitados ven la checklist **bloqueada** (sin marcar) con aviso e enlace a login.
    - **Idea futura (no prioritaria):** **burbujas arrastrables** para reposicionar el dock (persistir offset en `localStorage` o prefs); valor UX moderado frente a complejidad en móvil y solapes con el contenido.
-   - **Iteración UX pendiente:** el panel debería ganar **ancho fluido** respecto al viewport (p. ej. `min(..., 100vw - padding)`) para que los rótulos de pestaña no se corten; en paralelo, **etiquetas de pestaña cortas** (“Pasos”, “IA”) y el **texto largo en el cuerpo del tab** (intro del checklist, etc.) suelen funcionar mejor que títulos largos en la barra.
+   - **Sprint B (abr. 2026):** panel con `max-w` que respeta **safe-area** horizontal; fila de pestañas con **scroll horizontal** y pestañas `shrink-0` para que no se compriman en móvil.
 
 4. **Detalles de confianza** — Toasts, mensajes tras guardar/borrar, errores legibles: se implementa con criterio técnico y se ajusta cuando tengas más horas de uso sobre la web.
    - **Parcial (abr. 2026):** tipo de toast **`warning`** (ámbar) alineado con usos reales del código; **accesibilidad** básica en toasts (`role="status"`, `aria-live`); helper **`userFacingDbError`** en `ui-feedback.ts` para mensajes de Postgres/Supabase repetitivos (RLS, sesión, duplicados, red) aplicado en **proyecto**, **tecnologías**, **evidencias (embeds)** y **conceptos**. Valorar i18n de los textos del helper y unificar mensajes en inglés cuando el UI esté en EN.
 
 5. **Dashboard (`/app`)** — **Actividad y/o accesos recientes** (últimos proyectos o tecnologías, enlaces útiles) para que la entrada a la app tenga “vida” y punto de retorno al trabajo.
-   - **Implementado (abr. 2026):** bloque **Actividad** con listas “Proyectos recientes” / “Tecnologías recientes” (`localStorage`, `recent-activity.ts`), rellenadas al abrir detalle CSR (`project-view-bootstrap` / `technology-view-bootstrap`); sección **Enlaces útiles** (Estudio, Prep, Ajustes, perfil, atajos); listados A–Z con hints; script `app-dashboard.ts` siempre en `/app` (sin Supabase en cliente o sin sesión → mensaje guía en lugar de “Cargando…” eterno).
+   - **Implementado (abr. 2026):** bloque **Actividad** con listas “Proyectos recientes” / “Tecnologías recientes” (`localStorage`, `app/recent-activity.ts`), rellenadas al abrir detalle CSR (`projects/project-view-bootstrap` / `technologies/technology-view-bootstrap`); sección **Enlaces útiles** (Estudio, Prep, Ajustes, perfil, atajos); listados A–Z con hints; script `app/app-dashboard.ts` siempre en `/app` (sin Supabase en cliente o sin sesión → mensaje guía en lugar de “Cargando…” eterno).
+   - **Sprint B5 (abr. 2026):** enlace directo **`/settings#portfolio-links`** (“Enlaces públicos”) junto a perfil y atajos; lista de pasos recomendados en `/app` alineada con hashes de Ajustes.
    - **Futuro (si el producto lo exige):** historial **multi-dispositivo** / ligado a cuenta (p. ej. `user_prefs` o tabla de eventos) en lugar de solo `localStorage` en el navegador.
 
 6. **Checklist muy corta post-login** — Onboarding mínimo (pocos pasos). **MVP:** integrado con las **burbujas** del punto 3 (segunda burbuja o sección dentro del mismo panel).
    - **Hecho:** checklist en el FAB (pestaña “Pasos”), persistencia local; invitados la ven bloqueada con CTA a login.
+   - **Sprint O1+ (abr. 2026):** eliminado el tour modal **V1**; el único flujo guiado es el **recorrido con spotlight** (`onboarding-spotlight.ts`), relanzable desde `/app` con “Recorrido guiado”; copy sin jerga “onboarding” en español.
 
 7. **Portfolio público** — **Jerarquía y perfilado** para el visitante: lectura clara, móvil, orden visual de historia + evidencias + stack (sin mezclar con refactors grandes de la app interna hasta estar listos).
    - **Parcial (abr. 2026):** módulo compartido `src/lib/public-portfolio-project-card.ts` — tarjeta con orden **título → stack → historia (rol/impacto) → descripción → evidencia**; chips con icono; iframe/enlace con accesibilidad y CTA táctil; preview autenticado (`portfolio-projects.ts`) alineado; `/portfolio/[slug]` y `/p/[token]` con cabecera y rejilla más aireadas (móvil); textos `portfolio.public.*` + `portfolio.publicLoading` (i18n).
@@ -77,7 +80,7 @@ Orden priorizado para ganar profundidad sin dejar de pulir tecnologías/portfoli
   - foto opcional + fuente (subida vs LinkedIn/proveedor) sin perder la subida
   - impresión en claro (beforeprint + `@media print`)
 - **Landing:** scroll horizontal contenido con `overflow-x: hidden` en `html`/`body` (sin cambiar el full-bleed del hero).
-- **Header:** `syncHeaderNavActive()` + indicador `left`/`width`; sin Precios en nav; Admin separado de iconos con `flex-1` espaciador; estilos activos `.header-nav-link` / `.header-admin-link`; **command palette** con estilo primario (índigo); selector de idioma en cabecera **opcional** (`showLangSelector`, por defecto oculto).
+- **Header:** `syncHeaderNavActive()` + indicador `left`/`width`; sin Precios en nav; Admin separado de iconos con `flex-1` espaciador; estilos activos `.header-nav-link` / `.header-admin-link`; **command palette** con estilo primario (índigo); marca (logo) y avatar separados (avatar → `/settings#portfolio-profile`); selector de idioma en cabecera **opcional** (`showLangSelector`, por defecto **visible**); tema con `aria-pressed` alineado al modo efectivo.
 
 ---
 
@@ -89,7 +92,7 @@ Resumen:
 
 1. Multiusuario real: `user_id` en tablas + RLS por `auth.uid()` (SQL en repo: `docs/sql/saas-001*.sql`, `saas-002*.sql`).
 2. Portfolio no catalogo publico: `portfolio_profiles` + `share_token` + ruta `/p/...` y RPC `skillatlas_portfolio_by_share_token` (`docs/sql/saas-003*.sql`).
-3. App interna con **CSR** en Supabase: listas y detalles cargan en cliente (`/projects/view`, `/technologies/view`, bootstraps en `src/scripts/*-view-bootstrap.ts`). Ver `docs/architecture.md`.
+3. App interna con **CSR** en Supabase: listas y detalles cargan en cliente (`/projects/view`, `/technologies/view`, bootstraps en `src/scripts/projects/project-view-bootstrap.ts` y `src/scripts/technologies/technology-view-bootstrap.ts`). Ver `docs/architecture.md`.
 
 **Hecho en codigo (pendiente de aplicar SQL en tu proyecto Supabase si aun no):** inserts con `user_id`, rutas CSR, `supabaseProvider` tolerante a build sin datos, duplicados de proyecto por `(user_id, slug)`.
 
@@ -115,8 +118,8 @@ El bloque "single-account" y el script `rls-mvp-authenticated.sql` quedan como *
 - ~~constraints para sort_order por proyecto~~ -> indice unico `(project_id, sort_order)`
 
 3. ~~Limpieza tecnica~~ (hecho)
-- ~~dividir `project-detail.ts` en modulos mas pequenos~~ -> `src/scripts/project-detail/*.ts`
-- ~~extraer helper compartido~~ -> `getSupabaseBrowserClient` en `src/scripts/client-supabase.ts`
+- ~~dividir `project-detail.ts` en modulos mas pequenos~~ -> `src/scripts/projects/project-detail/*.ts`
+- ~~extraer helper compartido~~ -> `getSupabaseBrowserClient` en `src/scripts/core/client-supabase.ts`
 
 ## Prioridad media
 
@@ -163,7 +166,7 @@ El bloque "single-account" y el script `rls-mvp-authenticated.sql` quedan como *
 
 **Incluye:**
 
-- CSR en `/portfolio` para **cards de proyectos** (`src/scripts/portfolio-projects.ts`):
+- CSR en `/portfolio` para **cards de proyectos** (`src/scripts/portfolio/portfolio-projects.ts`):
   - chips de tecnologías con icono y color suave
   - historia: rol + resultado/impacto
   - evidencia primaria: iframe/enlace + chip de origen + favicon + contador

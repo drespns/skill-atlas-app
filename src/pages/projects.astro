@@ -153,8 +153,8 @@ const projectCards = await Promise.all(
   </section>
 
   {dataSource === "supabase" ? (
-    <script src="../scripts/projects.ts"></script>
+    <script src="../scripts/projects/projects.ts"></script>
   ) : null}
-  {dataSource === "supabase" ? <script src="../scripts/view-toggle.ts"></script> : null}
+  {dataSource === "supabase" ? <script src="../scripts/core/view-toggle.ts"></script> : null}
 </AppShell>
 

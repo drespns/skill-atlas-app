@@ -1,0 +1,15 @@
+---
+export interface Props {
+  bannerId: string;
+}
+const { bannerId } = Astro.props;
+---
+
+<script is:inline define:vars={{ skillatlasBannerId: bannerId }}>
+  try {
+    document.documentElement.dataset.saBannerDismissed =
+      localStorage.getItem(`skillatlas_banner_dismissed:${skillatlasBannerId}`) === "1" ? "1" : "0";
+  } catch {
+    document.documentElement.dataset.saBannerDismissed = "0";
+  }
+</script>

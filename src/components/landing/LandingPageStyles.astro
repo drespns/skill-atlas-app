@@ -1,0 +1,90 @@
+---
+/** Animaciones y máscaras de la landing (`landing-page.ts` asume estas clases). */
+---
+
+<style is:global>
+    @keyframes landingHeroGlowPulse {
+      0%,
+      100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.72;
+      }
+    }
+
+    .landing-hero-glow-pulse {
+      animation: landingHeroGlowPulse 4.5s ease-in-out infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .landing-hero-glow-pulse {
+        animation: none;
+      }
+    }
+
+    @keyframes landingDotsFloat {
+      0% {
+        background-position:
+          0 0,
+          11px 11px;
+      }
+      100% {
+        background-position:
+          44px 28px,
+          55px 39px;
+      }
+    }
+
+    .landing-dots {
+      opacity: 0.55;
+      background-image: radial-gradient(rgba(15, 23, 42, 0.22) 1px, transparent 1.35px),
+        radial-gradient(rgba(79, 70, 229, 0.14) 1px, transparent 1.45px);
+      background-size: 22px 22px, 22px 22px;
+      background-position: 0 0, 11px 11px;
+      mask-image: radial-gradient(ellipse 120% 85% at 50% 20%, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.45) 52%, rgba(0, 0, 0, 0.12) 72%, transparent 88%);
+      -webkit-mask-image: radial-gradient(ellipse 120% 85% at 50% 20%, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.45) 52%, rgba(0, 0, 0, 0.12) 72%, transparent 88%);
+      mask-repeat: no-repeat;
+      -webkit-mask-repeat: no-repeat;
+      mask-size: 100% 100%;
+      -webkit-mask-size: 100% 100%;
+      animation: landingDotsFloat 22s linear infinite;
+      will-change: background-position;
+      transform: translateZ(0);
+    }
+
+    html.dark .landing-dots {
+      opacity: 0.5;
+      background-image: radial-gradient(rgba(226, 232, 240, 0.16) 1px, transparent 1.35px),
+        radial-gradient(rgba(56, 189, 248, 0.12) 1px, transparent 1.45px);
+    }
+
+    html[data-motion="reduced"] .landing-dots {
+      animation: none;
+    }
+
+    html[data-motion="reduced"] .landing-hero-glow-pulse {
+      animation: none;
+    }
+
+    /* Softer toward viewport edges (pairs with full-bleed section) */
+    .landing-edge-vignette {
+      background: radial-gradient(
+        ellipse 115% 92% at 50% 36%,
+        transparent 0%,
+        transparent 32%,
+        rgb(255 255 255 / 0.35) 72%,
+        rgb(255 255 255 / 0.88) 100%
+      );
+    }
+
+    html.dark .landing-edge-vignette {
+      background: radial-gradient(
+        ellipse 115% 92% at 50% 36%,
+        transparent 0%,
+        transparent 28%,
+        rgb(3 7 18 / 0.5) 68%,
+        rgb(3 7 18 / 0.94) 100%
+      );
+    }
+  </style>

@@ -1,0 +1,91 @@
+---
+import SettingsPrefsFields from "./SettingsPrefsFields.astro";
+import SettingsShortcutsBody from "./SettingsShortcutsBody.astro";
+import SettingsPortfolioProfileBody from "./SettingsPortfolioProfileBody.astro";
+import SettingsPortfolioClassicBlocks from "./SettingsPortfolioClassicBlocks.astro";
+
+interface Props {
+  kbd: string;
+  profile: { publicName: string; bio: string };
+}
+const { kbd, profile } = Astro.props;
+---
+
+<div
+  data-settings-panels-root
+  class="settings-panels-root min-w-0 flex-1 px-4 py-8 sm:px-8 lg:px-12 lg:py-10 bg-white dark:bg-[#0d1117] border-l border-transparent lg:border-l-gray-200/80 dark:lg:border-l-[#30363d] overflow-x-hidden"
+>
+  <section
+    id="prefs"
+    data-settings-section="prefs"
+    data-settings-panel
+    class="settings-classic-panel max-w-3xl pb-10"
+    aria-hidden="false"
+  >
+    <div class="space-y-4 max-w-3xl">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200/90 dark:border-[#30363d] pb-5">
+        <h1 class="m-0 text-3xl font-normal tracking-tight text-gray-900 dark:text-gray-100">
+          <span data-i18n="settings.prefs.sectionTitle">Preferencias</span>
+        </h1>
+        <button
+          type="button"
+          data-pref-reset
+          class="inline-flex items-center justify-center rounded-md border border-gray-200 dark:border-[#30363d] bg-white dark:bg-[#21262d] px-3 py-2 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-[#30363d] motion-safe:transition-colors"
+        >
+          <span data-i18n="settings.prefs.reset">Restablecer</span>
+        </button>
+      </div>
+      <SettingsPrefsFields />
+      <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
+        <span data-i18n="settings.prefs.localFirstHint">
+          Cambios aplicados al instante en toda la app.
+        </span>
+      </p>
+    </div>
+  </section>
+  <section
+    id="shortcuts"
+    data-settings-section="shortcuts"
+    data-settings-panel
+    hidden
+    class="settings-classic-panel hidden max-w-3xl pb-10"
+    aria-hidden="true"
+  >
+    <div class="space-y-4 max-w-3xl">
+      <h1 class="m-0 text-3xl font-normal tracking-tight text-gray-900 dark:text-gray-100 border-b border-gray-200/90 dark:border-[#30363d] pb-5">
+        <span data-i18n="settings.shortcuts.sectionTitle">Atajos de teclado</span>
+      </h1>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
+        <span data-i18n="settings.shortcuts.intro"
+          >Atajos activos en toda la app (salvo al escribir en un campo).</span
+        >
+      </p>
+      <SettingsShortcutsBody kbd={kbd} />
+    </div>
+  </section>
+  <section
+    id="portfolio-profile"
+    data-settings-profile-root
+    data-settings-section="portfolio_profile"
+    data-settings-panel
+    hidden
+    class="settings-classic-panel hidden max-w-3xl pb-10"
+    aria-hidden="true"
+  >
+    <div class="space-y-4 max-w-3xl">
+      <div class="space-y-1 border-b border-gray-200/90 dark:border-[#30363d] pb-5">
+        <h1 class="m-0 text-3xl font-normal tracking-tight text-gray-900 dark:text-gray-100">
+          <span data-i18n="settings.portfolio.profileCardTitle">Perfil público</span>
+        </h1>
+        <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
+          <span data-i18n="settings.portfolio.hint"
+            >Texto que se muestra arriba en tu portfolio público.</span
+          >
+        </p>
+        <p data-profile-cloud-hint class="m-0 text-xs min-h-4 text-gray-500 dark:text-gray-400"></p>
+      </div>
+      <SettingsPortfolioProfileBody profile={profile} />
+    </div>
+  </section>
+  <SettingsPortfolioClassicBlocks />
+</div>

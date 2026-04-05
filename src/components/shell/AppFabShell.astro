@@ -1,0 +1,324 @@
+---
+const fabKbd =
+  "inline-flex items-center rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 px-1.5 py-0.5 text-[11px] font-mono font-semibold text-gray-800 dark:text-gray-200 shadow-sm";
+---
+
+<!-- Burbujas flotantes: atajos, checklist (sesión), IA (roadmap). Script: fab-bubbles.ts -->
+<div
+  data-fab-root
+  class="hidden fixed inset-x-0 bottom-0 z-[1900] pointer-events-none flex flex-col items-end gap-0 px-4 pb-4 pt-20 md:px-6 md:pb-6"
+  aria-live="polite"
+>
+  <div
+    data-fab-backdrop
+    class="pointer-events-none fixed inset-0 z-[1880] bg-black/45 opacity-0 transition-opacity duration-200 motion-reduce:transition-none"
+    aria-hidden="true"
+  >
+  </div>
+
+  <div
+    id="fab-help-panel"
+    data-fab-panel
+    class="pointer-events-none relative z-[1890] mb-3 w-full max-w-[min(36rem,calc(100vw-2rem-env(safe-area-inset-left,0px)-env(safe-area-inset-right,0px)))] translate-y-2 scale-95 opacity-0 transition-all duration-200 motion-reduce:transition-none motion-reduce:translate-y-0 motion-reduce:scale-100"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="fab-panel-title"
+    hidden
+  >
+    <div
+      class="max-h-[min(32rem,72vh)] overflow-hidden rounded-2xl border border-gray-200/90 dark:border-gray-700/90 bg-white/95 dark:bg-gray-950/95 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-md"
+    >
+      <div class="flex items-center justify-between gap-2 border-b border-gray-100 dark:border-gray-800 px-3 py-2.5">
+        <div
+          data-fab-tab-row
+          class="hidden min-w-0 flex-1 flex flex-nowrap gap-0.5 overflow-x-auto overscroll-x-contain rounded-lg bg-gray-100/80 dark:bg-gray-900/80 p-0.5 [scrollbar-width:thin] sm:gap-1"
+        >
+          <button
+            type="button"
+            data-fab-tab="shortcuts"
+            class="fab-tab shrink-0 rounded-md px-2 py-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-400 data-[active=true]:bg-white data-[active=true]:dark:bg-gray-800 data-[active=true]:text-gray-900 data-[active=true]:dark:text-gray-100 sm:px-2.5 sm:text-xs"
+            data-active="true"
+          >
+            <span class="block whitespace-nowrap text-center" data-i18n="fab.tabShortcuts">Atajos</span>
+          </button>
+          <button
+            type="button"
+            data-fab-tab="checklist"
+            class="fab-tab shrink-0 rounded-md px-2 py-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-400 data-[active=true]:bg-white data-[active=true]:dark:bg-gray-800 data-[active=true]:text-gray-900 data-[active=true]:dark:text-gray-100 sm:px-2.5 sm:text-xs"
+            data-active="false"
+          >
+            <span class="block whitespace-nowrap text-center" data-i18n="fab.tabChecklist">Pasos</span>
+          </button>
+          <button
+            type="button"
+            data-fab-tab="ai"
+            class="fab-tab shrink-0 rounded-md px-2 py-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-400 data-[active=true]:bg-white data-[active=true]:dark:bg-gray-800 data-[active=true]:text-gray-900 data-[active=true]:dark:text-gray-100 sm:px-2.5 sm:text-xs"
+            data-active="false"
+          >
+            <span class="block whitespace-nowrap text-center" data-i18n="fab.tabAi">IA</span>
+          </button>
+        </div>
+        <h2
+          id="fab-panel-title"
+          data-fab-title-guest
+          class="m-0 hidden min-w-0 flex-1 text-sm font-semibold text-gray-900 dark:text-gray-100"
+        >
+          <span data-i18n="fab.panelTitleShortcuts">Atajos</span>
+        </h2>
+        <button
+          type="button"
+          data-fab-close
+          class="shrink-0 rounded-lg border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900"
+          data-i18n="fab.close"
+        >
+          Cerrar
+        </button>
+      </div>
+
+      <div data-fab-pane="shortcuts" class="max-h-[min(28rem,62vh)] overflow-y-auto p-4 space-y-4">
+        <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
+          <span data-i18n="settings.shortcuts.intro">Atajos activos en toda la app.</span>
+        </p>
+        <ul class="m-0 list-none space-y-3 p-0">
+          <li
+            class="flex flex-col gap-2 rounded-xl border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
+              <span data-i18n="settings.shortcuts.palette">Abrir búsqueda y navegación rápida</span>
+            </span>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <kbd class={fabKbd} data-i18n="settings.shortcuts.ctrl">Ctrl</kbd><span class="text-gray-400">+</span><kbd class={fabKbd}>K</kbd>
+              <span class="px-1 text-xs text-gray-500 dark:text-gray-400" data-i18n="settings.shortcuts.or">o</span>
+              <kbd class={fabKbd}>⌘</kbd><span class="text-gray-400">+</span><kbd class={fabKbd}>K</kbd>
+              <span class="px-1 text-xs text-gray-500 dark:text-gray-400">·</span>
+              <kbd class={fabKbd}>/</kbd>
+            </div>
+          </li>
+          <li class="-mt-1 px-1 text-xs text-gray-600 dark:text-gray-400">
+            <span data-i18n="settings.shortcuts.slashHint"></span>
+          </li>
+          <li
+            class="flex flex-col gap-2 rounded-xl border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
+              <span data-i18n="settings.shortcuts.paletteNavigate">En la paleta: moverse y abrir</span>
+            </span>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <kbd class={fabKbd}>↑</kbd><kbd class={fabKbd}>↓</kbd><span class="text-xs text-gray-500">+</span><kbd class={fabKbd}>Enter</kbd>
+            </div>
+          </li>
+          <li
+            class="flex flex-col gap-2 rounded-xl border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
+              <span data-i18n="settings.shortcuts.close">Cerrar la paleta</span>
+            </span>
+            <kbd class={fabKbd}>Esc</kbd>
+          </li>
+        </ul>
+        <div class="flex flex-col gap-2 border-t border-gray-100 dark:border-gray-800 pt-3 sm:flex-row sm:flex-wrap">
+          <button
+            type="button"
+            data-fab-open-palette
+            class="inline-flex justify-center rounded-xl bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+          >
+            <span data-i18n="fab.openCommandPalette">Abrir paleta</span>
+          </button>
+          <a
+            href="/settings#shortcuts"
+            class="inline-flex justify-center rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm font-semibold text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+          >
+            <span data-i18n="fab.linkSettings">Ver en Ajustes</span>
+          </a>
+        </div>
+      </div>
+
+      <div data-fab-pane="checklist" class="hidden max-h-[min(28rem,62vh)] overflow-y-auto p-4 space-y-3">
+        <div
+          data-fab-checklist-guest-callout
+          class="hidden rounded-xl border border-amber-200/90 dark:border-amber-900/50 bg-amber-50/95 dark:bg-amber-950/30 px-3 py-2.5 text-sm text-amber-950 dark:text-amber-100"
+        >
+          <p class="m-0 flex items-start gap-2.5">
+            <svg
+              class="h-5 w-5 shrink-0 text-amber-700 dark:text-amber-300 mt-0.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+              <path d="M7 11V7a5 5 0 0110 0v4"></path>
+            </svg>
+            <span class="min-w-0 leading-snug">
+              <span data-i18n="fab.checklistGuestIntro"
+                >Inicia sesión para poder marcar el progreso; sin cuenta solo puedes ver la lista.</span>
+              <a
+                href="/login"
+                class="ml-1 font-semibold text-amber-900 underline decoration-amber-700/40 underline-offset-2 hover:decoration-amber-800 dark:text-amber-200 dark:decoration-amber-400/50"
+                data-i18n="fab.checklistGuestLogin">Iniciar sesión</a>
+            </span>
+          </p>
+        </div>
+        <p data-fab-checklist-intro-authed class="m-0 text-xs text-gray-600 dark:text-gray-400">
+          <span data-i18n="fab.checklistIntro">Marca lo que ya hayas hecho; se guarda en este dispositivo.</span>
+        </p>
+        <ul class="m-0 list-none space-y-2 p-0">
+          <li>
+            <label
+              data-fab-check-row
+              class="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-2.5"
+            >
+              <input type="checkbox" data-fab-check="tech" class="mt-1 rounded border-gray-300 dark:border-gray-600" />
+              <span class="text-sm text-gray-900 dark:text-gray-100">
+                <span data-i18n="fab.checkTech">Crear al menos una tecnología</span>
+                <a
+                  href="/technologies?create=1"
+                  class="ml-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  data-i18n="fab.checkTechLink">Ir</a>
+              </span>
+            </label>
+          </li>
+          <li>
+            <label
+              data-fab-check-row
+              class="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-2.5"
+            >
+              <input type="checkbox" data-fab-check="project" class="mt-1 rounded border-gray-300 dark:border-gray-600" />
+              <span class="text-sm text-gray-900 dark:text-gray-100">
+                <span data-i18n="fab.checkProject">Crear un proyecto y enlazar tecnologías</span>
+                <a
+                  href="/projects?create=1"
+                  class="ml-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  data-i18n="fab.checkProjectLink">Ir</a>
+              </span>
+            </label>
+          </li>
+          <li>
+            <label
+              data-fab-check-row
+              class="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-2.5"
+            >
+              <input type="checkbox" data-fab-check="cv" class="mt-1 rounded border-gray-300 dark:border-gray-600" />
+              <span class="text-sm text-gray-900 dark:text-gray-100">
+                <span data-i18n="fab.checkCv">Completar o revisar tu CV</span>
+                <a href="/cv" class="ml-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline" data-i18n="fab.checkCvLink">Ir</a>
+              </span>
+            </label>
+          </li>
+          <li>
+            <label
+              data-fab-check-row
+              class="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-2.5"
+            >
+              <input
+                type="checkbox"
+                data-fab-check="portfolio"
+                class="mt-1 rounded border-gray-300 dark:border-gray-600"
+              />
+              <span class="text-sm text-gray-900 dark:text-gray-100">
+                <span data-i18n="fab.checkPortfolio">Configurar portfolio público (slug o visibilidad)</span>
+                <a
+                  href="/settings#portfolio-links"
+                  class="ml-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  data-i18n="fab.checkPortfolioLink">Ajustes</a>
+              </span>
+            </label>
+          </li>
+        </ul>
+      </div>
+
+      <div data-fab-pane="ai" class="hidden max-h-[min(28rem,62vh)] overflow-y-auto p-4">
+        <div
+          class="space-y-3 rounded-2xl border border-violet-200/70 dark:border-violet-800/50 bg-gradient-to-br from-violet-50/95 via-white to-white dark:from-violet-950/40 dark:via-gray-950 dark:to-gray-950 p-4 shadow-sm ring-1 ring-violet-200/40 dark:ring-violet-900/30"
+        >
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <h3 class="m-0 text-base font-semibold tracking-tight text-violet-950 dark:text-violet-100">
+              <span data-i18n="fab.aiTitle">Asistente inteligente</span>
+            </h3>
+            <span
+              class="shrink-0 rounded-full border border-violet-300/80 bg-violet-100/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-violet-800 dark:border-violet-700 dark:bg-violet-950/60 dark:text-violet-200"
+              data-i18n="fab.aiBadge"
+            >
+              Próximamente
+            </span>
+          </div>
+          <p class="m-0 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+            <span data-i18n="fab.aiIntro">
+              Estamos diseñando ayudas con IA que encajen con tu mapa de skills, sin sustituir tu criterio.
+            </span>
+          </p>
+          <ul class="m-0 list-none space-y-2.5 border-t border-violet-100/80 pt-3 dark:border-violet-900/40 pl-0 text-sm text-gray-600 dark:text-gray-400">
+            <li class="flex gap-2.5">
+              <span class="mt-0.5 shrink-0 text-violet-500 dark:text-violet-400" aria-hidden="true">◇</span>
+              <span data-i18n="fab.aiBullet1">Sugerencias al redactar proyectos y evidencias.</span>
+            </li>
+            <li class="flex gap-2.5">
+              <span class="mt-0.5 shrink-0 text-violet-500 dark:text-violet-400" aria-hidden="true">◇</span>
+              <span data-i18n="fab.aiBullet2">Resúmenes y preguntas sobre fuentes en Estudio (cuando haya RAG).</span>
+            </li>
+            <li class="flex gap-2.5">
+              <span class="mt-0.5 shrink-0 text-violet-500 dark:text-violet-400" aria-hidden="true">◇</span>
+              <span data-i18n="fab.aiBullet3">Ideas para conceptos y plantillas, siempre bajo tu revisión.</span>
+            </li>
+          </ul>
+          <p class="m-0 border-t border-violet-100/80 pt-3 text-xs leading-snug text-gray-500 dark:text-gray-500">
+            <span data-i18n="fab.aiFooter">Aún no hay modelo conectado; te avisaremos cuando abramos la beta.</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div data-fab-dock class="pointer-events-auto relative z-[1910] flex flex-col-reverse items-end gap-3">
+    <button
+      type="button"
+      data-fab-ai
+      class="flex h-12 w-12 items-center justify-center rounded-full border border-violet-200/90 bg-violet-600 text-white shadow-lg ring-2 ring-white/20 transition-transform hover:scale-105 hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 motion-reduce:transition-none motion-reduce:hover:scale-100"
+      aria-expanded="false"
+      aria-haspopup="dialog"
+      aria-controls="fab-help-panel"
+    >
+      <span class="sr-only" data-i18n="fab.openAi">Inteligencia artificial (próximamente)</span>
+      <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M12 3a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0V4a1 1 0 0 0-1-1Z"></path>
+        <path d="M5.64 5.64a1 1 0 0 0 0 1.41l.71.71a1 1 0 0 0 1.41-1.41L7.05 5.64a1 1 0 0 0-1.41 0Z"></path>
+        <path d="M3 12a1 1 0 0 1 1-1h1a1 1 0 0 1 0 2H4a1 1 0 0 1-1-1Z"></path>
+        <path d="M5.64 18.36a1 1 0 0 0 1.41 0l.71-.71a1 1 0 1 0-1.41-1.41l-.71.71a1 1 0 0 0 0 1.41Z"></path>
+        <path d="M12 19a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1Z"></path>
+        <path d="M18.36 5.64a1 1 0 0 0-1.41 0l-.71.71a1 1 0 0 0 1.41 1.41l.71-.71a1 1 0 0 0 0-1.41Z"></path>
+        <path d="M19 12a1 1 0 0 1-1 1h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 1 1Z"></path>
+        <path d="M16.24 16.24a1 1 0 0 0 0 1.41l.71.71a1 1 0 1 0 1.41-1.41l-.71-.71a1 1 0 0 0-1.41 0Z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+    </button>
+    <button
+      type="button"
+      data-fab-checklist
+      class="flex h-12 w-12 items-center justify-center rounded-full border border-emerald-200/90 bg-emerald-600 text-white shadow-lg ring-2 ring-white/20 transition-transform hover:scale-105 hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 motion-reduce:transition-none motion-reduce:hover:scale-100"
+      aria-expanded="false"
+      aria-haspopup="dialog"
+      aria-controls="fab-help-panel"
+    >
+      <span class="sr-only" data-i18n="fab.openChecklist">Primeros pasos</span>
+      <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M9 11l3 3L22 4"></path>
+        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+      </svg>
+    </button>
+    <button
+      type="button"
+      data-fab-shortcuts
+      class="flex h-14 w-14 items-center justify-center rounded-full border border-indigo-200/90 bg-indigo-600 text-white shadow-lg ring-2 ring-white/20 transition-transform hover:scale-105 hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 motion-reduce:transition-none motion-reduce:hover:scale-100"
+      aria-expanded="false"
+      aria-haspopup="dialog"
+      aria-controls="fab-help-panel"
+    >
+      <span class="sr-only" data-i18n="fab.openShortcuts">Atajos y ayuda</span>
+      <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+        <path d="M6 10h0M10 10h0M14 10h0"></path>
+      </svg>
+    </button>
+  </div>
+</div>

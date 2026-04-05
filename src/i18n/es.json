@@ -19,13 +19,20 @@
     "add": "Añadir",
     "cancel": "Cancelar",
     "language": "Idioma",
+    "openPublicProfileSettings": "Perfil público (Ajustes)",
     "githubRepo": "Ver repositorio en GitHub",
     "toggleTheme": "Cambiar tema",
     "commandPalettePlaceholder": "Buscar… (Ctrl+K)",
     "commandPaletteAria": "Buscar y navegar (Ctrl+K)",
     "commandPaletteTriggerLabel": "Buscar",
     "close": "Cerrar",
-    "loading": "Cargando…"
+    "loading": "Cargando…",
+    "paletteNoResults": "Sin resultados",
+    "paletteSectionAdmin": "Admin",
+    "paletteSectionNav": "Navegación",
+    "paletteSectionActions": "Acciones rápidas",
+    "paletteSectionTech": "Tus tecnologías",
+    "paletteSectionProject": "Tus proyectos"
   },
   "fab": {
     "tabShortcuts": "Atajos",
@@ -319,7 +326,7 @@
     "todayLi2": "Evidencias como enlace o embed, ordenadas y con pistas según la URL.",
     "todayLi3": "Historia de proyecto: rol + resultado para explicar impacto, no solo tareas.",
     "todayLi4": "Portfolio público por slug o token, perfil y compartir desde Ajustes; demo, precios y solicitudes de acceso con panel admin.",
-    "todayLi5": "Modo oscuro, ES/EN, View Transitions, Ajustes en panel lateral (estilo app moderna), onboarding con pasos y pulido diario que se nota.",
+    "todayLi5": "Modo oscuro, ES/EN, View Transitions, Ajustes en panel lateral (estilo app moderna), recorrido guiado paso a paso y pulido diario que se nota.",
     "workflowVizKicker": "Dentro de la app",
     "workflowVizTitle": "De la base al portfolio, y más allá.",
     "workflowVizSubtitle": "Flujo de trabajo real: mapa de habilidades, proyectos con evidencias, salidas públicas y preparación para convocatorias.",
@@ -413,6 +420,7 @@
     "usefulLinksTitle": "Enlaces útiles",
     "linkPrep": "Prep",
     "linkPublicProfile": "Perfil público",
+    "linkPublicLinks": "Enlaces públicos",
     "linkShortcuts": "Atajos",
     "mockHydrateHint": "Modo sin Supabase en cliente: los listados A–Z no están disponibles aquí. Usa las rutas de la cabecera o PUBLIC_DATA_SOURCE=supabase.",
     "signedOutListHint": "Inicia sesión para cargar tus listas de proyectos y tecnologías.",
@@ -677,7 +685,7 @@
       "language": "Idioma",
       "showHeaderIcons": "Iconos del header",
       "showLangSelector": "Selector de idioma (header)",
-      "showLangSelectorHint": "Por defecto está oculto en la barra; el idioma puedes cambiarlo siempre aquí.",
+      "showLangSelectorHint": "Por defecto se muestra en la barra; puedes ocultarlo aquí.",
       "show": "Mostrar",
       "hide": "Ocultar"
     },
@@ -701,42 +709,31 @@
     }
   }
   ,
+  "guidedTour": {
+    "startButton": "Recorrido guiado",
+    "restartedToast": "Recorrido reiniciado. Sigue los pasos en el panel flotante.",
+    "openedFromDashboard": "Recorrido abierto.",
+    "continueLater": "Continuar más tarde",
+    "continueLaterToast": "Puedes reanudar el recorrido cuando quieras desde el dashboard: «Recorrido guiado».",
+    "skipEnd": "Salir del recorrido"
+  },
   "onboarding": {
-    "kicker": "Primeros pasos",
-    "currentPage": "Página actual:",
-    "progress": "Progreso:",
     "skip": "Saltar",
     "back": "Atrás",
     "next": "Siguiente",
     "markDone": "Marcar como hecho",
-    "markUndone": "Desmarcar",
     "goTechnologies": "Ir a Tecnologías",
     "goProjects": "Ir a Proyectos",
     "goSettings": "Ir a Ajustes",
     "goPortfolio": "Ir a Portfolio",
-    "goCv": "Ir a CV",
-    "restart": "Rehacer onboarding",
-    "step1Title": "1/5 · Crea tu primera tecnología",
-    "step1Body": "Empieza creando una tecnología. Desde su detalle podrás añadir conceptos y llevar progreso.",
-    "step2Title": "2/5 · Crea un proyecto",
-    "step2Body": "Crea un proyecto y asócialo a tecnologías. Después podrás vincular conceptos relevantes.",
-    "step3Title": "3/5 · Ajusta tu perfil",
-    "step3Body": "Completa tu nombre, bio y avatar. Aquí también gestionas enlaces públicos (portfolio y CV).",
-    "step4Title": "4/5 · Publica tu portfolio",
-    "step4Body": "Activa tu URL pública por slug o por token y prueba el enlace en incógnito.",
-    "step5Title": "5/5 · Construye tu CV",
-    "step5Body": "Completa tu CV, usa Preview e imprime/guarda como PDF."
-  }
-  ,
-  "onboardingV1": {
-    "kicker": "Pasos recomendados (V1)",
-    "hint": "Si lo saltaste o quieres repetir, lánzalo desde aquí."
+    "goPublicLinks": "Enlaces públicos",
+    "goCv": "Ir a CV"
   },
   "onboardingV2": {
-    "kicker": "Onboarding",
-    "start": "Onboarding avanzado",
+    "kicker": "Recorrido guiado",
+    "go": "Ir",
     "assist": "Rellenar ejemplo",
-    "open": "Onboarding · Abrir",
+    "open": "Abrir recorrido guiado",
     "close": "Cerrar",
     "minimize": "Ocultar",
     "openPreview": "Abrir preview",

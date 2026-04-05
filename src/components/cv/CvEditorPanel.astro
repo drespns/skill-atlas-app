@@ -1,0 +1,193 @@
+---
+/** Formulario de edición del CV; hidratado por `cv-page.ts`. */
+---
+
+<div data-cv-editor class="hidden space-y-6 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 p-5 shadow-sm print:hidden">
+  <div class="rounded-xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 p-4 text-sm text-indigo-900 dark:text-indigo-100">
+    <span data-i18n="cv.publicShareMovedNote">El enlace público del CV se gestiona en Ajustes → “Portfolio público”.</span>
+    <a href="/settings" class="ml-1 font-semibold underline underline-offset-2 hover:opacity-90" data-i18n="cv.goToSettings">
+      Ir a Ajustes
+    </a>
+  </div>
+  <div class="space-y-3">
+    <h2 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">
+      <span data-i18n="cv.profileSectionTitle">Datos del CV</span>
+    </h2>
+    <p class="m-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="cv.settingsSyncHint">
+      Nombre, bio, avatar y stack se sincronizan con Ajustes. Si están vacíos, puedes completarlos aquí.
+    </p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <label class="space-y-1">
+        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.fullNameLabel">Nombre</span>
+        <input
+          type="text"
+          data-cv-full-name
+          placeholder="Tu nombre"
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+        />
+      </label>
+      <label class="space-y-1">
+        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.photoLabel">Foto</span>
+        <div class="flex items-center gap-3">
+          <input
+            type="file"
+            accept="image/*"
+            data-cv-avatar-file
+            class="block w-full text-sm text-gray-700 dark:text-gray-300 file:mr-3 file:rounded-lg file:border file:border-gray-200 file:bg-white/70 file:px-3 file:py-2 file:text-sm file:font-semibold hover:file:bg-gray-50 dark:file:border-gray-800 dark:file:bg-gray-950 dark:hover:file:bg-gray-900"
+          />
+          <button
+            type="button"
+            data-cv-photo-use-linkedin
+            class="hidden text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline"
+          >
+            <span data-i18n="cv.useLinkedinPhoto">Usar LinkedIn</span>
+          </button>
+          <button
+            type="button"
+            data-cv-photo-use-uploaded
+            class="hidden text-xs font-semibold text-gray-600 dark:text-gray-400 hover:underline"
+          >
+            <span data-i18n="cv.useUploadedPhoto">Usar subida</span>
+          </button>
+          <label class="flex items-start gap-2 cursor-pointer shrink-0">
+            <input type="checkbox" data-cv-show-photo class="rounded border-gray-300 dark:border-gray-600 mt-0.5" />
+            <span class="text-sm text-gray-800 dark:text-gray-200" data-i18n="cv.showPhotoLabel">Mostrar</span>
+          </label>
+        </div>
+      </label>
+      <label class="space-y-1 md:col-span-2">
+        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.publicBioLabel">Bio (Ajustes)</span>
+        <textarea
+          rows={3}
+          data-cv-public-bio
+          placeholder="Bio breve (se comparte con portfolio)."
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+        ></textarea>
+      </label>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <label class="space-y-1">
+        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.headlineLabel">Titular</span>
+        <input
+          type="text"
+          data-cv-headline
+          placeholder="Data Analyst · Analytics Engineer"
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+        />
+      </label>
+      <label class="space-y-1">
+        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.locationLabel">Ubicación</span>
+        <input
+          type="text"
+          data-cv-location
+          placeholder="Madrid, ES"
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+        />
+      </label>
+      <label class="space-y-1 md:col-span-2">
+        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.emailLabel">Email</span>
+        <input
+          type="email"
+          data-cv-email
+          placeholder="tu@email.com"
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+        />
+      </label>
+    </div>
+    <div class="space-y-2">
+      <p class="m-0 text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.linksLabel">Enlaces</p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <label class="space-y-1">
+          <span class="text-[11px] text-gray-600 dark:text-gray-400" data-i18n="cv.linkLabel1">LinkedIn</span>
+          <input
+            type="url"
+            data-cv-link-url="0"
+            placeholder="https://linkedin.com/in/..."
+            class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+          />
+        </label>
+        <label class="space-y-1">
+          <span class="text-[11px] text-gray-600 dark:text-gray-400" data-i18n="cv.linkLabel2">GitHub</span>
+          <input
+            type="url"
+            data-cv-link-url="1"
+            placeholder="https://github.com/..."
+            class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+          />
+        </label>
+        <label class="space-y-1">
+          <span class="text-[11px] text-gray-600 dark:text-gray-400" data-i18n="cv.linkLabel3">Portfolio</span>
+          <input
+            type="url"
+            data-cv-link-url="2"
+            placeholder="https://skillatlas.app/portfolio/..."
+            class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+          />
+        </label>
+      </div>
+      <p class="m-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="cv.profileHint">
+        Se guarda en tus preferencias (no es público).
+      </p>
+    </div>
+    <label class="space-y-1">
+      <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.summaryLabel">Resumen</span>
+      <textarea
+        rows={4}
+        data-cv-summary
+        placeholder="Resumen breve: foco, impacto, tecnologías y tipo de rol que buscas…"
+        class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+      ></textarea>
+    </label>
+    <label class="flex items-start gap-2 cursor-pointer">
+      <input type="checkbox" data-cv-show-helpstack class="rounded border-gray-300 dark:border-gray-600 mt-0.5" />
+      <span class="text-sm text-gray-800 dark:text-gray-200" data-i18n="cv.showHelpStackLabel">Mostrar stack de ayuda</span>
+    </label>
+    <label class="space-y-1">
+      <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.highlightsLabel">Experiencia / logros</span>
+      <textarea
+        rows={5}
+        data-cv-highlights
+        placeholder="- Logro 1 (métrica)\n- Logro 2 (impacto)\n- Logro 3 (stack)"
+        class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 font-mono/90"
+      ></textarea>
+      <p class="m-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="cv.highlightsHint">
+        Una línea por punto. Se imprimirá como bullets.
+      </p>
+    </label>
+  </div>
+
+  <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <h2 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">
+      <span data-i18n="cv.projectsSectionTitle">Proyectos en el CV</span>
+    </h2>
+    <div class="flex flex-wrap gap-3 text-xs font-semibold">
+      <button type="button" data-cv-select-all class="text-indigo-700 dark:text-indigo-300 hover:underline">
+        <span data-i18n="cv.selectAll">Marcar todos</span>
+      </button>
+      <button type="button" data-cv-select-none class="text-gray-600 dark:text-gray-400 hover:underline">
+        <span data-i18n="cv.selectNone">Quitar todos</span>
+      </button>
+    </div>
+  </div>
+  <ul data-cv-project-list class="m-0 list-none space-y-2 p-0"></ul>
+
+  <div class="pt-2 space-y-3">
+    <div class="flex items-end justify-between gap-3">
+      <h2 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="cv.experienceTitle">Experiencia</h2>
+      <button type="button" data-cv-exp-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
+        <span data-i18n="cv.addExperience">Añadir</span>
+      </button>
+    </div>
+    <div data-cv-exp-list class="space-y-3"></div>
+  </div>
+
+  <div class="pt-2 space-y-3">
+    <div class="flex items-end justify-between gap-3">
+      <h2 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="cv.educationTitle">Educación</h2>
+      <button type="button" data-cv-edu-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
+        <span data-i18n="cv.addEducation">Añadir</span>
+      </button>
+    </div>
+    <div data-cv-edu-list class="space-y-3"></div>
+  </div>
+</div>

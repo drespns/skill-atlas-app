@@ -1,0 +1,83 @@
+---
+/** Aplica prefs desde localStorage antes del primer paint (debe coincidir con `core/prefs.ts` / `loadPrefs`). */
+---
+
+<script is:inline>
+  (() => {
+    const STORAGE_KEY = "skillatlas_prefs_v1";
+    const safeParse = (raw) => {
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    };
+
+    const prefs = safeParse(localStorage.getItem(STORAGE_KEY)) ?? {};
+    const legacyTheme = localStorage.getItem("theme"); // "dark" | "light" | null
+    const themeMode =
+      prefs?.themeMode ?? (legacyTheme === "dark" || legacyTheme === "light" ? legacyTheme : "auto");
+    const density = prefs?.density ?? "comfortable";
+    const font = prefs?.font ?? "system";
+    const accent = prefs?.accent ?? "indigo";
+    const motion = prefs?.motion ?? "normal";
+    const technologiesView = prefs?.technologiesView ?? "cards";
+    const projectsView = prefs?.projectsView ?? "cards";
+    const projectEvidenceLayout = prefs?.projectEvidenceLayout === "grid" ? "grid" : "large";
+    const showHeaderIcons = prefs?.showHeaderIcons ?? true;
+    const showLangSelector = prefs?.showLangSelector ?? true;
+    const lang = prefs?.lang ?? "es";
+
+    const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;
+    const isDark = themeMode === "dark" ? true : themeMode === "light" ? false : Boolean(prefersDark);
+
+    const root = document.documentElement;
+    root.classList.toggle("dark", isDark);
+    root.dataset.theme = isDark ? "dark" : "light";
+    root.dataset.themeMode = themeMode;
+    root.dataset.density = density;
+    root.dataset.font = font;
+    root.dataset.accent = accent;
+    root.dataset.motion = motion;
+    root.dataset.technologiesView = technologiesView;
+    root.dataset.projectsView = projectsView;
+    root.dataset.projectEvidenceLayout = projectEvidenceLayout;
+    root.dataset.showHeaderIcons = showHeaderIcons ? "true" : "false";
+    root.dataset.showLangSelector = showLangSelector ? "true" : "false";
+    root.dataset.langPref = lang;
+    root.style.colorScheme = isDark ? "dark" : "light";
+
+    const fontFamily =
+      font === "mono"
+        ? 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
+        : font === "inter"
+          ? 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"'
+          : 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"';
+    root.style.setProperty("--app-font-family", fontFamily);
+
+    const mainPy = density === "compact" ? "1rem" : "1.5rem";
+    const mainPx = density === "compact" ? "1rem" : "1.25rem";
+    const headerPy = density === "compact" ? "0.75rem" : "1rem";
+    const headerPx = density === "compact" ? "1rem" : "1.25rem";
+    root.style.setProperty("--app-main-py", mainPy);
+    root.style.setProperty("--app-main-px", mainPx);
+    root.style.setProperty("--app-header-py", headerPy);
+    root.style.setProperty("--app-header-px", headerPx);
+
+    const accentHsl =
+      accent === "emerald"
+        ? "152 76% 36%"
+        : accent === "rose"
+          ? "346 77% 49%"
+          : accent === "amber"
+            ? "38 92% 50%"
+            : accent === "sky"
+              ? "199 89% 48%"
+              : accent === "violet"
+                ? "262 83% 58%"
+                : "239 84% 67%";
+    root.style.setProperty("--app-accent-hsl", accentHsl);
+    root.style.setProperty("--app-motion", motion);
+  })();
+</script>

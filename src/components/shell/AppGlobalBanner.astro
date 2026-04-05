@@ -1,0 +1,61 @@
+---
+import { GLOBAL_BANNER } from "../../config/banner";
+---
+
+<div
+  data-global-banner-wrap
+  class="sticky top-0 z-1001"
+  transition:persist="skillatlas-global-banner"
+>
+  <div
+    data-global-banner
+    data-banner-id={GLOBAL_BANNER.id}
+    data-banner-state="open"
+    class="relative overflow-hidden border-b border-white/40 dark:border-white/10 backdrop-blur transition-[max-height,opacity,transform] duration-300 ease-out max-h-24 opacity-100 translate-y-0 pointer-events-auto bg-linear-to-r from-fuchsia-500/25 via-indigo-500/15 to-sky-400/20 dark:from-fuchsia-400/15 dark:via-indigo-400/10 dark:to-sky-300/10"
+  >
+    <div
+      aria-hidden="true"
+      class="pointer-events-none absolute inset-0 opacity-70"
+      style="
+            background-image:
+              radial-gradient(12px 12px at 12% 35%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.0) 70%),
+              radial-gradient(10px 10px at 35% 65%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.0) 70%),
+              radial-gradient(8px 8px at 62% 30%, rgba(255,255,255,0.40) 0%, rgba(255,255,255,0.0) 70%),
+              radial-gradient(9px 9px at 78% 70%, rgba(255,255,255,0.42) 0%, rgba(255,255,255,0.0) 70%),
+              linear-gradient(90deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02));
+          "
+    >
+    </div>
+    <div class="max-w-screen-2xl mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-2">
+      <div class="flex flex-wrap items-center gap-2 min-w-0">
+        <span class="text-[11px] font-semibold rounded-full px-2 py-0.5 border border-white/50 dark:border-white/15 bg-white/55 dark:bg-gray-950/40">
+          {GLOBAL_BANNER.version}
+        </span>
+        <span data-banner-text class="text-xs text-gray-900 dark:text-gray-100 truncate">{GLOBAL_BANNER.text}</span>
+        {
+          GLOBAL_BANNER.href ? (
+            <a
+              data-banner-link
+              href={GLOBAL_BANNER.href}
+              target={GLOBAL_BANNER.href.startsWith("http") ? "_blank" : undefined}
+              rel={GLOBAL_BANNER.href.startsWith("http") ? "noreferrer" : undefined}
+              class="text-xs font-semibold underline decoration-white/60 hover:decoration-white dark:decoration-white/40 dark:hover:decoration-white"
+            >
+              {GLOBAL_BANNER.hrefLabel ?? "Ver más"}
+            </a>
+          ) : null
+        }
+      </div>
+      <button
+        type="button"
+        data-banner-close
+        class="text-xs font-semibold rounded-lg border border-white/50 dark:border-white/15 bg-white/40 dark:bg-gray-950/35 px-2.5 py-1 hover:bg-white/55 dark:hover:bg-gray-900/40 transition-colors"
+        aria-label="Cerrar anuncio"
+        title="Cerrar"
+      >
+        Cerrar
+      </button>
+    </div>
+  </div>
+  <div class="pointer-events-none absolute inset-0 -z-10 bg-linear-to-r from-indigo-200/40 via-transparent to-rose-200/40 dark:from-indigo-500/10 dark:to-rose-500/10 opacity-100" data-banner-glow></div>
+</div>

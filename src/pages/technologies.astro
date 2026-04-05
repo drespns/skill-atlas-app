@@ -114,8 +114,8 @@ const technologies = mockTechnologies.map((t) => ({
   )}
 
   {dataSource === "supabase" ? (
-    <script src="../scripts/technologies.ts"></script>
+    <script src="../scripts/technologies/technologies.ts"></script>
   ) : null}
-  {dataSource === "supabase" ? <script src="../scripts/view-toggle.ts"></script> : null}
+  {dataSource === "supabase" ? <script src="../scripts/core/view-toggle.ts"></script> : null}
 </AppShell>
 

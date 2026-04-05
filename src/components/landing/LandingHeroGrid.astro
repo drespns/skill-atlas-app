@@ -1,0 +1,202 @@
+---
+/** Columna de copy + mock de preview de la landing. */
+---
+      <div class="grid lg:grid-cols-2 gap-12 xl:gap-16 items-start">
+        <div class="space-y-8">
+          <div
+            class="landing-hero-enter inline-flex items-center gap-2.5 rounded-full border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/50 px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 shadow-sm shadow-indigo-500/5"
+            style="--le-delay: 0ms"
+          >
+            <span
+              class="landing-hero-pulse-dot inline-flex h-2 w-2 shrink-0 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.55)]"
+              aria-hidden="true"
+            />
+            <span class="font-semibold" data-i18n="landing.heroBadgeBrand">SkillAtlas</span>
+            <span class="text-gray-400">·</span>
+            <span data-i18n="landing.heroBadgeTail">Solo por invitación</span>
+          </div>
+
+          <h1
+            class="landing-hero-enter m-0 text-4xl md:text-6xl font-semibold tracking-tight leading-[1.05]"
+            style="--le-delay: 70ms"
+          >
+            <span data-i18n="landing.heroTitleBefore">Tu conocimiento técnico,</span>
+            <br />
+            <span
+              class="text-transparent bg-clip-text bg-linear-to-r from-indigo-600 via-sky-500 to-rose-600 dark:from-indigo-300 dark:via-sky-300 dark:to-rose-300"
+              data-i18n="landing.heroTitleGradient"
+            >
+              listo para convertirse en portfolio
+            </span>.
+          </h1>
+          <p
+            class="landing-hero-enter m-0 text-base md:text-xl text-gray-600 dark:text-gray-400 max-w-xl leading-relaxed"
+            style="--le-delay: 130ms"
+            data-i18n="landing.heroSubtitle"
+          >
+            Captura tecnologías y conceptos, construye proyectos con evidencias y publica un portfolio
+            que se lee en minutos.
+          </p>
+
+          <div
+            class="landing-hero-enter flex flex-wrap gap-2 pt-1"
+            style="--le-delay: 160ms"
+            role="group"
+            data-i18n="landing.heroChipsAria"
+            data-i18n-attr="aria-label"
+          >
+            <span
+              class="rounded-full border border-indigo-200/70 dark:border-indigo-800/50 bg-indigo-50/80 dark:bg-indigo-950/35 px-3 py-1 text-[11px] font-medium text-indigo-900 dark:text-indigo-200"
+              data-i18n="landing.heroChip1"
+            >
+              /portfolio/…
+            </span>
+            <span
+              class="rounded-full border border-sky-200/70 dark:border-sky-800/50 bg-sky-50/80 dark:bg-sky-950/30 px-3 py-1 text-[11px] font-medium text-sky-900 dark:text-sky-200"
+              data-i18n="landing.heroChip2"
+            >
+              /p/… revocable
+            </span>
+            <span
+              class="rounded-full border border-rose-200/70 dark:border-rose-800/50 bg-rose-50/80 dark:bg-rose-950/30 px-3 py-1 text-[11px] font-medium text-rose-900 dark:text-rose-200"
+              data-i18n="landing.heroChip3"
+            >
+              CV + impresión
+            </span>
+            <span
+              class="rounded-full border border-violet-200/70 dark:border-violet-800/50 bg-violet-50/80 dark:bg-violet-950/30 px-3 py-1 text-[11px] font-medium text-violet-900 dark:text-violet-200"
+              data-i18n="landing.heroChip4"
+            >
+              OG en compartidos
+            </span>
+          </div>
+
+          <div class="landing-hero-enter flex flex-col sm:flex-row flex-wrap gap-3 pt-1" style="--le-delay: 200ms">
+            <a
+              href="/request-access"
+              data-landing-request-access
+              class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 no-underline"
+            >
+              <span data-i18n="landing.ctaRequest">Solicitar acceso</span>
+            </a>
+            <a
+              href="/login"
+              data-landing-have-invite
+              class="inline-flex items-center justify-center rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="landing.ctaLogin">Entrar (acceso privado)</span>
+            </a>
+            <a
+              href="/app"
+              data-landing-open-app
+              class="hidden items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 no-underline shadow-sm"
+            >
+              <span data-i18n="landing.ctaOpenApp">Abrir app</span>
+            </a>
+            <a
+              href="/demo"
+              data-landing-demo
+              class="inline-flex items-center justify-center rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/55 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="landing.ctaDemo">Ver demo</span>
+            </a>
+            <a
+              href="/pricing"
+              class="inline-flex items-center justify-center rounded-lg border border-transparent px-4 py-2.5 text-sm font-semibold text-indigo-700 dark:text-indigo-300 hover:underline underline-offset-8 decoration-2 hover:decoration-4 no-underline"
+            >
+              <span data-i18n="nav.pricing">Precios</span>
+            </a>
+          </div>
+
+          <div class="landing-hero-enter grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2" style="--le-delay: 260ms">
+            <div class="landing-pill-card rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-4 shadow-sm">
+              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/10 dark:bg-indigo-400/10 text-indigo-700 dark:text-indigo-300">T</span>
+                <span data-i18n="landing.pillTechTitle">Tecnologías</span>
+              </p>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="landing.pillTechDesc">
+                Tu mapa de stack.
+              </p>
+            </div>
+            <div class="landing-pill-card rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-4 shadow-sm">
+              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-sky-500/10 dark:bg-sky-400/10 text-sky-700 dark:text-sky-300">C</span>
+                <span data-i18n="landing.pillConceptTitle">Conceptos</span>
+              </p>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="landing.pillConceptDesc">
+                Aprendizaje trazable.
+              </p>
+            </div>
+            <div class="landing-pill-card rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-4 shadow-sm">
+              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-rose-500/10 dark:bg-rose-400/10 text-rose-700 dark:text-rose-300">E</span>
+                <span data-i18n="landing.pillEvidenceTitle">Evidencias</span>
+              </p>
+              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="landing.pillEvidenceDesc">
+                Links + embeds, rápido.
+              </p>
+            </div>
+          </div>
+
+          <div class="pt-2 space-y-3 max-w-xl">
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.noteEvidence">
+              Pensado para que tu portfolio no dependa de “me acuerdo de todo”, sino de evidencias y una historia clara (rol + resultado).
+            </p>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.noteInvite">
+              Acceso por invitación mientras iteramos con calma hacia una v1 que merezca el nombre.
+            </p>
+          </div>
+        </div>
+
+        <div class="relative landing-hero-enter" style="--le-delay: 120ms">
+          <div class="landing-hero-glow-pulse absolute -inset-3 rounded-3xl bg-linear-to-br from-indigo-200/70 via-transparent to-rose-200/55 dark:from-indigo-500/15 dark:to-rose-500/12 blur-2xl" />
+          <div class="landing-preview-mock relative rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/85 dark:bg-gray-950/85 shadow-sm overflow-hidden ring-1 ring-black/5 dark:ring-white/10">
+            <div class="px-5 py-4 border-b border-gray-200/80 dark:border-gray-800 flex items-center justify-between bg-white/60 dark:bg-gray-950/40 backdrop-blur">
+              <div class="flex items-center gap-2">
+                <div class="h-2.5 w-2.5 rounded-full bg-rose-400/80" />
+                <div class="h-2.5 w-2.5 rounded-full bg-amber-300/80" />
+                <div class="h-2.5 w-2.5 rounded-full bg-emerald-300/80" />
+              </div>
+              <span class="text-xs font-semibold text-gray-500 dark:text-gray-400" data-i18n="landing.previewLabel">Vista previa</span>
+            </div>
+            <div class="p-6 space-y-4">
+              <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-950/40">
+                <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewProjectTitle">
+                  Proyecto · “Tableau Water Intake”
+                </p>
+                <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.previewProjectBody">
+                  Rol: data analyst · Resultado: dashboard público + insights accionables.
+                </p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">Tableau</span>
+                  <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">SQL</span>
+                  <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">Storytelling</span>
+                </div>
+              </div>
+              <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-950/40">
+                <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewEvidenceTitle">Evidencias</p>
+                <div class="mt-3 grid grid-cols-1 gap-2">
+                  <div class="rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/20 px-3 py-2">
+                    <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewEmbedTitle">
+                      Dashboard embebido
+                    </p>
+                    <p class="mt-1 mb-0 text-xs text-gray-600 dark:text-gray-400 truncate" data-i18n="landing.previewEmbedUrl">
+                      tableau.com / vistas / …
+                    </p>
+                  </div>
+                  <div class="rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/20 px-3 py-2">
+                    <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewRepoTitle">Repositorio</p>
+                    <p class="mt-1 mb-0 text-xs text-gray-600 dark:text-gray-400 truncate" data-i18n="landing.previewRepoUrl">github.com / …</p>
+                  </div>
+                </div>
+              </div>
+              <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-950/40">
+                <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewPortfolioTitle">Portfolio</p>
+                <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.previewPortfolioBody">
+                  Tarjetas claras, filtro por tecnología y evidencia principal destacada.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>

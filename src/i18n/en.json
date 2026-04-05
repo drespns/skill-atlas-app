@@ -19,13 +19,20 @@
     "add": "Add",
     "cancel": "Cancel",
     "language": "Language",
+    "openPublicProfileSettings": "Public profile (Settings)",
     "githubRepo": "View GitHub repository",
     "toggleTheme": "Toggle theme",
     "commandPalettePlaceholder": "Search… (Ctrl+K)",
     "commandPaletteAria": "Search and navigate (Ctrl+K)",
     "commandPaletteTriggerLabel": "Search",
     "close": "Close",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "paletteNoResults": "No results",
+    "paletteSectionAdmin": "Admin",
+    "paletteSectionNav": "Navigation",
+    "paletteSectionActions": "Quick actions",
+    "paletteSectionTech": "Your technologies",
+    "paletteSectionProject": "Your projects"
   },
   "fab": {
     "tabShortcuts": "Shortcuts",
@@ -319,7 +326,7 @@
     "todayLi2": "Evidence as link or embed, ordered, with hints from the URL.",
     "todayLi3": "Project story: role + outcome to explain impact, not just tasks.",
     "todayLi4": "Public portfolio by slug or token, profile and sharing from Settings; demo, pricing, and access requests with an admin queue.",
-    "todayLi5": "Dark mode, ES/EN, View Transitions, sidebar-style Settings, onboarding steps, and daily polish you can feel.",
+    "todayLi5": "Dark mode, ES/EN, View Transitions, sidebar-style Settings, guided step-by-step tour, and daily polish you can feel.",
     "workflowVizKicker": "Inside the app",
     "workflowVizTitle": "From your base to your portfolio—and beyond.",
     "workflowVizSubtitle": "Real workflow: skill map, projects with evidence, public outputs, and exam-prep space.",
@@ -413,6 +420,7 @@
     "usefulLinksTitle": "Useful links",
     "linkPrep": "Prep",
     "linkPublicProfile": "Public profile",
+    "linkPublicLinks": "Public links",
     "linkShortcuts": "Shortcuts",
     "mockHydrateHint": "No Supabase client in the browser: A–Z lists are not available here. Use the header routes or set PUBLIC_DATA_SOURCE=supabase.",
     "signedOutListHint": "Sign in to load your project and technology lists.",
@@ -677,7 +685,7 @@
       "language": "Language",
       "showHeaderIcons": "Header icons",
       "showLangSelector": "Language selector (header)",
-      "showLangSelectorHint": "Off by default in the bar; you can always change language here.",
+      "showLangSelectorHint": "Shown in the header by default; you can turn it off here.",
       "show": "Show",
       "hide": "Hide"
     },
@@ -701,42 +709,31 @@
     }
   }
   ,
+  "guidedTour": {
+    "startButton": "Guided tour",
+    "restartedToast": "Tour restarted. Follow the steps in the floating panel.",
+    "openedFromDashboard": "Tour opened.",
+    "continueLater": "Continue later",
+    "continueLaterToast": "You can resume anytime from the dashboard: “Guided tour”.",
+    "skipEnd": "Exit tour"
+  },
   "onboarding": {
-    "kicker": "Getting started",
-    "currentPage": "Current page:",
-    "progress": "Progress:",
     "skip": "Skip",
     "back": "Back",
     "next": "Next",
     "markDone": "Mark as done",
-    "markUndone": "Unmark",
     "goTechnologies": "Go to Technologies",
     "goProjects": "Go to Projects",
     "goSettings": "Go to Settings",
     "goPortfolio": "Go to Portfolio",
-    "goCv": "Go to CV",
-    "restart": "Restart onboarding",
-    "step1Title": "1/5 · Create your first technology",
-    "step1Body": "Start by creating a technology. From its detail you can add concepts and track progress.",
-    "step2Title": "2/5 · Create a project",
-    "step2Body": "Create a project and link it to technologies. Then you can associate relevant concepts.",
-    "step3Title": "3/5 · Set up your profile",
-    "step3Body": "Fill in your name, bio and avatar. You also manage public links (portfolio and CV) here.",
-    "step4Title": "4/5 · Publish your portfolio",
-    "step4Body": "Enable a public URL via slug or token and test it in an incognito window.",
-    "step5Title": "5/5 · Build your CV",
-    "step5Body": "Fill in your CV, use Preview, and print/save as PDF."
-  }
-  ,
-  "onboardingV1": {
-    "kicker": "Recommended steps (V1)",
-    "hint": "If you skipped it or want to repeat, start it from here."
+    "goPublicLinks": "Public links",
+    "goCv": "Go to CV"
   },
   "onboardingV2": {
-    "kicker": "Onboarding",
-    "start": "Advanced onboarding",
+    "kicker": "Guided tour",
+    "go": "Go",
     "assist": "Fill example",
-    "open": "Onboarding · Open",
+    "open": "Open guided tour",
     "close": "Close",
     "minimize": "Hide",
     "openPreview": "Open preview",
