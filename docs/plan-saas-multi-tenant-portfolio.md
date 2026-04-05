@@ -134,14 +134,13 @@ Recomendacion pragmatica para **SaaS con datos privados**: **B o C** a medio pla
 ### 4.4 Rutas
 
 - `/portfolio` (actual): redirigir a **“Mi portfolio”** (preview autenticado) o renombrar a `/me/portfolio`.
-- **Nueva ruta publica por token**: `/p/[token].astro` (o similar) que llame a la RPC (desde cliente o servidor segun modo) y renderice solo ese payload.
+- **Ruta publica por token** (en código): `/p/[token]` on-demand + RPC `skillatlas_portfolio_by_share_token`; slug legible `/portfolio/[slug]` + RPC `skillatlas_portfolio_by_public_slug` (**saas-011**).
 
 ### 4.5 UI producto
 
-- Ajustes / portfolio:
-  - interruptor “Activar enlace de comparticion”
-  - mostrar URL copiable
-  - “Regenerar enlace” (nuevo token, invalida el anterior)
+- Ajustes → **Enlaces públicos** (`/settings#portfolio-links`):
+  - visibilidad pública + identificador `/portfolio/<slug>` (**saas-011**); confirmación explícita con **Aplicar** y feedback (toast), no solo el checkbox
+  - URL por token `/p/<token>` copiable; **Regenerar** (invalida el anterior; **saas-003**)
 - Mensajes claros: “Solo quien tenga este enlace puede verlo; no aparece en un listado publico”.
 
 ---

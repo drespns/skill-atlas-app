@@ -16,8 +16,8 @@ Aplicación web para **organizar conocimiento técnico** y **mostrar un portfoli
 - **Flujo**: Tecnologías → Conceptos → Proyectos → Portfolio; conceptos siempre ligados a una tecnología; proyectos enlazan tecnologías y conceptos.
 - **Persistencia Supabase**: CRUD de tecnologías, conceptos y proyectos; asociaciones proyecto–tecnología y proyecto–concepto; **evidencias** por proyecto (`project_embeds`: enlace o iframe, ordenables); campos de **historia** en proyecto (`role`, `outcome` — migración `docs/sql/saas-006-projects-role-outcome.sql`); perfil en `portfolio_profiles` (nombre, bio, stack de ayuda con `docs/sql/saas-005-portfolio-help-stack.sql`) y **avatar** (Storage + `docs/sql/saas-008-portfolio-avatar.sql`).
 - **Autenticación**: `/login` con email/contraseña y OAuth (GitHub, LinkedIn OIDC); sesión y logout desde **Ajustes**.
-- **Ajustes** (`/settings`): preferencias de UI (tema, densidad, fuente, atajos), **dashboard** con rejilla configurable (1–4 columnas en escritorio), orden de tarjetas por arrastre, perfil público y stack de ayuda.
-- **Portfolio** (`/portfolio`): cabecera con nombre, bio y chips del stack de ayuda (Supabase + caché local).
+- **Ajustes** (`/settings`): preferencias de UI (tema, densidad, fuente, atajos), **dashboard** con rejilla configurable (1–4 columnas en escritorio), orden de tarjetas por arrastre, perfil público y stack de ayuda; enlaces profundos por hash (p. ej. `#portfolio-links`, `#prefs`); visibilidad/slug del portfolio público con botón **Aplicar** y feedback (toast).
+- **Portfolio** (`/portfolio`): preview autenticado; visitantes en `/portfolio/<slug>` o `/p/<token>` (RPCs públicas; ver `docs/db.md`).
 - **Acceso privado (invite-only)**: landing pública con CTA **“Solicitar acceso”** (`/request-access`) que guarda solicitudes en BD (migración `docs/sql/saas-009-access-requests.sql`).
 - **Import de conceptos** (detalle de tecnología en modo Supabase): Markdown desde URL o pegado, vista previa con niveles/categorías, selección masiva, plantillas y catálogo de seeds.
 - **UX**: modo claro/oscuro, selector de idioma ES/EN (banderas en cabecera y ajustes), modales y toasts propios, command palette (p. ej. `Ctrl+K`), footer con stack técnico.
@@ -56,7 +56,7 @@ Crea un archivo `.env` en la raíz (no commitear secretos):
 | `PUBLIC_SUPABASE_ANON_KEY` | Clave anónima |
 | `PUBLIC_DATA_SOURCE` | `mock` o `supabase` |
 
-Con `supabase`, aplica los scripts SQL en el orden indicado en [`docs/db.md`](docs/db.md) (MVP + `saas-001` … `saas-005` según necesites).
+Con `supabase`, aplica los scripts SQL en el orden indicado en [`docs/db.md`](docs/db.md) (MVP + migraciones `saas-001` … según las funciones que uses, p. ej. portfolio público **saas-011**–**014**).
 
 ---
 
@@ -100,7 +100,11 @@ según `PUBLIC_DATA_SOURCE`. Así se mantiene un contrato estable al cambiar de 
 | `/projects/view?project=<slug>` | Detalle (modo **Supabase**, CSR) |
 | `/demo` | Demo pública (estática; no depende de sesión) |
 | `/portfolio` | Portfolio (preview autenticado; en Supabase carga por CSR) |
-| `/settings` | Ajustes, sesión y perfil |
+| `/portfolio/<slug>` | Portfolio público por slug (on-demand; **saas-011**) |
+| `/p/<token>` | Portfolio público por token revocable (**saas-003**) |
+| `/cv` | CV privado (sesión; editor, preview, impresión) |
+| `/cv/p/<token>` | CV público por token (**saas-012**) |
+| `/settings` | Ajustes, sesión y perfil (hash de sección, p. ej. `#portfolio-links`) |
 | `/request-access` | Solicitud de acceso (pública; guarda en `access_requests`) |
 | `/admin` | Panel admin (privado; lista/gestiona `access_requests`) |
 

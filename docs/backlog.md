@@ -5,12 +5,12 @@
 Orden priorizado para ganar profundidad sin dejar de pulir tecnologías/portfolio:
 
 1. **Precios y posicionamiento** — Página pública `/pricing` (planes Starter / Pro / Team, comparativa, FAQ, toggle mensual/anual). CTAs alineados con acceso por invitación. Más adelante: Patreon u otros apoyos y facturación real (p. ej. Stripe) cuando cierres importes y condiciones legales.
-2. **Portfolio por enlace** — Ruta `/p/[token]` + RPC `skillatlas_portfolio_by_share_token` + UI (activar compartir, copiar enlace). Ver `docs/plan-saas-multi-tenant-portfolio.md`.
-   - **Parcial (v0.45+):** URL legible **`/portfolio/<slug>`** + RPC `skillatlas_portfolio_by_public_slug` + Ajustes (`public_slug`, `share_enabled`, migración **saas-011**). El token `/p/...` sigue en roadmap si se unifica UX.
-   - **Implementado ahora:** ruta `/p/<token>` + bloque en Ajustes para copiar/regenerar token (revocable) usando `portfolio_profiles.share_token` (RPC `saas-003`).
+2. **Portfolio por enlace** — Ver `docs/plan-saas-multi-tenant-portfolio.md`.
+   - **Slug público:** **`/portfolio/<slug>`** + RPC `skillatlas_portfolio_by_public_slug` + Ajustes → **Enlaces públicos** (`#portfolio-links`): visibilidad + slug; confirmación con **Aplicar** y toast (**saas-011**).
+   - **Token revocable:** **`/p/<token>`** + RPC `skillatlas_portfolio_by_share_token` + misma sección de Ajustes (copiar/regenerar; `portfolio_profiles.share_token`, **saas-003**).
 3. **CV / hoja de vida** — Por defecto **100 % privado** (previsualización y descarga); **opción explícita de enlace público** revocable (token o flag en perfil, RLS acorde). Varias plantillas; fuentes de datos: perfil, proyectos seleccionados, stack; export PDF (primero cliente/`print`; servidor opcional para pixel-perfect).
    - **Parcial (v0.45+):** `/cv` privado (editor + prefs `cvProfile`/`cvProjectSlugs`, preview, impresión en claro).
-   - **Siguiente/vertical actual:** enlace público revocable `/cv/p/<token>` (migración **saas-012** + RPC `skillatlas_cv_by_share_token`) y UI de activar/copiar/regenerar en `/cv`.
+   - **Enlace público revocable (código):** `/cv/p/<token>` (RPC `skillatlas_cv_by_share_token`, **saas-012**) + UI en `/cv` para activar/copiar/regenerar (`cv_share_enabled`, `cv_share_token`).
 4. **Salida profesional** — PDF de portfolio, previews OG por proyecto, export estático cuando tenga sentido.
 
 **Actualización (calidad de producto):**
@@ -69,7 +69,7 @@ Orden priorizado para ganar profundidad sin dejar de pulir tecnologías/portfoli
 ## Release v0.45.0 (resumen)
 
 - **Despliegue:** `@astrojs/vercel` (no `@astrojs/node`) para evitar 404 en Vercel; **`.vercel/`** en `.gitignore` (artefactos de build local).
-- **Portfolio público:** `saas-011` + `/portfolio/[slug]` + Ajustes (slug, compartir, copiar URL).
+- **Portfolio público:** `saas-011` + `/portfolio/[slug]` + Ajustes → Enlaces públicos (`#portfolio-links`: slug, visibilidad con **Aplicar**, copiar URL; token `/p/…` con **saas-003**).
 - **CV:** `/cv` privado (solo sesión) con:
   - preview modal (CTA “Preview”)
   - datos del CV en prefs (`cvProfile`: titular, ubicación, email, links, resumen, experiencia/educación)
@@ -93,7 +93,7 @@ Resumen:
 
 **Hecho en codigo (pendiente de aplicar SQL en tu proyecto Supabase si aun no):** inserts con `user_id`, rutas CSR, `supabaseProvider` tolerante a build sin datos, duplicados de proyecto por `(user_id, slug)`.
 
-**Siguiente vertical sugerido:** fila en `portfolio_profiles` al registrar o primer login; pagina publica `/p/[token]` que llame a la RPC; ajustes UI (toggle compartir, copiar enlace). `/portfolio` estatico seguira vacio en build con RLS estricta hasta usar la RPC o CSR de preview autenticado.
+**Hecho en código (aplicar SQL en Supabase si falta):** fila `portfolio_profiles`, páginas `/p/[token]` y `/portfolio/[slug]` con RPCs, preview autenticado CSR en `/portfolio`, Ajustes con **Aplicar** para slug/visibilidad y regeneración de token. El build estático sigue sin datos de usuario en páginas públicas; el contenido real es on-demand + anon RPC.
 
 El bloque "single-account" y el script `rls-mvp-authenticated.sql` quedan como **paso previo**; en produccion SaaS deben sustituirse por `saas-002` cuando el esquema y backfill esten listos.
 

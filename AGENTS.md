@@ -10,14 +10,14 @@ SkillAtlas es un MVP para gestionar conocimiento tecnico y mostrar portfolio:
 - conceptos por tecnologia
 - proyectos
 - embeds por proyecto
-- portfolio publico (sesion en `/portfolio`; URL publica legible `/portfolio/<slug>` con **saas-011**)
-- CV privado (`/cv`; seleccion/orden de proyectos + perfil del CV en prefs; preview modal; print en claro)
+- portfolio publico (preview en sesion `/portfolio`; URL legible `/portfolio/<slug>` **saas-011**; enlace revocable `/p/<token>` **saas-003**)
+- CV privado (`/cv`; seleccion/orden de proyectos + perfil del CV en prefs; preview modal; print en claro; enlace publico opcional `/cv/p/<token>` **saas-012**)
 
 ## Stack actual
 
 - Astro
 - Tailwind CSS v4
-- Supabase (PostgreSQL + RLS; transicion `docs/sql/rls-mvp-authenticated.sql`; SaaS multi-tenant `docs/sql/saas-001` … `saas-011` — ver `docs/db.md`)
+- Supabase (PostgreSQL + RLS; transicion `docs/sql/rls-mvp-authenticated.sql`; SaaS multi-tenant `docs/sql/saas-001` … `saas-014` — ver `docs/db.md`)
 - Despliegue **Vercel:** `@astrojs/vercel` en `astro.config.mjs` (rutas on-demand); no commitear `.vercel/` ni `dist/`
 - TypeScript para scripts cliente
 - Cliente Supabase en el navegador: `getSupabaseBrowserClient()` en `src/scripts/client-supabase.ts` (evitar repetir `createClient` en cada script)
@@ -25,7 +25,7 @@ SkillAtlas es un MVP para gestionar conocimiento tecnico y mostrar portfolio:
 ## Auth (login convencional)
 
 - La pantalla principal es **`/login`** (email+contraseña + OAuth).
-- `Ajustes` (`/settings`) se usa para estado de sesión, logout, preferencias UI (navegación lateral estilo “repo settings”), perfil público y stack de ayuda (`portfolio_profiles` + localStorage).
+- `Ajustes` (`/settings`) se usa para estado de sesión, logout, preferencias UI (navegación lateral estilo “repo settings”), perfil público y stack de ayuda (`portfolio_profiles` + localStorage). Secciones enlazables con hash (`#prefs`, `#portfolio-links`, `#portfolio-presentation`, …); bookmarks antiguos `#classic-*` se redirigen en cliente al id nuevo. **Enlaces públicos:** visibilidad y slug se guardan con **Aplicar** (toast), no solo con el checkbox; **Guardar perfil** es para el bloque de perfil (nombre, bio, enlaces, stack).
 - En el header:
   - si NO hay sesión: aparece icono de `/login`
   - si hay sesión: aparecen **Ajustes + Sign out** y avatar (si el provider lo devuelve); enlaces de app (CV, tecnologías, proyectos, portfolio); **Admin** si allowlist; **no** hay enlace a **Precios** en la barra (Precios: landing/hero + footer con sesión).
