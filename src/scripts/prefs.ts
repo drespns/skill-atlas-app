@@ -8,19 +8,25 @@ export type DefaultView = "cards" | "list";
 export type ProjectEvidenceLayout = "large" | "grid";
 export type Lang = "es" | "en";
 
-export const SETTINGS_SECTION_IDS = ["prefs", "shortcuts", "portfolio"] as const;
-export type SettingsSectionId = (typeof SETTINGS_SECTION_IDS)[number];
+/** Posición de la barra lateral en /settings. */
+export type SettingsSidebarSide = "left" | "right";
 
-export type SettingsGridColumns = 1 | 2 | 3 | 4;
+/** IDs de panel en `/settings` (hash `#…` y prefs). */
+export const SETTINGS_PANEL_IDS = [
+  "classic-prefs",
+  "classic-shortcuts",
+  "classic-portfolio-profile",
+  "classic-portfolio-links",
+  "classic-portfolio-display",
+  "classic-portfolio-presentation",
+  "classic-cv-public",
+  "classic-qa",
+] as const;
+export type SettingsPanelId = (typeof SETTINGS_PANEL_IDS)[number];
 
-export type SettingsLayoutItemV1 = {
-  id: SettingsSectionId;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-};
-export type SettingsLayoutV1 = SettingsLayoutItemV1[];
+export function isSettingsPanelId(s: string): s is SettingsPanelId {
+  return (SETTINGS_PANEL_IDS as readonly string[]).includes(s);
+}
 
 export type CvLink = {
   label: string;
@@ -78,12 +84,10 @@ export type AppPrefsV1 = {
   showHeaderIcons: boolean;
   showLangSelector: boolean;
   lang: Lang;
-  /** Grid de la página Ajustes (≥ md). */
-  settingsGridColumns: SettingsGridColumns;
-  /** Orden de las tarjetas en Ajustes. */
-  settingsSectionOrder: SettingsSectionId[];
-  /** Layout 2D (GridStack) en /settings (opcional). */
-  settingsLayoutV1?: SettingsLayoutV1;
+  /** Barra lateral de /settings a izquierda o derecha. */
+  settingsSidebarSide: SettingsSidebarSide;
+  /** Última sección visible en /settings (sin hash en URL). */
+  settingsActiveSection?: SettingsPanelId;
   /**
    * Proyectos mostrados en /cv (slugs, orden conservado).
    * Ausente o `undefined`: todos los proyectos del usuario.
@@ -112,10 +116,9 @@ const DEFAULT_PREFS: AppPrefsV1 = {
   projectsView: "cards",
   projectEvidenceLayout: "large",
   showHeaderIcons: true,
-  showLangSelector: true,
+  showLangSelector: false,
   lang: "es",
-  settingsGridColumns: 2,
-  settingsSectionOrder: [...SETTINGS_SECTION_IDS],
+  settingsSidebarSide: "left",
   cvProfile: {},
   qaTesterMode: false,
   onboardingV1: { done: false, step: 0, completedIds: [] },
@@ -131,52 +134,13 @@ function safeParse(raw: string | null): unknown {
   }
 }
 
-function clampSettingsColumns(n: unknown): SettingsGridColumns {
-  const x = Number(n);
-  if (!Number.isFinite(x)) return 2;
-  if (x < 1) return 1;
-  if (x > 4) return 4;
-  return x as SettingsGridColumns;
+function normalizeSettingsSidebarSide(raw: unknown): SettingsSidebarSide {
+  return raw === "right" ? "right" : "left";
 }
 
-function normalizeSectionOrder(raw: unknown): SettingsSectionId[] {
-  const allowed = new Set<string>(SETTINGS_SECTION_IDS);
-  const out: SettingsSectionId[] = [];
-  const seen = new Set<string>();
-  if (Array.isArray(raw)) {
-    for (const x of raw) {
-      if (typeof x === "string" && allowed.has(x) && !seen.has(x)) {
-        out.push(x as SettingsSectionId);
-        seen.add(x);
-      }
-    }
-  }
-  for (const id of SETTINGS_SECTION_IDS) {
-    if (!seen.has(id)) out.push(id);
-  }
-  return out;
-}
-
-function normalizeSettingsLayout(raw: unknown): SettingsLayoutV1 | undefined {
-  if (!Array.isArray(raw)) return undefined;
-  const allowed = new Set<string>(SETTINGS_SECTION_IDS);
-  const seen = new Set<string>();
-  const out: SettingsLayoutItemV1[] = [];
-  for (const x of raw) {
-    if (!x || typeof x !== "object") continue;
-    const r = x as any;
-    if (typeof r.id !== "string" || !allowed.has(r.id) || seen.has(r.id)) continue;
-    const xi = Number(r.x);
-    const yi = Number(r.y);
-    const wi = Number(r.w);
-    const hi = Number(r.h);
-    if (![xi, yi, wi, hi].every((n) => Number.isFinite(n))) continue;
-    // basic sanity
-    if (wi < 1 || hi < 1) continue;
-    out.push({ id: r.id as SettingsSectionId, x: xi, y: yi, w: wi, h: hi });
-    seen.add(r.id);
-  }
-  return out.length > 0 ? out : undefined;
+function normalizeSettingsActiveSection(raw: unknown): SettingsPanelId | undefined {
+  if (typeof raw !== "string") return undefined;
+  return isSettingsPanelId(raw) ? raw : undefined;
 }
 
 function normalizeCvProjectSlugs(raw: unknown): string[] | undefined {
@@ -282,9 +246,10 @@ export function loadPrefs(): AppPrefsV1 {
     ...DEFAULT_PREFS,
     ...base,
     v: 1,
-    settingsGridColumns: clampSettingsColumns(base.settingsGridColumns ?? DEFAULT_PREFS.settingsGridColumns),
-    settingsSectionOrder: normalizeSectionOrder(base.settingsSectionOrder ?? DEFAULT_PREFS.settingsSectionOrder),
-    settingsLayoutV1: normalizeSettingsLayout((base as any).settingsLayoutV1),
+    settingsSidebarSide: normalizeSettingsSidebarSide(
+      (base as Partial<AppPrefsV1>).settingsSidebarSide ?? DEFAULT_PREFS.settingsSidebarSide,
+    ),
+    settingsActiveSection: normalizeSettingsActiveSection((base as Partial<AppPrefsV1>).settingsActiveSection),
     cvProjectSlugs: normalizeCvProjectSlugs((base as Partial<AppPrefsV1>).cvProjectSlugs),
     cvProfile: normalizeCvProfile((base as Partial<AppPrefsV1>).cvProfile) ?? DEFAULT_PREFS.cvProfile,
     qaTesterMode: typeof (base as any).qaTesterMode === "boolean" ? Boolean((base as any).qaTesterMode) : false,
@@ -363,6 +328,7 @@ export function applyPrefs(prefs: AppPrefsV1) {
   root.dataset.showHeaderIcons = prefs.showHeaderIcons ? "true" : "false";
   root.dataset.showLangSelector = prefs.showLangSelector ? "true" : "false";
   root.dataset.langPref = prefs.lang;
+  root.dataset.settingsSidebarSide = prefs.settingsSidebarSide;
 
   // Theme
   const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;

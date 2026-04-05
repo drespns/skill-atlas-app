@@ -28,6 +28,8 @@ Migracion multi-tenant y portfolio por token (scripts versionados):
 | 10 | `docs/sql/saas-010-admin-access-requests.sql` | Tabla `admin_users` (allowlist) + RLS admin-only para listar/gestionar `access_requests` desde `/admin` |
 | 11 | `docs/sql/saas-011-portfolio-public-slug.sql` | `portfolio_profiles.public_slug` (unico case-insensitive) + RPC `skillatlas_portfolio_by_public_slug(text)` (`GRANT` a `anon`) para `/portfolio/<slug>` |
 | 12 | `docs/sql/saas-012-cv-public-share-token.sql` | `portfolio_profiles.cv_share_enabled` + `cv_share_token` (unico) + RPC `skillatlas_cv_by_share_token(uuid)` (`GRANT` a `anon`) para `/cv/p/<token>` |
+| 13 | `docs/sql/saas-013-portfolio-public-display.sql` | `portfolio_profiles.public_layout`, `public_embeds_limit` (1–5), `public_hero_cta_label` / `public_hero_cta_url`; RPC slug y token devuelven `embeds[]`, `publicLayout`, `publicEmbedsLimit`, CTA y `helpStack` también en la RPC por token |
+| 14 | `docs/sql/saas-014-portfolio-presentation.sql` | `public_theme`, `public_density`, `public_accent_hex`, `public_header_style`, `featured_project_slugs` (JSONB); RPC devuelve `publicTheme`, `publicDensity`, `publicAccentHex`, `publicHeaderStyle`, `featuredProjectSlugs` y ordena proyectos por destacados |
 
 **Nota saas-006:** si ya aplicaste `saas-003`, debes aplicar **saas-006** (o al menos el bloque `CREATE OR REPLACE FUNCTION` del script) para que la RPC y el esquema coincidan con lo que espera el frontend (`select` con `role`/`outcome` y consumidores del JSON del portfolio). En entornos nuevos: orden típico … → `saas-003` → … → `saas-006`.
 
@@ -39,6 +41,8 @@ Migracion multi-tenant y portfolio por token (scripts versionados):
 - `display_name`, `bio`
 - `share_enabled`, `share_token` (unico)
 - `public_slug` (tras **saas-011**): segmento de URL publica; unico por `lower(trim(...))` cuando no es NULL
+- `public_layout`, `public_embeds_limit`, `public_hero_cta_label`, `public_hero_cta_url` (tras **saas-013**): preferencias del portfolio público expuestas vía RPC
+- `public_theme`, `public_density`, `public_accent_hex`, `public_header_style`, `featured_project_slugs` (tras **saas-014**): presentación visual y orden de proyectos destacados
 - `help_stack` (JSONB, tras **saas-005**): array de claves de herramientas (`src/config/help-stack.ts`)
 
 La **app aun no crea** la fila automaticamente al registrarse; hay que hacerlo en un siguiente paso (p. ej. primer login o trigger en auth). La RPC de saas-003 asume que existe fila cuando se activa comparticion.

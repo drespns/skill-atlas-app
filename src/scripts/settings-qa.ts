@@ -29,7 +29,7 @@ const QA_ITEMS: QaItem[] = [
   { id: "share-portfolio-token", labelKey: "settings.qa.itemShareToken", labelFallback: "Portfolio público por token (/p/<token>)", href: "/settings" },
   { id: "share-cv-token", labelKey: "settings.qa.itemShareCv", labelFallback: "CV público por token (/cv/p/<token>)", href: "/settings" },
   { id: "prefs-cv", labelKey: "settings.qa.itemPrefsCv", labelFallback: "Prefs CV: selección/orden + cvProfile", href: "/cv" },
-  { id: "prefs-settings", labelKey: "settings.qa.itemPrefsSettings", labelFallback: "Ajustes: layout grid + preferencias", href: "/settings" },
+  { id: "prefs-settings", labelKey: "settings.qa.itemPrefsSettings", labelFallback: "Ajustes: navegación lateral + preferencias", href: "/settings" },
 ];
 
 function readState(): Record<string, boolean> {
@@ -195,114 +195,138 @@ async function seedDemoData(feedbackEl?: HTMLElement) {
 }
 
 function init() {
-  const mount = document.querySelector<HTMLElement>('[data-settings-section="portfolio"]');
-  if (!mount) return;
-  if (mount.dataset.qaBound === "1") return;
-  mount.dataset.qaBound = "1";
-
-  const toggle = document.querySelector<HTMLInputElement>("[data-qa-tester-mode]");
-  const panel = document.querySelector<HTMLElement>("[data-qa-panel]");
-  const checklist = document.querySelector<HTMLElement>("[data-qa-checklist]");
-  const copyChecklistBtn = document.querySelector<HTMLButtonElement>("[data-qa-copy-checklist]");
-  const seedBtn = document.querySelector<HTMLButtonElement>("[data-qa-seed]");
-  const copyDebugBtn = document.querySelector<HTMLButtonElement>("[data-qa-copy-debug]");
-  const feedback = document.querySelector<HTMLElement>("[data-qa-feedback]");
-
-  if (!toggle || !panel || !checklist || !copyChecklistBtn || !seedBtn || !copyDebugBtn) return;
+  const mounts = document.querySelectorAll<HTMLElement>('[data-settings-section="qa"]');
+  if (mounts.length === 0) return;
 
   let lastError: { message: string; where?: string } | null = null;
 
-  const renderChecklist = () => {
-    const state = readState();
-    checklist.innerHTML = QA_ITEMS.map((it) => {
-      const label = tt(it.labelKey, it.labelFallback);
-      const checked = Boolean(state[it.id]);
-      const link = it.href
-        ? `<a class="text-indigo-700 dark:text-indigo-300 hover:underline no-underline" href="${esc(it.href)}">${esc(label)}</a>`
-        : `<span>${esc(label)}</span>`;
-      return `<label class="flex items-start gap-2 cursor-pointer rounded-lg border border-gray-200/70 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 px-3 py-2">
-        <input type="checkbox" data-qa-item="${esc(it.id)}" class="rounded border-gray-300 dark:border-gray-600 mt-0.5" ${checked ? "checked" : ""} />
-        <span class="text-sm text-gray-900 dark:text-gray-100">${link}</span>
-      </label>`;
-    }).join("");
-  };
+  const allToggles = () =>
+    Array.from(document.querySelectorAll<HTMLInputElement>("[data-qa-tester-mode]"));
+  const allPanels = () => Array.from(document.querySelectorAll<HTMLElement>("[data-qa-panel]"));
 
   const applyMode = () => {
     const on = Boolean(loadPrefs().qaTesterMode);
-    toggle.checked = on;
-    panel.classList.toggle("hidden", !on);
+    allToggles().forEach((t) => {
+      t.checked = on;
+    });
+    allPanels().forEach((p) => {
+      p.classList.toggle("hidden", !on);
+    });
   };
+
+  const renderChecklist = () => {
+    const state = readState();
+    document.querySelectorAll<HTMLElement>("[data-qa-checklist]").forEach((cl) => {
+      cl.innerHTML = QA_ITEMS.map((it) => {
+        const label = tt(it.labelKey, it.labelFallback);
+        const checked = Boolean(state[it.id]);
+        const link = it.href
+          ? `<a class="text-indigo-700 dark:text-indigo-300 hover:underline no-underline" href="${esc(it.href)}">${esc(label)}</a>`
+          : `<span>${esc(label)}</span>`;
+        return `<label class="flex items-start gap-2 cursor-pointer rounded-lg border border-gray-200/70 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 px-3 py-2">
+        <input type="checkbox" data-qa-item="${esc(it.id)}" class="rounded border-gray-300 dark:border-gray-600 mt-0.5" ${checked ? "checked" : ""} />
+        <span class="text-sm text-gray-900 dark:text-gray-100">${link}</span>
+      </label>`;
+      }).join("");
+    });
+  };
+
+  mounts.forEach((mount) => {
+    if (mount.dataset.qaBound === "1") return;
+    mount.dataset.qaBound = "1";
+
+    const toggle = mount.querySelector<HTMLInputElement>("[data-qa-tester-mode]");
+    const checklist = mount.querySelector<HTMLElement>("[data-qa-checklist]");
+    const copyChecklistBtn = mount.querySelector<HTMLButtonElement>("[data-qa-copy-checklist]");
+    const seedBtn = mount.querySelector<HTMLButtonElement>("[data-qa-seed]");
+    const copyDebugBtn = mount.querySelector<HTMLButtonElement>("[data-qa-copy-debug]");
+    const feedback = mount.querySelector<HTMLElement>("[data-qa-feedback]");
+
+    if (!toggle || !checklist || !copyChecklistBtn || !seedBtn || !copyDebugBtn) return;
+
+    toggle.addEventListener("change", () => {
+      updatePrefs({ qaTesterMode: Boolean(toggle.checked) });
+      applyMode();
+      showToast(
+        toggle.checked
+          ? tt("settings.qa.enabledToast", "Modo tester activado.")
+          : tt("settings.qa.disabledToast", "Modo tester desactivado."),
+        "success",
+      );
+    });
+
+    checklist.addEventListener("change", (e) => {
+      const t = e.target as HTMLInputElement | null;
+      if (!t || t.type !== "checkbox") return;
+      const id = t.dataset.qaItem;
+      if (!id) return;
+      const state = readState();
+      state[id] = Boolean(t.checked);
+      writeState(state);
+      renderChecklist();
+    });
+
+    copyChecklistBtn.addEventListener("click", async () => {
+      const state = readState();
+      const lines = QA_ITEMS.map((it) => {
+        const label = tt(it.labelKey, it.labelFallback);
+        const done = Boolean(state[it.id]);
+        return `- [${done ? "x" : " "}] ${mdLink(label, it.href)}`;
+      });
+      const text = `${tt("settings.qa.copyHeader", "Checklist QA")}\n\n${lines.join("\n")}\n`;
+      await navigator.clipboard.writeText(text);
+      showToast(tt("settings.qa.copiedToast", "Checklist copiada."), "success");
+    });
+
+    seedBtn.addEventListener("click", async () => {
+      try {
+        seedBtn.disabled = true;
+        document.querySelectorAll<HTMLButtonElement>("[data-qa-seed]").forEach((b) => {
+          b.disabled = true;
+        });
+        await seedDemoData(feedback ?? undefined);
+      } catch (e: any) {
+        lastError = { where: "seed", message: e?.message ?? String(e) };
+        document.querySelectorAll<HTMLElement>("[data-qa-feedback]").forEach((el) => {
+          el.textContent = lastError!.message;
+          el.className = "m-0 text-xs text-red-600 dark:text-red-400 min-h-4";
+        });
+        showToast(tt("settings.qa.seedErrorToast", "Error creando datos de prueba."), "error");
+      } finally {
+        document.querySelectorAll<HTMLButtonElement>("[data-qa-seed]").forEach((b) => {
+          b.disabled = false;
+        });
+      }
+    });
+
+    copyDebugBtn.addEventListener("click", async () => {
+      const supabase = getSupabaseBrowserClient();
+      let userId: string | null = null;
+      if (supabase) {
+        try {
+          userId = await getSessionUserId(supabase);
+        } catch {
+          userId = null;
+        }
+      }
+      const prefs = loadPrefs();
+      const payload = {
+        at: new Date().toISOString(),
+        path: window.location.pathname,
+        href: window.location.href,
+        userId,
+        dataSource: (import.meta as any).env?.PUBLIC_DATA_SOURCE ?? "unknown",
+        prefs: { qaTesterMode: prefs.qaTesterMode, lang: prefs.lang, themeMode: prefs.themeMode },
+        lastError,
+      };
+      await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+      showToast(tt("settings.qa.debugCopiedToast", "Debug info copiada."), "success");
+    });
+  });
 
   renderChecklist();
   applyMode();
-
-  toggle.addEventListener("change", () => {
-    updatePrefs({ qaTesterMode: Boolean(toggle.checked) });
-    applyMode();
-    showToast(toggle.checked ? tt("settings.qa.enabledToast", "Modo tester activado.") : tt("settings.qa.disabledToast", "Modo tester desactivado."), "success");
-  });
-
-  checklist.addEventListener("change", (e) => {
-    const t = e.target as HTMLInputElement | null;
-    if (!t || t.type !== "checkbox") return;
-    const id = t.dataset.qaItem;
-    if (!id) return;
-    const state = readState();
-    state[id] = Boolean(t.checked);
-    writeState(state);
-  });
-
-  copyChecklistBtn.addEventListener("click", async () => {
-    const state = readState();
-    const lines = QA_ITEMS.map((it) => {
-      const label = tt(it.labelKey, it.labelFallback);
-      const done = Boolean(state[it.id]);
-      return `- [${done ? "x" : " "}] ${mdLink(label, it.href)}`;
-    });
-    const text = `${tt("settings.qa.copyHeader", "Checklist QA")}\n\n${lines.join("\n")}\n`;
-    await navigator.clipboard.writeText(text);
-    showToast(tt("settings.qa.copiedToast", "Checklist copiada."), "success");
-  });
-
-  seedBtn.addEventListener("click", async () => {
-    try {
-      seedBtn.disabled = true;
-      await seedDemoData(feedback ?? undefined);
-    } catch (e: any) {
-      lastError = { where: "seed", message: e?.message ?? String(e) };
-      if (feedback) {
-        feedback.textContent = lastError.message;
-        feedback.className = "m-0 text-xs text-red-600 dark:text-red-400 min-h-4";
-      }
-      showToast(tt("settings.qa.seedErrorToast", "Error creando datos de prueba."), "error");
-    } finally {
-      seedBtn.disabled = false;
-    }
-  });
-
-  copyDebugBtn.addEventListener("click", async () => {
-    const supabase = getSupabaseBrowserClient();
-    let userId: string | null = null;
-    if (supabase) {
-      try {
-        userId = await getSessionUserId(supabase);
-      } catch {
-        userId = null;
-      }
-    }
-    const prefs = loadPrefs();
-    const payload = {
-      at: new Date().toISOString(),
-      path: window.location.pathname,
-      href: window.location.href,
-      userId,
-      dataSource: (import.meta as any).env?.PUBLIC_DATA_SOURCE ?? "unknown",
-      prefs: { qaTesterMode: prefs.qaTesterMode, lang: prefs.lang, themeMode: prefs.themeMode },
-      lastError,
-    };
-    await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
-    showToast(tt("settings.qa.debugCopiedToast", "Debug info copiada."), "success");
-  });
+  window.addEventListener("skillatlas:prefs-updated", () => applyMode());
 }
 
 const boot = () => init();

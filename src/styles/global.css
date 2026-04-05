@@ -368,3 +368,251 @@ html.dark .header-settings-rainbow--active .header-settings-rainbow__inner {
   background: hsl(var(--app-accent-hsl) / 0.08);
 }
 
+/* Portfolio público / preview: lista centrada y entrada suave de tarjetas */
+.portfolio-visitor-card--list {
+  max-width: 48rem;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+@keyframes portfolio-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .portfolio-motion-on .portfolio-visitor-card--motion {
+    animation: portfolio-card-in 0.42s ease-out both;
+  }
+}
+
+.portfolio-motion-off .portfolio-visitor-card--motion {
+  animation: none !important;
+}
+
+/* Portfolio: densidad compacta */
+.portfolio-visitor-card--density-compact .portfolio-visitor-card__body {
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .portfolio-visitor-card--density-compact .portfolio-visitor-card__body {
+    padding: 0.875rem 1.125rem;
+  }
+}
+
+.portfolio-visitor-card--density-compact .portfolio-visitor-card__title {
+  font-size: 1.0625rem;
+}
+
+@media (min-width: 640px) {
+  .portfolio-visitor-card--density-compact .portfolio-visitor-card__title {
+    font-size: 1.125rem;
+  }
+}
+
+/* Acento de marca: CTA + barra de controles (--portfolio-accent-rgb en el section vía inline o script) */
+[data-public-accent-hex] .portfolio-public-cta-link {
+  background-color: rgb(var(--portfolio-accent-rgb)) !important;
+  color: #ffffff !important;
+  border: 1px solid rgb(var(--portfolio-accent-rgb) / 0.85);
+}
+
+[data-public-accent-hex] [data-public-portfolio-controls] {
+  border-color: rgb(var(--portfolio-accent-rgb) / 0.35);
+}
+
+.portfolio-hero-cta--prominent .portfolio-public-cta-link {
+  width: 100%;
+  justify-content: center;
+  padding: 0.875rem 1.5rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+@media (min-width: 640px) {
+  .portfolio-hero-cta--prominent .portfolio-public-cta-link {
+    width: auto;
+  }
+}
+
+/* Tema minimal */
+[data-public-presentation-theme="minimal"] .portfolio-visitor-card {
+  box-shadow: none;
+  --tw-ring-shadow: 0 0 #0000;
+  border-color: rgb(229 231 235 / 0.95);
+}
+
+.dark [data-public-presentation-theme="minimal"] .portfolio-visitor-card {
+  border-color: rgb(55 65 81 / 0.95);
+}
+
+/* Tema contraste */
+[data-public-presentation-theme="contrast"] .portfolio-visitor-card {
+  border-width: 2px;
+  border-color: rgb(17 24 39 / 0.9);
+}
+
+.dark [data-public-presentation-theme="contrast"] .portfolio-visitor-card {
+  border-color: rgb(243 244 246 / 0.85);
+}
+
+[data-public-presentation-theme="contrast"] [data-public-portfolio-controls],
+[data-public-presentation-theme="contrast"] [data-portfolio-preview-controls] {
+  border-width: 2px;
+}
+
+/* Tema lectura */
+section[data-public-portfolio-page][data-public-presentation-theme="reader"] {
+  max-width: 48rem !important;
+}
+
+section[data-portfolio-preview-page][data-public-presentation-theme="reader"] {
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+[data-public-presentation-theme="reader"] [data-public-portfolio-bio],
+[data-public-presentation-theme="reader"] [data-portfolio-public-bio] {
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  line-height: 1.65;
+  font-size: 1.0625rem;
+}
+
+[data-public-presentation-theme="reader"] .portfolio-visitor-card__body {
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  line-height: 1.6;
+}
+
+/* Ajustes: vista clásica (navegación lateral estilo “repo settings”) */
+.settings-classic-nav-heading {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(87 96 106);
+}
+
+.dark .settings-classic-nav-heading {
+  color: rgb(139 148 158);
+}
+
+.settings-nav-icon {
+  flex-shrink: 0;
+  opacity: 0.72;
+  color: rgb(87 96 106);
+  transition:
+    opacity 0.18s ease,
+    color 0.18s ease;
+}
+
+.dark .settings-nav-icon {
+  color: rgb(139 148 158);
+}
+
+.settings-classic-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  border-left: 2px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(55 65 81);
+  text-decoration: none;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.dark .settings-classic-nav-link {
+  color: rgb(201 209 217);
+}
+
+.settings-classic-nav-link:hover {
+  background-color: rgb(243 244 246 / 0.9);
+}
+
+.dark .settings-classic-nav-link:hover {
+  background-color: rgb(255 255 255 / 0.06);
+}
+
+.settings-classic-nav-link[data-active="true"] {
+  border-left-color: rgb(9 105 218);
+  background-color: rgb(221 244 255 / 0.65);
+  color: rgb(17 24 39);
+  font-weight: 600;
+}
+
+.settings-classic-nav-link[data-active="true"] .settings-nav-icon {
+  opacity: 1;
+  color: rgb(9 105 218);
+}
+
+.dark .settings-classic-nav-link[data-active="true"] {
+  border-left-color: rgb(56 139 253);
+  background-color: rgb(33 38 45);
+  color: rgb(240 246 252);
+  font-weight: 600;
+}
+
+.dark .settings-classic-nav-link[data-active="true"] .settings-nav-icon {
+  opacity: 1;
+  color: rgb(88 166 255);
+}
+
+/* Transiciones entre secciones de /settings */
+.settings-panels-root.settings-panels-root--is-leaving {
+  opacity: 0.22;
+  transform: translateY(6px);
+  transition:
+    opacity 0.14s ease-in,
+    transform 0.14s ease-in;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-panels-root.settings-panels-root--is-leaving {
+    transition: none;
+    transform: none;
+  }
+}
+
+@keyframes settings-panels-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.settings-panels-root.settings-panels-root--is-entering {
+  animation: settings-panels-enter 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-panels-root.settings-panels-root--is-entering {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-classic-nav-link {
+    transition: none;
+  }
+}
+

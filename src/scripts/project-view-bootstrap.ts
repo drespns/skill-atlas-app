@@ -9,6 +9,7 @@ import { getSupabaseBrowserClient } from "./client-supabase";
 import { getSessionUserId } from "./auth-session";
 import { runProjectDetailInits } from "./project-detail/runner";
 import { loadPrefs } from "./prefs";
+import { recordRecentActivity } from "./recent-activity";
 
 function esc(s: string | null | undefined) {
   return (s ?? "")
@@ -111,6 +112,8 @@ export async function bootstrapProjectDetailPage() {
     role: string | null;
     outcome: string | null;
   };
+
+  recordRecentActivity({ kind: "project", slug: project.slug, label: project.title });
 
   const role = (project.role ?? "").trim();
   const outcome = (project.outcome ?? "").trim();

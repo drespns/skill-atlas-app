@@ -40,15 +40,23 @@ Orden priorizado para ganar profundidad sin dejar de pulir tecnologías/portfoli
 
 2. **Command palette (el que ya tienes)** — Hoy: **Ctrl+K**, **/** (cuando el foco no está en un campo de texto) y **botón en la cabecera** (icono de búsqueda, `data-command-palette-trigger` en `AppShell.astro`, p. ej. “Buscar (Ctrl+K)”). **No es** crear un segundo sistema; **sí es** hacerlo más potente: buscar proyectos/tecnologías, más acciones rápidas, mejor textos/i18n.
 
-3. **Burbujas flotantes (FAB / launcher)** — **Nuevo patrón:** zona fija (p. ej. esquina inferior derecha), estilo “widget” de chat: al pulsar, panel con **animación** (modal o toast grande) con **atajos** (la referencia detallada sigue en **Ajustes**). **Extensible** a más burbujas en línea (futuro: asistente / IA, ayuda contextual). **Opcional:** que se puedan **arrastrar** para cambiar sitio. La checklist corta post-login (punto 6) puede vivir aquí en el MVP.
+3. **Burbujas flotantes (FAB / launcher)** — **Nuevo patrón:** zona fija (p. ej. esquina inferior derecha), estilo “widget” de chat: al pulsar, panel con **animación** (modal o toast grande) con **atajos** (la referencia detallada sigue en **Ajustes**). **Extensible** a más burbujas en línea (futuro: asistente / IA, ayuda contextual). La checklist corta post-login (punto 6) vive aquí en el MVP.
+   - **Implementado (abr. 2026):** panel con pestañas (atajos · checklist · teaser IA), checklist persistida en `localStorage`, invitados ven la checklist **bloqueada** (sin marcar) con aviso e enlace a login.
+   - **Idea futura (no prioritaria):** **burbujas arrastrables** para reposicionar el dock (persistir offset en `localStorage` o prefs); valor UX moderado frente a complejidad en móvil y solapes con el contenido.
+   - **Iteración UX pendiente:** el panel debería ganar **ancho fluido** respecto al viewport (p. ej. `min(..., 100vw - padding)`) para que los rótulos de pestaña no se corten; en paralelo, **etiquetas de pestaña cortas** (“Pasos”, “IA”) y el **texto largo en el cuerpo del tab** (intro del checklist, etc.) suelen funcionar mejor que títulos largos en la barra.
 
 4. **Detalles de confianza** — Toasts, mensajes tras guardar/borrar, errores legibles: se implementa con criterio técnico y se ajusta cuando tengas más horas de uso sobre la web.
+   - **Parcial (abr. 2026):** tipo de toast **`warning`** (ámbar) alineado con usos reales del código; **accesibilidad** básica en toasts (`role="status"`, `aria-live`); helper **`userFacingDbError`** en `ui-feedback.ts` para mensajes de Postgres/Supabase repetitivos (RLS, sesión, duplicados, red) aplicado en **proyecto**, **tecnologías**, **evidencias (embeds)** y **conceptos**. Valorar i18n de los textos del helper y unificar mensajes en inglés cuando el UI esté en EN.
 
 5. **Dashboard (`/app`)** — **Actividad y/o accesos recientes** (últimos proyectos o tecnologías, enlaces útiles) para que la entrada a la app tenga “vida” y punto de retorno al trabajo.
+   - **Implementado (abr. 2026):** bloque **Actividad** con listas “Proyectos recientes” / “Tecnologías recientes” (`localStorage`, `recent-activity.ts`), rellenadas al abrir detalle CSR (`project-view-bootstrap` / `technology-view-bootstrap`); sección **Enlaces útiles** (Estudio, Prep, Ajustes, perfil, atajos); listados A–Z con hints; script `app-dashboard.ts` siempre en `/app` (sin Supabase en cliente o sin sesión → mensaje guía en lugar de “Cargando…” eterno).
+   - **Futuro (si el producto lo exige):** historial **multi-dispositivo** / ligado a cuenta (p. ej. `user_prefs` o tabla de eventos) en lugar de solo `localStorage` en el navegador.
 
 6. **Checklist muy corta post-login** — Onboarding mínimo (pocos pasos). **MVP:** integrado con las **burbujas** del punto 3 (segunda burbuja o sección dentro del mismo panel).
+   - **Hecho:** checklist en el FAB (pestaña “Pasos”), persistencia local; invitados la ven bloqueada con CTA a login.
 
 7. **Portfolio público** — **Jerarquía y perfilado** para el visitante: lectura clara, móvil, orden visual de historia + evidencias + stack (sin mezclar con refactors grandes de la app interna hasta estar listos).
+   - **Parcial (abr. 2026):** módulo compartido `src/lib/public-portfolio-project-card.ts` — tarjeta con orden **título → stack → historia (rol/impacto) → descripción → evidencia**; chips con icono; iframe/enlace con accesibilidad y CTA táctil; preview autenticado (`portfolio-projects.ts`) alineado; `/portfolio/[slug]` y `/p/[token]` con cabecera y rejilla más aireadas (móvil); textos `portfolio.public.*` + `portfolio.publicLoading` (i18n).
 
 8. **Impresión profesional** — PDF de portfolio donde encaje, previews **OG por proyecto** o piezas compartibles, export estático si aplica (alineado con “salida profesional” del roadmap global).
 
@@ -69,7 +77,7 @@ Orden priorizado para ganar profundidad sin dejar de pulir tecnologías/portfoli
   - foto opcional + fuente (subida vs LinkedIn/proveedor) sin perder la subida
   - impresión en claro (beforeprint + `@media print`)
 - **Landing:** scroll horizontal contenido con `overflow-x: hidden` en `html`/`body` (sin cambiar el full-bleed del hero).
-- **Header:** `syncHeaderNavActive()` + indicador `left`/`width`; sin Precios en nav; Admin separado de iconos con `flex-1` espaciador; estilos activos `.header-nav-link` / `.header-admin-link`.
+- **Header:** `syncHeaderNavActive()` + indicador `left`/`width`; sin Precios en nav; Admin separado de iconos con `flex-1` espaciador; estilos activos `.header-nav-link` / `.header-admin-link`; **command palette** con estilo primario (índigo); selector de idioma en cabecera **opcional** (`showLangSelector`, por defecto oculto).
 
 ---
 

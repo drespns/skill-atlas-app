@@ -1,0 +1,190 @@
+---
+/** Campos de preferencias (compartidos: vista tablero y vista clásica). */
+---
+
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+  <label class="space-y-1">
+    <span class="text-sm font-semibold" data-i18n="settings.prefs.density">Densidad</span>
+    <select
+      data-pref-density
+      class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+    >
+      <option value="comfortable" data-i18n="settings.prefs.densityComfortable">Cómoda</option>
+      <option value="compact" data-i18n="settings.prefs.densityCompact">Compacta</option>
+    </select>
+  </label>
+
+  <div class="space-y-1 sm:col-span-2">
+    <span class="text-sm font-semibold" data-i18n="settings.prefs.font">Fuente</span>
+    <div data-pref-font-picker class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <button
+        type="button"
+        data-pref-font-choice="system"
+        aria-pressed="true"
+        class="text-left rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <span style="font-family: var(--font-system);" data-i18n="settings.prefs.fontSystem">Sistema</span>
+          <span class="text-xs text-gray-500 dark:text-gray-400">Aa</span>
+        </div>
+      </button>
+      <button
+        type="button"
+        data-pref-font-choice="inter"
+        aria-pressed="false"
+        class="text-left rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <span style="font-family: var(--font-inter);" data-i18n="settings.prefs.fontInter">Inter</span>
+          <span class="text-xs text-gray-500 dark:text-gray-400">Aa</span>
+        </div>
+      </button>
+      <button
+        type="button"
+        data-pref-font-choice="serif"
+        aria-pressed="false"
+        class="text-left rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <span style="font-family: var(--font-serif);">Serif</span>
+          <span class="text-xs text-gray-500 dark:text-gray-400">Aa</span>
+        </div>
+      </button>
+      <button
+        type="button"
+        data-pref-font-choice="mono"
+        aria-pressed="false"
+        class="text-left rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <span style="font-family: var(--font-mono);" data-i18n="settings.prefs.fontMono">Mono</span>
+          <span class="text-xs text-gray-500 dark:text-gray-400">Aa</span>
+        </div>
+      </button>
+    </div>
+    <select data-pref-font class="hidden">
+      <option value="system">system</option>
+      <option value="inter">inter</option>
+      <option value="serif">serif</option>
+      <option value="mono">mono</option>
+    </select>
+  </div>
+
+  <label class="space-y-1">
+    <span class="text-sm font-semibold" data-i18n="settings.prefs.accent">Acento</span>
+    <select
+      data-pref-accent
+      class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+    >
+      <option value="indigo" data-i18n="settings.prefs.accentIndigo">Índigo</option>
+      <option value="emerald" data-i18n="settings.prefs.accentEmerald">Esmeralda</option>
+      <option value="rose" data-i18n="settings.prefs.accentRose">Rosa</option>
+      <option value="amber" data-i18n="settings.prefs.accentAmber">Ámbar</option>
+      <option value="sky" data-i18n="settings.prefs.accentSky">Cielo</option>
+      <option value="violet" data-i18n="settings.prefs.accentViolet">Violeta</option>
+    </select>
+  </label>
+
+  <label class="space-y-1">
+    <span class="text-sm font-semibold" data-i18n="settings.prefs.motion">Movimiento</span>
+    <select
+      data-pref-motion
+      class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+    >
+      <option value="normal" data-i18n="settings.prefs.motionNormal">Normal</option>
+      <option value="reduced" data-i18n="settings.prefs.motionReduced">Reducido</option>
+    </select>
+  </label>
+
+  <label class="space-y-1">
+    <span class="text-sm font-semibold" data-i18n="settings.prefs.technologiesView">Vista (Tecnologías)</span>
+    <select
+      data-pref-technologies-view
+      class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+    >
+      <option value="cards" data-i18n="settings.prefs.viewCards">Cards</option>
+      <option value="list" data-i18n="settings.prefs.viewList">Lista</option>
+    </select>
+  </label>
+
+  <label class="space-y-1">
+    <span class="text-sm font-semibold" data-i18n="settings.prefs.projectsView">Vista (Proyectos)</span>
+    <select
+      data-pref-projects-view
+      class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+    >
+      <option value="cards" data-i18n="settings.prefs.viewCards">Cards</option>
+      <option value="list" data-i18n="settings.prefs.viewList">Lista</option>
+    </select>
+  </label>
+
+  <div class="space-y-1 sm:col-span-2">
+    <span class="text-sm font-semibold" data-i18n="settings.prefs.language">Idioma</span>
+    <div
+      class="inline-flex rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 p-0.5 gap-0.5"
+      data-pref-lang-flags
+    >
+      <button
+        type="button"
+        data-pref-lang-flag="es"
+        class="rounded-md px-2.5 py-1.5 leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
+        aria-pressed="true"
+        title="Español"
+      >
+        <img
+          data-flag-img="es"
+          src="/icons/flags/Spain.svg"
+          alt=""
+          class="h-5 w-5 rounded-sm"
+          loading="lazy"
+          decoding="async"
+        />
+      </button>
+      <button
+        type="button"
+        data-pref-lang-flag="en"
+        class="rounded-md px-2.5 py-1.5 leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
+        aria-pressed="false"
+        title="English"
+      >
+        <img
+          data-flag-img="en"
+          src="/icons/flags/United_Kingdom.svg"
+          alt=""
+          class="h-5 w-5 rounded-sm"
+          loading="lazy"
+          decoding="async"
+        />
+      </button>
+    </div>
+  </div>
+
+  <label class="space-y-1">
+    <span class="text-sm font-semibold" data-i18n="settings.prefs.showHeaderIcons">Iconos del header</span>
+    <select
+      data-pref-show-header-icons
+      class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+    >
+      <option value="yes" data-i18n="settings.prefs.show">Mostrar</option>
+      <option value="no" data-i18n="settings.prefs.hide">Ocultar</option>
+    </select>
+  </label>
+
+  <label class="space-y-1">
+    <span class="text-sm font-semibold" data-i18n="settings.prefs.showLangSelector">Selector de idioma (header)</span>
+    <select
+      data-pref-show-lang-selector
+      class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+    >
+      <option value="yes" data-i18n="settings.prefs.show">Mostrar</option>
+      <option value="no" data-i18n="settings.prefs.hide">Ocultar</option>
+    </select>
+    <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.showLangSelectorHint">
+      Por defecto está oculto en la barra; el idioma puedes cambiarlo siempre aquí.
+    </p>
+  </label>
+</div>
+
+<p class="m-0 text-xs text-gray-600 dark:text-gray-400">
+  <span data-i18n="settings.prefs.localFirstHint">Cambios aplicados al instante en toda la app.</span>
+</p>

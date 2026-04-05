@@ -9,6 +9,14 @@ import {
   writeStoredPublicProfile,
   type StoredPublicProfile,
 } from "./public-profile-local";
+import {
+  featuredSlugsToTextareaLines,
+  normalizePublicAccentHex,
+  normalizePublicDensity,
+  normalizePublicHeaderStyle,
+  normalizePublicTheme,
+  parseFeaturedSlugsFromText,
+} from "../lib/portfolio-presentation";
 import { showToast } from "./ui-feedback";
 
 function tt(key: string, fallback: string): string {
@@ -34,56 +42,90 @@ function applyHelpStackToDom(keys: string[]) {
 }
 
 async function initSettingsProfile() {
-  const nameInput = document.querySelector<HTMLInputElement>("[data-profile-public-name]");
-  const bioInput = document.querySelector<HTMLTextAreaElement>("[data-profile-public-bio]");
-  const saveBtn = document.querySelector<HTMLButtonElement>("[data-profile-save]");
-  const hint = document.querySelector<HTMLElement>("[data-profile-feedback]");
-  const cloudHint = document.querySelector<HTMLElement>("[data-profile-cloud-hint]");
-  const avatarFile = document.querySelector<HTMLInputElement>("[data-profile-avatar-file]");
-  const avatarPreview = document.querySelector<HTMLImageElement>("[data-profile-avatar-preview]");
-  const avatarFallback = document.querySelector<HTMLElement>("[data-profile-avatar-fallback]");
-  const shareCb = document.querySelector<HTMLInputElement>("[data-profile-share-enabled]");
-  const slugInput = document.querySelector<HTMLInputElement>("[data-profile-public-slug]");
-  const urlPreview = document.querySelector<HTMLElement>("[data-profile-public-url-preview]");
-  const copyBtn = document.querySelector<HTMLButtonElement>("[data-profile-copy-public-url]");
-  const tokenWrap = document.querySelector<HTMLElement>("[data-portfolio-token-share]");
-  const tokenUrlInput = document.querySelector<HTMLInputElement>("[data-portfolio-token-url]");
-  const tokenCopyBtn = document.querySelector<HTMLButtonElement>("[data-portfolio-token-copy]");
-  const tokenRotateBtn = document.querySelector<HTMLButtonElement>("[data-portfolio-token-rotate]");
-  const cvShareWrap = document.querySelector<HTMLElement>("[data-cv-share]");
-  const cvShareEnabledCb = document.querySelector<HTMLInputElement>("[data-cv-share-enabled]");
-  const cvShareUrlInput = document.querySelector<HTMLInputElement>("[data-cv-share-url]");
-  const cvShareCopyBtn = document.querySelector<HTMLButtonElement>("[data-cv-share-copy]");
-  const cvShareRotateBtn = document.querySelector<HTMLButtonElement>("[data-cv-share-rotate]");
+  if (document.body.dataset.settingsProfileInit === "1") return;
 
-  if (!nameInput || !bioInput || !saveBtn) return;
-  const portfolioCard = document.querySelector<HTMLElement>('[data-settings-section="portfolio"]');
-  if (portfolioCard && portfolioCard.dataset.bound === "1") return;
-  if (portfolioCard) portfolioCard.dataset.bound = "1";
+  const nameInputs = document.querySelectorAll<HTMLInputElement>("[data-profile-public-name]");
+  const bioInputs = document.querySelectorAll<HTMLTextAreaElement>("[data-profile-public-bio]");
+  const saveBtns = document.querySelectorAll<HTMLButtonElement>("[data-profile-save]");
+  const nameInput = nameInputs[0];
+  const bioInput = bioInputs[0];
+  const saveBtn = saveBtns[0];
+  const hints = document.querySelectorAll<HTMLElement>("[data-profile-feedback]");
+  const cloudHints = document.querySelectorAll<HTMLElement>("[data-profile-cloud-hint]");
+  const avatarFiles = document.querySelectorAll<HTMLInputElement>("[data-profile-avatar-file]");
+  const avatarPreviews = document.querySelectorAll<HTMLImageElement>("[data-profile-avatar-preview]");
+  const avatarFallbacks = document.querySelectorAll<HTMLElement>("[data-profile-avatar-fallback]");
+  const shareCbs = document.querySelectorAll<HTMLInputElement>("[data-profile-share-enabled]");
+  const slugInputs = document.querySelectorAll<HTMLInputElement>("[data-profile-public-slug]");
+  const urlPreviews = document.querySelectorAll<HTMLElement>("[data-profile-public-url-preview]");
+  const copyBtns = document.querySelectorAll<HTMLButtonElement>("[data-profile-copy-public-url]");
+  const tokenWraps = document.querySelectorAll<HTMLElement>("[data-portfolio-token-share]");
+  const tokenUrlInputs = document.querySelectorAll<HTMLInputElement>("[data-portfolio-token-url]");
+  const tokenCopyBtns = document.querySelectorAll<HTMLButtonElement>("[data-portfolio-token-copy]");
+  const tokenRotateBtns = document.querySelectorAll<HTMLButtonElement>("[data-portfolio-token-rotate]");
+  const cvShareWraps = document.querySelectorAll<HTMLElement>("[data-cv-share]");
+  const cvShareEnabledCbs = document.querySelectorAll<HTMLInputElement>("[data-cv-share-enabled]");
+  const cvShareUrlInputs = document.querySelectorAll<HTMLInputElement>("[data-cv-share-url]");
+  const cvShareCopyBtns = document.querySelectorAll<HTMLButtonElement>("[data-cv-share-copy]");
+  const cvShareRotateBtns = document.querySelectorAll<HTMLButtonElement>("[data-cv-share-rotate]");
+  const layoutSels = document.querySelectorAll<HTMLSelectElement>("[data-profile-public-layout]");
+  const embedLimitSels = document.querySelectorAll<HTMLSelectElement>("[data-profile-public-embeds-limit]");
+  const heroCtaLabelIns = document.querySelectorAll<HTMLInputElement>("[data-profile-hero-cta-label]");
+  const heroCtaUrlIns = document.querySelectorAll<HTMLInputElement>("[data-profile-hero-cta-url]");
+  const themeSels = document.querySelectorAll<HTMLSelectElement>("[data-profile-public-theme]");
+  const densitySels = document.querySelectorAll<HTMLSelectElement>("[data-profile-public-density]");
+  const accentColors = document.querySelectorAll<HTMLInputElement>("[data-profile-accent-color]");
+  const accentHexIns = document.querySelectorAll<HTMLInputElement>("[data-profile-accent-hex]");
+  const accentClearBtns = document.querySelectorAll<HTMLButtonElement>("[data-profile-accent-clear]");
+  const headerStyleSels = document.querySelectorAll<HTMLSelectElement>("[data-profile-header-style]");
+  const featuredTas = document.querySelectorAll<HTMLTextAreaElement>("[data-profile-featured-slugs]");
+  const featuredHints = document.querySelectorAll<HTMLElement>("[data-profile-featured-slugs-hint]");
+
+  if (nameInputs.length === 0 || bioInputs.length === 0 || saveBtns.length === 0) return;
+  document.body.dataset.settingsProfileInit = "1";
 
   const defaultName = nameInput.dataset.defaultPublicName ?? "";
   const defaultBio = bioInput.dataset.defaultPublicBio ?? "";
 
+  const slugPrimary = () => slugInputs[0]?.value ?? "";
+
   const updatePublicUrlPreview = () => {
-    if (!urlPreview) return;
-    const norm = normalizePublicSlug(slugInput?.value ?? "");
+    const norm = normalizePublicSlug(slugPrimary());
     const origin = window.location.origin;
-    if (norm && isValidPublicSlug(norm)) urlPreview.textContent = `${origin}/portfolio/${norm}`;
-    else urlPreview.textContent = `${origin}/portfolio/…`;
+    const text =
+      norm && isValidPublicSlug(norm) ? `${origin}/portfolio/${norm}` : `${origin}/portfolio/…`;
+    urlPreviews.forEach((el) => {
+      el.textContent = text;
+    });
   };
 
-  if (slugInput && slugInput.dataset.slugPreviewBound !== "1") {
-    slugInput.dataset.slugPreviewBound = "1";
-    slugInput.addEventListener("input", updatePublicUrlPreview);
-  }
-  if (shareCb && shareCb.dataset.slugPreviewBound !== "1") {
-    shareCb.dataset.slugPreviewBound = "1";
-    shareCb.addEventListener("change", updatePublicUrlPreview);
-  }
-  if (copyBtn && copyBtn.dataset.bound !== "1") {
+  slugInputs.forEach((si) => {
+    if (si.dataset.slugPreviewBound === "1") return;
+    si.dataset.slugPreviewBound = "1";
+    si.addEventListener("input", () => {
+      const v = si.value;
+      slugInputs.forEach((o) => {
+        if (o !== si) o.value = v;
+      });
+      updatePublicUrlPreview();
+    });
+  });
+  shareCbs.forEach((cb) => {
+    if (cb.dataset.slugPreviewBound === "1") return;
+    cb.dataset.slugPreviewBound = "1";
+    cb.addEventListener("change", () => {
+      const on = cb.checked;
+      shareCbs.forEach((o) => {
+        if (o !== cb) o.checked = on;
+      });
+      updatePublicUrlPreview();
+    });
+  });
+  copyBtns.forEach((copyBtn) => {
+    if (copyBtn.dataset.bound === "1") return;
     copyBtn.dataset.bound = "1";
     copyBtn.addEventListener("click", async () => {
-      const norm = normalizePublicSlug(slugInput?.value ?? "");
+      const norm = normalizePublicSlug(slugPrimary());
       if (!isValidPublicSlug(norm)) {
         showToast(
           tt("settings.portfolio.copyNeedsValidSlug", "Elige un identificador válido para copiar el enlace."),
@@ -99,7 +141,7 @@ async function initSettingsProfile() {
         showToast(tt("settings.portfolio.copyFailed", "No se pudo copiar al portapapeles."), "error");
       }
     });
-  }
+  });
 
   const supabase = getSupabaseBrowserClient();
   const userId = supabase ? await getSessionUserId(supabase) : null;
@@ -110,25 +152,67 @@ async function initSettingsProfile() {
   let cvShareToken: string | null = null;
 
   if (!userId || !supabase) {
-    if (shareCb) shareCb.disabled = true;
-    if (slugInput) slugInput.disabled = true;
-    if (copyBtn) copyBtn.disabled = true;
+    shareCbs.forEach((el) => {
+      el.disabled = true;
+    });
+    slugInputs.forEach((el) => {
+      el.disabled = true;
+    });
+    copyBtns.forEach((el) => {
+      el.disabled = true;
+    });
+    layoutSels.forEach((el) => {
+      el.disabled = true;
+    });
+    embedLimitSels.forEach((el) => {
+      el.disabled = true;
+    });
+    heroCtaLabelIns.forEach((el) => {
+      el.disabled = true;
+    });
+    heroCtaUrlIns.forEach((el) => {
+      el.disabled = true;
+    });
+    themeSels.forEach((el) => {
+      el.disabled = true;
+    });
+    densitySels.forEach((el) => {
+      el.disabled = true;
+    });
+    accentColors.forEach((el) => {
+      el.disabled = true;
+    });
+    accentHexIns.forEach((el) => {
+      el.disabled = true;
+    });
+    accentClearBtns.forEach((el) => {
+      el.disabled = true;
+    });
+    headerStyleSels.forEach((el) => {
+      el.disabled = true;
+    });
+    featuredTas.forEach((el) => {
+      el.disabled = true;
+    });
   }
 
   const setAvatarPreview = (url: string | null) => {
-    if (!avatarPreview) return;
-    if (url) {
-      avatarPreview.src = url;
-      avatarPreview.classList.remove("hidden");
-      avatarFallback?.classList.add("hidden");
-    } else {
-      avatarPreview.removeAttribute("src");
-      avatarPreview.classList.add("hidden");
-      avatarFallback?.classList.remove("hidden");
-    }
+    avatarPreviews.forEach((avatarPreview, i) => {
+      const avatarFallback = avatarFallbacks[i];
+      if (url) {
+        avatarPreview.src = url;
+        avatarPreview.classList.remove("hidden");
+        avatarFallback?.classList.add("hidden");
+      } else {
+        avatarPreview.removeAttribute("src");
+        avatarPreview.classList.add("hidden");
+        avatarFallback?.classList.remove("hidden");
+      }
+    });
   };
 
-  if (avatarFile && avatarFile.dataset.bound !== "1") {
+  avatarFiles.forEach((avatarFile) => {
+    if (avatarFile.dataset.bound === "1") return;
     avatarFile.dataset.bound = "1";
     avatarFile.addEventListener("change", () => {
       const f = avatarFile.files?.[0] ?? null;
@@ -137,7 +221,7 @@ async function initSettingsProfile() {
       const url = URL.createObjectURL(f);
       setAvatarPreview(url);
     });
-  }
+  });
 
   const loadLocal = (): StoredPublicProfile => {
     const s = readStoredPublicProfile();
@@ -152,14 +236,22 @@ async function initSettingsProfile() {
   };
 
   const applyToForm = (p: StoredPublicProfile) => {
-    nameInput.value = p.publicName;
-    bioInput.value = p.bio;
+    nameInputs.forEach((el) => {
+      el.value = p.publicName;
+    });
+    bioInputs.forEach((el) => {
+      el.value = p.bio;
+    });
     applyHelpStackToDom(p.helpStack);
   };
 
   const applyShareToForm = (shareEnabled: boolean, publicSlug: string) => {
-    if (shareCb && !shareCb.disabled) shareCb.checked = shareEnabled;
-    if (slugInput && !slugInput.disabled) slugInput.value = publicSlug;
+    shareCbs.forEach((cb) => {
+      if (!cb.disabled) cb.checked = shareEnabled;
+    });
+    slugInputs.forEach((si) => {
+      if (!si.disabled) si.value = publicSlug;
+    });
     updatePublicUrlPreview();
   };
 
@@ -174,16 +266,39 @@ async function initSettingsProfile() {
       share_token?: string | null;
       cv_share_enabled?: boolean | null;
       cv_share_token?: string | null;
+      public_layout?: string | null;
+      public_embeds_limit?: number | null;
+      public_hero_cta_label?: string | null;
+      public_hero_cta_url?: string | null;
+      public_theme?: string | null;
+      public_density?: string | null;
+      public_accent_hex?: string | null;
+      public_header_style?: string | null;
+      featured_project_slugs?: unknown;
     } | null = null;
     let error: { message?: string; code?: string } | null = null;
 
-    let resOpt = await supabase
-      .from("portfolio_profiles")
-      .select(
-        "display_name, bio, help_stack, avatar_url, share_enabled, share_token, public_slug, cv_share_enabled, cv_share_token",
+    const selWith014 =
+      "display_name, bio, help_stack, avatar_url, share_enabled, share_token, public_slug, cv_share_enabled, cv_share_token, public_layout, public_embeds_limit, public_hero_cta_label, public_hero_cta_url, public_theme, public_density, public_accent_hex, public_header_style, featured_project_slugs";
+    const sel013Only =
+      "display_name, bio, help_stack, avatar_url, share_enabled, share_token, public_slug, cv_share_enabled, cv_share_token, public_layout, public_embeds_limit, public_hero_cta_label, public_hero_cta_url";
+    const selNo013 =
+      "display_name, bio, help_stack, avatar_url, share_enabled, share_token, public_slug, cv_share_enabled, cv_share_token";
+
+    let resOpt = await supabase.from("portfolio_profiles").select(selWith014).eq("user_id", userId).maybeSingle();
+
+    if (
+      resOpt.error &&
+      /public_theme|public_density|public_accent_hex|public_header_style|featured_project_slugs|42703|column/i.test(
+        resOpt.error.message ?? "",
       )
-      .eq("user_id", userId)
-      .maybeSingle();
+    ) {
+      resOpt = await supabase.from("portfolio_profiles").select(sel013Only).eq("user_id", userId).maybeSingle();
+    }
+
+    if (resOpt.error && /public_layout|public_embeds_limit|public_hero_cta|42703|column/i.test(resOpt.error.message ?? "")) {
+      resOpt = await supabase.from("portfolio_profiles").select(selNo013).eq("user_id", userId).maybeSingle();
+    }
 
     if (resOpt.error && /public_slug|42703|column/i.test(resOpt.error.message ?? "")) {
       resOpt = await supabase
@@ -230,7 +345,9 @@ async function initSettingsProfile() {
       };
       applyToForm(merged);
       writeStoredPublicProfile(merged);
-      if (cloudHint) cloudHint.textContent = "";
+      cloudHints.forEach((h) => {
+        h.textContent = "";
+      });
 
       const slugStr = data.public_slug != null ? String(data.public_slug).trim() : "";
       applyShareToForm(Boolean(data.share_enabled), slugStr);
@@ -255,43 +372,108 @@ async function initSettingsProfile() {
           null;
       }
       setAvatarPreview(avatarUrl);
+
+      layoutSels.forEach((layoutSel) => {
+        if (!layoutSel.disabled) {
+          const pl = data.public_layout != null ? String(data.public_layout).toLowerCase() : "grid";
+          layoutSel.value = pl === "list" ? "list" : "grid";
+        }
+      });
+      embedLimitSels.forEach((embedLimitSel) => {
+        if (!embedLimitSel.disabled) {
+          const n = Number(data.public_embeds_limit);
+          const lim = Number.isFinite(n) ? Math.min(5, Math.max(1, Math.round(n))) : 3;
+          embedLimitSel.value = String(lim);
+        }
+      });
+      heroCtaLabelIns.forEach((heroCtaLabelIn) => {
+        if (!heroCtaLabelIn.disabled) {
+          heroCtaLabelIn.value = data.public_hero_cta_label != null ? String(data.public_hero_cta_label) : "";
+        }
+      });
+      heroCtaUrlIns.forEach((heroCtaUrlIn) => {
+        if (!heroCtaUrlIn.disabled) {
+          heroCtaUrlIn.value = data.public_hero_cta_url != null ? String(data.public_hero_cta_url) : "";
+        }
+      });
+      themeSels.forEach((themeSel) => {
+        if (!themeSel.disabled) themeSel.value = normalizePublicTheme(data.public_theme);
+      });
+      densitySels.forEach((densitySel) => {
+        if (!densitySel.disabled) densitySel.value = normalizePublicDensity(data.public_density);
+      });
+      headerStyleSels.forEach((headerStyleSel) => {
+        if (!headerStyleSel.disabled) headerStyleSel.value = normalizePublicHeaderStyle(data.public_header_style);
+      });
+      accentHexIns.forEach((accentHexIn, i) => {
+        if (!accentHexIn.disabled) {
+          const hx = normalizePublicAccentHex(data.public_accent_hex);
+          accentHexIn.value = hx ?? "";
+          const ac = accentColors[i];
+          if (ac) ac.value = hx ? `#${hx}` : "#10b981";
+        }
+      });
+      featuredTas.forEach((featuredTa) => {
+        if (!featuredTa.disabled) {
+          featuredTa.value = featuredSlugsToTextareaLines(data.featured_project_slugs);
+        }
+      });
+
+      const loadFeaturedHint = async () => {
+        if (featuredHints.length === 0 || !supabase || !userId) return;
+        const { data: pl } = await supabase.from("projects").select("slug").eq("user_id", userId).order("slug");
+        const slugs = (pl ?? []).map((r: { slug: string }) => r.slug).filter(Boolean);
+        const text =
+          slugs.length > 0
+            ? `${tt("settings.portfolio.featuredHintPrefix", "Slugs de tus proyectos:")} ${slugs.join(", ")}`
+            : tt("settings.portfolio.featuredHintEmpty", "Crea proyectos para ver aquí sus slugs.");
+        featuredHints.forEach((h) => {
+          h.textContent = text;
+        });
+      };
+      void loadFeaturedHint();
     } else {
       applyToForm(loadLocal());
       applyShareToForm(false, "");
-      if (cloudHint) {
-        if (error) {
-          cloudHint.textContent = "";
-        } else {
-          cloudHint.textContent = "";
-        }
-      }
+      cloudHints.forEach((h) => {
+        h.textContent = "";
+      });
     }
   } else {
     applyToForm(loadLocal());
     applyShareToForm(false, "");
-    if (cloudHint) cloudHint.textContent = "";
+    cloudHints.forEach((h) => {
+      h.textContent = "";
+    });
   }
 
   const updateCvShareUrl = () => {
-    if (!cvShareUrlInput) return;
-    cvShareUrlInput.value = cvShareToken ? `${window.location.origin}/cv/p/${cvShareToken}` : "";
+    const v = cvShareToken ? `${window.location.origin}/cv/p/${cvShareToken}` : "";
+    cvShareUrlInputs.forEach((inp) => {
+      inp.value = v;
+    });
   };
 
-  if (
-    cvShareWrap &&
-    cvShareEnabledCb &&
-    cvShareUrlInput &&
-    cvShareCopyBtn &&
-    cvShareRotateBtn &&
-    supabase &&
-    userId &&
-    (cvShareEnabled !== null || Boolean(cvShareToken))
-  ) {
-    cvShareWrap.classList.remove("hidden");
-    cvShareEnabledCb.checked = Boolean(cvShareEnabled);
+  const syncCvShareCheckboxes = () => {
+    cvShareEnabledCbs.forEach((cb) => {
+      cb.checked = Boolean(cvShareEnabled);
+    });
+  };
+
+  if (supabase && userId && (cvShareEnabled !== null || Boolean(cvShareToken))) {
+    cvShareWraps.forEach((cvShareWrap) => {
+      const cvShareEnabledCb = cvShareEnabledCbs[i];
+      const cvShareUrlInput = cvShareUrlInputs[i];
+      const cvShareCopyBtn = cvShareCopyBtns[i];
+      const cvShareRotateBtn = cvShareRotateBtns[i];
+      if (!cvShareWrap || !cvShareEnabledCb || !cvShareUrlInput || !cvShareCopyBtn || !cvShareRotateBtn) return;
+      cvShareWrap.classList.remove("hidden");
+    });
+    syncCvShareCheckboxes();
     updateCvShareUrl();
 
-    if (cvShareEnabledCb.dataset.bound !== "1") {
+    cvShareEnabledCbs.forEach((cvShareEnabledCb) => {
+      if (cvShareEnabledCb.dataset.bound === "1") return;
       cvShareEnabledCb.dataset.bound = "1";
       cvShareEnabledCb.addEventListener("change", async () => {
         const nextEnabled = Boolean(cvShareEnabledCb.checked);
@@ -326,6 +508,7 @@ async function initSettingsProfile() {
               typeof (up1.data as any)?.cv_share_enabled === "boolean" ? (up1.data as any).cv_share_enabled : nextEnabled;
             cvShareToken = typeof (up1.data as any)?.cv_share_token === "string" ? (up1.data as any).cv_share_token : nextToken;
           }
+          syncCvShareCheckboxes();
           updateCvShareUrl();
           showToast(
             nextEnabled
@@ -334,16 +517,17 @@ async function initSettingsProfile() {
             "success",
           );
         } catch (e: any) {
-          cvShareEnabledCb.checked = Boolean(cvShareEnabled);
+          syncCvShareCheckboxes();
           showToast(e?.message ?? tt("cv.publicShareSaveError", "No se pudo guardar."), "error");
         }
       });
-    }
+    });
 
-    if (cvShareCopyBtn.dataset.bound !== "1") {
+    cvShareCopyBtns.forEach((cvShareCopyBtn, i) => {
+      if (cvShareCopyBtn.dataset.bound === "1") return;
       cvShareCopyBtn.dataset.bound = "1";
       cvShareCopyBtn.addEventListener("click", async () => {
-        const url = cvShareUrlInput.value.trim();
+        const url = (cvShareUrlInputs[i]?.value ?? "").trim();
         if (!url) {
           showToast(tt("cv.publicShareNoUrl", "Activa el enlace para poder copiarlo."), "warning");
           return;
@@ -355,9 +539,10 @@ async function initSettingsProfile() {
           showToast(tt("settings.portfolio.copyFailed", "No se pudo copiar al portapapeles."), "error");
         }
       });
-    }
+    });
 
-    if (cvShareRotateBtn.dataset.bound !== "1") {
+    cvShareRotateBtns.forEach((cvShareRotateBtn) => {
+      if (cvShareRotateBtn.dataset.bound === "1") return;
       cvShareRotateBtn.dataset.bound = "1";
       cvShareRotateBtn.addEventListener("click", async () => {
         try {
@@ -376,22 +561,27 @@ async function initSettingsProfile() {
           showToast(e?.message ?? tt("cv.publicShareRotateError", "No se pudo regenerar."), "error");
         }
       });
-    }
+    });
   }
 
   const updatePortfolioTokenUrl = () => {
-    if (!tokenUrlInput) return;
-    tokenUrlInput.value = portfolioShareToken ? `${window.location.origin}/p/${portfolioShareToken}` : "";
+    const v = portfolioShareToken ? `${window.location.origin}/p/${portfolioShareToken}` : "";
+    tokenUrlInputs.forEach((inp) => {
+      inp.value = v;
+    });
   };
 
-  if (tokenWrap && tokenUrlInput && tokenCopyBtn && tokenRotateBtn && supabase && userId && portfolioShareToken) {
-    tokenWrap.classList.remove("hidden");
+  if (supabase && userId && portfolioShareToken) {
+    tokenWraps.forEach((tokenWrap) => {
+      tokenWrap.classList.remove("hidden");
+    });
     updatePortfolioTokenUrl();
 
-    if (tokenCopyBtn.dataset.bound !== "1") {
+    tokenCopyBtns.forEach((tokenCopyBtn, i) => {
+      if (tokenCopyBtn.dataset.bound === "1") return;
       tokenCopyBtn.dataset.bound = "1";
       tokenCopyBtn.addEventListener("click", async () => {
-        const url = tokenUrlInput.value.trim();
+        const url = (tokenUrlInputs[i]?.value ?? "").trim();
         if (!url) {
           showToast(tt("settings.portfolio.tokenNoUrl", "No hay enlace todavía."), "warning");
           return;
@@ -403,9 +593,10 @@ async function initSettingsProfile() {
           showToast(tt("settings.portfolio.copyFailed", "No se pudo copiar al portapapeles."), "error");
         }
       });
-    }
+    });
 
-    if (tokenRotateBtn.dataset.bound !== "1") {
+    tokenRotateBtns.forEach((tokenRotateBtn) => {
+      if (tokenRotateBtn.dataset.bound === "1") return;
       tokenRotateBtn.dataset.bound = "1";
       tokenRotateBtn.addEventListener("click", async () => {
         try {
@@ -424,21 +615,46 @@ async function initSettingsProfile() {
           showToast(e?.message ?? tt("settings.portfolio.tokenRotateError", "No se pudo regenerar."), "error");
         }
       });
-    }
+    });
   }
 
-  if (saveBtn.dataset.bound !== "1") {
+  accentColors.forEach((accentColor, i) => {
+    const accentHexIn = accentHexIns[i];
+    if (!accentHexIn || accentColor.dataset.skillatlasAccentSync === "1") return;
+    accentColor.dataset.skillatlasAccentSync = "1";
+    accentColor.addEventListener("input", () => {
+      const v = accentColor.value.replace(/^#/, "");
+      if (/^[0-9A-Fa-f]{6}$/.test(v)) accentHexIn.value = v.toUpperCase();
+    });
+    accentHexIn.addEventListener("input", () => {
+      const n = normalizePublicAccentHex(accentHexIn.value);
+      if (n) accentColor.value = `#${n}`;
+    });
+  });
+  accentClearBtns.forEach((accentClearBtn, i) => {
+    if (accentClearBtn.dataset.bound === "1") return;
+    accentClearBtn.dataset.bound = "1";
+    accentClearBtn.addEventListener("click", () => {
+      const accentHexIn = accentHexIns[i];
+      const accentColor = accentColors[i];
+      if (accentHexIn) accentHexIn.value = "";
+      if (accentColor) accentColor.value = "#10b981";
+    });
+  });
+
+  saveBtns.forEach((saveBtn) => {
+    if (saveBtn.dataset.bound === "1") return;
     saveBtn.dataset.bound = "1";
     saveBtn.addEventListener("click", async () => {
-      const publicName = nameInput.value.trim() || defaultName;
-      const bio = bioInput.value.trim();
+      const publicName = (nameInputs[0]?.value ?? "").trim() || defaultName;
+      const bio = (bioInputs[0]?.value ?? "").trim();
       const helpStack = collectHelpStackKeys();
       const payload: StoredPublicProfile = { publicName, bio, helpStack };
       writeStoredPublicProfile(payload);
       applyToForm(payload);
 
-      const shareOn = shareCb?.checked ?? false;
-      const slugNorm = normalizePublicSlug(slugInput?.value ?? "");
+      const shareOn = shareCbs[0]?.checked ?? false;
+      const slugNorm = normalizePublicSlug(slugPrimary());
       const slugToSave = isValidPublicSlug(slugNorm) ? slugNorm : null;
       if (shareOn && !slugToSave) {
         showToast(
@@ -451,13 +667,63 @@ async function initSettingsProfile() {
         return;
       }
 
-      if (hint) {
+      const publicLayout = layoutSels[0]?.value === "list" ? "list" : "grid";
+      let embedLim = Number(embedLimitSels[0]?.value ?? "3");
+      if (!Number.isFinite(embedLim)) embedLim = 3;
+      embedLim = Math.min(5, Math.max(1, Math.round(embedLim)));
+      const rawCtaLabel = (heroCtaLabelIns[0]?.value ?? "").trim();
+      const rawCtaUrl = (heroCtaUrlIns[0]?.value ?? "").trim();
+      if (rawCtaLabel && !rawCtaUrl) {
+        showToast(
+          tt("settings.portfolio.heroCtaNeedsUrl", "Si pones texto del botón, indica también una URL https válida."),
+          "error",
+        );
+        return;
+      }
+      if (rawCtaUrl) {
+        try {
+          const u = new URL(rawCtaUrl);
+          if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("bad");
+        } catch {
+          showToast(tt("settings.portfolio.heroCtaUrlInvalid", "La URL del botón debe ser http o https."), "error");
+          return;
+        }
+      }
+      const heroCtaLabelToSave = rawCtaLabel || null;
+      const heroCtaUrlToSave = rawCtaUrl || null;
+
+      const publicTheme = normalizePublicTheme(themeSels[0]?.value);
+      const publicDensity = normalizePublicDensity(densitySels[0]?.value);
+      const publicHeaderStyleSave = normalizePublicHeaderStyle(headerStyleSels[0]?.value);
+      const accentParsed = normalizePublicAccentHex(accentHexIns[0]?.value ?? "");
+      const publicAccentHexSave = accentParsed ? accentParsed.toUpperCase() : null;
+
+      let featuredSaved: string[] = [];
+      if (supabase && userId) {
+        const wishFeatured = parseFeaturedSlugsFromText(featuredTas[0]?.value ?? "");
+        const { data: pslug } = await supabase.from("projects").select("slug").eq("user_id", userId);
+        const valid = new Set((pslug ?? []).map((r: { slug: string }) => String(r.slug).toLowerCase()));
+        featuredSaved = wishFeatured.filter((s) => valid.has(s.toLowerCase()));
+        if (wishFeatured.length > featuredSaved.length) {
+          showToast(
+            tt(
+              "settings.portfolio.featuredSlugsFiltered",
+              "Se ignoraron líneas que no coinciden con el slug de ningún proyecto.",
+            ),
+            "warning",
+          );
+        }
+      }
+
+      hints.forEach((hint) => {
         hint.textContent = "Guardado.";
         hint.className = "m-0 text-xs text-green-600 dark:text-green-400";
-        window.setTimeout(() => {
+      });
+      window.setTimeout(() => {
+        hints.forEach((hint) => {
           hint.textContent = "";
-        }, 3200);
-      }
+        });
+      }, 3200);
 
       if (supabase && userId) {
         let nextAvatarUrl: string | null = avatarUrl;
@@ -485,6 +751,15 @@ async function initSettingsProfile() {
           avatar_url: nextAvatarUrl,
           share_enabled: shareOn,
           public_slug: slugToSave,
+          public_layout: publicLayout,
+          public_embeds_limit: embedLim,
+          public_hero_cta_label: heroCtaLabelToSave,
+          public_hero_cta_url: heroCtaUrlToSave,
+          public_theme: publicTheme,
+          public_density: publicDensity,
+          public_accent_hex: publicAccentHexSave,
+          public_header_style: publicHeaderStyleSave,
+          featured_project_slugs: featuredSaved,
         };
 
         const tryUpsert = async (r: Record<string, unknown>) =>
@@ -512,7 +787,72 @@ async function initSettingsProfile() {
                 ),
                 "info",
               );
-              if (cloudHint) cloudHint.textContent = "";
+              cloudHints.forEach((h) => {
+                h.textContent = "";
+              });
+              avatarUrl = nextAvatarUrl;
+              pendingAvatarFile = null;
+              updatePublicUrlPreview();
+              return;
+            }
+          }
+          if (
+            msg.includes("public_layout") ||
+            msg.includes("public_embeds_limit") ||
+            msg.includes("public_hero_cta")
+          ) {
+            const {
+              public_layout: _pl,
+              public_embeds_limit: _pel,
+              public_hero_cta_label: _hl,
+              public_hero_cta_url: _hu,
+              ...restDisplay
+            } = row;
+            res = await tryUpsert(restDisplay);
+            if (!res.error) {
+              showToast(
+                tt(
+                  "settings.portfolio.savedProfileDisplayNeedsMigration",
+                  "Perfil guardado. La vista pública no se sincronizó hasta aplicar saas-013.",
+                ),
+                "info",
+              );
+              cloudHints.forEach((h) => {
+                h.textContent = "";
+              });
+              avatarUrl = nextAvatarUrl;
+              pendingAvatarFile = null;
+              updatePublicUrlPreview();
+              return;
+            }
+          }
+          if (
+            msg.includes("public_theme") ||
+            msg.includes("public_density") ||
+            msg.includes("public_accent_hex") ||
+            msg.includes("public_header_style") ||
+            msg.includes("featured_project_slugs")
+          ) {
+            const {
+              public_theme: _pt,
+              public_density: _pd,
+              public_accent_hex: _pa,
+              public_header_style: _ph,
+              featured_project_slugs: _pf,
+              ...rest014
+            } = row;
+            res = await tryUpsert(rest014);
+            if (!res.error) {
+              showToast(
+                tt(
+                  "settings.portfolio.savedProfile014Migration",
+                  "Perfil guardado. La presentación pública no se guardó hasta aplicar saas-014 en Supabase.",
+                ),
+                "info",
+              );
+              cloudHints.forEach((h) => {
+                h.textContent = "";
+              });
               avatarUrl = nextAvatarUrl;
               pendingAvatarFile = null;
               updatePublicUrlPreview();
@@ -539,7 +879,9 @@ async function initSettingsProfile() {
           return;
         }
         showToast("Perfil guardado.", "success");
-        if (cloudHint) cloudHint.textContent = "";
+        cloudHints.forEach((h) => {
+          h.textContent = "";
+        });
         avatarUrl = nextAvatarUrl;
         pendingAvatarFile = null;
         updatePublicUrlPreview();
@@ -547,7 +889,7 @@ async function initSettingsProfile() {
         showToast("Perfil guardado.", "success");
       }
     });
-  }
+  });
 
   if ((window as any).__skillatlasProfileStorageBound !== true) {
     (window as any).__skillatlasProfileStorageBound = true;

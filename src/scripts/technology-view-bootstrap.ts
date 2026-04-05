@@ -8,6 +8,7 @@ import {
   summaryText,
 } from "./technology-detail/concept-list-html";
 import { hasConceptSeed } from "./technology-detail/concept-seeds";
+import { recordRecentActivity } from "./recent-activity";
 
 function escAttr(s: string | null | undefined) {
   return esc((s ?? "").replace(/\r\n|\r|\n/g, " "));
@@ -70,6 +71,8 @@ export async function bootstrapTechnologyDetailPage() {
     }
 
     const technology = techRes.data as { id: string; slug: string; name: string };
+
+    recordRecentActivity({ kind: "tech", slug: technology.slug, label: technology.name });
 
   const [conceptsRes, ptForTechRes, allTechRes, allProjectsRes, allPtRes, allPcRes] = await Promise.all([
     supabase

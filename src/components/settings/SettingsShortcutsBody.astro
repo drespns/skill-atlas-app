@@ -1,0 +1,44 @@
+---
+interface Props {
+  kbd: string;
+}
+const { kbd } = Astro.props;
+---
+
+<ul class="m-0 list-none p-0 space-y-3">
+  <li
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-3 settings-classic-well"
+  >
+    <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
+      <span data-i18n="settings.shortcuts.palette">Abrir búsqueda y navegación rápida</span>
+    </span>
+    <div class="flex flex-wrap items-center gap-1.5">
+      <kbd class={kbd} data-i18n="settings.shortcuts.ctrl">Ctrl</kbd><span class="text-gray-400">+</span><kbd class={kbd}>K</kbd>
+      <span class="text-xs text-gray-500 dark:text-gray-400 px-1" data-i18n="settings.shortcuts.or">o</span>
+      <kbd class={kbd}>⌘</kbd><span class="text-gray-400">+</span><kbd class={kbd}>K</kbd>
+      <span class="text-xs text-gray-500 dark:text-gray-400 px-1">·</span>
+      <kbd class={kbd}>/</kbd>
+    </div>
+  </li>
+  <li class="text-xs text-gray-600 dark:text-gray-400 px-1 -mt-1">
+    <span data-i18n="settings.shortcuts.slashHint"></span>
+  </li>
+  <li
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-3 settings-classic-well"
+  >
+    <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
+      <span data-i18n="settings.shortcuts.paletteNavigate">En la paleta: moverse y abrir</span>
+    </span>
+    <div class="flex flex-wrap items-center gap-1.5">
+      <kbd class={kbd}>↑</kbd><kbd class={kbd}>↓</kbd><span class="text-xs text-gray-500">+</span><kbd class={kbd}>Enter</kbd>
+    </div>
+  </li>
+  <li
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-3 settings-classic-well"
+  >
+    <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
+      <span data-i18n="settings.shortcuts.close">Cerrar la paleta</span>
+    </span>
+    <kbd class={kbd}>Esc</kbd>
+  </li>
+</ul>

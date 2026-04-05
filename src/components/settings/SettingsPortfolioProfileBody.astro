@@ -1,0 +1,100 @@
+---
+import { HELP_STACK_ITEMS } from "../../config/help-stack";
+
+interface Props {
+  profile: { publicName: string; bio: string };
+}
+const { profile } = Astro.props;
+---
+
+<div class="space-y-2">
+  <label class="text-sm font-semibold" data-i18n="settings.publicName">Nombre público</label>
+  <input
+    type="text"
+    data-profile-public-name
+    data-default-public-name={profile.publicName}
+    value={profile.publicName}
+    class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400/50 dark:focus:ring-gray-500/40 settings-classic-input"
+  />
+</div>
+
+<div class="space-y-2">
+  <label class="text-sm font-semibold">Imagen de perfil</label>
+  <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+    <div
+      class="h-14 w-14 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 overflow-hidden shrink-0"
+    >
+      <img
+        data-profile-avatar-preview
+        alt=""
+        class="h-full w-full object-cover hidden"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+      />
+      <div
+        data-profile-avatar-fallback
+        class="h-full w-full grid place-items-center text-xs font-semibold text-gray-500 dark:text-gray-400"
+      >
+        SA
+      </div>
+    </div>
+    <div class="flex-1 min-w-0 space-y-2">
+      <input type="file" accept="image/*" data-profile-avatar-file class="w-full text-sm" />
+      <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
+        Por defecto se usa tu avatar de proveedor (GitHub/LinkedIn). Puedes subir uno aquí para reemplazarlo.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="space-y-2">
+  <label class="text-sm font-semibold" data-i18n="settings.publicBio">Bio pública</label>
+  <textarea
+    data-profile-public-bio
+    data-default-public-bio={profile.bio}
+    rows={4}
+    class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400/50 dark:focus:ring-gray-500/40 settings-classic-input"
+  >{profile.bio}</textarea>
+</div>
+
+<div class="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+  <h3 class="app-kicker">
+    <span data-i18n="settings.helpStack.title">Stack de ayuda</span>
+  </h3>
+  <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
+    <span data-i18n="settings.helpStack.subtitle"
+      >Herramientas de productividad e IA que usas aparte del catálogo de conceptos.</span
+    >
+  </p>
+  <div
+    class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-72 overflow-y-auto rounded-lg border border-gray-200/80 dark:border-gray-800 p-2 bg-gray-50/50 dark:bg-gray-900/30"
+  >
+    {
+      HELP_STACK_ITEMS.map((item) => (
+        <label class="flex items-center gap-2 cursor-pointer rounded-md px-2 py-1.5 hover:bg-white dark:hover:bg-gray-950/80 has-checked:bg-emerald-50/80 dark:has-checked:bg-emerald-950/25">
+          <input
+            type="checkbox"
+            data-help-stack-key={item.key}
+            class="rounded border-gray-300 dark:border-gray-600 shrink-0"
+          />
+          <img src={item.icon} alt="" class="h-6 w-6 shrink-0 object-contain" loading="lazy" />
+          <span class="text-sm text-gray-900 dark:text-gray-100">{item.label}</span>
+        </label>
+      ))
+    }
+  </div>
+</div>
+
+<p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.portfolio.saveScopeHint">
+  “Save profile” also applies to links, layout and presentation cards below.
+</p>
+<div class="flex flex-wrap items-center gap-2">
+  <button
+    type="button"
+    data-profile-save
+    class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-3 py-2 text-sm font-semibold hover:opacity-90 app-accent-ring"
+  >
+    <span data-i18n="settings.portfolio.save">Guardar perfil</span>
+  </button>
+  <p data-profile-feedback class="m-0 text-xs text-gray-500 dark:text-gray-400 min-h-4"></p>
+</div>

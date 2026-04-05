@@ -1,7 +1,7 @@
 import { getTechnologyIconSrc } from "../config/icons";
 import { detectEvidenceUrl, evidenceSiteIconUrl } from "../lib/evidence-url";
 
-type ToastType = "success" | "error" | "info";
+export type ToastType = "success" | "error" | "info" | "warning";
 
 function escapeHtml(value: string) {
   return value
@@ -22,7 +22,35 @@ function getToastRoot() {
   return root;
 }
 
-export function showToast(message: string, type: ToastType = "info") {
+/** Short Spanish copy for noisy Supabase/Postgres errors; falls back when the raw message is empty or looks like raw SQL. */
+export function userFacingDbError(raw: string | undefined | null, fallback: string): string {
+  const msg = (raw ?? "").trim();
+  if (!msg) return fallback;
+  const m = msg.toLowerCase();
+  if (m.includes("jwt") || m.includes("invalid claim") || m.includes("session")) {
+    return "La sesión caducó o no es válida. Vuelve a iniciar sesión.";
+  }
+  if (
+    m.includes("row-level security") ||
+    m.includes("new row violates row-level security") ||
+    m.includes("permission denied") ||
+    m.includes("42501")
+  ) {
+    return "No se pudo completar la acción por permisos o sesión. Comprueba que sigas conectado.";
+  }
+  if (m.includes("duplicate key") || m.includes("unique constraint") || m.includes("23505")) {
+    return "Ese valor ya existe. Prueba con otro nombre o identificador.";
+  }
+  if (m.includes("failed to fetch") || m.includes("networkerror") || m.includes("load failed")) {
+    return "Error de red. Comprueba la conexión e inténtalo de nuevo.";
+  }
+  if (msg.length > 200 || /relation ".*" does not exist|syntax error/i.test(m)) {
+    return fallback;
+  }
+  return msg.length <= 160 ? msg : `${msg.slice(0, 157)}…`;
+}
+
+export function showToast(message: string, type: ToastType = "info", durationMs: number = type === "error" ? 8000 : 6000) {
   const root = getToastRoot();
   const node = document.createElement("div");
 
@@ -31,10 +59,14 @@ export function showToast(message: string, type: ToastType = "info") {
       ? "bg-green-600 text-white"
       : type === "error"
         ? "bg-red-600 text-white"
-        : "bg-gray-900 text-white";
+        : type === "warning"
+          ? "bg-amber-600 text-white"
+          : "bg-gray-900 text-white";
 
-  node.className = `rounded-lg px-3 py-2 text-sm shadow-lg flex items-center gap-2 transition-all duration-200 ease-out opacity-0 translate-y-2 ${tone}`;
-  node.innerHTML = `<span>${message}</span><button type="button" data-toast-close class="ml-1 text-white/90 hover:text-white">×</button>`;
+  node.setAttribute("role", "status");
+  node.setAttribute("aria-live", "polite");
+  node.className = `rounded-lg px-3 py-2 text-sm shadow-lg flex items-center gap-2 transition-all duration-200 ease-out opacity-0 translate-y-2 max-w-[min(24rem,calc(100vw-2rem))] ${tone}`;
+  node.innerHTML = `<span class="min-w-0 flex-1 break-words">${escapeHtml(message)}</span><button type="button" data-toast-close class="ml-1 shrink-0 text-white/90 hover:text-white" aria-label="Cerrar aviso">×</button>`;
   root.appendChild(node);
   requestAnimationFrame(() => {
     node.classList.remove("opacity-0", "translate-y-2");
@@ -48,7 +80,7 @@ export function showToast(message: string, type: ToastType = "info") {
   setTimeout(() => {
     node.classList.add("opacity-0", "translate-y-2");
     setTimeout(() => node.remove(), 180);
-  }, 6000);
+  }, durationMs);
 }
 
 function getModalRoot() {

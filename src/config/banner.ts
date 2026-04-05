@@ -9,9 +9,9 @@ export type GlobalBanner = {
 
 // Banner global (sticky) para versión/noticias.
 export const GLOBAL_BANNER: GlobalBanner = {
-  id: "v0.50.0",
-  version: "0.50.0",
-  text: "v0.50.0 · CV público, QA/OG, onboarding avanzado, prep y estudio.",
+  id: "v0.60.0",
+  version: "0.60.0",
+  text: "v0.60.0 · Ajustes estilo GitHub: barra lateral, sección única, animaciones y prefs; retirado tablero GridStack.",
   href: "https://github.com/drespns/skill-atlas-app",
   hrefLabel: "Repositorio",
   tone: "info",

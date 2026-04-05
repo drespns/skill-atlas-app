@@ -39,7 +39,13 @@ function techHue(name: string) {
 
 <AppShell title={title}>
   <div data-requires-auth class="hidden"></div>
-  <section class="space-y-6">
+  <section
+    class="space-y-6"
+    data-portfolio-preview-page
+    data-public-presentation-theme="classic"
+    data-public-presentation-density="comfortable"
+    data-public-header-style="default"
+  >
     <header class="space-y-3">
       <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div class="flex items-start gap-4 min-w-0">
@@ -184,7 +190,41 @@ function techHue(name: string) {
     </header>
 
     {dataSource === "supabase" ? (
-      <div data-portfolio-projects-csr-mount class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 min-h-32">
+      <div
+        data-portfolio-preview-controls
+        class="hidden flex flex-wrap items-end gap-4 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/50 dark:bg-gray-950/40 px-4 py-3 sm:px-5 sm:py-4"
+      >
+        <div class="space-y-1 min-w-[10rem]">
+          <label class="text-xs font-semibold text-gray-700 dark:text-gray-200" data-i18n="portfolio.public.viewLabel">
+            Vista
+          </label>
+          <select
+            data-portfolio-preview-layout
+            class="min-h-10 w-full max-w-[14rem] rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-medium app-accent-ring"
+          >
+          </select>
+        </div>
+        <div class="space-y-1 min-w-[10rem]">
+          <label class="text-xs font-semibold text-gray-700 dark:text-gray-200" data-i18n="portfolio.public.embedCapLabel">
+            Evidencias por proyecto
+          </label>
+          <select
+            data-portfolio-preview-embed-cap
+            class="min-h-10 w-full max-w-[14rem] rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-medium app-accent-ring"
+          >
+          </select>
+        </div>
+        <label class="flex cursor-pointer items-center gap-2 pt-5 sm:pt-6">
+          <input type="checkbox" data-portfolio-preview-reduced-motion class="rounded border-gray-300 dark:border-gray-600" />
+          <span class="text-sm text-gray-800 dark:text-gray-200" data-i18n="portfolio.public.reducedMotionLabel">
+            Menos animación
+          </span>
+        </label>
+      </div>
+    ) : null}
+
+    {dataSource === "supabase" ? (
+      <div data-portfolio-projects-csr-mount class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 min-h-32">
         <div class="col-span-full border border-gray-200/80 dark:border-gray-800 rounded-xl p-5 bg-white/60 dark:bg-gray-950/40">
           <p class="m-0 text-sm text-gray-600 dark:text-gray-400">Cargando proyectos del portfolio…</p>
         </div>

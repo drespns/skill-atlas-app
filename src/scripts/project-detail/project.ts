@@ -1,4 +1,4 @@
-import { confirmModal, projectEditModal, showToast } from "../ui-feedback";
+import { confirmModal, projectEditModal, showToast, userFacingDbError } from "../ui-feedback";
 import { refreshProjectDetailPage } from "./refresh-ui";
 
 export async function initProjectEdit(supabase: any, projectSlug: string) {
@@ -47,11 +47,12 @@ export async function initProjectEdit(supabase: any, projectSlug: string) {
       .eq("slug", projectSlug);
 
     if (updateRes.error) {
+      const hint = userFacingDbError(updateRes.error.message, "No se pudo guardar el proyecto.");
       if (feedback) {
-        feedback.textContent = `Error al guardar: ${updateRes.error.message}`;
+        feedback.textContent = hint;
         feedback.className = "text-sm text-red-600";
       }
-      showToast("Error al actualizar proyecto.", "error");
+      showToast(hint, "error");
       button.disabled = false;
       return;
     }
@@ -81,7 +82,7 @@ export async function initProjectDelete(supabase: any, projectSlug: string) {
     button.disabled = true;
     const deleteRes = await supabase.from("projects").delete().eq("slug", projectSlug);
     if (deleteRes.error) {
-      showToast(`Error al eliminar proyecto: ${deleteRes.error.message}`, "error");
+      showToast(userFacingDbError(deleteRes.error.message, "Error al eliminar proyecto."), "error");
       button.disabled = false;
       return;
     }

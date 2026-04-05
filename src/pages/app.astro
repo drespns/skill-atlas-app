@@ -1,6 +1,6 @@
 ---
 import AppShell from "../layouts/AppShell.astro";
-import { dataSource, getConcepts, getProjects, getTechnologies } from "../data";
+import { getConcepts, getProjects, getTechnologies } from "../data";
 
 const title = "Dashboard";
 
@@ -12,7 +12,7 @@ const technologiesCount = technologies.length;
 
 <AppShell title={title}>
   <div data-requires-auth class="hidden"></div>
-  <section class="space-y-6">
+  <section class="space-y-6" data-dashboard-root>
     <div class="relative overflow-hidden rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm">
       <div class="absolute inset-0 bg-linear-to-br from-indigo-50 via-transparent to-rose-50 dark:from-indigo-500/10 dark:to-rose-500/10" />
       <div class="relative p-6 md:p-8 flex flex-col gap-5">
@@ -49,13 +49,13 @@ const technologiesCount = technologies.length;
             href="/projects"
             class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 no-underline"
           >
-            Ir a Proyectos
+            <span data-i18n="dashboard.goProjects">Ir a Proyectos</span>
           </a>
           <a
             href="/technologies"
             class="inline-flex items-center justify-center rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
           >
-            Ir a Tecnologías
+            <span data-i18n="dashboard.goTechnologies">Ir a Tecnologías</span>
           </a>
           <button
             type="button"
@@ -75,7 +75,7 @@ const technologiesCount = technologies.length;
             href="/portfolio"
             class="inline-flex items-center justify-center rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
           >
-            Ver portfolio
+            <span data-i18n="dashboard.goPortfolio">Ver portfolio</span>
           </a>
           <a
             href="/cv"
@@ -88,35 +88,69 @@ const technologiesCount = technologies.length;
     </div>
 
     <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-5 shadow-sm">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <div class="space-y-1">
+          <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase" data-i18n="dashboard.recent.sectionKicker">
+            Actividad
+          </p>
+          <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-2xl" data-i18n="dashboard.recent.sectionIntro">
+            Lo último que abriste en este dispositivo. Abre un proyecto o una tecnología para volver aquí al instante.
+          </p>
+        </div>
+      </div>
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="rounded-xl border border-indigo-200/60 dark:border-indigo-900/40 bg-indigo-50/40 dark:bg-indigo-950/20 p-3">
+          <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="dashboard.recent.projectsTitle">
+            Proyectos recientes
+          </p>
+          <div class="mt-2 space-y-0.5" data-dashboard-recent-projects>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="common.loading">Cargando…</p>
+          </div>
+        </div>
+        <div class="rounded-xl border border-emerald-200/60 dark:border-emerald-900/40 bg-emerald-50/40 dark:bg-emerald-950/20 p-3">
+          <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="dashboard.recent.techTitle">
+            Tecnologías recientes
+          </p>
+          <div class="mt-2 space-y-0.5" data-dashboard-recent-tech>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="common.loading">Cargando…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-5 shadow-sm">
         <div class="flex flex-wrap items-end justify-between gap-3">
           <div class="space-y-1">
-            <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase">Resumen</p>
-            <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
-              Accesos rápidos a tus tecnologías y proyectos (se hidrata en cliente con tu sesión).
+            <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase" data-i18n="dashboard.summaryKicker">Resumen</p>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="dashboard.summaryIntro">
+              Accesos rápidos a tus tecnologías y proyectos (los listados se hidratan con tu sesión en Supabase).
             </p>
           </div>
         </div>
 
         <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/60 dark:bg-gray-950/40 p-3">
-            <div class="flex items-center justify-between gap-2">
-              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Tecnologías</p>
+            <div class="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
+              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="nav.technologies">Tecnologías</p>
               <span class="text-xs text-gray-500"><span data-dashboard-count-technologies>{technologiesCount}</span></span>
             </div>
+            <p class="m-0 mt-1 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="dashboard.exploreTechHint">Primeras 8 por nombre (A–Z).</p>
             <div class="mt-2 space-y-1" data-dashboard-technologies-list>
-              <p class="m-0 text-sm text-gray-600 dark:text-gray-400">Cargando…</p>
+              <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="common.loading">Cargando…</p>
             </div>
           </div>
 
           <div class="rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/60 dark:bg-gray-950/40 p-3">
-            <div class="flex items-center justify-between gap-2">
-              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Conceptos</p>
+            <div class="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
+              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="dashboard.conceptsCardTitle">Conceptos</p>
               <span class="text-xs text-gray-500"><span data-dashboard-count-concepts>{conceptsCount}</span></span>
             </div>
+            <p class="m-0 mt-1 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="dashboard.conceptsHint">Se gestionan desde cada tecnología.</p>
             <div class="mt-2 space-y-1">
               <a
                 class="block rounded-lg px-2 py-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900/40 no-underline"
                 href="/technologies"
+                data-i18n="dashboard.browseConceptsByTech"
               >
                 Ver conceptos por tecnología
               </a>
@@ -124,30 +158,46 @@ const technologiesCount = technologies.length;
           </div>
 
           <div class="rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/60 dark:bg-gray-950/40 p-3">
-            <div class="flex items-center justify-between gap-2">
-              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Proyectos</p>
+            <div class="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
+              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="nav.projects">Proyectos</p>
               <span class="text-xs text-gray-500"><span data-dashboard-count-projects>{projectsCount}</span></span>
             </div>
+            <p class="m-0 mt-1 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="dashboard.exploreProjectsHint">Primeros 8 por nombre (A–Z).</p>
             <div class="mt-2 space-y-1" data-dashboard-projects-list>
-              <p class="m-0 text-sm text-gray-600 dark:text-gray-400">Cargando…</p>
+              <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="common.loading">Cargando…</p>
             </div>
           </div>
 
           <div class="md:col-span-3 rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/60 dark:bg-gray-950/40 p-3">
-            <div class="flex items-center justify-between gap-2">
-              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100">Ajustes</p>
-              <span class="text-xs text-gray-500">/settings</span>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="dashboard.usefulLinksTitle">Enlaces útiles</p>
             </div>
-            <div class="mt-2 space-y-1">
-              <a class="block rounded-lg px-2 py-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900/40 no-underline" href="/settings">
-                Preferencias
-              </a>
-              <a class="block rounded-lg px-2 py-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900/40 no-underline" href="/settings#portfolio">
-                Perfil público
-              </a>
-              <a class="block rounded-lg px-2 py-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900/40 no-underline" href="/settings#shortcuts">
-                Shortcuts
-              </a>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <a
+                class="inline-flex rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+                href="/study"
+                data-i18n="nav.study"
+              >Estudio</a>
+              <a
+                class="inline-flex rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+                href="/prep"
+                data-i18n="dashboard.linkPrep"
+              >Prep</a>
+              <a
+                class="inline-flex rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+                href="/settings"
+                data-i18n="nav.settings"
+              >Ajustes</a>
+              <a
+                class="inline-flex rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+                href="/settings#portfolio"
+                data-i18n="dashboard.linkPublicProfile"
+              >Perfil público</a>
+              <a
+                class="inline-flex rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+                href="/settings#settings-shortcuts"
+                data-i18n="dashboard.linkShortcuts"
+              >Atajos</a>
             </div>
           </div>
         </div>
@@ -179,7 +229,7 @@ const technologiesCount = technologies.length;
     </div>
   </section>
 
-  {dataSource === "supabase" ? <script src="../scripts/app-dashboard.ts"></script> : null}
+  <script src="../scripts/app-dashboard.ts"></script>
   <script src="../scripts/app-onboarding.ts"></script>
 </AppShell>
 

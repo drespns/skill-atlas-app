@@ -1,5 +1,5 @@
 import { detectEvidenceUrl } from "../../lib/evidence-url";
-import { embedEditModal, showToast } from "../ui-feedback";
+import { embedEditModal, showToast, userFacingDbError } from "../ui-feedback";
 import { loadPrefs, updatePrefs, type ProjectEvidenceLayout } from "../prefs";
 import { getProjectDbId } from "./helpers";
 import { refreshProjectDetailPage } from "./refresh-ui";
@@ -45,11 +45,12 @@ async function insertProjectEmbed(
   ] as any);
 
   if (insertRes.error) {
+    const hint = userFacingDbError(insertRes.error.message, "Error al guardar evidencia.");
     if (feedback) {
-      feedback.textContent = `Error al guardar evidencia: ${insertRes.error.message}`;
+      feedback.textContent = hint;
       feedback.className = "text-sm text-red-600";
     }
-    showToast("Error al guardar evidencia.", "error");
+    showToast(hint, "error");
     return false;
   }
 
@@ -199,11 +200,12 @@ export async function initProjectEmbedEdit(supabase: any, projectSlug: string) {
         .eq("project_id", projectDbId);
 
       if (updateRes.error) {
+        const hint = userFacingDbError(updateRes.error.message, "Error al actualizar evidencia.");
         if (feedback) {
-          feedback.textContent = `Error al actualizar: ${updateRes.error.message}`;
+          feedback.textContent = hint;
           feedback.className = "text-sm text-red-600";
         }
-        showToast("Error al actualizar evidencia.", "error");
+        showToast(hint, "error");
         button.disabled = false;
         return;
       }
@@ -237,10 +239,12 @@ export async function initProjectEmbedRemove(supabase: any) {
 
       const deleteRes = await supabase.from("project_embeds").delete().eq("id", embedId);
       if (deleteRes.error) {
+        const hint = userFacingDbError(deleteRes.error.message, "Error al eliminar evidencia.");
         if (feedback) {
-          feedback.textContent = `Error al eliminar: ${deleteRes.error.message}`;
+          feedback.textContent = hint;
           feedback.className = "text-sm text-red-600";
         }
+        showToast(hint, "error");
         button.disabled = false;
         return;
       }

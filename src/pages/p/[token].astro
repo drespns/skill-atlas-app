@@ -7,10 +7,30 @@ import { supabaseAnonRpc } from "../../lib/server-supabase-rpc";
 const raw = Astro.params.token;
 const token = typeof raw === "string" ? raw : "";
 
-type RpcPayload = { displayName?: string; bio?: string } | null;
+type RpcPayload = { displayName?: string; bio?: string; publicTheme?: string; publicDensity?: string; publicAccentHex?: string | null; publicHeaderStyle?: string } | null;
 
 const rpcRes = token ? await supabaseAnonRpc<RpcPayload>("skillatlas_portfolio_by_share_token", { p_token: token }) : null;
 const payload = rpcRes?.data ?? null;
+
+function accentRgbFromHex(hex: string | null | undefined): string | null {
+  if (!hex || typeof hex !== "string") return null;
+  const h = hex.replace(/^#/, "").trim();
+  if (!/^[0-9A-Fa-f]{6}$/.test(h)) return null;
+  const n = parseInt(h, 16);
+  return `${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255}`;
+}
+
+const p = payload as RpcPayload;
+const presTheme =
+  p?.publicTheme && ["classic", "minimal", "contrast", "reader"].includes(String(p.publicTheme))
+    ? String(p.publicTheme)
+    : "classic";
+const presDensity = p?.publicDensity === "compact" ? "compact" : "comfortable";
+const presHeader = p?.publicHeaderStyle === "cta_prominent" ? "cta_prominent" : "default";
+const presAccentHex =
+  typeof p?.publicAccentHex === "string" && /^[0-9A-Fa-f]{6}$/i.test(p.publicAccentHex) ? p.publicAccentHex.toUpperCase() : null;
+const presAccentRgb = accentRgbFromHex(presAccentHex ?? undefined);
+const presAccentAttr = presAccentHex ? presAccentHex.replace(/^#/, "").toLowerCase() : null;
 
 const displayName = (payload as any)?.displayName ? String((payload as any).displayName).trim() : "";
 const bio = (payload as any)?.bio ? String((payload as any).bio).trim() : "";
@@ -31,13 +51,22 @@ const ogImage = token ? `${origin}/og/portfolio.svg?token=${encodeURIComponent(t
     <meta name="twitter:description" content={ogDesc} />
     <meta name="twitter:image" content={ogImage} />
   </Fragment>
-  <section class="space-y-6 max-w-screen-2xl mx-auto" data-public-portfolio-page data-public-portfolio-token={token}>
-    <header class="space-y-3">
-      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-        <div class="flex items-start gap-4 min-w-0">
+  <section
+    class="space-y-8 max-w-screen-2xl mx-auto px-0"
+    data-public-portfolio-page
+    data-public-portfolio-token={token}
+    data-public-presentation-theme={presTheme}
+    data-public-presentation-density={presDensity}
+    data-public-header-style={presHeader}
+    {...(presAccentAttr ? { "data-public-accent-hex": presAccentAttr } : {})}
+    style={presAccentRgb ? `--portfolio-accent-rgb: ${presAccentRgb}` : undefined}
+  >
+    <header class="space-y-4">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 md:gap-6">
+        <div class="flex items-start gap-3 sm:gap-4 min-w-0">
           <div class="shrink-0">
             <div
-              class="h-14 w-14 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 overflow-hidden"
+              class="h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem] rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 overflow-hidden shadow-sm"
             >
               <img
                 data-public-portfolio-avatar
@@ -55,10 +84,10 @@ const ogImage = token ? `${origin}/og/portfolio.svg?token=${encodeURIComponent(t
             </div>
           </div>
           <div class="space-y-1 min-w-0">
-            <h1 class="m-0 text-2xl font-semibold text-gray-900 dark:text-gray-100" data-public-portfolio-name>
+            <h1 class="m-0 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-100 text-balance" data-public-portfolio-name>
               Portfolio
             </h1>
-            <p class="text-sm text-gray-600 dark:text-gray-400" data-public-portfolio-bio></p>
+            <p class="text-sm sm:text-[0.9375rem] leading-relaxed text-gray-600 dark:text-gray-400 max-w-2xl" data-public-portfolio-bio></p>
             <div
               data-public-portfolio-help-wrap
               class="hidden mt-3 pt-3 border-t border-gray-200 dark:border-gray-800 max-w-2xl"
@@ -71,6 +100,13 @@ const ogImage = token ? `${origin}/og/portfolio.svg?token=${encodeURIComponent(t
               </p>
               <div data-public-portfolio-help-stack class="flex flex-wrap gap-2"></div>
             </div>
+            <div data-public-portfolio-hero-cta class="hidden mt-3">
+              <a
+                data-public-portfolio-hero-cta-link
+                class="portfolio-public-cta-link inline-flex min-h-11 items-center justify-center rounded-xl bg-gray-900 dark:bg-gray-100 px-5 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:opacity-90 no-underline"
+                href="#"
+              ></a>
+            </div>
           </div>
         </div>
 
@@ -80,16 +116,48 @@ const ogImage = token ? `${origin}/og/portfolio.svg?token=${encodeURIComponent(t
           </label>
           <select
             data-public-portfolio-tech-select
-            class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm"
+            class="min-h-11 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2.5 text-sm font-medium app-accent-ring"
           >
           </select>
         </form>
       </div>
     </header>
 
-    <div data-public-portfolio-mount class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 min-h-32">
-      <div class="col-span-full border border-gray-200/80 dark:border-gray-800 rounded-xl p-5 bg-white/60 dark:bg-gray-950/40">
-        <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-public-portfolio-loading>
+    <div
+      data-public-portfolio-controls
+      class="hidden flex flex-wrap items-end gap-4 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/50 dark:bg-gray-950/40 px-4 py-3 sm:px-5 sm:py-4"
+    >
+      <div class="space-y-1 min-w-[10rem]">
+        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200" data-i18n="portfolio.public.viewLabel">
+          Vista
+        </label>
+        <select
+          data-public-portfolio-layout
+          class="min-h-10 w-full max-w-[14rem] rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-medium app-accent-ring"
+        >
+        </select>
+      </div>
+      <div class="space-y-1 min-w-[10rem]">
+        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200" data-i18n="portfolio.public.embedCapLabel">
+          Evidencias por proyecto
+        </label>
+        <select
+          data-public-portfolio-embed-cap
+          class="min-h-10 w-full max-w-[14rem] rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-medium app-accent-ring"
+        >
+        </select>
+      </div>
+      <label class="flex cursor-pointer items-center gap-2 pt-5 sm:pt-6">
+        <input type="checkbox" data-public-portfolio-reduced-motion class="rounded border-gray-300 dark:border-gray-600" />
+        <span class="text-sm text-gray-800 dark:text-gray-200" data-i18n="portfolio.public.reducedMotionLabel">
+          Menos animación
+        </span>
+      </label>
+    </div>
+
+    <div data-public-portfolio-mount class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 min-h-32">
+      <div class="col-span-full border border-gray-200/80 dark:border-gray-800 rounded-2xl p-5 sm:p-6 bg-white/60 dark:bg-gray-950/40">
+        <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-public-portfolio-loading data-i18n="portfolio.publicLoading">
           Cargando portfolio…
         </p>
       </div>

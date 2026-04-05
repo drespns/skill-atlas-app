@@ -1,6 +1,5 @@
 import {
   loadPrefs,
-  SETTINGS_SECTION_IDS,
   updatePrefs,
   type Accent,
   type Density,
@@ -8,7 +7,7 @@ import {
   type FontPreset,
   type Lang,
   type Motion,
-  type SettingsGridColumns,
+  type SettingsSidebarSide,
   type ThemeMode,
 } from "./prefs";
 
@@ -33,56 +32,62 @@ function isDefaultView(v: string): v is DefaultView {
 function isLang(v: string): v is Lang {
   return v === "es" || v === "en";
 }
-function isGridCols(v: string): v is SettingsGridColumns {
-  return v === "1" || v === "2" || v === "3" || v === "4";
-}
-
 function initSettingsPrefs() {
-  const prefsCard = document.querySelector<HTMLElement>('[data-settings-section="prefs"]');
-  if (prefsCard && prefsCard.dataset.bound === "1") return;
+  if (document.body.dataset.settingsPrefsInit === "1") return;
+
   const theme = document.querySelector<HTMLSelectElement>("[data-pref-theme]");
-  const font = document.querySelector<HTMLSelectElement>("[data-pref-font]");
-  const fontPicker = document.querySelector<HTMLElement>("[data-pref-font-picker]");
-  const accent = document.querySelector<HTMLSelectElement>("[data-pref-accent]");
-  const density = document.querySelector<HTMLSelectElement>("[data-pref-density]");
-  const motion = document.querySelector<HTMLSelectElement>("[data-pref-motion]");
-  const settingsColumns = document.querySelector<HTMLSelectElement>("[data-pref-settings-columns]");
-  const technologiesView = document.querySelector<HTMLSelectElement>("[data-pref-technologies-view]");
-  const projectsView = document.querySelector<HTMLSelectElement>("[data-pref-projects-view]");
-  const showHeaderIcons = document.querySelector<HTMLSelectElement>("[data-pref-show-header-icons]");
-  const showLangSelector = document.querySelector<HTMLSelectElement>("[data-pref-show-lang-selector]");
-  const langFlags = document.querySelector<HTMLElement>("[data-pref-lang-flags]");
-  const reset = document.querySelector<HTMLButtonElement>("[data-pref-reset]");
+  const fontEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-font]");
+  const accentEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-accent]");
+  const densityEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-density]");
+  const motionEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-motion]");
+  const technologiesViewEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-technologies-view]");
+  const projectsViewEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-projects-view]");
+  const showHeaderIconsEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-show-header-icons]");
+  const showLangSelectorEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-show-lang-selector]");
 
   if (
     !theme ||
-    !font ||
-    !accent ||
-    !density ||
-    !motion ||
-    !settingsColumns ||
-    !technologiesView ||
-    !projectsView ||
-    !showHeaderIcons ||
-    !showLangSelector
+    fontEls.length === 0 ||
+    accentEls.length === 0 ||
+    densityEls.length === 0 ||
+    motionEls.length === 0 ||
+    technologiesViewEls.length === 0 ||
+    projectsViewEls.length === 0 ||
+    showHeaderIconsEls.length === 0 ||
+    showLangSelectorEls.length === 0
   )
     return;
 
-  if (prefsCard) prefsCard.dataset.bound = "1";
+  document.body.dataset.settingsPrefsInit = "1";
 
   const render = () => {
     const p = loadPrefs();
     theme.value = p.themeMode;
-    font.value = p.font;
-    accent.value = p.accent;
-    density.value = p.density;
-    motion.value = p.motion;
-    settingsColumns.value = String(p.settingsGridColumns ?? 2);
-    technologiesView.value = p.technologiesView;
-    projectsView.value = p.projectsView;
-    showHeaderIcons.value = p.showHeaderIcons ? "yes" : "no";
-    showLangSelector.value = p.showLangSelector ? "yes" : "no";
-    fontPicker?.querySelectorAll<HTMLButtonElement>("[data-pref-font-choice]").forEach((btn) => {
+    fontEls.forEach((font) => {
+      font.value = p.font;
+    });
+    accentEls.forEach((el) => {
+      el.value = p.accent;
+    });
+    densityEls.forEach((el) => {
+      el.value = p.density;
+    });
+    motionEls.forEach((el) => {
+      el.value = p.motion;
+    });
+    technologiesViewEls.forEach((el) => {
+      el.value = p.technologiesView;
+    });
+    projectsViewEls.forEach((el) => {
+      el.value = p.projectsView;
+    });
+    showHeaderIconsEls.forEach((el) => {
+      el.value = p.showHeaderIcons ? "yes" : "no";
+    });
+    showLangSelectorEls.forEach((el) => {
+      el.value = p.showLangSelector ? "yes" : "no";
+    });
+    document.querySelectorAll<HTMLButtonElement>("[data-pref-font-choice]").forEach((btn) => {
       const active = btn.dataset.prefFontChoice === p.font;
       btn.setAttribute("aria-pressed", active ? "true" : "false");
     });
@@ -98,7 +103,8 @@ function initSettingsPrefs() {
     if (v === "auto") localStorage.removeItem("theme");
   });
 
-  if (fontPicker && fontPicker.dataset.bound !== "1") {
+  document.querySelectorAll<HTMLElement>("[data-pref-font-picker]").forEach((fontPicker) => {
+    if (fontPicker.dataset.bound === "1") return;
     fontPicker.dataset.bound = "1";
     fontPicker.querySelectorAll<HTMLButtonElement>("[data-pref-font-choice]").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -108,100 +114,93 @@ function initSettingsPrefs() {
         render();
       });
     });
-  }
-
-  // Keep the select (hidden) in sync for accessibility/fallback.
-  font.addEventListener("change", () => {
-    const v = font.value;
-    if (!isFont(v)) return;
-    updatePrefs({ font: v });
-    render();
   });
 
-  accent.addEventListener("change", () => {
-    const v = accent.value;
-    if (!isAccent(v)) return;
-    updatePrefs({ accent: v });
-  });
-
-  density.addEventListener("change", () => {
-    const v = density.value;
-    if (!isDensity(v)) return;
-    updatePrefs({ density: v });
-  });
-
-  motion.addEventListener("change", () => {
-    const v = motion.value;
-    if (!isMotion(v)) return;
-    updatePrefs({ motion: v });
-  });
-
-  settingsColumns.addEventListener("change", () => {
-    const v = settingsColumns.value;
-    if (!isGridCols(v)) return;
-    const n = Number(v) as SettingsGridColumns;
-    updatePrefs({ settingsGridColumns: n });
-    window.skillatlas?.applySettingsDashboard?.();
-  });
-
-  technologiesView.addEventListener("change", () => {
-    const v = technologiesView.value;
-    if (!isDefaultView(v)) return;
-    updatePrefs({ technologiesView: v });
-  });
-
-  projectsView.addEventListener("change", () => {
-    const v = projectsView.value;
-    if (!isDefaultView(v)) return;
-    updatePrefs({ projectsView: v });
-  });
-
-  showHeaderIcons.addEventListener("change", () => {
-    const v = showHeaderIcons.value === "yes";
-    updatePrefs({ showHeaderIcons: v });
-    window.location.reload();
-  });
-
-  showLangSelector.addEventListener("change", () => {
-    const v = showLangSelector.value === "yes";
-    updatePrefs({ showLangSelector: v });
-    window.location.reload();
-  });
-
-  langFlags?.querySelectorAll<HTMLButtonElement>("[data-pref-lang-flag]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const v = btn.dataset.prefLangFlag;
-      if (!v || !isLang(v)) return;
-      updatePrefs({ lang: v });
-      if (window.skillatlas?.setUiLang) {
-        await window.skillatlas.setUiLang(v);
-      } else {
-        window.location.reload();
-      }
+  fontEls.forEach((font) => {
+    font.addEventListener("change", () => {
+      const v = font.value;
+      if (!isFont(v)) return;
+      updatePrefs({ font: v });
+      render();
     });
   });
 
-  reset?.addEventListener("click", async () => {
-    localStorage.removeItem("skillatlas_prefs_v1");
-    localStorage.removeItem("theme");
-    updatePrefs({
-      themeMode: "auto",
-      font: "system",
-      accent: "indigo",
-      density: "comfortable",
-      motion: "normal",
-      technologiesView: "cards",
-      projectsView: "cards",
-      showHeaderIcons: true,
-      showLangSelector: true,
-      lang: "es",
-      settingsGridColumns: 2,
-      settingsSectionOrder: [...SETTINGS_SECTION_IDS],
-      qaTesterMode: false,
+  const bindSelectAll = <T extends string>(
+    els: NodeListOf<HTMLSelectElement>,
+    ok: (v: string) => v is T,
+    patch: (v: T) => Partial<Parameters<typeof updatePrefs>[0]>,
+  ) => {
+    els.forEach((el) => {
+      el.addEventListener("change", () => {
+        const v = el.value;
+        if (!ok(v)) return;
+        updatePrefs(patch(v) as any);
+        render();
+      });
     });
-    render();
-    window.skillatlas?.applySettingsDashboard?.();
-    await window.skillatlas?.setUiLang?.("es");
+  };
+
+  bindSelectAll(accentEls, isAccent, (v) => ({ accent: v }));
+  bindSelectAll(densityEls, isDensity, (v) => ({ density: v }));
+  bindSelectAll(motionEls, isMotion, (v) => ({ motion: v }));
+  bindSelectAll(technologiesViewEls, isDefaultView, (v) => ({ technologiesView: v }));
+  bindSelectAll(projectsViewEls, isDefaultView, (v) => ({ projectsView: v }));
+
+  showHeaderIconsEls.forEach((el) => {
+    el.addEventListener("change", () => {
+      const v = el.value === "yes";
+      updatePrefs({ showHeaderIcons: v });
+      window.location.reload();
+    });
+  });
+  showLangSelectorEls.forEach((el) => {
+    el.addEventListener("change", () => {
+      const v = el.value === "yes";
+      updatePrefs({ showLangSelector: v });
+      window.location.reload();
+    });
+  });
+
+  document.querySelectorAll<HTMLElement>("[data-pref-lang-flags]").forEach((langFlags) => {
+    langFlags.querySelectorAll<HTMLButtonElement>("[data-pref-lang-flag]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const v = btn.dataset.prefLangFlag;
+        if (!v || !isLang(v)) return;
+        updatePrefs({ lang: v });
+        if (window.skillatlas?.setUiLang) {
+          await window.skillatlas.setUiLang(v);
+        } else {
+          window.location.reload();
+        }
+      });
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>("[data-pref-reset]").forEach((reset) => {
+    if (reset.dataset.bound === "1") return;
+    reset.dataset.bound = "1";
+    reset.addEventListener("click", async () => {
+      localStorage.removeItem("skillatlas_prefs_v1");
+      localStorage.removeItem("theme");
+      updatePrefs({
+        themeMode: "auto",
+        font: "system",
+        accent: "indigo",
+        density: "comfortable",
+        motion: "normal",
+        technologiesView: "cards",
+        projectsView: "cards",
+        showHeaderIcons: true,
+        showLangSelector: false,
+        lang: "es",
+        settingsSidebarSide: "left" as SettingsSidebarSide,
+        settingsActiveSection: "classic-prefs",
+        qaTesterMode: false,
+      });
+      render();
+      await window.skillatlas?.setUiLang?.("es");
+      window.dispatchEvent(new CustomEvent("skillatlas:settings-panel", { detail: { id: "classic-prefs" } }));
+    });
   });
 }
 

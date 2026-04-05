@@ -2,7 +2,7 @@ import { getTechnologyIconSrc } from "../config/icons";
 import { getSupabaseBrowserClient } from "./client-supabase";
 import { getSessionUserId } from "./auth-session";
 import i18next from "i18next";
-import { confirmModal, showToast } from "./ui-feedback";
+import { confirmModal, showToast, userFacingDbError } from "./ui-feedback";
 import { loadPrefs } from "./prefs";
 import { getSeedCatalogEntries } from "./technology-detail/concept-seeds";
 
@@ -11,7 +11,6 @@ declare global {
     skillatlas?: {
       bootstrapTechnologiesGrid?: () => Promise<void>;
       clearTechnologiesCache?: () => void;
-      applySettingsDashboard?: () => void;
       setUiLang?: (lng: "es" | "en") => Promise<void>;
     };
   }
@@ -145,7 +144,7 @@ async function initTechnologyForm() {
       .maybeSingle();
 
     if (dup.error) {
-      feedback.textContent = `Error al validar duplicado: ${dup.error.message}`;
+      feedback.textContent = userFacingDbError(dup.error.message, "Error al validar duplicado.");
       feedback.className = "text-sm text-red-600";
       submitBtn.disabled = false;
       return;
@@ -168,7 +167,7 @@ async function initTechnologyForm() {
       feedback.textContent =
         error.code === "23505"
           ? "Conflicto de slug en la base de datos: suele indicar un índice único global en slug (heredado). En Supabase ejecuta el script docs/sql/saas-004-drop-global-slug-constraints.sql; debe quedar solo la unicidad (user_id, slug) de saas-001."
-          : `Error al guardar: ${error.message}`;
+          : userFacingDbError(error.message, "Error al guardar la tecnología.");
       feedback.className = "text-sm text-red-600";
       submitBtn.disabled = false;
       return;
@@ -233,11 +232,12 @@ async function initTechnologyActions() {
 
       const deleteRes = await supabase.from("technologies").delete().eq("slug", techId);
       if (deleteRes.error) {
+        const hint = userFacingDbError(deleteRes.error.message, "Error al eliminar tecnología.");
         if (feedback) {
-          feedback.textContent = `Error al eliminar: ${deleteRes.error.message}`;
+          feedback.textContent = hint;
           feedback.className = "text-sm text-red-600 m-0";
         }
-        showToast("Error al eliminar tecnología.", "error");
+        showToast(hint, "error");
         button.disabled = false;
         return;
       }

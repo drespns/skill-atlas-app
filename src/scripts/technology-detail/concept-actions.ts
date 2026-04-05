@@ -1,6 +1,6 @@
 import { getSupabaseBrowserClient } from "../client-supabase";
 import { getSessionUserId } from "../auth-session";
-import { conceptEditModal, confirmModal, showToast } from "../ui-feedback";
+import { conceptEditModal, confirmModal, showToast, userFacingDbError } from "../ui-feedback";
 import { refreshTechnologyDetailPage } from "./refresh-ui";
 
 export async function initConceptActions() {
@@ -54,11 +54,12 @@ export async function initConceptActions() {
         .eq("id", conceptId);
 
       if (updateRes.error) {
+        const hint = userFacingDbError(updateRes.error.message, "Error al actualizar concepto.");
         if (feedback) {
-          feedback.textContent = `Error al actualizar: ${updateRes.error.message}`;
+          feedback.textContent = hint;
           feedback.className = "text-sm text-red-600 dark:text-red-400 m-0";
         }
-        showToast("Error al actualizar concepto.", "error");
+        showToast(hint, "error");
         button.disabled = false;
         return;
       }
@@ -90,11 +91,12 @@ export async function initConceptActions() {
 
       const deleteRes = await supabase.from("concepts").delete().eq("id", conceptId);
       if (deleteRes.error) {
+        const hint = userFacingDbError(deleteRes.error.message, "Error al eliminar concepto.");
         if (feedback) {
-          feedback.textContent = `Error al eliminar: ${deleteRes.error.message}`;
+          feedback.textContent = hint;
           feedback.className = "text-sm text-red-600 dark:text-red-400 m-0";
         }
-        showToast("Error al eliminar concepto.", "error");
+        showToast(hint, "error");
         button.disabled = false;
         return;
       }

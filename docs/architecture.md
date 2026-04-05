@@ -44,6 +44,11 @@ Esto implica que scripts cliente que antes dependían de `DOMContentLoaded` debe
 **Indicador subrayado (nav):** el subrayado animado usa **`left` + `width`** en el elemento `[data-header-nav-indicator]` (anclado con `left-0` en el `<nav>`), no `translateX` horizontal, para evitar desalineación con **flex + `justify-center`** y con la animación de ancho al hacer hover.
 
 **Precios en header:** no hay enlace a `/pricing` en la barra superior; **Precios** sigue en landing/hero y, con sesión, en el **footer** (`data-public-footer-pricing`).
+
+**Portfolio público (visitante):** el HTML de cada proyecto en `/portfolio/<slug>`, `/p/<token>` y el preview CSR de `/portfolio` se genera con **`renderPortfolioVisitorCard`** (`src/lib/public-portfolio-project-card.ts`): jerarquía fija título → tecnologías → bloque historia → descripción → sección evidencia (varias incrustaciones si el RPC las devuelve); copy vía i18n `portfolio.public.*`. La lógica compartida de RPC + barra de controles (vista cuadrícula/lista, tope de evidencias, “menos animación”) está en **`public-portfolio-public-page.ts`**; preferencias del visitante en **`localStorage`** (`src/lib/public-portfolio-guest-prefs.ts`, clave por slug o token; en preview autenticado `preview:session`). Valores por defecto del autor: columnas `portfolio_profiles` + RPC tras **saas-013** (layout, evidencias, CTA) y **saas-014** (tema visual `public_theme`, densidad `public_density`, acento hex opcional, cabecera `public_header_style`, slugs destacados y su orden en el JSON); utilidades **`src/lib/portfolio-presentation.ts`** + `data-public-presentation-*` en el DOM; animación ligera y `prefers-reduced-motion` (`global.css`).
+
+**Dashboard (`/app`):** `src/scripts/recent-activity.ts` guarda en `localStorage` (clave `skillatlas_recent_activity_v1`) las últimas aperturas de detalle **proyecto** y **tecnología**; la escritura ocurre en `project-view-bootstrap.ts` y `technology-view-bootstrap.ts` tras cargar el recurso con éxito. `app-dashboard.ts` renderiza esas listas con marca de tiempo relativa, hidrata conteos y listas alfabéticas (8 ítems) vía Supabase cuando hay cliente y sesión, y escucha `skillatlas:auth-nav-updated` para refrescar. **Nota de producto:** si hiciera falta continuidad entre dispositivos, habría que persistir el historial en servidor (p. ej. prefs sync o tabla dedicada), no solo en `localStorage`.
+
 ### Geo / país del usuario (futuro)
 
 Ahora mismo, para elegir bandera/región usamos señales del navegador (**`navigator.language`** y fallback por **timezone**). Esto no garantiza ubicación física real.
@@ -99,8 +104,8 @@ En **build estatico**, las lecturas usan el cliente server-side de Supabase (sin
 | Ajustes | `/settings` | `/settings` (sesión, preferencias UI, perfil público + stack de ayuda; sync `portfolio_profiles` en Supabase; auth en `/login`) |
 | CV (privado) | — | `/cv` — sesión obligatoria; editor + documento; selección y orden de proyectos (`cvProjectSlugs`), perfil del CV (`cvProfile`), experiencia/educación; **preview modal**; impresión en claro (`body.cv-print-mode`, `beforeprint`) |
 | CV (público por token) | — | `/cv/p/<token>` — **SSR/on-demand** (`prerender = false`): anon llama RPC `skillatlas_cv_by_share_token`; se activa/regenera desde `/cv` (migración **saas-012**) |
-| Portfolio público (slug) | — | `/portfolio/<slug>` — **SSR/on-demand** (`prerender = false`): anon llama RPC `skillatlas_portfolio_by_public_slug`; configuración en Ajustes (`public_slug`, `share_enabled`, migración **saas-011**) |
-| Portfolio público (token) | — | `/p/<token>` — **SSR/on-demand** (`prerender = false`): anon llama RPC `skillatlas_portfolio_by_share_token`; copiar/regenerar token en Ajustes (requiere `share_enabled`) |
+| Portfolio público (slug) | — | `/portfolio/<slug>` — **SSR/on-demand** (`prerender = false`): anon llama RPC `skillatlas_portfolio_by_public_slug`; Ajustes → bloque portfolio: **saas-011**–**014** |
+| Portfolio público (token) | — | `/p/<token>` — **SSR/on-demand** (`prerender = false`): anon llama RPC `skillatlas_portfolio_by_share_token` (misma forma JSON que slug); token en Ajustes (requiere `share_enabled`) |
 
 Los componentes `ProjectCard.astro` y `TechnologyCard.astro` enlazan a las rutas CSR cuando el data source es Supabase. `project-detail.ts` no inicializa formularios si existe `[data-project-csr-mount]` (evita doble enganche).
 
@@ -123,7 +128,7 @@ Scripts principales:
 - `src/lib/evidence-url.ts` -> detección heurística de origen de URL y normalización de iframe (Tableau Public)
 - `auth-session.ts` -> `getSessionUserId()` para adjuntar `user_id` en inserts
 - `client-supabase.ts` -> `getSupabaseBrowserClient()` para scripts en navegador
-- `ui-feedback.ts` -> modales y toasts
+- `ui-feedback.ts` -> modales y toasts (`showToast` con tipos `success` | `error` | `info` | `warning`, escape HTML del mensaje, `role="status"`); **`userFacingDbError`** para acortar/mapear errores típicos de Supabase/Postgres en copy legible (español) antes de mostrarlos en feedback inline o toasts
 - `login-auth.ts` -> login/signup email+password + OAuth en `/login`
 - `login-earth.ts` -> escena Three.js (Earth) en background del login
 - `settings-profile.ts` -> nombre/bio/stack de ayuda; URL pública `/portfolio/<slug>` (`share_enabled`, `public_slug`); `public-profile-local.ts` + upsert `portfolio_profiles`
@@ -131,16 +136,14 @@ Scripts principales:
 - `public-cv-by-token.ts` -> `/cv/p/<token>` (público): render de CV desde RPC `skillatlas_cv_by_share_token`
 - `public-portfolio-by-token.ts` -> `/p/<token>` (público): render de portfolio desde RPC `skillatlas_portfolio_by_share_token`
 - `portfolio-public-profile.ts` -> hidrata cabecera de `/portfolio` desde Supabase o localStorage; chips de **stack de ayuda**
-- `settings-dashboard.ts` -> grid de Ajustes: columnas configurables + orden de tarjetas (drag & drop) persistido en prefs
-
 ## Ajustes (`/settings`) — layout y perfil (v0.10+)
 
 ### Preferencias (`skillatlas_prefs_v1`)
 
 Además de tema, densidad, fuente, acento, movimiento, vistas lista/cards, iconos del header y visibilidad del selector de idioma:
 
-- **`settingsGridColumns`**: 1–4 columnas en viewport ≥ `md` (en móvil siempre 1). Selector en Preferencias.
-- **`settingsSectionOrder`**: orden de las tarjetas `prefs` | `shortcuts` | `portfolio` (sesión y acciones de cuenta van en la barra fija superior, sin arrastre).
+- **`settingsSidebarSide`**: barra lateral de navegación en `/settings` a izquierda o derecha.
+- **`settingsActiveSection`**: última sección de Ajustes abierta (ids `classic-prefs`, `classic-shortcuts`, …); si la URL lleva hash `#classic-*`, ese hash manda al cargar.
 - **`cvProjectSlugs`** (opcional): array de slugs de proyectos incluidos en `/cv`; ausente = todos; vacío = ninguno; el orden del array es el orden del CV (drag & drop en el editor). Persistido en `user_prefs` y caché local `skillatlas_prefs_v1`.
 - **`cvProfile`** (opcional): datos privados del CV guardados en prefs: `headline`, `location`, `email`, `links`, `summary`, `highlights`, `experiences[]`, `education[]`, `showHelpStack`, `showPhoto` y `photoSource` (subida vs LinkedIn/proveedor).
 - **`qaTesterMode`** (opcional): habilita UI de **Onboarding/QA** (checklist, seed demo, copiar debug info) en `/settings`. La checklist se guarda localmente en `localStorage` (`skillatlas_qa_v1`).
@@ -237,7 +240,7 @@ Plan detallado para **multiusuario + portfolio por enlace compartido**: `docs/pl
 
 Implementación (Sprint A):
 - Preferencias guardadas en `localStorage` (`skillatlas_prefs_v1`) y aplicadas en `AppShell.astro` (script inline en `<head>`) + `src/scripts/client.ts`.
-- UI en `/settings` con `src/scripts/settings-prefs.ts` + `settings-dashboard.ts` (grid/columnas/orden).
+- UI en `/settings` con `src/scripts/settings-prefs.ts` + `settings-classic-ui.ts` (navegación lateral y un panel visible por sección; hash `#classic-*`).
 - Cache de navegación ligera para CSR lists en `sessionStorage` (TTL 2 min) en `src/scripts/{projects,technologies}.ts`.
 
 Mejoras UX (Sprint A+):

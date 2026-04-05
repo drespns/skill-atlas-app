@@ -25,7 +25,7 @@ SkillAtlas es un MVP para gestionar conocimiento tecnico y mostrar portfolio:
 ## Auth (login convencional)
 
 - La pantalla principal es **`/login`** (email+contraseña + OAuth).
-- `Ajustes` (`/settings`) se usa para estado de sesión, logout, preferencias UI (incl. grid/columnas y orden de tarjetas), perfil público y stack de ayuda (`portfolio_profiles` + localStorage).
+- `Ajustes` (`/settings`) se usa para estado de sesión, logout, preferencias UI (navegación lateral estilo “repo settings”), perfil público y stack de ayuda (`portfolio_profiles` + localStorage).
 - En el header:
   - si NO hay sesión: aparece icono de `/login`
   - si hay sesión: aparecen **Ajustes + Sign out** y avatar (si el provider lo devuelve); enlaces de app (CV, tecnologías, proyectos, portfolio); **Admin** si allowlist; **no** hay enlace a **Precios** en la barra (Precios: landing/hero + footer con sesión).

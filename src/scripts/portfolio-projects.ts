@@ -1,10 +1,26 @@
-import { getTechnologyIconSrc } from "../config/icons";
+import { detectEvidenceUrl } from "../lib/evidence-url";
 import {
-  detectEvidenceUrl,
-  embedIframeSrc,
-  evidenceSiteIconUrl,
-  IFRAME_EMBED_ALLOW,
-} from "../lib/evidence-url";
+  applyPortfolioPresentationToRoot,
+  featuredSlugsFromRpc,
+  normalizePublicAccentHex,
+  normalizePublicDensity,
+  normalizePublicHeaderStyle,
+  normalizePublicTheme,
+  sortProjectsByFeaturedSlugs,
+} from "../lib/portfolio-presentation";
+import {
+  effectiveEmbedCap,
+  effectivePublicLayout,
+  GUEST_PREFS_PREVIEW_KEY,
+  motionEnabledForGuest,
+  normalizeOwnerEmbedLimit,
+  normalizeOwnerLayout,
+  patchPublicPortfolioGuestPrefs,
+  publicPortfolioMountGridClass,
+  readPublicPortfolioGuestPrefs,
+  type PublicPortfolioGuestPrefs,
+} from "../lib/public-portfolio-guest-prefs";
+import { renderPortfolioVisitorCard } from "../lib/public-portfolio-project-card";
 import { getSupabaseBrowserClient } from "./client-supabase";
 import { getSessionUserId } from "./auth-session";
 import i18next from "i18next";
@@ -22,12 +38,6 @@ function esc(s: string) {
     .replace(/"/g, "&quot;");
 }
 
-function techHue(input: string) {
-  let h = 0;
-  for (let i = 0; i < input.length; i++) h = (h * 31 + input.charCodeAt(i)) >>> 0;
-  return h % 360;
-}
-
 type DbProject = {
   id: string;
   slug: string;
@@ -39,82 +49,6 @@ type DbProject = {
 
 type DbTech = { id: string; slug: string; name: string };
 type DbEmbed = { id: string; project_id: string; kind: "iframe" | "link"; title: string | null; url: string | null; sort_order: number };
-
-function renderCard(options: {
-  project: DbProject;
-  techNames: string[];
-  primaryEmbed: { kind: "iframe" | "link"; title: string; url: string } | null;
-  embedCount: number;
-}) {
-  const { project, techNames, primaryEmbed, embedCount } = options;
-  const hasStory = Boolean((project.role ?? "").trim() || (project.outcome ?? "").trim());
-
-  const pills = techNames
-    .map((name) => {
-      const hue = techHue(name);
-      const iconSrc = getTechnologyIconSrc({ id: name.toLowerCase(), name });
-      const icon = iconSrc
-        ? `<img src="${esc(iconSrc)}" alt="" class="h-4 w-4 object-contain" loading="lazy" decoding="async" />`
-        : "";
-      return `<span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border whitespace-nowrap" style="border-color:hsl(${hue} 72% 52% / 0.35); background-color:hsl(${hue} 72% 52% / 0.10)">
-        ${icon}
-        <span class="font-semibold text-gray-900 dark:text-gray-100">${esc(name)}</span>
-      </span>`;
-    })
-    .join("");
-
-  const embedHtml = (() => {
-    if (!primaryEmbed) {
-      return `<div class="border border-dashed border-gray-200 dark:border-gray-800 rounded-xl p-4 text-sm text-gray-600 dark:text-gray-400">
-        Aún no hay evidencias. Añade una en el detalle del proyecto.
-      </div>`;
-    }
-    const det = detectEvidenceUrl(primaryEmbed.url);
-    const fav = evidenceSiteIconUrl(primaryEmbed.url);
-    const chipIcon = fav
-      ? `<img src="${esc(fav)}" alt="" width="18" height="18" class="rounded ring-1 ring-gray-200/80 dark:ring-gray-700" loading="lazy" decoding="async" onerror="this.remove()" />`
-      : "";
-    const chip = `<div class="flex flex-wrap items-center gap-2">
-      ${chipIcon}
-      <span class="text-[10px] uppercase tracking-wide font-semibold text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full bg-emerald-100/80 dark:bg-emerald-950/50">${esc(det.sourceLabel)}</span>
-      <span class="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">${esc(primaryEmbed.kind === "iframe" ? "iframe" : "enlace")}</span>
-      <span class="text-[10px] text-gray-500 dark:text-gray-400">Evidencias: ${embedCount}</span>
-    </div>`;
-
-    const body =
-      primaryEmbed.kind === "iframe"
-        ? `<iframe class="w-full aspect-video rounded-lg border border-gray-200/80 dark:border-gray-800" src="${esc(embedIframeSrc(primaryEmbed.url))}" title="${esc(primaryEmbed.title)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="${esc(IFRAME_EMBED_ALLOW)}" allowfullscreen></iframe>`
-        : `<a class="inline-flex items-center justify-center rounded-lg border border-gray-200/80 dark:border-gray-800 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline" href="${esc(primaryEmbed.url)}" target="_blank" rel="noreferrer">Abrir evidencia</a>`;
-
-    return `<div class="space-y-2">${chip}<h3 class="m-0 text-sm font-semibold">${esc(primaryEmbed.title)}</h3>${body}</div>`;
-  })();
-
-  const story = hasStory
-    ? `<dl class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-        <div>
-          <dt class="font-semibold text-gray-800 dark:text-gray-200">Rol</dt>
-          <dd class="m-0 mt-1 text-gray-600 dark:text-gray-400">${esc((project.role ?? "").trim() || "—")}</dd>
-        </div>
-        <div>
-          <dt class="font-semibold text-gray-800 dark:text-gray-200">Resultado / impacto</dt>
-          <dd class="m-0 mt-1 text-gray-600 dark:text-gray-400 line-clamp-2">${esc((project.outcome ?? "").trim() || "—")}</dd>
-        </div>
-      </dl>`
-    : "";
-
-  return `<article class="border border-gray-200/80 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 flex flex-col gap-3 shadow-sm">
-    <div>
-      <h2 class="m-0 text-base font-semibold">${esc(project.title)}</h2>
-      <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">${esc(project.description ?? "")}</p>
-      ${story}
-    </div>
-    <div class="flex flex-wrap gap-2">${pills}</div>
-    ${embedHtml}
-    <div class="flex items-center justify-end">
-      <a href="/projects/view?project=${encodeURIComponent(project.slug)}" class="inline-flex items-center justify-center rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800 no-underline">Ver detalle</a>
-    </div>
-  </article>`;
-}
 
 function readSelectedTechsFromUrl(): Set<string> {
   const params = new URLSearchParams(window.location.search);
@@ -221,6 +155,40 @@ function initPortfolioTechFilterPopover(techNamesAll: string[]) {
   }
 }
 
+function syncPreviewGuestControls(
+  prefs: PublicPortfolioGuestPrefs,
+  layoutSel: HTMLSelectElement,
+  capSel: HTMLSelectElement,
+  motionCb: HTMLInputElement,
+  ownerLimit: number,
+) {
+  layoutSel.value = prefs.layout === "grid" || prefs.layout === "list" ? prefs.layout : "inherit";
+  if (prefs.embedCap === 1 || prefs.embedCap === 2 || prefs.embedCap === 3 || prefs.embedCap === 4 || prefs.embedCap === 5) {
+    capSel.value = String(Math.min(prefs.embedCap, ownerLimit));
+  } else {
+    capSel.value = "inherit";
+  }
+  motionCb.checked = Boolean(prefs.reducedMotion);
+}
+
+function fillPreviewLayoutSelect(layoutSel: HTMLSelectElement) {
+  const inherit = String(
+    i18next.t("portfolio.preview.viewInherit", { defaultValue: "Predeterminado (Ajustes)" }),
+  );
+  const grid = String(i18next.t("portfolio.public.viewGrid", { defaultValue: "Cuadrícula" }));
+  const list = String(i18next.t("portfolio.public.viewList", { defaultValue: "Lista" }));
+  layoutSel.innerHTML = `<option value="inherit">${esc(inherit)}</option><option value="grid">${esc(grid)}</option><option value="list">${esc(list)}</option>`;
+}
+
+function fillPreviewEmbedCap(capSel: HTMLSelectElement, ownerLimit: number) {
+  const inheritLabel = String(i18next.t("portfolio.public.embedCapInherit", { defaultValue: "Predeterminado del autor" }));
+  let opts = `<option value="inherit">${esc(inheritLabel)}</option>`;
+  for (let n = 1; n <= ownerLimit; n++) {
+    opts += `<option value="${n}">${n}</option>`;
+  }
+  capSel.innerHTML = opts;
+}
+
 async function run() {
   const mount = document.querySelector<HTMLElement>("[data-portfolio-projects-csr-mount]");
   const loadingEl = document.querySelector<HTMLElement>("[data-portfolio-loading]");
@@ -256,11 +224,18 @@ async function run() {
     return;
   }
 
-  const [projRes, ptRes, techRes, embRes] = await Promise.all([
+  const [projRes, ptRes, techRes, embRes, profRes] = await Promise.all([
     supabase.from("projects").select("id, slug, title, description, role, outcome").eq("user_id", userId).order("title"),
     supabase.from("project_technologies").select("project_id, technology_id"),
     supabase.from("technologies").select("id, slug, name").eq("user_id", userId).order("name"),
     supabase.from("project_embeds").select("id, project_id, kind, title, url, sort_order").order("sort_order", { ascending: true }),
+    supabase
+      .from("portfolio_profiles")
+      .select(
+        "public_layout, public_embeds_limit, public_theme, public_density, public_accent_hex, public_header_style, featured_project_slugs",
+      )
+      .eq("user_id", userId)
+      .maybeSingle(),
   ]);
 
   if (projRes.error) {
@@ -293,13 +268,44 @@ async function run() {
     embedsByProject.set(e.project_id, cur);
   }
 
+  let ownerLayout: "grid" | "list" = "grid";
+  let ownerEmbedLimit = 3;
+  let ownerTheme = normalizePublicTheme(undefined);
+  let ownerPresDensity = normalizePublicDensity(undefined);
+  let ownerAccent: string | null = null;
+  let ownerHeaderStyle = normalizePublicHeaderStyle(undefined);
+  let featuredSlugs: string[] = [];
+  const profMsg = profRes.error?.message ?? "";
+  if (!profRes.error && profRes.data) {
+    const row = profRes.data as {
+      public_layout?: string | null;
+      public_embeds_limit?: number | null;
+      public_theme?: string | null;
+      public_density?: string | null;
+      public_accent_hex?: string | null;
+      public_header_style?: string | null;
+      featured_project_slugs?: unknown;
+    };
+    ownerLayout = normalizeOwnerLayout(row.public_layout);
+    ownerEmbedLimit = normalizeOwnerEmbedLimit(row.public_embeds_limit);
+    ownerTheme = normalizePublicTheme(row.public_theme);
+    ownerPresDensity = normalizePublicDensity(row.public_density);
+    ownerAccent = normalizePublicAccentHex(row.public_accent_hex);
+    ownerHeaderStyle = normalizePublicHeaderStyle(row.public_header_style);
+    featuredSlugs = featuredSlugsFromRpc(row.featured_project_slugs);
+  } else if (profMsg && /public_layout|public_embeds|public_theme|featured_project|42703|column/i.test(profMsg)) {
+    /* saas-013/014 no aplicada: defaults */
+  }
+
+  const projectsOrdered = sortProjectsByFeaturedSlugs(projects, featuredSlugs);
+
   const techNamesAll = Array.from(new Set(techs.map((t) => t.name))).sort((a, b) => a.localeCompare(b, "es"));
   const selectedTechs = readSelectedTechsFromUrl();
 
   const filtered =
     selectedTechs.size === 0
-      ? projects
-      : projects.filter((p) => {
+      ? projectsOrdered
+      : projectsOrdered.filter((p) => {
           const names = techNamesByProject.get(p.id) ?? [];
           return names.some((n) => selectedTechs.has(n));
         });
@@ -321,21 +327,107 @@ async function run() {
       }
     </div>`;
     stopLoading();
+    const previewControls = document.querySelector<HTMLElement>("[data-portfolio-preview-controls]");
+    if (previewControls) previewControls.classList.add("hidden");
     return;
   }
 
-  mount.innerHTML = filtered
-    .map((p) => {
-      const techNames = (techNamesByProject.get(p.id) ?? []).slice().sort((a, b) => a.localeCompare(b, "es"));
-      const allEmb = embedsByProject.get(p.id) ?? [];
-      const primary = allEmb[0]
-        ? { kind: allEmb[0].kind, title: (allEmb[0].title ?? "").trim() || detectEvidenceUrl(allEmb[0].url ?? "").sourceLabel, url: (allEmb[0].url ?? "").trim() }
-        : null;
-      const safePrimary = primary && primary.url ? primary : null;
-      return renderCard({ project: p, techNames, primaryEmbed: safePrimary, embedCount: allEmb.length });
-    })
-    .join("");
+  const previewRoot = document.querySelector<HTMLElement>("[data-portfolio-preview-page]");
+  const previewControls = document.querySelector<HTMLElement>("[data-portfolio-preview-controls]");
+  const layoutSel = document.querySelector<HTMLSelectElement>("[data-portfolio-preview-layout]");
+  const capSel = document.querySelector<HTMLSelectElement>("[data-portfolio-preview-embed-cap]");
+  const motionCb = document.querySelector<HTMLInputElement>("[data-portfolio-preview-reduced-motion]");
+  const guestPrefs0 = readPublicPortfolioGuestPrefs(GUEST_PREFS_PREVIEW_KEY);
 
+  const paintPreview = () => {
+    const prefs = readPublicPortfolioGuestPrefs(GUEST_PREFS_PREVIEW_KEY);
+    const layout = effectivePublicLayout(ownerLayout, prefs);
+    const cap = effectiveEmbedCap(ownerEmbedLimit, prefs);
+    const motionOn = motionEnabledForGuest(prefs);
+    if (previewRoot) {
+      previewRoot.classList.toggle("portfolio-motion-on", motionOn);
+      previewRoot.classList.toggle("portfolio-motion-off", !motionOn);
+      applyPortfolioPresentationToRoot(previewRoot, {
+        theme: ownerTheme,
+        density: ownerPresDensity,
+        accentHex: ownerAccent,
+        headerStyle: ownerHeaderStyle,
+      });
+    }
+    mount.className = `${publicPortfolioMountGridClass(layout)} min-h-32`;
+    mount.innerHTML = filtered
+      .map((p, idx) => {
+        const techNames = (techNamesByProject.get(p.id) ?? []).slice().sort((a, b) => a.localeCompare(b, "es"));
+        const allEmb = embedsByProject.get(p.id) ?? [];
+        const sliced = allEmb.slice(0, cap);
+        const embedsForCard = sliced
+          .map((e) => {
+            const url = (e.url ?? "").trim();
+            if (!url) return null;
+            return {
+              kind: e.kind,
+              title: (e.title ?? "").trim() || detectEvidenceUrl(url).sourceLabel,
+              url,
+            };
+          })
+          .filter(Boolean) as { kind: string; title: string; url: string }[];
+        const primary = allEmb[0]
+          ? {
+              kind: allEmb[0].kind,
+              title: (allEmb[0].title ?? "").trim() || detectEvidenceUrl(allEmb[0].url ?? "").sourceLabel,
+              url: (allEmb[0].url ?? "").trim(),
+            }
+          : null;
+        const safePrimary = primary && primary.url ? primary : null;
+        return renderPortfolioVisitorCard(
+          {
+            title: p.title,
+            description: p.description,
+            role: p.role,
+            outcome: p.outcome,
+            technologyNames: techNames,
+            embeds: embedsForCard,
+            primaryEmbed: safePrimary,
+          },
+          {
+            variant: "preview",
+            projectSlug: p.slug,
+            layout,
+            density: ownerPresDensity,
+            cardIndex: idx,
+            motionStagger: motionOn,
+            totalEmbedCount: allEmb.length,
+          },
+        );
+      })
+      .join("");
+  };
+
+  if (previewControls && layoutSel && capSel && motionCb) {
+    previewControls.classList.remove("hidden");
+    fillPreviewLayoutSelect(layoutSel);
+    fillPreviewEmbedCap(capSel, ownerEmbedLimit);
+    syncPreviewGuestControls(guestPrefs0, layoutSel, capSel, motionCb, ownerEmbedLimit);
+    const onPreviewUiChange = () => {
+      const layoutVal = layoutSel.value;
+      const capVal = capSel.value;
+      patchPublicPortfolioGuestPrefs(GUEST_PREFS_PREVIEW_KEY, {
+        layout: layoutVal === "inherit" ? "inherit" : (layoutVal as "grid" | "list"),
+        embedCap: capVal === "inherit" ? "inherit" : (Number(capVal) as 1 | 2 | 3 | 4 | 5),
+        reducedMotion: motionCb.checked ? true : false,
+      });
+      paintPreview();
+      syncPreviewGuestControls(readPublicPortfolioGuestPrefs(GUEST_PREFS_PREVIEW_KEY), layoutSel, capSel, motionCb, ownerEmbedLimit);
+    };
+    if (previewControls.dataset.skillatlasPreviewControlsBound !== "1") {
+      previewControls.dataset.skillatlasPreviewControlsBound = "1";
+      layoutSel.addEventListener("change", onPreviewUiChange);
+      capSel.addEventListener("change", onPreviewUiChange);
+      motionCb.addEventListener("change", onPreviewUiChange);
+    }
+  }
+
+  paintPreview();
   stopLoading();
 }
 
