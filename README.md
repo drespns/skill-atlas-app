@@ -14,7 +14,7 @@ Aplicación web para **organizar conocimiento técnico** y **mostrar un portfoli
 ## Qué incluye hoy
 
 - **Flujo**: Tecnologías → Conceptos → Proyectos → Portfolio; conceptos siempre ligados a una tecnología; proyectos enlazan tecnologías y conceptos.
-- **Persistencia Supabase**: CRUD de tecnologías, conceptos y proyectos; asociaciones proyecto–tecnología y proyecto–concepto; **evidencias** por proyecto (`project_embeds`: enlace o iframe, ordenables); campos de **historia** en proyecto (`role`, `outcome` — migración `docs/sql/saas-006-projects-role-outcome.sql`); perfil en `portfolio_profiles` (nombre, bio, stack de ayuda con `docs/sql/saas-005-portfolio-help-stack.sql`) y **avatar** (Storage + `docs/sql/saas-008-portfolio-avatar.sql`).
+- **Persistencia Supabase**: CRUD de tecnologías, conceptos y proyectos; asociaciones proyecto–tecnología y proyecto–concepto; **evidencias** por proyecto (`project_embeds`: enlace o iframe, ordenables; visibilidad/thumbnail en público con **`saas-015`**); **portada opcional por proyecto** (Storage `project_covers`, **`saas-016`**); campos de **historia** en proyecto (`role`, `outcome` — `docs/sql/saas-006-projects-role-outcome.sql`); perfil en `portfolio_profiles` (nombre, bio, stack de ayuda con `docs/sql/saas-005-portfolio-help-stack.sql`) y **avatar** (Storage + `docs/sql/saas-008-portfolio-avatar.sql`).
 - **Autenticación**: `/login` con email/contraseña y OAuth (GitHub, LinkedIn OIDC); sesión y logout desde **Ajustes**.
 - **Ajustes** (`/settings`): preferencias de UI (tema, densidad, fuente, atajos), **dashboard** con rejilla configurable (1–4 columnas en escritorio), orden de tarjetas por arrastre, perfil público y stack de ayuda; enlaces profundos por hash (p. ej. `#portfolio-links`, `#prefs`); visibilidad/slug del portfolio público con botón **Aplicar** y feedback (toast).
 - **Portfolio** (`/portfolio`): preview autenticado; visitantes en `/portfolio/<slug>` o `/p/<token>` (RPCs públicas; ver `docs/db.md`).
@@ -56,7 +56,7 @@ Crea un archivo `.env` en la raíz (no commitear secretos):
 | `PUBLIC_SUPABASE_ANON_KEY` | Clave anónima |
 | `PUBLIC_DATA_SOURCE` | `mock` o `supabase` |
 
-Con `supabase`, aplica los scripts SQL en el orden indicado en [`docs/db.md`](docs/db.md) (MVP + migraciones `saas-001` … según las funciones que uses, p. ej. portfolio público **saas-011**–**014**).
+Con `supabase`, aplica los scripts SQL en el orden indicado en [`docs/db.md`](docs/db.md) (MVP + migraciones `saas-001` … hasta **`saas-016`** si usas portadas de proyecto y thumbnails públicos en evidencias).
 
 ---
 
@@ -119,7 +119,7 @@ Las tarjetas de listado enlazan automáticamente a las rutas CSR cuando el data 
 | [`AGENTS.md`](AGENTS.md) | Guía operativa para contribuir (convenciones, archivos sensibles, commits/tags) |
 | [`docs/architecture.md`](docs/architecture.md) | CSR vs build, scripts por pantalla, import de conceptos, decisiones UX |
 | [`docs/db.md`](docs/db.md) | Tablas, migraciones SaaS, checklist Supabase |
-| [`docs/backlog.md`](docs/backlog.md) | Roadmap y releases anotadas |
+| [`docs/backlog.md`](docs/backlog.md) | **Historial de entregas** (versiones 0.10 → actual), ideas y frentes abiertos |
 
 ---
 
@@ -148,7 +148,17 @@ Las tarjetas de listado enlazan automáticamente a las rutas CSR cuando el data 
 
 ## Versionado
 
-Las versiones de producto se marcan con **tags** de Git (mensaje tipo `feat:` / bullets, ver `AGENTS.md`). La release actual en desarrollo es **v0.20.0**.
+- **Versión actual del paquete:** la que declare **`package.json`** (hoy **v0.70.0**).
+- **Tags Git:** releases anotadas (`v0.45.0`, `v0.50.0`, `v0.60.0`, `v0.70.0`, …); mensaje de tag al estilo `feat:` + bullets (ver [`AGENTS.md`](AGENTS.md)).
+
+| Versión | Eje principal |
+|---------|----------------|
+| **0.45** | Vercel, portfolio por slug (**saas-011**), CV privado, header/landing |
+| **0.50** | CV público (**saas-012**), OG portfolio + `/og/portfolio.svg`, QA Ajustes, onboarding, `/prep` + `/study` |
+| **0.60** | Ajustes estilo GitHub, retirada tablero GridStack, prefs laterales |
+| **0.70** | **saas-015** / **saas-016**, portadas de proyecto, thumbnails evidencias, CV público enriquecido, APIs auxiliares, gráficos landing/dashboard |
+
+El **listado completo** de lo implementado por versión (incl. 0.10 … 0.40) está en [**`docs/backlog.md`**](docs/backlog.md) § *Registro de versiones*. El README se mantiene breve; ampliar aquí cuando el producto lo requiera.
 
 ---
 
