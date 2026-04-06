@@ -2,13 +2,33 @@
 
 Documento orientado al **historial** de lo implementado y a **ideas** sin orden de prioridad fijo. Detalle de esquema y migraciones: **`docs/db.md`**. Plan multi-tenant ampliado: **`docs/plan-saas-multi-tenant-portfolio.md`**.
 
-**Convención:** las versiones de producto siguen **`package.json`** y tags Git anotados (`git tag -l`, `git show v0.70.0`). Esta sección intenta listar **todo lo hecho hasta la versión actual**; las ideas futuras siguen al final y **no se borran** salvo decisión explícita.
+**Convención:** las versiones de producto siguen **`package.json`** y tags Git anotados (`git tag -l`, `git show v0.100.0`). Esta sección intenta listar **todo lo hecho hasta la versión actual**; las ideas futuras siguen al final y **no se borran** salvo decisión explícita.
+
+**Proceso de documentación (cada iteración con alcance de producto):** al cerrar un bloque de trabajo que añada o cambie **funcionalidad** visible (flujos, pantallas, prefs, SQL, rutas), actualizar **este `backlog.md`** en la entrada de versión en curso (o la siguiente) con bullets concretos por área, para que el historial refleje lo implementado. Los **fixes** puntuales o de calidad sin cambio de producto no requieren línea obligatoria; usar criterio.
 
 ---
 
 ## Registro de versiones (historial de producto)
 
-### v0.70.0 (actual)
+### v0.100.0 (actual)
+
+- **Footer:** `clip-path` superior en forma de V (`polygon(50% 17%, …)`); capas de gradiente y halos; sin enlace “código abierto” duplicado junto al stack.
+- **Banner global:** misma línea estética que el footer (halos indigo/violeta, fondo en capas, anillo suave, sombra); `config/banner.ts` en **0.100.0**.
+- **SEO:** `SiteMeta.astro` + `config/site-meta.ts`, imagen OG por defecto (`public/og/og-default.svg`), `site` opcional vía `PUBLIC_SITE_URL` en `astro.config.mjs`.
+- **Landing — carrusel facetas:** arrastre con `requestAnimationFrame`, scroll solo en el carril (`scrollTo`, sin `scrollIntoView`), `snap-proximity` + `overscroll-x-contain`; auto-avance con barra de progreso; puntos extremos no clicables; transición de tarjetas desactivada mientras se arrastra.
+- **Shell / responsive:** relleno horizontal con `clamp` en `.app-main-shell`, cabecera y footer con márgenes laterales coherentes; landing con `px-4 sm:px-6 lg:px-8` en el contenedor; hero con tipografía escalada (`sm` / `lg`); rejilla de tarjetas bajo el hero **2 columnas en tablet** (`sm:grid-cols-2 lg:grid-cols-3`); carrusel de facetas **compacto** de nuevo.
+- **Precios (orientativos):** Team mensual **€4,99** (`data-price-month` 4.99 / anual equivalente 3.99); vitalicios **€19,99** (Pro) y **€49,99** (Team) en `PricingLifetime.astro`.
+- **Navegación:** menú del avatar sin entrada “Perfil público” (duplicaba Ajustes).
+- **CV (`/cv`):** `cvLinkSlots` (huecos fijos LinkedIn / GitHub / portfolio / X / web) para corregir desalineación etiqueta–URL; `socialLinkDisplay` (solo enlace, solo icono, ambos) y chips con iconos en vista previa; secciones **Certificaciones** e **Idiomas**; `cvSectionVisibility` por bloque; plantilla documento `classic` \| `minimal` (primera iteración); **bug** arreglado: inputs de experiencia/educación ya no re-renderizan en cada tecla; encabezados de sección del editor más destacados.
+- **CV — orden de bloques:** `cvDocumentSectionOrder` en `cvProfile` (prefs); vista previa con carril derecho para reordenar; aplicado al documento y al CV público. El RPC **`skillatlas_cv_by_share_token`** ya devuelve `prefs.cvProfile` completo desde **`user_prefs`**: al sincronizar prefs con cuenta, el orden viaja al enlace público (sin migración SQL adicional).
+- **CV — i18n documento:** `cv.docHighlightsHeading` pasa a **Logros** / **Highlights** (antes duplicaba “Experiencia” con el bloque de experiencia laboral).
+- **CV — preview:** selector de **plantilla** en la cabecera del modal (cambio en caliente, sin recarga; persiste en prefs).
+- **CV — importar texto (beta):** bloque **“Importar desde texto”** con heurística `cv-paste-import.ts` (bloques separados por línea en blanco; rol `en`/`@`/`|`; fechas flexibles; viñetas). **No** sustituye a import PDF ni a IA; sirve para pegar CV previo y rellenar experiencia/educación más rápido.
+- **Prefs remoto:** al cargar `user_prefs`, **fusión superficial de `cvProfile`** (`{ ...local.cvProfile, ...remote.cvProfile }`) para no perder claves solo locales si el servidor trae un subconjunto.
+- **FAB:** una sola burbuja; pestaña Contacto con iconos **estables** (LinkedIn SVG local, logo Gmail de `gstatic`) en lugar de avatares externos lentos o rotos.
+- **Ideas explícitas (post‑MVP):** import **PDF/DOCX** con extracción de texto en servidor; **IA** para mapear campos arbitrarios a `experiences`/`education` (formatos de fecha heterogéneos); preview de plantilla ya resuelto en cliente.
+
+### v0.70.0 (anterior)
 
 - **Base de datos (repo):** scripts **`docs/sql/saas-015-embed-public-thumbnail.sql`** y **`docs/sql/saas-016-project-cover-storage.sql`** — evidencias con `show_in_public` y `thumbnail_url` en RPCs; **portada por proyecto** con `projects.cover_image_path`, bucket Storage **`project_covers`**, RPCs portfolio + **`skillatlas_cv_by_share_token`** con **`coverImagePath`** (ver **`docs/db.md`**).
 - **Portada de proyecto:** compresión en navegador (`src/lib/browser/image-compress.ts`), subida y quitar portada (`project-cover.ts`), UI en detalle CSR (`project-view-bootstrap.ts`), URL pública (`supabase-public-storage-url.ts`); `coverImagePath` en `supabaseProvider` y tipo `Project`.
@@ -125,13 +145,16 @@ Lista **explícita** — no implica prioridad; **no eliminar** entradas por ahor
 10. **Observabilidad** — e2e, snapshots visuales.
 11. **Rendimiento navegación** — menos recarga completa, caché de listas CSR, skeletons.
 12. **i18n** — textos restantes (p. ej. mensajes de `userFacingDbError` en EN cuando UI en EN).
-13. **QA seed** — el botón “Crear datos de prueba” puede chocar con constraints de `concepts` (p. ej. `progress`); alinear seed con DB real.
-14. **Categorías / columnas** en conceptos (`category`, `tier`) si se sale del modelo actual.
+13. **i18n multi-idioma amplio** — además de ES/EN en shell, **muchos idiomas** en selector, traducciones completas de landing/app y mantenimiento de `*.json` (pendiente de priorizar; hoy solo ES/EN en UI principal).
+14. **QA seed** — el botón “Crear datos de prueba” puede chocar con constraints de `concepts` (p. ej. `progress`); alinear seed con DB real.
+15. **Categorías / columnas** en conceptos (`category`, `tier`) si se sale del modelo actual.
+16. **CV — import enriquecido:** subida **PDF/DOCX**, extracción de texto en servidor, opcional **IA** para mapear a `experiences` / `education` con fechas en formatos heterogéneos (mes/año, rangos, etc.); complementa el import por pegado en **v0.100.0**.
 
 ---
 
 ## Referencias cruzadas
 
+- Ideas de preferencias (futuro): `docs/prefs-candidates.md`
 - Arquitectura y CSR: `docs/architecture.md`
 - SQL y RPCs: `docs/db.md`
 - Plan SaaS: `docs/plan-saas-multi-tenant-portfolio.md`
