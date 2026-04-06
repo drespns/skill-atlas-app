@@ -154,14 +154,14 @@ export async function runDashboardVisuals() {
   const [conceptsRes, techRes, ptRes, embedRes, pcRes] = await Promise.all([
     supabase.from("concepts").select("id, technology_id, progress"),
     supabase.from("technologies").select("id, name, slug"),
-    supabase.from("project_technologies").select("technology_id"),
+    supabase.from("project_technologies").select("technology_id, project_id"),
     supabase.from("project_embeds").select("project_id"),
     supabase.from("project_concepts").select("concept_id"),
   ]);
 
   const concepts = (conceptsRes.data ?? []) as { id: string; technology_id: string; progress: string }[];
   const techRows = (techRes.data ?? []) as { id: string; name: string; slug: string }[];
-  const ptRows = (ptRes.data ?? []) as { technology_id: string }[];
+  const ptRows = (ptRes.data ?? []) as { technology_id: string; project_id: string }[];
   const embedRows = (embedRes.data ?? []) as { project_id: string }[];
   const pcRows = (pcRes.data ?? []) as { concept_id: string }[];
 
@@ -188,6 +188,9 @@ export async function runDashboardVisuals() {
     if (!tid) continue;
     projectCountByTech.set(tid, (projectCountByTech.get(tid) ?? 0) + 1);
   }
+
+  const distinctProjectIds = new Set(ptRows.map((r) => r.project_id).filter(Boolean));
+  const hasProjectsData = distinctProjectIds.size > 0 || embedRows.length > 0;
 
   const techIds = [...new Set([...byTech.keys(), ...projectCountByTech.keys()])].filter((id) => techName.has(id));
 
@@ -260,12 +263,102 @@ export async function runDashboardVisuals() {
     }
   }
 
-  if (!hasConcepts) {
+  const treemapProjectData = (() => {
+    const sorted = [...techIds].sort((a, b) => (projectCountByTech.get(b) ?? 0) - (projectCountByTech.get(a) ?? 0));
+    return sorted
+      .map((id) => ({
+        name: techName.get(id) ?? id,
+        value: projectCountByTech.get(id) ?? 0,
+      }))
+      .filter((d) => d.value > 0);
+  })();
+
+  const renderProjectCharts = () => {
+    const projSorted = [...techIds].sort((a, b) => (projectCountByTech.get(b) ?? 0) - (projectCountByTech.get(a) ?? 0));
+    const projCategories = projSorted.map((id) => techName.get(id) ?? id);
+    const projData = projSorted.map((id) => projectCountByTech.get(id) ?? 0);
+    const anyProj = projData.some((n) => n > 0);
+
+    if (!anyProj) {
+      pushChart(elProjects, emptyOption(t("dashboard.charts.projectsTitle"), t("dashboard.charts.projectsHint")));
+    } else {
+      pushChart(elProjects, {
+        title: baseTitle(t("dashboard.charts.projectsTitle")),
+        tooltip: { trigger: "axis" },
+        grid: { left: 8, right: 12, top: 36, bottom: 8, containLabel: true },
+        xAxis: {
+          type: "value",
+          minInterval: 1,
+          axisLabel: { color: textMuted() },
+          splitLine: { lineStyle: { color: borderSubtle(), opacity: 0.5 } },
+        },
+        yAxis: {
+          type: "category",
+          data: projCategories,
+          axisLabel: { color: textMuted(), fontSize: 10 },
+          axisLine: { lineStyle: { color: borderSubtle() } },
+        },
+        series: [
+          {
+            type: "bar",
+            data: projData,
+            itemStyle: { color: "#8b5cf6", borderRadius: [0, 6, 6, 0] },
+          },
+        ],
+      });
+    }
+
+    if (treemapProjectData.length === 0) {
+      pushChart(elTreemap, emptyOption(t("dashboard.charts.treemapProjectsTitle"), t("dashboard.charts.treemapProjectsHint")));
+    } else {
+      pushChart(elTreemap, {
+        title: baseTitle(t("dashboard.charts.treemapProjectsTitle")),
+        tooltip: { formatter: "{b}: {c}" },
+        series: [
+          {
+            type: "treemap",
+            roam: false,
+            nodeClick: false,
+            breadcrumb: { show: false },
+            label: { show: true, fontSize: 11, color: "#fff" },
+            upperLabel: { show: false },
+            itemStyle: {
+              borderColor: isDark() ? "#111827" : "#fff",
+              borderWidth: 2,
+              gapWidth: 2,
+            },
+            levels: [
+              {
+                itemStyle: {
+                  borderWidth: 2,
+                  gapWidth: 2,
+                  borderColor: isDark() ? "#111827" : "#fff",
+                },
+                colorSaturation: [0.35, 0.65],
+                colorMappingBy: "value",
+                colorAlpha: [0.85, 1],
+              },
+            ],
+            data: treemapProjectData,
+            color: ["#6366f1", "#8b5cf6", "#a855f7", "#d946ef", "#ec4899", "#14b8a6", "#22c55e", "#eab308"],
+          },
+        ],
+      });
+    }
+  };
+
+  if (!hasConcepts && !hasProjectsData) {
     pushChart(elStack, emptyOption(t("dashboard.charts.stackedTitle"), t("dashboard.charts.stackedHint")));
     pushChart(elPie, emptyOption(t("dashboard.charts.pieTitle"), t("dashboard.charts.pieHint")));
     pushChart(elGauge, emptyOption(t("dashboard.charts.gaugeTitle"), t("dashboard.charts.gaugeHint")));
     pushChart(elProjects, emptyOption(t("dashboard.charts.projectsTitle"), t("dashboard.charts.projectsHint")));
-    pushChart(elTreemap, emptyOption(t("dashboard.charts.treemapTitle"), t("dashboard.charts.treemapHint")));
+    pushChart(elTreemap, emptyOption(t("dashboard.charts.treemapProjectsTitle"), t("dashboard.charts.treemapProjectsHint")));
+    pushChart(elCoverage, emptyOption(t("dashboard.charts.coverageTitle"), t("dashboard.charts.coverageHint")));
+  } else if (!hasConcepts && hasProjectsData) {
+    pushChart(elStack, emptyOption(t("dashboard.charts.stackedTitle"), t("dashboard.charts.stackedHint")));
+    pushChart(elPie, emptyOption(t("dashboard.charts.pieTitle"), t("dashboard.charts.pieHint")));
+    pushChart(elGauge, emptyOption(t("dashboard.charts.gaugeTitle"), t("dashboard.charts.gaugeHint")));
+    renderProjectCharts();
     pushChart(elCoverage, emptyOption(t("dashboard.charts.coverageTitle"), t("dashboard.charts.coverageHint")));
   } else if (!canStack) {
     pushChart(elStack, emptyOption(t("dashboard.charts.stackedTitle"), t("dashboard.charts.noTechLink")));
@@ -292,13 +385,14 @@ export async function runDashboardVisuals() {
       elGauge,
       gaugeOption(masteryPct, t("dashboard.charts.gaugeAxis"), t("dashboard.charts.gaugeTitle")),
     );
-    pushChart(elProjects, emptyOption(t("dashboard.charts.projectsTitle"), t("dashboard.charts.projectsHint")));
-    pushChart(elTreemap, emptyOption(t("dashboard.charts.treemapTitle"), t("dashboard.charts.treemapHint")));
+    renderProjectCharts();
     pushChart(
       elCoverage,
       coverageOption(linkedCount, soloStack, t("dashboard.charts.coverageInProjects"), t("dashboard.charts.coverageSolo")),
     );
   } else {
+    renderProjectCharts();
+
     const seriesStacked = PROGRESS_KEYS.map((key) => ({
       name: t(`dashboard.charts.progress.${key}`),
       type: "bar" as const,
@@ -354,84 +448,13 @@ export async function runDashboardVisuals() {
 
     pushChart(elGauge, gaugeOption(masteryPct, t("dashboard.charts.gaugeAxis"), t("dashboard.charts.gaugeTitle")));
 
-    const projSorted = [...topTech].sort((a, b) => (projectCountByTech.get(b) ?? 0) - (projectCountByTech.get(a) ?? 0));
-    const projCategories = projSorted.map((id) => techName.get(id) ?? id);
-    const projData = projSorted.map((id) => projectCountByTech.get(id) ?? 0);
-
-    pushChart(elProjects, {
-      title: baseTitle(t("dashboard.charts.projectsTitle")),
-      tooltip: { trigger: "axis" },
-      grid: { left: 8, right: 12, top: 36, bottom: 8, containLabel: true },
-      xAxis: {
-        type: "value",
-        minInterval: 1,
-        axisLabel: { color: textMuted() },
-        splitLine: { lineStyle: { color: borderSubtle(), opacity: 0.5 } },
-      },
-      yAxis: {
-        type: "category",
-        data: projCategories,
-        axisLabel: { color: textMuted(), fontSize: 10 },
-        axisLine: { lineStyle: { color: borderSubtle() } },
-      },
-      series: [
-        {
-          type: "bar",
-          data: projData,
-          itemStyle: { color: "#8b5cf6", borderRadius: [0, 6, 6, 0] },
-        },
-      ],
-    });
-
-    const treemapData = sortedByConcepts
-      .map((id) => {
-        const tr = byTech.get(id);
-        const v = tr ? PROGRESS_KEYS.reduce((n, k) => n + tr[k], 0) : 0;
-        return { name: techName.get(id) ?? id, value: v };
-      })
-      .filter((d) => d.value > 0);
-
-    pushChart(elTreemap, {
-      title: baseTitle(t("dashboard.charts.treemapTitle")),
-      tooltip: { formatter: "{b}: {c}" },
-      series: [
-        {
-          type: "treemap",
-          roam: false,
-          nodeClick: false,
-          breadcrumb: { show: false },
-          label: { show: true, fontSize: 11, color: "#fff" },
-          upperLabel: { show: false },
-          itemStyle: {
-            borderColor: isDark() ? "#111827" : "#fff",
-            borderWidth: 2,
-            gapWidth: 2,
-          },
-          levels: [
-            {
-              itemStyle: {
-                borderWidth: 2,
-                gapWidth: 2,
-                borderColor: isDark() ? "#111827" : "#fff",
-              },
-              colorSaturation: [0.35, 0.65],
-              colorMappingBy: "value",
-              colorAlpha: [0.85, 1],
-            },
-          ],
-          data: treemapData,
-          color: ["#6366f1", "#8b5cf6", "#a855f7", "#d946ef", "#ec4899", "#14b8a6", "#22c55e", "#eab308"],
-        },
-      ],
-    });
-
     pushChart(
       elCoverage,
       coverageOption(linkedCount, soloStack, t("dashboard.charts.coverageInProjects"), t("dashboard.charts.coverageSolo")),
     );
   }
 
-  const observeEls = [elStack, elPie, elGauge, elProjects, elTreemap, elCoverage].filter(Boolean) as HTMLElement[];
+  const observeEls = [elProjects, elTreemap, elStack, elPie, elGauge, elCoverage].filter(Boolean) as HTMLElement[];
   const onResize = () => {
     for (const c of chartInstances) c.resize();
   };
