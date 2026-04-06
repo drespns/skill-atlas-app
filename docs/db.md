@@ -32,6 +32,7 @@ Migracion multi-tenant y portfolio por token (scripts versionados):
 | 14 | `docs/sql/saas-014-portfolio-presentation.sql` | `public_theme`, `public_density`, `public_accent_hex`, `public_header_style`, `featured_project_slugs` (JSONB); RPC devuelve `publicTheme`, `publicDensity`, `publicAccentHex`, `publicHeaderStyle`, `featuredProjectSlugs` y ordena proyectos por destacados |
 | 15 | `docs/sql/saas-015-embed-public-thumbnail.sql` | `project_embeds.show_in_public`, `thumbnail_url`; RPC portfolio (slug/token) y CV filtran embeds públicos y devuelven `thumbnailUrl` en JSON |
 | 16 | `docs/sql/saas-016-project-cover-storage.sql` | `projects.cover_image_path`; bucket Storage **`project_covers`** (lectura pública; escritura solo carpeta `auth.uid()/…`); RPCs portfolio (slug/token) y **`skillatlas_cv_by_share_token`** incluyen **`coverImagePath`** por proyecto |
+| 17 | `docs/sql/saas-017-embed-thumbnail-storage.sql` | Bucket **`embed_thumbnails`** para miniaturas de evidencia subidas por el usuario (URL pública sigue guardándose en `project_embeds.thumbnail_url`) |
 
 **Nota saas-006:** si ya aplicaste `saas-003`, debes aplicar **saas-006** (o al menos el bloque `CREATE OR REPLACE FUNCTION` del script) para que la RPC y el esquema coincidan con lo que espera el frontend (`select` con `role`/`outcome` y consumidores del JSON del portfolio). En entornos nuevos: orden típico … → `saas-003` → … → `saas-006`.
 
