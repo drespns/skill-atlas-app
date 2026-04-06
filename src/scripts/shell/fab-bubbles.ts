@@ -4,7 +4,11 @@ const CHECKLIST_KEY = "skillatlas_fab_checklist_v1";
 
 type CheckKey = "tech" | "project" | "cv" | "portfolio";
 
-type FabPane = "shortcuts" | "checklist" | "ai";
+type FabPane = "shortcuts" | "checklist" | "ai" | "contact";
+
+function isFabPane(t: string | null | undefined): t is FabPane {
+  return t === "shortcuts" || t === "checklist" || t === "ai" || t === "contact";
+}
 
 function readChecks(): Record<CheckKey, boolean> {
   try {
@@ -49,24 +53,14 @@ function setFabTab(root: HTMLElement, pane: FabPane) {
   root.dataset.fabActivePane = pane;
 }
 
-function setTriggerExpanded(
-  root: HTMLElement,
-  pane: FabPane,
-  shortcutsBtn: HTMLButtonElement | null,
-  checklistBtn: HTMLButtonElement | null,
-  aiBtn: HTMLButtonElement | null,
-) {
-  shortcutsBtn?.setAttribute("aria-expanded", pane === "shortcuts" ? "true" : "false");
-  checklistBtn?.setAttribute("aria-expanded", pane === "checklist" ? "true" : "false");
-  aiBtn?.setAttribute("aria-expanded", pane === "ai" ? "true" : "false");
+function setMainButtonExpanded(shortcutsBtn: HTMLButtonElement | null, open: boolean) {
+  shortcutsBtn?.setAttribute("aria-expanded", open ? "true" : "false");
 }
 
 function openFabPanel(root: HTMLElement, pane: FabPane) {
   const backdrop = root.querySelector<HTMLElement>("[data-fab-backdrop]");
   const panel = root.querySelector<HTMLElement>("[data-fab-panel]");
   const shortcutsBtn = root.querySelector<HTMLButtonElement>("[data-fab-shortcuts]");
-  const checklistBtn = root.querySelector<HTMLButtonElement>("[data-fab-checklist]");
-  const aiBtn = root.querySelector<HTMLButtonElement>("[data-fab-ai]");
   if (!backdrop || !panel) return;
 
   setFabTab(root, pane);
@@ -83,7 +77,7 @@ function openFabPanel(root: HTMLElement, pane: FabPane) {
     panel.classList.add("pointer-events-auto", "translate-y-0", "scale-100", "opacity-100");
   }
 
-  setTriggerExpanded(root, pane, shortcutsBtn, checklistBtn, aiBtn);
+  setMainButtonExpanded(shortcutsBtn, true);
 
   const closeBtn = root.querySelector<HTMLButtonElement>("[data-fab-close]");
   window.setTimeout(() => closeBtn?.focus(), prefersReducedMotion() ? 0 : 50);
@@ -93,8 +87,6 @@ function closeFabPanel(root: HTMLElement) {
   const backdrop = root.querySelector<HTMLElement>("[data-fab-backdrop]");
   const panel = root.querySelector<HTMLElement>("[data-fab-panel]");
   const shortcutsBtn = root.querySelector<HTMLButtonElement>("[data-fab-shortcuts]");
-  const checklistBtn = root.querySelector<HTMLButtonElement>("[data-fab-checklist]");
-  const aiBtn = root.querySelector<HTMLButtonElement>("[data-fab-ai]");
   if (!backdrop || !panel) return;
 
   const done = () => {
@@ -114,9 +106,7 @@ function closeFabPanel(root: HTMLElement) {
     window.setTimeout(done, 200);
   }
 
-  shortcutsBtn?.setAttribute("aria-expanded", "false");
-  checklistBtn?.setAttribute("aria-expanded", "false");
-  aiBtn?.setAttribute("aria-expanded", "false");
+  setMainButtonExpanded(shortcutsBtn, false);
 }
 
 function syncChecklistInputs(root: HTMLElement) {
@@ -131,31 +121,19 @@ function bindFabRoot(root: HTMLElement) {
   const backdrop = root.querySelector<HTMLElement>("[data-fab-backdrop]");
   const panel = root.querySelector<HTMLElement>("[data-fab-panel]");
   const shortcutsBtn = root.querySelector<HTMLButtonElement>("[data-fab-shortcuts]");
-  const checklistBtn = root.querySelector<HTMLButtonElement>("[data-fab-checklist]");
-  const aiBtn = root.querySelector<HTMLButtonElement>("[data-fab-ai]");
   const closeBtn = root.querySelector<HTMLButtonElement>("[data-fab-close]");
   const openPaletteBtn = root.querySelector<HTMLButtonElement>("[data-fab-open-palette]");
   const tabRow = root.querySelector<HTMLElement>("[data-fab-tab-row]");
 
-  const toggleFromBubble = (pane: FabPane) => {
-    const open = panel && !panel.hidden;
-    if (open && root.dataset.fabActivePane === pane) closeFabPanel(root);
-    else openFabPanel(root, pane);
-  };
-
   shortcutsBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
-    toggleFromBubble("shortcuts");
-  });
-
-  checklistBtn?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    toggleFromBubble("checklist");
-  });
-
-  aiBtn?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    toggleFromBubble("ai");
+    const open = panel && !panel.hidden;
+    if (open) closeFabPanel(root);
+    else {
+      const raw = root.dataset.fabActivePane;
+      const pane: FabPane = isFabPane(raw) ? raw : "shortcuts";
+      openFabPanel(root, pane);
+    }
   });
 
   closeBtn?.addEventListener("click", () => closeFabPanel(root));
@@ -170,10 +148,8 @@ function bindFabRoot(root: HTMLElement) {
   root.querySelectorAll<HTMLButtonElement>("[data-fab-tab]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const t = btn.getAttribute("data-fab-tab");
-      if (t !== "shortcuts" && t !== "checklist" && t !== "ai") return;
-      const pane = t as FabPane;
-      setFabTab(root, pane);
-      setTriggerExpanded(root, pane, shortcutsBtn, checklistBtn, aiBtn);
+      if (!isFabPane(t)) return;
+      setFabTab(root, t);
     });
   });
 
@@ -191,11 +167,8 @@ function bindFabRoot(root: HTMLElement) {
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     if (!panel || panel.hidden) return;
-    const pane = root.dataset.fabActivePane as FabPane | undefined;
     closeFabPanel(root);
-    if (pane === "checklist") checklistBtn?.focus();
-    else if (pane === "ai") aiBtn?.focus();
-    else shortcutsBtn?.focus();
+    shortcutsBtn?.focus();
   });
 
   const applyLayout = (authed: boolean) => {
@@ -218,7 +191,6 @@ function bindFabRoot(root: HTMLElement) {
       row.classList.toggle("cursor-pointer", authed);
     });
 
-    checklistBtn?.classList.remove("hidden");
     if (tabRow) {
       tabRow.classList.remove("hidden");
       tabRow.classList.add("flex");
