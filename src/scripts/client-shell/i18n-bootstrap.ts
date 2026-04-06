@@ -4,69 +4,68 @@ import en from "@i18n/en.json";
 import { loadPrefs, updatePrefs } from "@scripts/core/prefs";
 import { refreshHeaderIconsFromPrefs } from "@scripts/client-shell/header-icons";
 import { syncThemeToggleAria } from "@scripts/client-shell/theme-toggle-sync";
+import { resolveSpanishPickerId, clearSpanishPickerSession } from "@lib/lang-picker-infer";
+import { LANG_PICKER_OPTIONS, preferEnglishPickerId } from "@lib/lang-picker-options";
 
-function isLangUiLocked(): boolean {
-  return document.documentElement.dataset.langUiLocked === "1";
+function normalizePathname(): string {
+  const p = window.location.pathname.replace(/\/$/, "");
+  return p === "" ? "/" : p;
+}
+
+function shouldForceLangPickerVisible(): boolean {
+  const path = normalizePathname();
+  return path === "/" || path === "/login";
+}
+
+function isLangSelectorVisible(): boolean {
+  return loadPrefs().showLangSelector || shouldForceLangPickerVisible();
+}
+
+function getUiLangFromI18n(): "es" | "en" {
+  const l = (i18next.language || "es").toLowerCase();
+  return l.startsWith("en") ? "en" : "es";
+}
+
+function countryFromSpanishPickerId(id: string): "Spain" | "Mexico" | "Argentina" | "Chile" | "Ecuador" {
+  if (id === "es") return "Spain";
+  if (id === "es_mx") return "Mexico";
+  if (id === "es_ar") return "Argentina";
+  if (id === "es_cl") return "Chile";
+  if (id === "es_ec") return "Ecuador";
+  return "Mexico";
 }
 
 export async function initI18n() {
+  const initial = loadPrefs().lang;
+
   await i18next.init({
-    lng: "es",
+    lng: initial,
     fallbackLng: "es",
     resources: {
       es: { translation: es as any },
       en: { translation: en as any },
     },
   });
-  await i18next.changeLanguage("es");
+  await i18next.changeLanguage(initial);
 
   const notifyLangChanged = (lang: "es" | "en") => {
     window.dispatchEvent(new CustomEvent("skillatlas:ui-lang-changed", { detail: { lang } }));
   };
 
   const setLangAttr = () => {
-    document.documentElement.lang = "es";
+    const lng = getUiLangFromI18n();
+    document.documentElement.lang = lng === "en" ? "en" : "es";
   };
 
   const render = () => {
     setLangAttr();
-    const lng: "es" | "en" = "es";
+    const lng: "es" | "en" = getUiLangFromI18n();
 
-    const inferCountryForSpanish = (): "Spain" | "Mexico" | "Argentina" | "Chile" | "Ecuador" => {
-      try {
-        const nav = (navigator.language || "").toLowerCase();
-        if (nav === "es-es" || nav.endsWith("-es")) return "Spain";
-        if (nav === "es-mx" || nav.endsWith("-mx")) return "Mexico";
-        if (nav === "es-ar" || nav.endsWith("-ar")) return "Argentina";
-        if (nav === "es-cl" || nav.endsWith("-cl")) return "Chile";
-        if (nav === "es-ec" || nav.endsWith("-ec")) return "Ecuador";
-
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        if (typeof tz === "string") {
-          if (tz === "Europe/Madrid") return "Spain";
-          if (tz === "America/Mexico_City") return "Mexico";
-          if (tz === "America/Argentina/Buenos_Aires") return "Argentina";
-          if (tz === "America/Santiago") return "Chile";
-          if (tz === "America/Guayaquil") return "Ecuador";
-        }
-      } catch {
-        // ignore
-      }
-      return "Mexico";
-    };
-
-    const esCountry = inferCountryForSpanish();
+    const esPickerId = resolveSpanishPickerId();
+    const esCountry = countryFromSpanishPickerId(esPickerId);
     const esFlagSrc = `/icons/flags/${esCountry}.svg`;
-    const esTitle =
-      esCountry === "Spain"
-        ? "Español (España)"
-        : esCountry === "Argentina"
-          ? "Español (Argentina)"
-          : esCountry === "Chile"
-            ? "Español (Chile)"
-            : esCountry === "Ecuador"
-              ? "Español (Ecuador)"
-              : "Español (México)";
+    const opt = LANG_PICKER_OPTIONS.find((o) => o.id === esPickerId);
+    const esTitle = opt?.label ?? "Español";
 
     document.querySelectorAll<HTMLElement>('[data-lang-flag="es"], [data-pref-lang-flag="es"]').forEach((btn) => {
       btn.setAttribute("title", esTitle);
@@ -93,40 +92,27 @@ export async function initI18n() {
 
     const quickFlagImg = document.querySelector<HTMLImageElement>("[data-lang-quick-flag]");
     if (quickFlagImg) {
-      quickFlagImg.src = esFlagSrc;
-      quickFlagImg.alt = esTitle;
+      if (lng === "en") {
+        const enId = preferEnglishPickerId();
+        const enFlag = LANG_PICKER_OPTIONS.find((o) => o.id === enId)?.flag ?? "United_Kingdom";
+        quickFlagImg.src = `/icons/flags/${enFlag}.svg`;
+        quickFlagImg.alt = enId === "en_us" ? "English (US)" : "English";
+      } else {
+        quickFlagImg.src = esFlagSrc;
+        quickFlagImg.alt = esTitle;
+      }
     }
 
-    const show = loadPrefs().showLangSelector;
+    const show = isLangSelectorVisible();
+    const langWrap = document.querySelector<HTMLElement>("[data-lang-wrap]");
+    if (langWrap) {
+      langWrap.classList.toggle("hidden", !show);
+      langWrap.classList.toggle("inline-flex", show);
+    }
+
     const langQuick = document.querySelector<HTMLElement>("[data-lang-quick-toggle]");
-    if (langQuick) {
-      if (!show) {
-        langQuick.classList.add("hidden");
-        langQuick.classList.remove("inline-flex");
-      } else {
-        langQuick.classList.remove("hidden");
-        langQuick.classList.add("inline-flex");
-      }
-      if (isLangUiLocked()) {
-        langQuick.setAttribute("aria-disabled", "true");
-        langQuick.setAttribute("tabindex", "-1");
-        langQuick.classList.add("pointer-events-none", "cursor-default", "opacity-90");
-      } else {
-        langQuick.removeAttribute("aria-disabled");
-        langQuick.removeAttribute("tabindex");
-        langQuick.classList.remove("pointer-events-none", "cursor-default", "opacity-90");
-      }
-    }
-    const langFlags = document.querySelector<HTMLElement>("[data-lang-flags]");
-    if (langFlags) {
-      if (!show) {
-        langFlags.classList.add("hidden");
-        langFlags.classList.remove("inline-flex");
-      } else {
-        langFlags.classList.remove("hidden");
-        langFlags.classList.add("inline-flex");
-      }
-    }
+    if (langQuick) langQuick.setAttribute("aria-haspopup", "menu");
+
     document.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
       const key = el.getAttribute("data-i18n");
       if (!key) return;
@@ -146,18 +132,20 @@ export async function initI18n() {
         el.textContent = i18next.t(key, args);
       }
     });
+
+    window.dispatchEvent(new CustomEvent("skillatlas:lang-picker-sync"));
   };
 
   render();
-  notifyLangChanged("es");
+  notifyLangChanged(initial);
 
   window.skillatlas = window.skillatlas ?? {};
   window.skillatlas.setUiLang = async (lng: "es" | "en") => {
-    await i18next.changeLanguage("es");
-    void lng;
-    updatePrefs({ lang: "es" });
+    await i18next.changeLanguage(lng);
+    if (lng === "en") clearSpanishPickerSession();
+    updatePrefs({ lang: lng });
     render();
-    notifyLangChanged("es");
+    notifyLangChanged(lng);
   };
   window.skillatlas.refreshI18nDom = render;
 
@@ -174,23 +162,9 @@ export async function initI18n() {
     if (btn.dataset.bound === "1") return;
     btn.dataset.bound = "1";
     btn.addEventListener("click", async () => {
-      if (isLangUiLocked()) return;
       const next = btn.dataset.langFlag === "en" ? "en" : "es";
       await i18next.changeLanguage(next);
-      updatePrefs({ lang: next });
-      render();
-      notifyLangChanged(next);
-    });
-  });
-
-  document.querySelectorAll<HTMLButtonElement>("[data-lang-quick-toggle]").forEach((btn) => {
-    if (btn.dataset.bound === "1") return;
-    btn.dataset.bound = "1";
-    btn.addEventListener("click", async () => {
-      if (isLangUiLocked()) return;
-      const cur = i18next.language.startsWith("en") ? "en" : "es";
-      const next: "es" | "en" = cur === "en" ? "es" : "en";
-      await i18next.changeLanguage(next);
+      if (next === "en") clearSpanishPickerSession();
       updatePrefs({ lang: next });
       render();
       notifyLangChanged(next);

@@ -1,4 +1,6 @@
 import { applyFontToDocument, normalizeFontId } from "@config/font-catalog";
+import { CV_LINK_SLOT_COUNT, migrateCvLinksToSlots, slotsToPersistedLinks } from "@lib/cv-contact-html";
+import { isDefaultCvDocumentSectionOrder, normalizeCvDocumentSectionOrder } from "@lib/cv-document-section-order";
 
 export type ThemeMode = "auto" | "light" | "dark";
 export type Density = "comfortable" | "compact";
@@ -10,6 +12,9 @@ export type DefaultView = "cards" | "list";
 /** Vista de la lista de evidencias en detalle de proyecto (CSR). */
 export type ProjectEvidenceLayout = "large" | "grid" | "list";
 export type Lang = "es" | "en";
+
+/** Cómo abrir popovers de la cabecera (idioma / menú usuario). */
+export type HeaderPopoverTrigger = "hover" | "click";
 /** Escala del texto base de la UI (rem); pensado para pocos saltos seguros. */
 export type UiFontScale = "sm" | "md" | "lg";
 
@@ -24,7 +29,6 @@ export const SETTINGS_PANEL_IDS = [
   "portfolio-links",
   "portfolio-display",
   "portfolio-presentation",
-  "cv-public",
   "qa",
 ] as const;
 export type SettingsPanelId = (typeof SETTINGS_PANEL_IDS)[number];
@@ -37,7 +41,7 @@ export const LEGACY_SETTINGS_PANEL_ID: Record<string, SettingsPanelId> = {
   "classic-portfolio-links": "portfolio-links",
   "classic-portfolio-display": "portfolio-display",
   "classic-portfolio-presentation": "portfolio-presentation",
-  "classic-cv-public": "cv-public",
+  "classic-cv-public": "portfolio-links",
   "classic-qa": "qa",
 };
 
@@ -48,6 +52,7 @@ export function isSettingsPanelId(s: string): s is SettingsPanelId {
 export function migrateSettingsPanelHashFragment(raw: string): SettingsPanelId | null {
   const t = raw.trim();
   if (!t) return null;
+  if (t === "cv-public") return "portfolio-links";
   if (isSettingsPanelId(t)) return t;
   const mapped = LEGACY_SETTINGS_PANEL_ID[t];
   return mapped ?? null;
@@ -56,25 +61,6 @@ export function migrateSettingsPanelHashFragment(raw: string): SettingsPanelId |
 export type CvLink = {
   label: string;
   url: string;
-};
-
-export type CvProfileV1 = {
-  headline?: string;
-  location?: string;
-  email?: string;
-  links?: CvLink[];
-  /** Resumen del CV (privado). Si falta, se usa `portfolio_profiles.bio` como fallback. */
-  summary?: string;
-  /** Mostrar chips del stack de ayuda en el CV. */
-  showHelpStack?: boolean;
-  /** Texto libre (líneas) para experiencia/logros. */
-  highlights?: string;
-  /** Mostrar foto (avatar de portfolio_profiles.avatar_url) en el CV. */
-  showPhoto?: boolean;
-  /** Fuente de la foto cuando hay varias opciones. */
-  photoSource?: "uploaded" | "linkedin" | "provider";
-  experiences?: CvExperienceV1[];
-  education?: CvEducationV1[];
 };
 
 export type CvExperienceV1 = {
@@ -95,6 +81,67 @@ export type CvEducationV1 = {
   details?: string;
 };
 
+export type CvCertificationV1 = {
+  name?: string;
+  issuer?: string;
+  year?: string;
+  url?: string;
+};
+
+export type CvLanguageV1 = {
+  name?: string;
+  level?: string;
+};
+
+/** Qué bloques del CV se muestran en vista previa / impresión (por defecto todo visible). */
+export type CvSectionVisibilityV1 = {
+  highlights?: boolean;
+  projects?: boolean;
+  experience?: boolean;
+  education?: boolean;
+  certifications?: boolean;
+  languages?: boolean;
+};
+
+export type CvSocialLinkDisplayV1 = "url" | "icon" | "both";
+
+export type CvTemplateIdV1 = "classic" | "minimal";
+
+export type CvProfileV1 = {
+  headline?: string;
+  location?: string;
+  email?: string;
+  links?: CvLink[];
+  /** Resumen del CV (privado). Si falta, se usa `portfolio_profiles.bio` como fallback. */
+  summary?: string;
+  /** Mostrar chips del stack de ayuda en el CV. */
+  showHelpStack?: boolean;
+  /** Texto libre (líneas) para experiencia/logros. */
+  highlights?: string;
+  /** Mostrar foto (avatar de portfolio_profiles.avatar_url) en el CV. */
+  showPhoto?: boolean;
+  /** Fuente de la foto cuando hay varias opciones. */
+  photoSource?: "uploaded" | "linkedin" | "provider";
+  experiences?: CvExperienceV1[];
+  education?: CvEducationV1[];
+  certifications?: CvCertificationV1[];
+  languages?: CvLanguageV1[];
+  /**
+   * URLs fijas por hueco (LinkedIn, GitHub, portfolio, X/Twitter, web).
+   * Evita que al filtrar `links` se desalineen etiqueta y URL.
+   */
+  cvLinkSlots?: string[];
+  /** Cómo mostrar enlaces sociales en el CV: texto, icono o ambos. */
+  socialLinkDisplay?: CvSocialLinkDisplayV1;
+  cvSectionVisibility?: CvSectionVisibilityV1;
+  /** Plantilla visual del documento (extensible). */
+  cvTemplate?: CvTemplateIdV1;
+  /** Orden de bloques del documento CV (Experiencia, Educación, …). */
+  cvDocumentSectionOrder?: string[];
+  /** Objetivo de extensión al imprimir (1–6 páginas A4 aprox.); ajusta escala tipográfica. */
+  cvPrintMaxPages?: number;
+};
+
 export type AppPrefsV1 = {
   v: 1;
   themeMode: ThemeMode;
@@ -111,6 +158,12 @@ export type AppPrefsV1 = {
   projectEvidenceLayout: ProjectEvidenceLayout;
   showHeaderIcons: boolean;
   showLangSelector: boolean;
+  /** Abrir selector de idioma: hover (rápido) o clic (evita aperturas accidentales). */
+  headerLangPopover?: HeaderPopoverTrigger;
+  /** Abrir menú de cuenta (avatar): hover o clic. */
+  headerUserMenuPopover?: HeaderPopoverTrigger;
+  /* Pref desactivado en UI: menú del logo (/app vs /) solo hover en cabecera.
+  headerHomePopover?: HeaderPopoverTrigger; */
   lang: Lang;
   /** Barra lateral de /settings a izquierda o derecha. */
   settingsSidebarSide: SettingsSidebarSide;
@@ -143,7 +196,10 @@ const DEFAULT_PREFS: AppPrefsV1 = {
   projectsView: "cards",
   projectEvidenceLayout: "large",
   showHeaderIcons: true,
-  showLangSelector: true,
+  showLangSelector: false,
+  headerLangPopover: "hover",
+  headerUserMenuPopover: "click",
+  // headerHomePopover: "hover",
   lang: "es",
   settingsSidebarSide: "left",
   cvProfile: {},
@@ -166,6 +222,7 @@ function normalizeSettingsSidebarSide(raw: unknown): SettingsSidebarSide {
 
 function normalizeSettingsActiveSection(raw: unknown): SettingsPanelId | undefined {
   if (typeof raw !== "string") return undefined;
+  if (raw === "cv-public") return "portfolio-links";
   if (isSettingsPanelId(raw)) return raw;
   const migrated = LEGACY_SETTINGS_PANEL_ID[raw];
   return migrated && isSettingsPanelId(migrated) ? migrated : undefined;
@@ -191,6 +248,8 @@ function normalizeCvProjectSlugs(raw: unknown): string[] | undefined {
   return out.length > 0 ? Array.from(new Set(out)) : [];
 }
 
+const CV_LINK_CANON_LABELS = ["LinkedIn", "GitHub", "Portfolio", "X / Twitter", "Web"];
+
 function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
   if (!raw || typeof raw !== "object") return undefined;
   const r = raw as any;
@@ -206,16 +265,27 @@ function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
       ? (r.photoSource as "uploaded" | "linkedin" | "provider")
       : undefined;
   const linksRaw = Array.isArray(r.links) ? r.links : [];
-  const links: CvLink[] = linksRaw
+  const legacyPairs: CvLink[] = linksRaw
     .map((x) => {
       if (!x || typeof x !== "object") return null;
       const rx = x as any;
       const label = typeof rx.label === "string" ? rx.label.trim() : "";
       const url = typeof rx.url === "string" ? rx.url.trim() : "";
       if (!label && !url) return null;
-      return { label: label || url, url };
+      return { label: label || "Link", url };
     })
-    .filter((x): x is CvLink => Boolean(x?.url));
+    .filter((x): x is CvLink => Boolean(x));
+
+  let cvLinkSlots: string[] = Array.from({ length: CV_LINK_SLOT_COUNT }, () => "");
+  const rawSlots = Array.isArray(r.cvLinkSlots) ? r.cvLinkSlots : null;
+  if (rawSlots && rawSlots.length === CV_LINK_SLOT_COUNT) {
+    cvLinkSlots = rawSlots.map((x: unknown) => (typeof x === "string" ? x.trim() : ""));
+  } else {
+    cvLinkSlots = migrateCvLinksToSlots(legacyPairs);
+  }
+
+  const links = slotsToPersistedLinks(cvLinkSlots, CV_LINK_CANON_LABELS);
+
   const out: CvProfileV1 = {};
   if (headline) out.headline = headline;
   if (location) out.location = location;
@@ -226,6 +296,22 @@ function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
   if (showPhoto !== undefined) out.showPhoto = showPhoto;
   if (photoSource !== undefined) out.photoSource = photoSource;
   if (links.length > 0) out.links = links.slice(0, 6);
+  if (cvLinkSlots.some((s) => s.length > 0)) out.cvLinkSlots = cvLinkSlots;
+
+  const disp = r.socialLinkDisplay;
+  if (disp === "url" || disp === "icon" || disp === "both") out.socialLinkDisplay = disp;
+
+  const tpl = r.cvTemplate;
+  if (tpl === "classic" || tpl === "minimal") out.cvTemplate = tpl;
+
+  if (r.cvSectionVisibility && typeof r.cvSectionVisibility === "object") {
+    const v = r.cvSectionVisibility as Record<string, unknown>;
+    const vis: CvSectionVisibilityV1 = {};
+    for (const k of ["highlights", "projects", "experience", "education", "certifications", "languages"] as const) {
+      if (typeof v[k] === "boolean") (vis as any)[k] = v[k];
+    }
+    if (Object.keys(vis).length > 0) out.cvSectionVisibility = vis;
+  }
 
   const expRaw = Array.isArray(r.experiences) ? r.experiences : [];
   const experiences = expRaw
@@ -261,6 +347,43 @@ function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
     .filter(Boolean) as CvEducationV1[];
   if (education.length > 0) out.education = education.slice(0, 12);
 
+  const certRaw = Array.isArray(r.certifications) ? r.certifications : [];
+  const certifications = certRaw
+    .map((x) => {
+      if (!x || typeof x !== "object") return null;
+      const rx = x as any;
+      const name = typeof rx.name === "string" ? rx.name.trim() : "";
+      const issuer = typeof rx.issuer === "string" ? rx.issuer.trim() : "";
+      const year = typeof rx.year === "string" ? rx.year.trim() : "";
+      const url = typeof rx.url === "string" ? rx.url.trim() : "";
+      if (!name && !issuer && !year && !url) return null;
+      return { name, issuer, year, url } as CvCertificationV1;
+    })
+    .filter(Boolean) as CvCertificationV1[];
+  if (certifications.length > 0) out.certifications = certifications.slice(0, 16);
+
+  const langRaw = Array.isArray(r.languages) ? r.languages : [];
+  const languages = langRaw
+    .map((x) => {
+      if (!x || typeof x !== "object") return null;
+      const rx = x as any;
+      const name = typeof rx.name === "string" ? rx.name.trim() : "";
+      const level = typeof rx.level === "string" ? rx.level.trim() : "";
+      if (!name && !level) return null;
+      return { name, level } as CvLanguageV1;
+    })
+    .filter(Boolean) as CvLanguageV1[];
+  if (languages.length > 0) out.languages = languages.slice(0, 16);
+
+  const docOrder = normalizeCvDocumentSectionOrder(r.cvDocumentSectionOrder);
+  if (!isDefaultCvDocumentSectionOrder(docOrder)) out.cvDocumentSectionOrder = docOrder;
+
+  const ppm = Number(r.cvPrintMaxPages);
+  if (Number.isFinite(ppm)) {
+    const n = Math.round(ppm);
+    if (n >= 1 && n <= 6) out.cvPrintMaxPages = n;
+  }
+
   return out;
 }
 
@@ -269,6 +392,7 @@ export function loadPrefs(): AppPrefsV1 {
     try {
       const navLang = (navigator.language || "").toLowerCase();
       if (navLang.startsWith("es")) return "es";
+      if (navLang.startsWith("en")) return "en";
     } catch {
       // ignore
     }
@@ -310,16 +434,36 @@ export function loadPrefs(): AppPrefsV1 {
     projectEvidenceLayout: normalizeProjectEvidenceLayout((base as Partial<AppPrefsV1>).projectEvidenceLayout),
     font: normalizeFontId((base as Partial<AppPrefsV1>).font ?? DEFAULT_PREFS.font),
     uiFontScale: normalizeUiFontScale((base as Partial<AppPrefsV1>).uiFontScale),
+    headerLangPopover: normalizeHeaderPopoverTrigger(
+      (base as Partial<AppPrefsV1>).headerLangPopover,
+      DEFAULT_PREFS.headerLangPopover,
+    ),
+    headerUserMenuPopover: normalizeHeaderPopoverTrigger(
+      (base as Partial<AppPrefsV1>).headerUserMenuPopover,
+      DEFAULT_PREFS.headerUserMenuPopover,
+    ),
+    /* headerHomePopover: normalizeHeaderPopoverTrigger(
+      (base as Partial<AppPrefsV1>).headerHomePopover,
+      DEFAULT_PREFS.headerHomePopover,
+    ), */
   };
 
   return finalizeAppPrefs(migrateLegacyPrefs(merged));
 }
 
-/** Política de producto: solo ES en UI; densidad de shell fija; escala de texto normalizada. */
+function normalizeUiLang(raw: unknown): Lang {
+  return raw === "en" ? "en" : "es";
+}
+
+function normalizeHeaderPopoverTrigger(raw: unknown, fallback: HeaderPopoverTrigger): HeaderPopoverTrigger {
+  return raw === "hover" || raw === "click" ? raw : fallback;
+}
+
+/** Densidad de shell fija; escala de texto normalizada; idioma UI es | en. */
 function finalizeAppPrefs(prefs: AppPrefsV1): AppPrefsV1 {
   return {
     ...prefs,
-    lang: "es",
+    lang: normalizeUiLang(prefs.lang),
     density: "comfortable",
     uiFontScale: normalizeUiFontScale(prefs.uiFontScale),
   };
@@ -361,6 +505,28 @@ export function updatePrefs(patch: Partial<Omit<AppPrefsV1, "v">>): AppPrefsV1 {
   return next;
 }
 
+/**
+ * Fusiona `user_prefs` remoto. Los modos hover|clic de cabecera **siempre** se toman de `loadPrefs()`
+ * (estado local antes de escribir), no del remoto: el servidor puede ir atrasado y el merge `{ local, …remote }`
+ * pisaba “Al pasar el cursor”. Restaurar solo desde JSON crudo tampoco sirve: tras un merge remoto el local
+ * ya contiene esas claves, y quedaba bloqueado en `click`.
+ */
+export function mergeRemoteUserPrefs(remote: unknown): void {
+  if (!remote || typeof remote !== "object") return;
+  const incoming = remote as Record<string, unknown>;
+  const local = loadPrefs();
+  const merged: Record<string, unknown> = { ...local, ...incoming, v: 1 };
+  if (incoming.cvProfile && typeof incoming.cvProfile === "object") {
+    merged.cvProfile = { ...((local as any).cvProfile ?? {}), ...(incoming.cvProfile as object) };
+  }
+  merged.headerLangPopover = local.headerLangPopover;
+  merged.headerUserMenuPopover = local.headerUserMenuPopover;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+  const next = loadPrefs();
+  applyPrefs(next);
+  window.dispatchEvent(new CustomEvent("skillatlas:prefs-updated", { detail: next }));
+}
+
 export function applyPrefs(prefs: AppPrefsV1) {
   const root = document.documentElement;
   const p = finalizeAppPrefs(prefs);
@@ -377,8 +543,9 @@ export function applyPrefs(prefs: AppPrefsV1) {
   root.dataset.langPref = p.lang;
   root.dataset.settingsSidebarSide = p.settingsSidebarSide;
   root.dataset.uiFontScale = p.uiFontScale;
-  /** Fase solo-ES: selector de idioma desactivado en cabecera y ajustes. */
-  root.dataset.langUiLocked = "1";
+  root.dataset.headerLangPopover = p.headerLangPopover ?? "hover";
+  root.dataset.headerUserMenuPopover = p.headerUserMenuPopover ?? "click";
+  // root.dataset.headerHomePopover = p.headerHomePopover ?? "hover";
 
   // Theme
   const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;

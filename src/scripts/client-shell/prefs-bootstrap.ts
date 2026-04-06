@@ -1,5 +1,5 @@
 import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
-import { applyPrefs, loadPrefs, updatePrefs } from "@scripts/core/prefs";
+import { applyPrefs, loadPrefs, mergeRemoteUserPrefs, updatePrefs } from "@scripts/core/prefs";
 import { syncThemeToggleAria } from "@scripts/client-shell/theme-toggle-sync";
 
 export async function initPrefs() {
@@ -39,9 +39,7 @@ export async function initPrefs() {
         const res = await supabase.from("user_prefs").select("prefs").eq("user_id", userId).maybeSingle();
         const remote = (res?.data?.prefs ?? null) as any;
         if (remote && typeof remote === "object") {
-          const merged = { ...loadPrefs(), ...remote, v: 1 };
-          localStorage.setItem("skillatlas_prefs_v1", JSON.stringify(merged));
-          applyPrefs(merged);
+          mergeRemoteUserPrefs(remote);
           syncThemeToggleAria();
         }
       }

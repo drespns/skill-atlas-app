@@ -10,9 +10,11 @@ import { initHeaderIconVisibility } from "@scripts/client-shell/header-icons";
 import { syncHeaderNavActive, initHeaderNavIndicator } from "@scripts/client-shell/header-nav";
 import { initCommandPaletteTrigger } from "@scripts/client-shell/command-palette-trigger";
 import { initI18n } from "@scripts/client-shell/i18n-bootstrap";
+import { initLangPickerPopover } from "@scripts/client-shell/lang-picker-popover";
 import { initAuthHeader } from "@scripts/client-shell/auth-header-bootstrap";
 import { initLandingCtas } from "@scripts/client-shell/landing-ctas";
 import { initAuthGuard } from "@scripts/client-shell/auth-guard";
+import { initHeaderScrollAutoHideDelegation } from "@scripts/client-shell/header-scroll-hide";
 
 declare global {
   interface Window {
@@ -35,11 +37,13 @@ async function bootClient() {
   initGlobalBannerCloseDelegationOnce();
   initLayoutVars();
   await initPrefs();
+  initHeaderScrollAutoHideDelegation();
   initHeaderIconVisibility();
   syncHeaderNavActive();
   initHeaderNavIndicator();
   initCommandPaletteTrigger();
   await initI18n();
+  initLangPickerPopover();
   await initAuthHeader();
   await initLandingCtas();
   await initAuthGuard();
