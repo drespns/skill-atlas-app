@@ -51,6 +51,8 @@ Esto implica que scripts cliente que antes dependían de `DOMContentLoaded` debe
 
 **Dashboard (`/app`):** `src/scripts/app/recent-activity.ts` guarda en `localStorage` (clave `skillatlas_recent_activity_v1`) las últimas aperturas de detalle **proyecto** y **tecnología**; la escritura ocurre en `projects/project-view-bootstrap.ts` y `technologies/technology-view-bootstrap.ts` tras cargar el recurso con éxito. `app/app-dashboard.ts` renderiza esas listas con marca de tiempo relativa, hidrata conteos y listas alfabéticas (8 ítems) vía Supabase cuando hay cliente y sesión, y escucha `skillatlas:auth-nav-updated` para refrescar. **Nota de producto:** si hiciera falta continuidad entre dispositivos, habría que persistir el historial en servidor (p. ej. prefs sync o tabla dedicada), no solo en `localStorage`.
 
+**Insights / gráficos (plan):** siguiente vertical en `/app` — métricas **solo del usuario** en MVP (p. ej. conceptos por tecnología y `progress` desde tablas ya cubiertas por RLS); agregados **multi-usuario** y cualquier IA sobre datos solo vía **RPC agregadas / vistas fijas** + opt-in, no con SELECTs abiertos en cliente. Contexto e ideas relacionadas: **`docs/backlog.md`** (p. ej. ítem “Insights en `/app`” en ideas y frentes abiertos).
+
 ### Geo / país del usuario (futuro)
 
 Ahora mismo, para elegir bandera/región usamos señales del navegador (**`navigator.language`** y fallback por **timezone**). Esto no garantiza ubicación física real.
