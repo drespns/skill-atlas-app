@@ -1,4 +1,5 @@
 import i18next from "i18next";
+import { coerceEvidenceDisplayKind } from "@lib/evidence-url";
 import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 import { getSessionUserId } from "@scripts/core/auth-session";
 import { loadPrefs, updatePrefs } from "@scripts/core/prefs";
@@ -183,8 +184,17 @@ async function seedDemoData(feedbackEl?: HTMLElement) {
       .eq("project_id", pid);
     if (embedCount.error) throw embedCount.error;
     if ((embedCount.count ?? 0) === 0) {
+      const kind = coerceEvidenceDisplayKind(p.embed.url, p.embed.kind);
       const emb = await supabase.from("project_embeds").insert([
-        { project_id: pid, kind: p.embed.kind, title: p.embed.title, url: p.embed.url, sort_order: 0 },
+        {
+          project_id: pid,
+          kind,
+          title: p.embed.title,
+          url: p.embed.url,
+          sort_order: 0,
+          show_in_public: true,
+          thumbnail_url: null,
+        },
       ] as any);
       if (emb.error) throw emb.error;
     }

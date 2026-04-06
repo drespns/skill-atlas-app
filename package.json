@@ -1,7 +1,7 @@
 {
   "name": "skill-atlas-app",
   "type": "module",
-  "version": "0.60.0",
+  "version": "0.70.0",
   "engines": {
     "node": ">=22.12.0"
   },
@@ -17,6 +17,7 @@
     "@tailwindcss/vite": "^4.2.2",
     "@vercel/og": "^0.11.1",
     "astro": "^6.0.8",
+    "echarts": "^6.0.0",
     "i18next": "^25.10.10",
     "three": "^0.180.0"
   },

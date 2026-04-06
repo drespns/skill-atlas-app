@@ -20,19 +20,16 @@ export type Concept = {
   notes: string;
 };
 
-export type ProjectEmbed =
-  | {
-      id: string;
-      kind: "iframe";
-      title: string;
-      url: string;
-    }
-  | {
-      id: string;
-      kind: "link";
-      title: string;
-      url: string;
-    };
+export type ProjectEmbed = {
+  id: string;
+  kind: "iframe" | "link";
+  title: string;
+  url: string;
+  /** Por defecto true: visible en portfolio/CV público. */
+  showInPublic?: boolean;
+  /** Miniatura opcional (HTTPS) para vista pública. */
+  thumbnailUrl?: string | null;
+};
 
 export type Project = {
   id: string;
@@ -45,6 +42,8 @@ export type Project = {
   technologyIds: string[];
   conceptIds: string[];
   embeds: ProjectEmbed[];
+  /** Ruta en Storage `project_covers` (Supabase); opcional. */
+  coverImagePath?: string | null;
   updatedAtISO: string;
 };
 
@@ -123,13 +122,14 @@ export const projects: Project[] = [
         kind: "iframe",
         title: "Tableau Public (mock)",
         url: "https://public.tableau.com/views/volumen_agua_captacion/Informe?:language=es-ES&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link",
-        // url: "https://public.tableau.com/views/volumen_agua_captacion/Informe?:language=es-ES",
+        showInPublic: false,
       },
       {
         id: "embed-github-1",
         kind: "link",
         title: "Repositorio (mock)",
         url: "https://github.com/drespns/skill-atlas-app",
+        showInPublic: true,
       },
     ],
     updatedAtISO: "2026-03-20T10:00:00.000Z",

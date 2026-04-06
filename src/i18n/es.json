@@ -32,7 +32,11 @@
     "paletteSectionNav": "Navegación",
     "paletteSectionActions": "Acciones rápidas",
     "paletteSectionTech": "Tus tecnologías",
-    "paletteSectionProject": "Tus proyectos"
+    "paletteSectionProject": "Tus proyectos",
+    "langQuickToggleAria": "Idioma actual — pulsa para cambiar",
+    "userMenuTriggerAria": "Menú de cuenta",
+    "userMenuLabel": "Cuenta",
+    "userMenuPublicProfile": "Perfil público"
   },
   "fab": {
     "tabShortcuts": "Atajos",
@@ -98,6 +102,7 @@
     "publicLoadError": "No se pudo cargar el CV público.",
     "publicNotFound": "Este CV no existe o no está publicado.",
     "publicNoProjects": "No hay proyectos.",
+    "publicEvidence": "Evidencia",
     "kicker": "Documento privado",
     "pageTitle": "CV",
     "intro": "Vista previa local de tu CV. Nadie puede ver esta página sin tu sesión.",
@@ -327,6 +332,13 @@
     "todayLi3": "Historia de proyecto: rol + resultado para explicar impacto, no solo tareas.",
     "todayLi4": "Portfolio público por slug o token, perfil y compartir desde Ajustes; demo, precios y solicitudes de acceso con panel admin.",
     "todayLi5": "Modo oscuro, ES/EN, View Transitions, Ajustes en panel lateral (estilo app moderna), recorrido guiado paso a paso y pulido diario que se nota.",
+    "chartsPreviewKicker": "Métricas",
+    "chartsPreviewTitle": "Gráficos que cuentan tu progreso",
+    "chartsPreviewBody": "En el dashboard verás barras y resúmenes con tus tecnologías reales. Aquí solo hay un ejemplo visual (no son datos de usuarios).",
+    "chartsPreviewBadge": "Ejemplo",
+    "chartsPreviewDemoTitle": "Ejemplo: conceptos por stack (ficticio)",
+    "chartsPreviewCtaApp": "Ver mi dashboard",
+    "chartsPreviewCtaLogin": "Entrar",
     "workflowVizKicker": "Dentro de la app",
     "workflowVizTitle": "De la base al portfolio, y más allá.",
     "workflowVizSubtitle": "Flujo de trabajo real: mapa de habilidades, proyectos con evidencias, salidas públicas y preparación para convocatorias.",
@@ -424,8 +436,27 @@
     "linkShortcuts": "Atajos",
     "mockHydrateHint": "Modo sin Supabase en cliente: los listados A–Z no están disponibles aquí. Usa las rutas de la cabecera o PUBLIC_DATA_SOURCE=supabase.",
     "signedOutListHint": "Inicia sesión para cargar tus listas de proyectos y tecnologías.",
+    "kpi": {
+      "kicker": "Métricas",
+      "masteryLabel": "Dominio",
+      "masterySub": "{{mastered}} de {{total}} en «Dominado»",
+      "noConceptsYet": "Sin conceptos aún",
+      "embedsLabel": "Evidencias",
+      "embedsSub": "Total de embeds",
+      "projectsEvidenceLabel": "Proyectos con evidencia",
+      "projectsEvidenceSub": "Al menos un embed",
+      "linkedLabel": "En proyectos",
+      "linkedSub": "Conceptos vinculados",
+      "soloLabel": "Solo en stack",
+      "soloSub": "Sin enlace a proyecto",
+      "emptyTechsLabel": "Techs vacías",
+      "emptyTechsSub": "Sin conceptos",
+      "emptyTechsHint": "Prioriza añadir conceptos en:",
+      "allTechsHaveConcepts": "Todas tus tecnologías tienen al menos un concepto."
+    },
     "recent": {
       "sectionKicker": "Actividad",
+      "sectionTitle": "Actividad reciente",
       "sectionIntro": "Lo último que abriste en este dispositivo. Abre un proyecto o una tecnología para volver aquí al instante.",
       "projectsTitle": "Proyectos recientes",
       "techTitle": "Tecnologías recientes",
@@ -435,6 +466,34 @@
       "minutesAgo": "Hace {{count}} min",
       "hoursAgo": "Hace {{count}} h",
       "daysAgo": "Hace {{count}} d"
+    },
+    "charts": {
+      "sectionKicker": "Visualizaciones",
+      "sectionTitle": "Tu mapa de conocimiento",
+      "sectionIntro": "Gráficos con tus conceptos y proyectos (solo tu sesión; datos en vivo desde Supabase).",
+      "needSession": "Inicia sesión para ver gráficos con tus datos.",
+      "emptyData": "Sin datos",
+      "stackedTitle": "Conceptos por tecnología",
+      "stackedHint": "Añade conceptos desde cada tecnología.",
+      "pieTitle": "Distribución de progreso",
+      "pieHint": "Estados de todos tus conceptos.",
+      "projectsTitle": "Proyectos por tecnología",
+      "projectsHint": "Enlaces proyecto ↔ tecnología en tus datos.",
+      "gaugeTitle": "Dominio global",
+      "gaugeAxis": "Dominio",
+      "gaugeHint": "Porcentaje de conceptos en estado dominado.",
+      "treemapTitle": "Conceptos por tecnología (área)",
+      "treemapHint": "Cada bloque es una tecnología; el tamaño refleja el número de conceptos.",
+      "coverageTitle": "Cobertura en proyectos",
+      "coverageInProjects": "En proyectos",
+      "coverageSolo": "Solo en stack",
+      "coverageHint": "Conceptos vinculados a proyectos frente a los que solo están en tecnologías.",
+      "noTechLink": "Hay conceptos sin tecnología reconocida; revisa tus datos.",
+      "progress": {
+        "aprendido": "Aprendido",
+        "practicado": "Practicado",
+        "mastered": "Dominado"
+      }
     }
   },
   "technologies": {
@@ -664,6 +723,11 @@
       "densityComfortable": "Cómoda",
       "densityCompact": "Compacta",
       "font": "Fuente",
+      "fontGroupBuiltin": "Integradas",
+      "fontGroupSans": "Sans (Google Fonts)",
+      "fontGroupSerif": "Serif (Google Fonts)",
+      "fontGroupMono": "Monospace (Google Fonts)",
+      "fontGoogleHint": "Las fuentes de estos grupos se cargan desde Google Fonts al seleccionarlas.",
       "fontSystem": "Sistema",
       "fontInter": "Inter",
       "fontMono": "Mono",
@@ -684,8 +748,8 @@
       "viewList": "Lista",
       "language": "Idioma",
       "showHeaderIcons": "Iconos del header",
-      "showLangSelector": "Selector de idioma (header)",
-      "showLangSelectorHint": "Por defecto se muestra en la barra; puedes ocultarlo aquí.",
+      "showLangSelector": "Bandera de idioma (header)",
+      "showLangSelectorHint": "El idioma se controla aquí con detalle; la bandera del header solo alterna ES/EN.",
       "show": "Mostrar",
       "hide": "Ocultar"
     },
@@ -705,7 +769,9 @@
       "goToLogin": "Ir a login",
       "currentUser": "Usuario actual",
       "refresh": "Refrescar estado",
-      "logout": "Cerrar sesión"
+      "logout": "Cerrar sesión",
+      "logoutSuccess": "Sesión cerrada.",
+      "logoutError": "No se pudo cerrar sesión: {{message}}"
     }
   }
   ,

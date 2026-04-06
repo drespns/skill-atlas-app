@@ -39,7 +39,7 @@ void main()
     // Atmosphere
     float atmosphereDayMix = smoothstep(- 0.5, 1.0, sunOrientation);
     vec3 atmosphereColor = mix(uAtmosphereTwilightColor, uAtmosphereDayColor, atmosphereDayMix);
-    color = mix(color, atmosphereColor, fresnel * atmosphereDayMix);
+    color = mix(color, atmosphereColor, fresnel * atmosphereDayMix * 1.12);
 
     // Specular
     vec3 reflection = reflect(- uSunDirection, normal);

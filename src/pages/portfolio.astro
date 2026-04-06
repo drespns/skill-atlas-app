@@ -232,7 +232,8 @@ function techHue(name: string) {
     ) : (
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredCards.map(({ project, technologyNames }) => {
-          const primaryEmbed = project.embeds[0];
+          const publicEmbeds = project.embeds.filter((e) => e.showInPublic !== false);
+          const primaryEmbed = publicEmbeds[0];
           const hasStory = Boolean(project.role?.trim() || project.outcome?.trim());
 
           return (

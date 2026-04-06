@@ -14,11 +14,6 @@ function escAttr(s: string | null | undefined) {
   return esc((s ?? "").replace(/\r\n|\r|\n/g, " "));
 }
 
-const tabActiveClass =
-  "px-3 py-1.5 text-sm rounded-lg ring-2 ring-gray-900 dark:ring-gray-100 bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900 font-semibold";
-const tabIdleClass =
-  "px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-semibold";
-
 export async function bootstrapTechnologyDetailPage() {
   const mount = document.querySelector<HTMLElement>("[data-technology-csr-mount]");
   if (!mount) return;
@@ -121,6 +116,10 @@ export async function bootstrapTechnologyDetailPage() {
   const { aprend, pract, dom } = statCounts(techConcepts);
 
   const conceptsHtml = conceptsListHtml(techConcepts);
+  const conceptCount = techConcepts.length;
+  const seedSlug = technology.slug;
+  const showSeedImport = hasConceptSeed(seedSlug);
+  const importSourceId = `concept-import-src-${seedSlug.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 
   const projectCardsHtml = relatedProjects
     .map((project) => {
@@ -163,10 +162,15 @@ export async function bootstrapTechnologyDetailPage() {
         <span data-tech-stat-dom class="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 whitespace-nowrap">${dom} dom.</span>
       </div>
     </header>
-    <section class="space-y-3">
-      <h2 class="m-0 text-base font-semibold">Conceptos</h2>
-      <form data-concept-form data-tech-id="${esc(technology.slug)}" class="border border-gray-200 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 space-y-3">
-        <p class="m-0 text-sm font-semibold">Nuevo concepto en ${esc(technology.name)}</p>
+    <section class="space-y-5" aria-labelledby="tech-concepts-heading">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <h2 id="tech-concepts-heading" class="m-0 text-lg font-semibold">Conceptos</h2>
+        <p class="m-0 text-xs text-gray-500 dark:text-gray-400">${conceptCount} en esta tecnología · revisa la lista y añade o importa abajo</p>
+      </div>
+      <div data-concept-list class="space-y-2">${conceptsHtml}</div>
+      <form data-concept-form data-tech-id="${esc(technology.slug)}" class="rounded-xl border border-gray-200/80 dark:border-gray-800 p-4 bg-white dark:bg-gray-950 space-y-3 shadow-sm">
+        <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Añadir concepto</p>
+        <p class="m-0 text-xs text-gray-500 dark:text-gray-400 -mt-1">Un concepto nuevo solo para ${esc(technology.name)}.</p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
           <input name="title" type="text" placeholder="Título del concepto" class="border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950" required />
           <select name="progress" class="border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950">
@@ -176,50 +180,78 @@ export async function bootstrapTechnologyDetailPage() {
           </select>
         </div>
         <textarea name="notes" rows="3" placeholder="Notas del concepto" class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950"></textarea>
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3">
           <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200">Guardar concepto</button>
           <p data-concept-feedback class="text-sm text-gray-600 dark:text-gray-300 m-0"></p>
         </div>
       </form>
-      <section data-concept-import data-technology-id="${esc(technology.id)}" data-technology-slug="${esc(technology.slug)}" data-technology-name="${esc(technology.name)}" class="border border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-4 bg-gray-50/50 dark:bg-gray-900/30 space-y-3">
-        <h3 class="m-0 text-sm font-semibold">Importar conceptos (texto o URL)</h3>
-        <p class="m-0 text-xs text-gray-600 dark:text-gray-400">Lo habitual es partir de un <strong class="font-semibold">catálogo sugerido</strong> (si existe para esta tecnología), pegar tu propio Markdown (<code class="text-[11px]">## Sección</code> y <code class="text-[11px]">- concepto</code>) o usar una URL que devuelva un <code class="text-[11px]">.md</code> en texto plano. Las frases largas se descartan solas. Siempre puedes dar de alta conceptos uno a uno en el formulario de arriba.</p>
+      <section data-concept-import data-technology-id="${esc(technology.id)}" data-technology-slug="${esc(technology.slug)}" data-technology-name="${esc(technology.name)}" class="space-y-3 m-0">
+      <details class="rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm">
+        <summary class="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 flex flex-wrap items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+          <span>Importar varios conceptos</span>
+          <span class="text-xs font-normal text-gray-500 dark:text-gray-400">${showSeedImport ? "SkillAtlas por defecto · modal de revisión" : "texto, URL o modal de revisión"}</span>
+        </summary>
+        <div class="border-t border-gray-200 dark:border-gray-800 px-4 pb-4 pt-3 space-y-3">
+        <p class="m-0 text-xs text-gray-600 dark:text-gray-400">Lo más directo es el <strong class="font-semibold text-gray-800 dark:text-gray-200">catálogo SkillAtlas</strong> cuando existe para esta tecnología: se carga solo y puedes elegir qué importar o hacerlo todo de una vez. El Markdown manual queda en un bloque avanzado.</p>
+        <div class="space-y-1 max-w-lg">
+          <label for="${escAttr(importSourceId)}" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Origen</label>
+          <select id="${escAttr(importSourceId)}" data-import-source class="w-full text-sm border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950">
+            ${
+              showSeedImport
+                ? `<option value="seed" selected>Catálogo sugerido (SkillAtlas)</option>
+            <option value="text">Texto o Markdown propio</option>`
+                : `<option value="text" selected>Texto o Markdown propio</option>`
+            }
+            <option value="url">URL (archivo .md o texto plano)</option>
+          </select>
+        </div>
         ${
-          hasConceptSeed(technology.slug)
-            ? `<div class="rounded-xl border border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/60 dark:bg-emerald-950/25 px-3 py-2.5 space-y-2">
-          <p class="m-0 text-xs text-emerald-900 dark:text-emerald-200/90">Hay un catálogo base en el proyecto para <strong>${esc(technology.name)}</strong>. Cárgalo aquí y luego «Extraer candidatos» (revisas) o «Importación rápida» (sin revisar).</p>
-          <button type="button" data-import-load-seed class="inline-flex items-center justify-center rounded-lg bg-emerald-700 dark:bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:hover:bg-emerald-500">Cargar catálogo sugerido</button>
+          showSeedImport
+            ? `<div data-import-seed-panel class="rounded-lg border border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 px-3 py-2.5 space-y-2">
+          <p class="m-0 text-xs text-emerald-900 dark:text-emerald-200/90">Plantilla mantenida en el proyecto para <strong>${esc(technology.name)}</strong>. Si algo falla o quieres empezar de cero, vuelve a cargarla.</p>
+          <button type="button" data-import-load-seed class="inline-flex items-center justify-center rounded-lg bg-emerald-700 dark:bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:hover:bg-emerald-500">Recargar plantilla SkillAtlas</button>
         </div>`
             : ""
         }
-        <div class="flex flex-wrap gap-2">
-          <button type="button" data-import-tab="text" aria-pressed="true" class="${tabActiveClass}">Texto</button>
-          <button type="button" data-import-tab="url" aria-pressed="false" class="${tabIdleClass}">URL</button>
-        </div>
         <div data-import-panel-text class="space-y-2">
-          <div class="flex flex-wrap items-center gap-2">
-            <button type="button" data-import-expand-text class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 px-2.5 py-1.5 text-xs font-semibold text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900">Editor amplio (Markdown)</button>
-            <span class="text-[11px] text-gray-500 dark:text-gray-400">Cuadro de diálogo para ver y editar más cómodo.</span>
-          </div>
-          <textarea data-import-text rows="8" placeholder="## Core&#10;- RDD&#10;- Lazy evaluation&#10;&#10;## API&#10;- mapPartitions" class="w-full text-sm border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950 font-mono"></textarea>
+          <details class="rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-50/40 dark:bg-gray-900/30 px-3 py-2">
+            <summary class="cursor-pointer text-xs font-semibold text-gray-700 dark:text-gray-300 list-none [&::-webkit-details-marker]:hidden">Editar Markdown a mano (avanzado)</summary>
+            <div class="mt-2 space-y-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" data-import-expand-text class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 px-2.5 py-1.5 text-xs font-semibold text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900">Editor amplio</button>
+                <span class="text-[11px] text-gray-500 dark:text-gray-400">Atajos tipo IDE: Alt+flechas mueven línea; Shift+Alt+flechas duplican.</span>
+              </div>
+              <textarea data-import-text rows="5" placeholder="## Core&#10;- RDD&#10;- Lazy evaluation" class="w-full text-sm border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950 font-mono"></textarea>
+            </div>
+          </details>
         </div>
         <div data-import-panel-url hidden class="space-y-2">
           <input data-import-url type="url" inputmode="url" placeholder="https://ejemplo.com/doc.md" class="w-full text-sm border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950" />
         </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <button type="button" data-import-extract class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200">Generar vista previa</button>
-          <button type="button" data-import-quick class="inline-flex items-center justify-center rounded-lg border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 px-3 py-2 text-sm font-semibold hover:bg-amber-50 dark:hover:bg-amber-950/40">Importación rápida…</button>
+        <div class="space-y-2">
+          <div class="flex flex-wrap gap-2">
+            <button type="button" data-import-choose class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200">Revisar e importar…</button>
+            <button type="button" data-import-quick class="inline-flex items-center justify-center rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900">Importar todo lo nuevo</button>
+          </div>
+          <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400 leading-snug">«Revisar e importar» analiza el origen y abre un modal para marcar conceptos. «Importar todo lo nuevo» crea en bloque los que falten sin abrir el modal.</p>
         </div>
         <p data-import-feedback class="text-sm text-gray-600 dark:text-gray-300 m-0 min-h-5"></p>
-        <div data-import-review hidden class="space-y-3 border-t border-gray-200 dark:border-gray-800 pt-3">
-          <div class="flex flex-wrap gap-2">
+        </div>
+      </details>
+      <dialog data-import-review-dialog class="concept-import-review-dialog rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 shadow-2xl">
+        <div class="flex min-h-0 min-w-0 flex-1 flex-col">
+          <header class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
+            <h3 class="m-0 text-base font-semibold">Elegir conceptos</h3>
+            <button type="button" data-import-review-dialog-close class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-lg leading-none text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" aria-label="Cerrar">×</button>
+          </header>
+          <div data-import-review-body class="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3"></div>
+          <footer class="flex flex-wrap gap-2 border-t border-gray-200 dark:border-gray-800 px-4 py-3 shrink-0">
             <button type="button" data-import-select-nondup class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-900">Solo marcar no duplicados</button>
             <button type="button" data-import-selected disabled class="inline-flex items-center justify-center rounded-lg bg-green-700 dark:bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-800 dark:hover:bg-green-500 disabled:opacity-50">Importar seleccionados</button>
-          </div>
-          <div data-import-review-body class="space-y-2"></div>
+          </footer>
         </div>
+      </dialog>
       </section>
-      <div data-concept-list class="space-y-2">${conceptsHtml}</div>
     </section>
     <section class="space-y-3">
       <h2 class="m-0 text-base font-semibold">Proyectos con esta tecnología</h2>

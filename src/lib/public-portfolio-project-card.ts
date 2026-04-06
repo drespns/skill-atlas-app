@@ -4,15 +4,18 @@
  */
 
 import { getTechnologyIconSrc } from "../config/icons";
+import { publicStorageObjectUrl } from "./supabase-public-storage-url";
 import {
+  coerceEvidenceDisplayKind,
   detectEvidenceUrl,
   embedIframeSrc,
   evidenceSiteIconUrl,
   IFRAME_EMBED_ALLOW,
+  resolveEvidenceThumbnailForDisplay,
 } from "./evidence-url";
 import i18next from "i18next";
 
-export type PortfolioEmbed = { kind: string; title: string; url: string };
+export type PortfolioEmbed = { kind: string; title: string; url: string; thumbnailUrl?: string | null };
 
 export type PortfolioCardProject = {
   title: string;
@@ -20,9 +23,11 @@ export type PortfolioCardProject = {
   role?: string | null;
   outcome?: string | null;
   technologyNames: string[];
+  /** Ruta en bucket `project_covers` (RPC `coverImagePath`). */
+  coverImagePath?: string | null;
   /** Lista ya recortada al límite efectivo (preferido sobre primaryEmbed). */
   embeds?: PortfolioEmbed[];
-  primaryEmbed?: { kind: string; title: string; url: string } | null;
+  primaryEmbed?: { kind: string; title: string; url: string; thumbnailUrl?: string | null } | null;
 };
 
 function esc(s: string) {
@@ -48,18 +53,24 @@ function normalizeEmbed(e: PortfolioEmbed | { kind: string; title: string; url: 
   kind: "iframe" | "link";
   title: string;
   url: string;
+  thumbnailUrl: string | null;
 } | null {
   if (!e?.url) return null;
   const url = String(e.url).trim();
   if (!url) return null;
-  const kind = e.kind === "iframe" ? "iframe" : "link";
+  const stored = e.kind === "iframe" ? "iframe" : "link";
+  const kind = coerceEvidenceDisplayKind(url, stored);
   const title =
     String(e.title ?? "").trim() || detectEvidenceUrl(url).sourceLabel;
-  return { kind, title, url };
+  const thumbRaw =
+    e && typeof (e as PortfolioEmbed).thumbnailUrl === "string"
+      ? (e as PortfolioEmbed).thumbnailUrl!.trim()
+      : "";
+  return { kind, title, url, thumbnailUrl: thumbRaw || null };
 }
 
 function renderOneEvidenceBlock(
-  primary: { kind: "iframe" | "link"; title: string; url: string },
+  primary: { kind: "iframe" | "link"; title: string; url: string; thumbnailUrl: string | null },
   options: { variant: "public" | "preview"; showHeading: boolean; index: number },
 ): string {
   const det = detectEvidenceUrl(primary.url);
@@ -81,11 +92,17 @@ function renderOneEvidenceBlock(
       <span class="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">${esc(kindLabel)}</span>
       ${idxLabel}
     </div>`;
+  const thumbSrc = resolveEvidenceThumbnailForDisplay(primary.thumbnailUrl, primary.url);
+  const thumbBlock = thumbSrc
+    ? `<div class="evidence-thumb-wrap mb-2 overflow-hidden rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-100 dark:bg-gray-900/50 max-h-52">
+        <img src="${esc(thumbSrc)}" alt="" width="640" height="360" class="w-full h-auto max-h-52 object-cover" loading="lazy" decoding="async" onerror="this.parentElement?.remove()" />
+      </div>`
+    : "";
   const body =
     primary.kind === "iframe"
       ? `<iframe class="w-full max-w-full aspect-video rounded-xl border border-gray-200/80 dark:border-gray-800 min-h-[12rem]" src="${esc(embedIframeSrc(primary.url))}" title="${esc(primary.title)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="${esc(IFRAME_EMBED_ALLOW)}" allowfullscreen></iframe>`
       : `<a class="inline-flex min-h-11 w-full sm:w-auto items-center justify-center rounded-xl border-2 border-gray-200/90 dark:border-gray-700 bg-white dark:bg-gray-950 px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline active:scale-[0.99] transition-transform" href="${esc(primary.url)}" target="_blank" rel="noreferrer">${esc(tr("portfolio.public.openEvidence", "Abrir evidencia"))}</a>`;
-  return `<div class="min-w-0 space-y-2 rounded-xl border border-gray-100 dark:border-gray-800/90 bg-gray-50/40 dark:bg-gray-900/25 p-3 sm:p-3.5">${chip}<h3 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100 leading-snug break-words">${esc(primary.title)}</h3>${body}</div>`;
+  return `<div class="min-w-0 space-y-2 rounded-xl border border-gray-100 dark:border-gray-800/90 bg-gray-50/40 dark:bg-gray-900/25 p-3 sm:p-3.5">${chip}${thumbBlock}<h3 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100 leading-snug break-words">${esc(primary.title)}</h3>${body}</div>`;
 }
 
 export type PortfolioVisitorCardOptions = {
@@ -112,18 +129,27 @@ export function renderPortfolioVisitorCard(
   const hasStory = Boolean(role || outcome);
   const desc = (project.description ?? "").trim();
 
+  const coverPath = (project.coverImagePath ?? "").trim();
+  const coverUrl = coverPath ? publicStorageObjectUrl("project_covers", coverPath) : "";
+  const coverBlock = coverUrl
+    ? `<div class="portfolio-visitor-card__cover -mx-4 -mt-4 sm:-mx-5 sm:-mt-5 mb-1 overflow-hidden rounded-t-2xl border-b border-gray-200/80 dark:border-gray-800 bg-gray-100 dark:bg-gray-900/50 max-h-56">
+        <img src="${esc(coverUrl)}" alt="" width="960" height="540" class="w-full h-auto max-h-56 object-cover" loading="lazy" decoding="async" />
+      </div>`
+    : "";
+
   const embedList: PortfolioEmbed[] = (() => {
     if (project.embeds && project.embeds.length > 0) {
       return project.embeds.filter((e) => e && String(e.url ?? "").trim());
     }
     const p = normalizeEmbed(project.primaryEmbed as PortfolioEmbed | null);
-    return p ? [{ kind: p.kind, title: p.title, url: p.url }] : [];
+    return p ? [{ kind: p.kind, title: p.title, url: p.url, thumbnailUrl: p.thumbnailUrl }] : [];
   })();
 
   const normalizedEmbeds = embedList.map((e) => normalizeEmbed(e)).filter(Boolean) as {
     kind: "iframe" | "link";
     title: string;
     url: string;
+    thumbnailUrl: string | null;
   }[];
 
   const totalHint =
@@ -223,6 +249,7 @@ export function renderPortfolioVisitorCard(
 
   return `<article class="portfolio-visitor-card flex flex-col overflow-hidden rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm ring-1 ring-black/5 dark:ring-white/10 min-w-0${layoutClass}${densityClass}${motionClass}"${motionStyle}>
     <div class="portfolio-visitor-card__body flex flex-col gap-4 p-4 sm:p-5 min-w-0">
+      ${coverBlock}
       <h2 class="portfolio-visitor-card__title m-0 text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100 text-balance break-words leading-snug">${esc(project.title)}</h2>
       ${stackBlock}
       ${storyBlock}

@@ -12,6 +12,7 @@ export type EvidenceQuickTemplate = {
 export const EVIDENCE_QUICK_TEMPLATES: EvidenceQuickTemplate[] = [
   { id: "tableau", label: "Tableau", starterUrl: "https://public.tableau.com/views/TU_LIBRO/TU_VISTA" },
   { id: "github", label: "GitHub", starterUrl: "https://github.com/USUARIO/REPOSITORIO" },
+  { id: "github_pages", label: "GitHub Pages", starterUrl: "https://USUARIO.github.io/REPOSITORIO/" },
   { id: "powerbi", label: "Power BI", starterUrl: "https://app.powerbi.com/view?r=TU_ENLACE_INCORPORADO" },
   { id: "looker", label: "Looker Studio", starterUrl: "https://lookerstudio.google.com/reporting/TU_INFORME/page/TU_PAGINA" },
   { id: "youtube", label: "YouTube", starterUrl: "https://www.youtube.com/watch?v=VIDEO_ID" },

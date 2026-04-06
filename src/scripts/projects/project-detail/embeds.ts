@@ -1,4 +1,4 @@
-import { detectEvidenceUrl } from "@lib/evidence-url";
+import { coerceEvidenceDisplayKind, detectEvidenceUrl } from "@lib/evidence-url";
 import { embedEditModal, showToast, userFacingDbError } from "@scripts/core/ui-feedback";
 import { loadPrefs, updatePrefs, type ProjectEvidenceLayout } from "@scripts/core/prefs";
 import { getProjectDbId } from "@scripts/projects/project-detail/helpers";
@@ -7,7 +7,13 @@ import { refreshProjectDetailPage } from "@scripts/projects/project-detail/refre
 async function insertProjectEmbed(
   supabase: any,
   projectSlug: string,
-  result: { kind: "iframe" | "link"; title: string; url: string },
+  result: {
+    kind: "iframe" | "link";
+    title: string;
+    url: string;
+    showInPublic: boolean;
+    thumbnailUrl: string | null;
+  },
   feedback: HTMLElement | null,
 ): Promise<boolean> {
   const projectDbId = await getProjectDbId(supabase, projectSlug);
@@ -34,13 +40,16 @@ async function insertProjectEmbed(
 
   const sortOrder = countRes.count ?? 0;
 
+  const kind = coerceEvidenceDisplayKind(result.url, result.kind);
   const insertRes = await supabase.from("project_embeds").insert([
     {
       project_id: projectDbId,
-      kind: result.kind,
+      kind,
       title: result.title,
       url: result.url,
       sort_order: sortOrder,
+      show_in_public: result.showInPublic,
+      thumbnail_url: result.thumbnailUrl,
     },
   ] as any);
 
@@ -134,6 +143,8 @@ export async function initProjectEmbedAdd(supabase: any, projectSlug: string) {
       initialKind: "iframe",
       initialTitle: "",
       initialUrl: "",
+      initialShowInPublic: true,
+      initialThumbnailUrl: "",
     });
     if (!result) return;
 
@@ -157,19 +168,31 @@ export async function initProjectEmbedEdit(supabase: any, projectSlug: string) {
   for (const button of editButtons) {
     button.addEventListener("click", async () => {
       const embedId = button.dataset.embedId;
-      const kind = (button.dataset.embedKind ?? "iframe") as "iframe" | "link";
+      const storedKind = (button.dataset.embedKind ?? "iframe") as "iframe" | "link";
       const initialTitle = button.dataset.embedTitle ?? "";
       const initialUrl = button.dataset.embedUrl ?? "";
+      const storedShowPublic = (button.dataset.embedShowPublic ?? "1") !== "0";
+      const initialThumb = (button.dataset.embedThumbnailUrl ?? "").trim();
       if (!embedId) return;
 
       const result = await embedEditModal({
         title: "Editar evidencia",
-        initialKind: kind === "link" ? "link" : "iframe",
+        initialKind: storedKind === "link" ? "link" : "iframe",
         initialTitle,
         initialUrl,
+        initialShowInPublic: storedShowPublic,
+        initialThumbnailUrl: initialThumb,
       });
       if (!result) return;
-      if (result.kind === kind && result.title === initialTitle && result.url === initialUrl) {
+      const initialCoerced = coerceEvidenceDisplayKind(initialUrl, storedKind === "link" ? "link" : "iframe");
+      const resultThumb = (result.thumbnailUrl ?? "").trim();
+      if (
+        result.kind === initialCoerced &&
+        result.title === initialTitle &&
+        result.url === initialUrl &&
+        result.showInPublic === storedShowPublic &&
+        resultThumb === initialThumb
+      ) {
         return;
       }
 
@@ -189,12 +212,15 @@ export async function initProjectEmbedEdit(supabase: any, projectSlug: string) {
         return;
       }
 
+      const resolvedKind = coerceEvidenceDisplayKind(result.url, result.kind);
       const updateRes = await supabase
         .from("project_embeds")
         .update({
-          kind: result.kind,
+          kind: resolvedKind,
           title: result.title,
           url: result.url,
+          show_in_public: result.showInPublic,
+          thumbnail_url: result.thumbnailUrl,
         })
         .eq("id", embedId)
         .eq("project_id", projectDbId);

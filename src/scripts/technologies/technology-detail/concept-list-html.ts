@@ -40,8 +40,7 @@ export function conceptsListHtml(techConcepts: TechConceptRow[]) {
   if (techConcepts.length === 0) {
     return `<div class="border border-gray-200 dark:border-gray-800 rounded-xl p-5 bg-gray-50 dark:bg-gray-900/40">
         <p class="m-0 font-semibold">Aún no tienes conceptos en esta tecnología.</p>
-        <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Crea conceptos manualmente o usa la importación inferior.</p>
-        <a href="/projects" class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline mt-3">Ver Proyectos</a>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Puedes empezar con el catálogo SkillAtlas en «Importar varios conceptos» más abajo, crear uno a uno en el formulario, o enlazar conceptos desde un proyecto en la sección inferior.</p>
       </div>`;
   }
   return techConcepts.map(conceptRowHtml).join("");

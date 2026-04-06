@@ -22,6 +22,7 @@ type DbProject = {
   description: string | null;
   role: string | null;
   outcome: string | null;
+  cover_image_path?: string | null;
 };
 
 type DbProjectEmbed = {
@@ -31,6 +32,8 @@ type DbProjectEmbed = {
   title: string;
   url: string;
   sort_order: number;
+  show_in_public?: boolean | null;
+  thumbnail_url?: string | null;
 };
 
 async function loadTechnologiesRows(): Promise<DbTechnology[]> {
@@ -60,7 +63,9 @@ async function loadConceptRows(): Promise<DbConcept[]> {
 async function loadProjectRows(): Promise<DbProject[]> {
   try {
     const supabase = getSupabaseClient();
-    const { data, error } = await supabase.from("projects").select("id, slug, title, description, role, outcome");
+    const { data, error } = await supabase
+      .from("projects")
+      .select("id, slug, title, description, role, outcome, cover_image_path");
     if (error) return [];
     return (data ?? []) as DbProject[];
   } catch {
@@ -97,7 +102,7 @@ async function loadProjectEmbedsRows(): Promise<DbProjectEmbed[]> {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from("project_embeds")
-      .select("id, project_id, kind, title, url, sort_order")
+      .select("id, project_id, kind, title, url, sort_order, show_in_public, thumbnail_url")
       .order("sort_order", { ascending: true });
     if (error) return [];
     return (data ?? []) as DbProjectEmbed[];
@@ -166,6 +171,8 @@ export async function getProjects(): Promise<Project[]> {
       kind: row.kind,
       title: row.title,
       url: row.url,
+      showInPublic: row.show_in_public ?? true,
+      thumbnailUrl: row.thumbnail_url ?? null,
     });
     embedsByProjectSlug.set(projectSlug, current);
   }
@@ -179,6 +186,7 @@ export async function getProjects(): Promise<Project[]> {
     technologyIds: technologyIdsByProjectSlug.get(p.slug) ?? [],
     conceptIds: conceptIdsByProjectSlug.get(p.slug) ?? [],
     embeds: embedsByProjectSlug.get(p.slug) ?? [],
+    coverImagePath: p.cover_image_path ?? null,
     updatedAtISO: new Date().toISOString(),
   }));
 }

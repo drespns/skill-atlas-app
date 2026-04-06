@@ -328,6 +328,21 @@ function groupCandidatesByTierThenCategory(candidates: ImportCandidate[], tierFi
   }).filter((block) => block.categories.some(([, items]) => items.length > 0));
 }
 
+/** Atenúa nivel/sección cuando todos los checkboxes visibles del bloque están desmarcados. */
+function syncReviewBlockMutedState(reviewBodyRoot: HTMLElement | null) {
+  if (!reviewBodyRoot) return;
+  reviewBodyRoot.querySelectorAll<HTMLDetailsElement>("details[data-import-category-block]").forEach((det) => {
+    const cbs = det.querySelectorAll<HTMLInputElement>("input[type=checkbox][data-import-candidate-id]");
+    const anyChecked = [...cbs].some((cb) => cb.checked);
+    det.classList.toggle("concept-import-review-muted", cbs.length > 0 && !anyChecked);
+  });
+  reviewBodyRoot.querySelectorAll<HTMLDetailsElement>("details[data-import-tier-root]").forEach((det) => {
+    const cbs = det.querySelectorAll<HTMLInputElement>("input[type=checkbox][data-import-candidate-id]");
+    const anyChecked = [...cbs].some((cb) => cb.checked);
+    det.classList.toggle("concept-import-review-muted", cbs.length > 0 && !anyChecked);
+  });
+}
+
 function renderCategoryBlock(cat: string, items: ImportCandidate[], filt: string) {
   const visible = filt ? items.filter((i) => i.title.toLowerCase().includes(filt)) : items;
   if (visible.length === 0) return "";
@@ -355,9 +370,12 @@ function renderCategoryBlock(cat: string, items: ImportCandidate[], filt: string
         <button type="button" data-import-cat-clear class="text-[10px] font-semibold rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-0.5 hover:bg-gray-50 dark:hover:bg-gray-800">✗ Sección</button>
       </span>`
       : "";
-  return `<details open data-import-category-block class="border border-gray-200/90 dark:border-gray-800 rounded-lg bg-white/60 dark:bg-gray-950/40">
-        <summary class="list-none flex flex-wrap items-center justify-between gap-2 px-3 py-2 [&::-webkit-details-marker]:hidden">
-          <span class="min-w-0 text-sm font-semibold text-gray-900 dark:text-gray-100">${esc(cat)} <span class="font-normal text-gray-500 dark:text-gray-400">(${visible.length})</span></span>
+  return `<details data-import-category-block class="concept-import-review-details border border-gray-200/90 dark:border-gray-800 rounded-lg bg-white/60 dark:bg-gray-950/40 transition-[background-color,border-color,opacity] duration-150">
+        <summary class="list-none flex flex-wrap items-center justify-between gap-2 px-3 py-2 cursor-pointer select-none [&::-webkit-details-marker]:hidden">
+          <span class="flex min-w-0 flex-1 items-center gap-2">
+            <span class="concept-import-review-chevron" aria-hidden="true">▸</span>
+            <span class="min-w-0 text-sm font-semibold text-gray-900 dark:text-gray-100">${esc(cat)} <span class="font-normal text-gray-500 dark:text-gray-400">(${visible.length})</span></span>
+          </span>
           ${catBtn}
         </summary>
         <div class="px-3 pb-2" data-import-category-body>${rows}</div>
@@ -402,9 +420,12 @@ function renderReviewHtml(
         <button type="button" data-import-tier-clear class="text-[10px] font-semibold rounded-md border border-violet-300 dark:border-violet-800 bg-white/70 dark:bg-violet-950/30 px-2 py-0.5 hover:opacity-90">✗ Nivel</button>
       </span>`
           : "";
-      return `<details open data-import-tier-root="${tier}" class="border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-violet-50/40 dark:bg-violet-950/20 space-y-2 p-2">
-        <summary class="list-none flex flex-wrap items-center justify-between gap-2 px-2 py-1.5 [&::-webkit-details-marker]:hidden">
-          <span class="min-w-0 text-sm font-bold text-violet-900 dark:text-violet-100">${esc(TIER_LABELS_ES[tier])} <span class="font-normal opacity-80">(${tierCount})</span></span>
+      return `<details data-import-tier-root="${tier}" class="concept-import-review-details border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-violet-50/40 dark:bg-violet-950/20 space-y-2 p-2 transition-[background-color,border-color,opacity] duration-150">
+        <summary class="list-none flex flex-wrap items-center justify-between gap-2 px-2 py-1.5 cursor-pointer select-none [&::-webkit-details-marker]:hidden">
+          <span class="flex min-w-0 flex-1 items-center gap-2">
+            <span class="concept-import-review-chevron" aria-hidden="true">▸</span>
+            <span class="min-w-0 text-sm font-bold text-violet-900 dark:text-violet-100">${esc(TIER_LABELS_ES[tier])} <span class="font-normal opacity-80">(${tierCount})</span></span>
+          </span>
           ${tierBtn}
         </summary>
         <div class="space-y-2 pl-1">${inner}</div>
@@ -439,7 +460,13 @@ function renderReviewHtml(
     </div>
     ${bulkBar}
     </div>
-    <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400">Opcional en Markdown: <code class="text-[10px]">&lt;!-- skillatlas-tier: junior --&gt;</code> antes de un <code class="text-[10px]">##</code>. Sin marca, todo va a «${esc(TIER_LABELS_ES.mid)}».</p>
+    <details class="concept-import-review-details rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40 px-2 py-1.5">
+      <summary class="cursor-pointer select-none text-[11px] text-gray-500 dark:text-gray-400 list-none flex items-center gap-2 [&::-webkit-details-marker]:hidden">
+        <span class="concept-import-review-chevron text-[9px]" aria-hidden="true">▸</span>
+        <span>Nota avanzada: niveles vía Markdown</span>
+      </summary>
+      <p class="m-0 mt-1.5 text-[11px] text-gray-500 dark:text-gray-400 leading-snug">Opcional: <code class="text-[10px]">&lt;!-- skillatlas-tier: junior --&gt;</code> antes de un <code class="text-[10px]">##</code>. Sin marca, todo va a «${esc(TIER_LABELS_ES.mid)}».</p>
+    </details>
     <div class="space-y-3">${blocksHtml || `<p class="text-sm text-gray-600 dark:text-gray-400">No hay candidatos visibles con este filtro.</p>`}</div>
   </div>`;
 }
@@ -457,20 +484,35 @@ export async function initConceptImport() {
   const feedback = root.querySelector<HTMLElement>("[data-import-feedback]");
   const urlInput = root.querySelector<HTMLInputElement>("[data-import-url]");
   const textArea = root.querySelector<HTMLTextAreaElement>("[data-import-text]");
-  const btnExtract = root.querySelector<HTMLButtonElement>("[data-import-extract]");
+  const sourceSelect = root.querySelector<HTMLSelectElement>("[data-import-source]");
+  const btnChoose = root.querySelector<HTMLButtonElement>("[data-import-choose]");
   const btnQuick = root.querySelector<HTMLButtonElement>("[data-import-quick]");
   const btnLoadSeed = root.querySelector<HTMLButtonElement>("[data-import-load-seed]");
   const btnExpandText = root.querySelector<HTMLButtonElement>("[data-import-expand-text]");
-  const reviewRoot = root.querySelector<HTMLElement>("[data-import-review]");
+  const reviewDialog = root.querySelector<HTMLDialogElement>("[data-import-review-dialog]");
   const reviewBody = root.querySelector<HTMLElement>("[data-import-review-body]");
   const btnImportSel = root.querySelector<HTMLButtonElement>("[data-import-selected]");
   const btnSelectNonDup = root.querySelector<HTMLButtonElement>("[data-import-select-nondup]");
   const enricher: ImportEnricher = defaultImportEnricher;
 
-  const tabActiveClass =
-    "px-3 py-1.5 text-sm rounded-lg ring-2 ring-gray-900 dark:ring-gray-100 bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900 font-semibold";
-  const tabIdleClass =
-    "px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-semibold";
+  const applyImportSource = (mode: "text" | "url" | "seed") => {
+    const panelUrl = root.querySelector<HTMLElement>("[data-import-panel-url]");
+    const panelText = root.querySelector<HTMLElement>("[data-import-panel-text]");
+    const seedPanel = root.querySelector<HTMLElement>("[data-import-seed-panel]");
+    if (mode === "url") {
+      panelUrl?.removeAttribute("hidden");
+      panelText?.setAttribute("hidden", "true");
+      seedPanel?.setAttribute("hidden", "true");
+    } else if (mode === "seed") {
+      panelUrl?.setAttribute("hidden", "true");
+      panelText?.setAttribute("hidden", "true");
+      seedPanel?.removeAttribute("hidden");
+    } else {
+      panelUrl?.setAttribute("hidden", "true");
+      panelText?.removeAttribute("hidden");
+      seedPanel?.setAttribute("hidden", "true");
+    }
+  };
 
   let latestCandidates: ImportCandidate[] = [];
   let latestStats: ParseStats = { rawLines: 0, rejectedByQuality: 0, reasons: {} };
@@ -493,13 +535,35 @@ export async function initConceptImport() {
       feedback.textContent = "Inicia sesión para importar conceptos.";
       feedback.className = "text-sm text-amber-600 dark:text-amber-400";
     }
-    btnExtract?.setAttribute("disabled", "true");
+    btnChoose?.setAttribute("disabled", "true");
     btnQuick?.setAttribute("disabled", "true");
     btnLoadSeed?.setAttribute("disabled", "true");
     btnExpandText?.setAttribute("disabled", "true");
+    sourceSelect?.setAttribute("disabled", "true");
     return;
   }
   const userId = userIdRaw;
+
+  function openReviewDialog() {
+    if (!reviewDialog || latestCandidates.length === 0) return;
+    rerenderReview();
+    const importDetails = root.querySelector("details");
+    importDetails?.setAttribute("open", "");
+    try {
+      if (typeof reviewDialog.showModal === "function") {
+        reviewDialog.showModal();
+      } else {
+        showToast("Tu navegador no soporta el modal de revisión.", "error");
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "No se pudo abrir el modal de revisión.";
+      showToast(msg, "error");
+    }
+  }
+
+  function closeReviewDialog() {
+    reviewDialog?.close();
+  }
 
   async function loadExistingTitleSet() {
     const res = await supabase
@@ -520,8 +584,8 @@ export async function initConceptImport() {
     }
 
     let body = "";
-    const pressed = root.querySelector<HTMLButtonElement>('[data-import-tab][aria-pressed="true"]');
-    const mode = pressed?.dataset.importTab === "url" ? "url" : "text";
+    const srcVal = sourceSelect?.value ?? "text";
+    const mode = srcVal === "url" ? "url" : "text";
 
     if (mode === "url") {
       const url = urlInput?.value.trim() ?? "";
@@ -546,8 +610,11 @@ export async function initConceptImport() {
       body = textArea?.value.trim() ?? "";
       if (!body) {
         if (feedback) {
-          feedback.textContent = "Pega contenido con bullets o headings Markdown.";
-          feedback.className = "text-sm text-amber-600";
+          feedback.textContent =
+            srcVal === "seed"
+              ? "Espera a que cargue el catálogo SkillAtlas, recarga la plantilla o cambia el origen."
+              : "Pega Markdown con ## y listas, o elige URL.";
+          feedback.className = "text-sm text-amber-600 dark:text-amber-400";
         }
         return false;
       }
@@ -574,9 +641,12 @@ export async function initConceptImport() {
 
     filterText = "";
     reviewTierFilter = "all";
-    if (reviewRoot && reviewBody) {
-      reviewRoot.hidden = latestCandidates.length === 0;
-      rerenderReview();
+    if (reviewBody) {
+      if (latestCandidates.length > 0) {
+        rerenderReview();
+      } else {
+        reviewBody.innerHTML = "";
+      }
     }
     btnImportSel?.toggleAttribute("disabled", latestCandidates.length === 0);
     return latestCandidates.length > 0;
@@ -586,6 +656,7 @@ export async function initConceptImport() {
     if (!reviewBody) return;
     reviewBody.innerHTML = renderReviewHtml(latestCandidates, latestStats, filterText, reviewTierFilter);
     bindReviewListeners();
+    syncReviewBlockMutedState(reviewBody);
   }
 
   function bindReviewListeners() {
@@ -603,8 +674,10 @@ export async function initConceptImport() {
   }
 
   function bindBulkReviewListeners() {
-    if (!reviewRoot) return;
-    reviewRoot.addEventListener("click", (e) => {
+    if (!reviewDialog) return;
+    if (reviewDialog.dataset.saBulkBound === "1") return;
+    reviewDialog.dataset.saBulkBound = "1";
+    reviewDialog.addEventListener("click", (e) => {
       const el = e.target as HTMLElement;
       const btn = el.closest<HTMLButtonElement>(
         "[data-import-cat-select],[data-import-cat-clear],[data-import-tier-select],[data-import-tier-clear],[data-import-global-select],[data-import-global-clear]",
@@ -619,6 +692,7 @@ export async function initConceptImport() {
         details.querySelectorAll<HTMLInputElement>("input[type=checkbox][data-import-candidate-id]").forEach((cb) => {
           cb.checked = check;
         });
+        syncReviewBlockMutedState(reviewBody);
         return;
       }
       if (btn.hasAttribute("data-import-tier-select") || btn.hasAttribute("data-import-tier-clear")) {
@@ -628,6 +702,7 @@ export async function initConceptImport() {
         tierRoot.querySelectorAll<HTMLInputElement>("input[type=checkbox][data-import-candidate-id]").forEach((cb) => {
           cb.checked = check;
         });
+        syncReviewBlockMutedState(reviewBody);
         return;
       }
       if (btn.hasAttribute("data-import-global-select") || btn.hasAttribute("data-import-global-clear")) {
@@ -635,11 +710,22 @@ export async function initConceptImport() {
         reviewBody?.querySelectorAll<HTMLInputElement>("input[type=checkbox][data-import-candidate-id]").forEach((cb) => {
           cb.checked = check;
         });
+        syncReviewBlockMutedState(reviewBody);
       }
     });
   }
 
   bindBulkReviewListeners();
+
+  if (reviewDialog && reviewDialog.dataset.saReviewCheckboxBound !== "1") {
+    reviewDialog.dataset.saReviewCheckboxBound = "1";
+    reviewDialog.addEventListener("change", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLInputElement) || t.type !== "checkbox") return;
+      if (!t.hasAttribute("data-import-candidate-id")) return;
+      syncReviewBlockMutedState(reviewBody);
+    });
+  }
 
   btnExpandText?.addEventListener("click", async () => {
     const next = await markdownEditorModal({
@@ -664,43 +750,40 @@ export async function initConceptImport() {
       }
       const text = await res.text();
       if (textArea) textArea.value = text;
-      root.querySelector<HTMLButtonElement>('[data-import-tab="text"]')?.click();
       if (feedback) {
-        feedback.textContent = "Plantilla cargada. Pulsa «Generar vista previa» o «Importación rápida».";
-        feedback.className = "text-sm text-gray-600 dark:text-gray-300";
+        feedback.textContent =
+          "Plantilla lista. Usa «Revisar e importar…» para el modal, o «Importar todo lo nuevo» para crear de una vez.";
+        feedback.className = "text-sm text-emerald-900 dark:text-emerald-200/90";
       }
-      showToast("Catálogo sugerido cargado en el área de texto.", "success");
+      showToast("Plantilla SkillAtlas cargada.", "success");
     } finally {
       btnLoadSeed.disabled = false;
     }
   });
 
-  root.querySelectorAll<HTMLButtonElement>("[data-import-tab]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      root.querySelectorAll<HTMLButtonElement>("[data-import-tab]").forEach((b) => {
-        b.setAttribute("aria-pressed", "false");
-        b.className = tabIdleClass;
-      });
-      btn.setAttribute("aria-pressed", "true");
-      btn.className = tabActiveClass;
-      const panelUrl = root.querySelector<HTMLElement>("[data-import-panel-url]");
-      const panelText = root.querySelector<HTMLElement>("[data-import-panel-text]");
-      if (btn.dataset.importTab === "url") {
-        panelUrl?.removeAttribute("hidden");
-        panelText?.setAttribute("hidden", "true");
-      } else {
-        panelText?.removeAttribute("hidden");
-        panelUrl?.setAttribute("hidden", "true");
-      }
-    });
+  sourceSelect?.addEventListener("change", () => {
+    const v = sourceSelect.value;
+    if (v === "url" || v === "seed") applyImportSource(v);
+    else applyImportSource("text");
+  });
+  applyImportSource(
+    sourceSelect?.value === "url" ? "url" : sourceSelect?.value === "seed" ? "seed" : "text",
+  );
+
+  reviewDialog?.querySelector<HTMLButtonElement>("[data-import-review-dialog-close]")?.addEventListener("click", () => {
+    closeReviewDialog();
+  });
+  reviewDialog?.addEventListener("click", (e) => {
+    if (e.target === reviewDialog) closeReviewDialog();
   });
 
-  btnExtract?.addEventListener("click", async () => {
-    btnExtract.disabled = true;
+  btnChoose?.addEventListener("click", async () => {
+    btnChoose.disabled = true;
     try {
-      await buildCandidatesFromInputs();
+      const ok = await buildCandidatesFromInputs();
+      if (ok) openReviewDialog();
     } finally {
-      btnExtract.disabled = false;
+      btnChoose.disabled = false;
     }
   });
 
@@ -715,9 +798,9 @@ export async function initConceptImport() {
         return;
       }
       const accepted = await confirmModal({
-        title: "Importación rápida",
-        description: `Se crearán ${toImport.length} conceptos sin revisar uno a uno. Los duplicados se omiten. Mismos filtros de calidad aplicados.`,
-        confirmLabel: "Importar todo",
+        title: "Importar sin abrir la lista",
+        description: `Se crearán ${toImport.length} conceptos nuevos de una vez (los que ya existan con el mismo título se saltan). Es la opción rápida frente a «Revisar e importar…».`,
+        confirmLabel: "Sí, importar ahora",
         danger: false,
       });
       if (!accepted) return;
@@ -733,10 +816,8 @@ export async function initConceptImport() {
       }
       showToast(`${toImport.length} conceptos creados.`, "success");
       latestCandidates = [];
-      if (reviewRoot) {
-        reviewRoot.hidden = true;
-        if (reviewBody) reviewBody.innerHTML = "";
-      }
+      closeReviewDialog();
+      if (reviewBody) reviewBody.innerHTML = "";
       if (feedback) feedback.textContent = "";
       await persistRefreshDom(supabase, technologyId);
     } finally {
@@ -745,20 +826,21 @@ export async function initConceptImport() {
   });
 
   btnSelectNonDup?.addEventListener("click", () => {
-    reviewRoot?.querySelectorAll<HTMLInputElement>("input[type=checkbox][data-import-candidate-id]").forEach((cb) => {
+    reviewDialog?.querySelectorAll<HTMLInputElement>("input[type=checkbox][data-import-candidate-id]").forEach((cb) => {
       const id = cb.dataset.importCandidateId;
       const c = latestCandidates.find((x) => x.id === id);
       cb.checked = !(c?.duplicateOfExisting ?? false);
     });
+    syncReviewBlockMutedState(reviewBody);
   });
 
   btnImportSel?.addEventListener("click", async () => {
-    if (!reviewRoot) return;
+    if (!reviewDialog) return;
     const selected: { title: string; notes: string }[] = [];
     for (const c of latestCandidates) {
-      const cb = reviewRoot.querySelector<HTMLInputElement>(`input[type=checkbox][data-import-candidate-id="${c.id}"]`);
+      const cb = reviewDialog.querySelector<HTMLInputElement>(`input[type=checkbox][data-import-candidate-id="${c.id}"]`);
       if (!cb?.checked) continue;
-      const titleInput = reviewRoot.querySelector<HTMLInputElement>(`[data-import-title="${c.id}"]`);
+      const titleInput = reviewDialog.querySelector<HTMLInputElement>(`[data-import-title="${c.id}"]`);
       const title = titleInput?.value.trim() ?? c.title;
       if (!title) continue;
       const q = assessTitleQuality(title);
@@ -794,9 +876,31 @@ export async function initConceptImport() {
     }
     showToast(`${deduped.length} conceptos creados.`, "success");
     latestCandidates = [];
-    reviewRoot.hidden = true;
+    closeReviewDialog();
     if (reviewBody) reviewBody.innerHTML = "";
     if (feedback) feedback.textContent = "";
     await persistRefreshDom(supabase, technologyId);
   });
+
+  async function autoLoadSeedAndParse() {
+    if (!hasConceptSeed(technologySlug)) return;
+    if (sourceSelect?.value !== "seed") return;
+    if (textArea?.value.trim()) return;
+    try {
+      const path = conceptSeedPublicPath(technologySlug);
+      const res = await fetch(path);
+      if (!res.ok) return;
+      const text = await res.text();
+      if (textArea) textArea.value = text;
+      if (feedback) {
+        feedback.textContent =
+          "Catálogo SkillAtlas cargado. Pulsa «Revisar e importar…» para el modal o «Importar todo lo nuevo» para ir directo.";
+        feedback.className = "text-sm text-emerald-900 dark:text-emerald-200/90";
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  void autoLoadSeedAndParse();
 }

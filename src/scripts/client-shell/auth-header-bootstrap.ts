@@ -1,23 +1,25 @@
+import i18next from "i18next";
 import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 import { isSkillAtlasAdmin } from "@scripts/core/admin-role";
 import { showToast } from "@scripts/core/ui-feedback";
 import { updateLandingCtas } from "@scripts/client-shell/landing-ctas";
 
 export async function initAuthHeader() {
-  const settingsLink = document.querySelector<HTMLAnchorElement>("[data-auth-header-settings]");
-  const signOutBtn = document.querySelector<HTMLButtonElement>("[data-auth-header-signout]");
+  const userMenuWrap = document.querySelector<HTMLElement>("[data-header-user-menu]");
+  const userMenuTrigger = document.querySelector<HTMLButtonElement>("[data-user-menu-trigger]");
+  const userMenuPanel = document.querySelector<HTMLElement>("[data-user-menu-panel]");
+  const menuSignOutBtn = document.querySelector<HTMLButtonElement>("[data-user-menu-signout]");
+  const avatarImg = document.querySelector<HTMLImageElement>("[data-auth-avatar]");
+  const avatarInitial = document.querySelector<HTMLElement>("[data-user-menu-initial]");
   const publicFooterPricing = document.querySelector<HTMLAnchorElement>("[data-public-footer-pricing]");
   const adminHeaderLink = document.querySelector<HTMLAnchorElement>("[data-admin-header-link]");
-  const avatarWrap = document.querySelector<HTMLElement>("[data-auth-avatar-wrap]");
-  const avatarImg = document.querySelector<HTMLImageElement>("[data-auth-avatar]");
   const authNavLinks = document.querySelectorAll<HTMLElement>("[data-auth-nav]");
   const footerAuthNavLinks = document.querySelectorAll<HTMLElement>("[data-auth-footer-nav]");
   const homeLink = document.querySelector<HTMLAnchorElement>("[data-home-link]");
   const homeWrap = document.querySelector<HTMLElement>("[data-home-wrap]");
   const homePopover = document.querySelector<HTMLElement>("[data-home-popover]");
   if (
-    !settingsLink &&
-    !signOutBtn &&
+    !userMenuWrap &&
     !adminHeaderLink &&
     authNavLinks.length === 0 &&
     footerAuthNavLinks.length === 0 &&
@@ -25,25 +27,57 @@ export async function initAuthHeader() {
   )
     return;
 
-  const setAvatar = (url: string | null) => {
-    if (!avatarWrap || !avatarImg) return;
+  const closeUserMenu = () => {
+    if (!userMenuPanel || !userMenuTrigger) return;
+    userMenuPanel.classList.add("hidden");
+    userMenuTrigger.setAttribute("aria-expanded", "false");
+  };
+
+  const openUserMenu = () => {
+    if (!userMenuPanel || !userMenuTrigger) return;
+    userMenuPanel.classList.remove("hidden");
+    userMenuTrigger.setAttribute("aria-expanded", "true");
+  };
+
+  if (userMenuWrap && userMenuTrigger && userMenuPanel && userMenuTrigger.dataset.menuBound !== "1") {
+    userMenuTrigger.dataset.menuBound = "1";
+    userMenuTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = userMenuPanel.classList.contains("hidden");
+      if (open) openUserMenu();
+      else closeUserMenu();
+    });
+    document.addEventListener("click", (e) => {
+      if (!userMenuWrap.contains(e.target as Node)) closeUserMenu();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeUserMenu();
+    });
+    userMenuPanel.querySelectorAll("a[role='menuitem']").forEach((a) => {
+      a.addEventListener("click", () => closeUserMenu());
+    });
+  }
+
+  const setAvatar = (url: string | null, emailHint: string | null) => {
+    if (!avatarImg || !avatarInitial) return;
+    const letter = (emailHint?.trim().charAt(0) || "?").toUpperCase();
     if (url) {
       avatarImg.src = url;
-      avatarWrap.classList.remove("hidden");
-      avatarWrap.classList.add("inline-flex");
+      avatarImg.classList.remove("hidden");
+      avatarInitial.classList.add("hidden");
     } else {
       avatarImg.removeAttribute("src");
-      avatarWrap.classList.add("hidden");
-      avatarWrap.classList.remove("inline-flex");
+      avatarImg.classList.add("hidden");
+      avatarInitial.classList.remove("hidden");
+      avatarInitial.textContent = letter;
     }
   };
 
   const setVisibility = (isAuthed: boolean) => {
-    settingsLink?.classList.toggle("hidden", !isAuthed);
-    settingsLink?.classList.toggle("inline-flex", isAuthed);
-
-    signOutBtn?.classList.toggle("hidden", !isAuthed);
-    signOutBtn?.classList.toggle("inline-flex", isAuthed);
+    if (userMenuWrap) {
+      userMenuWrap.classList.toggle("hidden", !isAuthed);
+    }
+    if (!isAuthed) closeUserMenu();
 
     authNavLinks.forEach((el) => {
       el.classList.toggle("hidden", !isAuthed);
@@ -116,19 +150,20 @@ export async function initAuthHeader() {
     return;
   }
 
-  if (signOutBtn && signOutBtn.dataset.bound !== "1") {
-    signOutBtn.dataset.bound = "1";
-    signOutBtn.addEventListener("click", async () => {
+  if (menuSignOutBtn && menuSignOutBtn.dataset.bound !== "1") {
+    menuSignOutBtn.dataset.bound = "1";
+    menuSignOutBtn.addEventListener("click", async () => {
       const sb = getSupabaseBrowserClient();
       if (!sb) return;
-      signOutBtn.disabled = true;
+      closeUserMenu();
+      menuSignOutBtn.disabled = true;
       const { error } = await sb.auth.signOut();
-      signOutBtn.disabled = false;
+      menuSignOutBtn.disabled = false;
       if (error) {
-        showToast(`No se pudo cerrar sesión: ${error.message}`, "error");
+        showToast(i18next.t("settings.auth.logoutError", { message: error.message }), "error");
         return;
       }
-      showToast("Sesión cerrada.", "success");
+      showToast(i18next.t("settings.auth.logoutSuccess"), "success");
     });
   }
 
@@ -187,7 +222,8 @@ export async function initAuthHeader() {
       }
     }
 
-    setAvatar(portfolioAvatar ?? oauthAvatar);
+    const email = typeof user?.email === "string" ? user.email : null;
+    setAvatar(portfolioAvatar ?? oauthAvatar, email);
   };
 
   window.skillatlas = window.skillatlas ?? {};

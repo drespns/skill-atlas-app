@@ -1,5 +1,7 @@
 import i18next from "i18next";
 import { getHelpStackItem, HELP_STACK_ITEMS } from "@config/help-stack";
+import { resolveEvidenceThumbnailForDisplay } from "@lib/evidence-url";
+import { publicStorageObjectUrl } from "@lib/supabase-public-storage-url";
 import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 
 function tt(key: string, fallback: string): string {
@@ -62,6 +64,13 @@ type RpcProject = {
   role: string;
   outcome: string;
   technologyNames: string[];
+  coverImagePath?: string | null;
+  primaryEmbed?: {
+    kind: string;
+    title: string;
+    url: string;
+    thumbnailUrl?: string | null;
+  } | null;
 };
 
 type RpcCvProfile = {
@@ -251,11 +260,43 @@ async function run() {
             ? `<p class="m-0 mt-2 text-sm text-gray-600 dark:text-gray-400"><span class="font-semibold text-gray-800 dark:text-gray-200">${esc(role || "—")}</span>${role && outcome ? " · " : ""}${esc(outcome)}</p>`
             : "";
         const desc = (p.description ?? "").trim();
+        const coverPath = (p.coverImagePath ?? "").trim();
+        const coverUrl = coverPath ? publicStorageObjectUrl("project_covers", coverPath) : "";
+        const pe = p.primaryEmbed;
+        const embedUrl = (pe?.url ?? "").trim();
+        const thumb =
+          embedUrl && pe ? resolveEvidenceThumbnailForDisplay(pe.thumbnailUrl ?? null, embedUrl) : null;
+        const embedTitle = (pe?.title ?? "").trim();
+        const evidenceFallback = tt("cv.publicEvidence", "Evidence");
+        const evidenceBlock =
+          embedUrl && pe
+            ? `<div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-start">
+                ${
+                  thumb
+                    ? `<a href="${esc(embedUrl)}" target="_blank" rel="noreferrer" class="shrink-0"><img src="${esc(
+                        thumb,
+                      )}" alt="" class="max-h-28 rounded object-cover border border-gray-200 dark:border-gray-700" loading="lazy" decoding="async" /></a>`
+                    : ""
+                }
+                <div class="min-w-0">
+                  <a class="text-sm font-semibold text-blue-700 dark:text-blue-400 hover:underline wrap-break-word" href="${esc(
+                    embedUrl,
+                  )}" target="_blank" rel="noreferrer">${esc(embedTitle || evidenceFallback)}</a>
+                </div>
+              </div>`
+            : "";
+        const coverBlock = coverUrl
+          ? `<div class="mb-3 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"><img src="${esc(
+              coverUrl,
+            )}" alt="" class="max-h-40 w-full object-cover" loading="lazy" decoding="async" /></div>`
+          : "";
         return `<section class="cv-doc-project">
+          ${coverBlock}
           <h4 class="m-0 text-lg font-semibold text-gray-900 dark:text-gray-100">${esc(p.title)}</h4>
           ${meta}
           ${desc ? `<p class="m-0 mt-2 text-sm leading-relaxed text-gray-700 dark:text-gray-300">${esc(desc)}</p>` : ""}
           ${techHtml}
+          ${evidenceBlock}
         </section>`;
       })
       .join("");

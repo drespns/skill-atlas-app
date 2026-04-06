@@ -1,9 +1,17 @@
 ---
 import type { ProjectEmbed } from "../data";
-import { embedIframeSrc, evidenceSiteIconUrl, IFRAME_EMBED_ALLOW } from "../lib/evidence-url";
+import {
+  coerceEvidenceDisplayKind,
+  embedIframeSrc,
+  evidenceSiteIconUrl,
+  IFRAME_EMBED_ALLOW,
+  resolveEvidenceThumbnailForDisplay,
+} from "../lib/evidence-url";
 
 const { embed } = Astro.props as { embed: ProjectEmbed };
 const iconSrc = evidenceSiteIconUrl(embed.url);
+const displayKind = coerceEvidenceDisplayKind(embed.url, embed.kind === "iframe" ? "iframe" : "link");
+const thumbSrc = resolveEvidenceThumbnailForDisplay(embed.thumbnailUrl ?? null, embed.url);
 ---
 
 <article class="border border-gray-200/80 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 flex flex-col gap-3 shadow-sm">
@@ -22,7 +30,13 @@ const iconSrc = evidenceSiteIconUrl(embed.url);
     <h3 class="m-0 text-sm font-semibold min-w-0 flex-1">{embed.title}</h3>
   </div>
 
-  {embed.kind === "iframe" ? (
+  {thumbSrc ? (
+    <div class="overflow-hidden rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-100 dark:bg-gray-900/40">
+      <img src={thumbSrc} alt="" width="640" height="360" class="w-full h-auto max-h-48 object-cover" loading="lazy" decoding="async" />
+    </div>
+  ) : null}
+
+  {displayKind === "iframe" ? (
     <iframe
       class="w-full aspect-video rounded-lg border border-gray-200/80 dark:border-gray-800"
       src={embedIframeSrc(embed.url)}

@@ -23,6 +23,12 @@ function authErrorMessage(raw: string): string {
   if (m.includes("email not confirmed")) {
     return "Confirma el correo antes de entrar.";
   }
+  if (m.includes("signups not allowed") || m.includes("signup not allowed") || (m.includes("signup") && m.includes("disabled"))) {
+    return "El alta abierta está desactivada. Si te invitaron, usa el enlace del correo; si no, solicita acceso desde la web.";
+  }
+  if (m.includes("access_denied")) {
+    return "Acceso cancelado en el proveedor. Vuelve a intentarlo o usa correo y contraseña.";
+  }
   return raw;
 }
 
@@ -122,6 +128,12 @@ async function initLoginAuth() {
     await render();
   });
 
+  const oauthLabel = (provider: string) => {
+    if (provider === "github") return "GitHub";
+    if (provider === "linkedin_oidc") return "LinkedIn";
+    return provider;
+  };
+
   const oauthButtons = document.querySelectorAll<HTMLButtonElement>("[data-auth-oauth-provider]");
   for (const btn of oauthButtons) {
     btn.addEventListener("click", async () => {
@@ -129,7 +141,7 @@ async function initLoginAuth() {
       if (!provider) return;
 
       btn.disabled = true;
-      setFeedback(feedback, `Abriendo ${provider}…`, "info");
+      setFeedback(feedback, `Conectando con ${oauthLabel(provider)}…`, "info");
 
       try {
         localStorage.setItem("skillatlas_last_auth_provider", provider);

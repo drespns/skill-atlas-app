@@ -1,6 +1,9 @@
+import { applyFontToDocument, normalizeFontId } from "@config/font-catalog";
+
 export type ThemeMode = "auto" | "light" | "dark";
 export type Density = "comfortable" | "compact";
-export type FontPreset = "system" | "inter" | "mono" | "serif";
+/** Id de fuente (`FONT_CATALOG` en `src/config/font-catalog.ts`). */
+export type FontPreset = string;
 export type Accent = "indigo" | "emerald" | "rose" | "amber" | "sky" | "violet";
 export type Motion = "normal" | "reduced";
 export type DefaultView = "cards" | "list";
@@ -290,6 +293,7 @@ export function loadPrefs(): AppPrefsV1 {
     })(),
     projectEvidenceLayout:
       (base as Partial<AppPrefsV1>).projectEvidenceLayout === "grid" ? "grid" : "large",
+    font: normalizeFontId((base as Partial<AppPrefsV1>).font ?? DEFAULT_PREFS.font),
   };
 
   return migrateLegacyPrefs(merged);
@@ -318,7 +322,12 @@ export function savePrefs(next: AppPrefsV1) {
 
 export function updatePrefs(patch: Partial<Omit<AppPrefsV1, "v">>): AppPrefsV1 {
   const current = loadPrefs();
-  const next: AppPrefsV1 = { ...current, ...patch, v: 1 };
+  const next: AppPrefsV1 = {
+    ...current,
+    ...patch,
+    v: 1,
+    font: normalizeFontId(patch.font !== undefined ? patch.font : current.font),
+  };
   savePrefs(next);
   applyPrefs(next);
   window.dispatchEvent(new CustomEvent("skillatlas:prefs-updated", { detail: next }));
@@ -330,7 +339,6 @@ export function applyPrefs(prefs: AppPrefsV1) {
 
   root.dataset.themeMode = prefs.themeMode;
   root.dataset.density = prefs.density;
-  root.dataset.font = prefs.font;
   root.dataset.accent = prefs.accent;
   root.dataset.motion = prefs.motion;
   root.dataset.technologiesView = prefs.technologiesView;
@@ -350,16 +358,7 @@ export function applyPrefs(prefs: AppPrefsV1) {
   root.dataset.theme = isDark ? "dark" : "light";
   root.style.colorScheme = isDark ? "dark" : "light";
 
-  // Font
-  const fontFamily =
-    prefs.font === "mono"
-      ? "var(--font-mono)"
-      : prefs.font === "serif"
-        ? "var(--font-serif)"
-        : prefs.font === "inter"
-          ? "var(--font-inter)"
-          : "var(--font-system)";
-  root.style.setProperty("--app-font-family", fontFamily);
+  applyFontToDocument(prefs.font);
 
   // Density (affects AppShell paddings)
   const mainPy = prefs.density === "compact" ? "1rem" : "1.5rem";

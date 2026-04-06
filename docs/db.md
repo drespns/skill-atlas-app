@@ -30,6 +30,8 @@ Migracion multi-tenant y portfolio por token (scripts versionados):
 | 12 | `docs/sql/saas-012-cv-public-share-token.sql` | `portfolio_profiles.cv_share_enabled` + `cv_share_token` (unico) + RPC `skillatlas_cv_by_share_token(uuid)` (`GRANT` a `anon`) para `/cv/p/<token>` |
 | 13 | `docs/sql/saas-013-portfolio-public-display.sql` | `portfolio_profiles.public_layout`, `public_embeds_limit` (1–5), `public_hero_cta_label` / `public_hero_cta_url`; RPC slug y token devuelven `embeds[]`, `publicLayout`, `publicEmbedsLimit`, CTA y `helpStack` también en la RPC por token |
 | 14 | `docs/sql/saas-014-portfolio-presentation.sql` | `public_theme`, `public_density`, `public_accent_hex`, `public_header_style`, `featured_project_slugs` (JSONB); RPC devuelve `publicTheme`, `publicDensity`, `publicAccentHex`, `publicHeaderStyle`, `featuredProjectSlugs` y ordena proyectos por destacados |
+| 15 | `docs/sql/saas-015-embed-public-thumbnail.sql` | `project_embeds.show_in_public`, `thumbnail_url`; RPC portfolio (slug/token) y CV filtran embeds públicos y devuelven `thumbnailUrl` en JSON |
+| 16 | `docs/sql/saas-016-project-cover-storage.sql` | `projects.cover_image_path`; bucket Storage **`project_covers`** (lectura pública; escritura solo carpeta `auth.uid()/…`); RPCs portfolio (slug/token) y **`skillatlas_cv_by_share_token`** incluyen **`coverImagePath`** por proyecto |
 
 **Nota saas-006:** si ya aplicaste `saas-003`, debes aplicar **saas-006** (o al menos el bloque `CREATE OR REPLACE FUNCTION` del script) para que la RPC y el esquema coincidan con lo que espera el frontend (`select` con `role`/`outcome` y consumidores del JSON del portfolio). En entornos nuevos: orden típico … → `saas-003` → … → `saas-006`.
 
@@ -91,8 +93,9 @@ Además de `id`, `user_id`, `slug`, `title`, `description` (y timestamps si los 
 |---------|------|-----|
 | `role` | `text` nullable | Rol o responsabilidad en el proyecto (historia). |
 | `outcome` | `text` nullable | Resultado o impacto (historia). |
+| `cover_image_path` | `text` nullable | Tras **saas-016**: ruta en bucket **`project_covers`** (p. ej. `{user_id}/{project_id}/cover.webp`); URL pública vía Supabase Storage. La app comprime en cliente antes de subir. |
 
-Añadidas por **`docs/sql/saas-006-projects-role-outcome.sql`**. El cliente Supabase hace `UPDATE`/`SELECT` incluyendo estas columnas; sin migración, fallan esas queries.
+Añadidas **`role` / `outcome`** por **`docs/sql/saas-006-projects-role-outcome.sql`**; **`cover_image_path`** por **`docs/sql/saas-016-project-cover-storage.sql`**. El cliente Supabase hace `UPDATE`/`SELECT` incluyendo estas columnas; sin migración, fallan esas queries.
 
 ### Tabla `project_embeds` (evidencias)
 
@@ -103,16 +106,22 @@ Añadidas por **`docs/sql/saas-006-projects-role-outcome.sql`**. El cliente Supa
 | `title` | Título visible. |
 | `url` | URL absoluta. |
 | `sort_order` | Orden dentro del proyecto (0, 1, 2…; unicidad recomendada `(project_id, sort_order)` vía `mvp-constraints.sql`). |
+| `show_in_public` | Tras **saas-015**: si `false`, la evidencia no sale en portfolio/CV público (sigue en la app). Default `true`. |
+| `thumbnail_url` | Tras **saas-015**: URL HTTPS opcional de miniatura para tarjetas públicas (auto OG/YouTube o URL manual). Subida de archivo dedicada por evidencia **no** está en este MVP (solo texto URL). |
 
-La **detección** del “tipo de sitio” (Tableau, GitHub, etc.) **no se persiste**: se calcula en cliente desde `url` (`src/lib/evidence-url.ts`).
+La **detección** del “tipo de sitio” (Tableau, GitHub, etc.) **no se persiste**: se calcula en cliente desde `url` (`src/lib/evidence-url.ts`). Las miniaturas automáticas (YouTube, Open Graph vía `/api/evidence-thumb`) son solo de presentación.
 
 ### RPC `skillatlas_portfolio_by_share_token`
 
-Definida en **saas-003** y **actualizada** en **saas-006**. Cada elemento de `projects` en el JSON incluye, entre otros: `slug`, `title`, `description`, **`role`**, **`outcome`**, `technologyNames`, `primaryEmbed` (`kind`, `title`, `url`).
+Definida en **saas-003** y **actualizada** en **saas-006** y sucesivos (**saas-013+** embeds/CTA, **saas-014** presentación, **saas-015** `thumbnailUrl` / `show_in_public`, **saas-016** `coverImagePath`). Cada elemento de `projects` en el JSON incluye, entre otros: `slug`, `title`, `description`, **`role`**, **`outcome`**, **`coverImagePath`**, `technologyNames`, `primaryEmbed` y lista de embeds acotada al límite público.
 
 ### RPC `skillatlas_portfolio_by_public_slug`
 
-Definida en **saas-011**. Misma forma de payload que la RPC por token, mas `helpStack` (JSON array, desde `portfolio_profiles.help_stack`). Solo resuelve filas con `share_enabled = true` y `public_slug` coincidente (comparacion case-insensitive).
+Definida en **saas-011**. Misma forma de payload que la RPC por token (incluye `helpStack` y el resto de campos de presentación). Solo resuelve filas con `share_enabled = true` y `public_slug` coincidente (comparacion case-insensitive).
+
+### RPC `skillatlas_cv_by_share_token`
+
+Definida en **saas-012** y **actualizada** con el mismo criterio de proyectos que el portfolio público (**saas-015** embeds/thumbnails, **saas-016** `coverImagePath`).
 
 ## Nota sobre `/portfolio` (CSR)
 

@@ -85,7 +85,24 @@ export async function initI18n() {
       const active = btn.dataset.prefLangFlag === lng;
       btn.setAttribute("aria-pressed", active ? "true" : "false");
     });
+
+    const quickFlagImg = document.querySelector<HTMLImageElement>("[data-lang-quick-flag]");
+    if (quickFlagImg) {
+      quickFlagImg.src = lng === "en" ? "/icons/flags/United_Kingdom.svg" : esFlagSrc;
+      quickFlagImg.alt = lng === "en" ? "English" : esTitle;
+    }
+
     const show = loadPrefs().showLangSelector;
+    const langQuick = document.querySelector<HTMLElement>("[data-lang-quick-toggle]");
+    if (langQuick) {
+      if (!show) {
+        langQuick.classList.add("hidden");
+        langQuick.classList.remove("inline-flex");
+      } else {
+        langQuick.classList.remove("hidden");
+        langQuick.classList.add("inline-flex");
+      }
+    }
     const langFlags = document.querySelector<HTMLElement>("[data-lang-flags]");
     if (langFlags) {
       if (!show) {
@@ -142,6 +159,19 @@ export async function initI18n() {
     btn.dataset.bound = "1";
     btn.addEventListener("click", async () => {
       const next = btn.dataset.langFlag === "en" ? "en" : "es";
+      await i18next.changeLanguage(next);
+      updatePrefs({ lang: next });
+      render();
+      notifyLangChanged(next);
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>("[data-lang-quick-toggle]").forEach((btn) => {
+    if (btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", async () => {
+      const cur = i18next.language.startsWith("en") ? "en" : "es";
+      const next: "es" | "en" = cur === "en" ? "es" : "en";
       await i18next.changeLanguage(next);
       updatePrefs({ lang: next });
       render();

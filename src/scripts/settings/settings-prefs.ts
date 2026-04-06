@@ -1,3 +1,4 @@
+import { isValidFontId } from "@config/font-catalog";
 import {
   loadPrefs,
   updatePrefs,
@@ -87,10 +88,6 @@ function initSettingsPrefs() {
     showLangSelectorEls.forEach((el) => {
       el.value = p.showLangSelector ? "yes" : "no";
     });
-    document.querySelectorAll<HTMLButtonElement>("[data-pref-font-choice]").forEach((btn) => {
-      const active = btn.dataset.prefFontChoice === p.font;
-      btn.setAttribute("aria-pressed", active ? "true" : "false");
-    });
   };
 
   render();
@@ -101,19 +98,6 @@ function initSettingsPrefs() {
     updatePrefs({ themeMode: v });
     if (v === "dark" || v === "light") localStorage.setItem("theme", v);
     if (v === "auto") localStorage.removeItem("theme");
-  });
-
-  document.querySelectorAll<HTMLElement>("[data-pref-font-picker]").forEach((fontPicker) => {
-    if (fontPicker.dataset.bound === "1") return;
-    fontPicker.dataset.bound = "1";
-    fontPicker.querySelectorAll<HTMLButtonElement>("[data-pref-font-choice]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const v = btn.dataset.prefFontChoice;
-        if (!v || !isFont(v)) return;
-        updatePrefs({ font: v });
-        render();
-      });
-    });
   });
 
   fontEls.forEach((font) => {

@@ -45,10 +45,20 @@ type DbProject = {
   description: string | null;
   role: string | null;
   outcome: string | null;
+  cover_image_path?: string | null;
 };
 
 type DbTech = { id: string; slug: string; name: string };
-type DbEmbed = { id: string; project_id: string; kind: "iframe" | "link"; title: string | null; url: string | null; sort_order: number };
+type DbEmbed = {
+  id: string;
+  project_id: string;
+  kind: "iframe" | "link";
+  title: string | null;
+  url: string | null;
+  sort_order: number;
+  show_in_public?: boolean | null;
+  thumbnail_url?: string | null;
+};
 
 function readSelectedTechsFromUrl(): Set<string> {
   const params = new URLSearchParams(window.location.search);
@@ -225,10 +235,17 @@ async function run() {
   }
 
   const [projRes, ptRes, techRes, embRes, profRes] = await Promise.all([
-    supabase.from("projects").select("id, slug, title, description, role, outcome").eq("user_id", userId).order("title"),
+    supabase
+      .from("projects")
+      .select("id, slug, title, description, role, outcome, cover_image_path")
+      .eq("user_id", userId)
+      .order("title"),
     supabase.from("project_technologies").select("project_id, technology_id"),
     supabase.from("technologies").select("id, slug, name").eq("user_id", userId).order("name"),
-    supabase.from("project_embeds").select("id, project_id, kind, title, url, sort_order").order("sort_order", { ascending: true }),
+    supabase
+      .from("project_embeds")
+      .select("id, project_id, kind, title, url, sort_order, show_in_public, thumbnail_url")
+      .order("sort_order", { ascending: true }),
     supabase
       .from("portfolio_profiles")
       .select(
@@ -359,23 +376,27 @@ async function run() {
       .map((p, idx) => {
         const techNames = (techNamesByProject.get(p.id) ?? []).slice().sort((a, b) => a.localeCompare(b, "es"));
         const allEmb = embedsByProject.get(p.id) ?? [];
-        const sliced = allEmb.slice(0, cap);
+        const publicEmb = allEmb.filter((e) => e.show_in_public !== false && (e.url ?? "").trim());
+        const sliced = publicEmb.slice(0, cap);
         const embedsForCard = sliced
           .map((e) => {
             const url = (e.url ?? "").trim();
             if (!url) return null;
+            const thumb = (e.thumbnail_url ?? "").trim() || null;
             return {
               kind: e.kind,
               title: (e.title ?? "").trim() || detectEvidenceUrl(url).sourceLabel,
               url,
+              thumbnailUrl: thumb,
             };
           })
-          .filter(Boolean) as { kind: string; title: string; url: string }[];
-        const primary = allEmb[0]
+          .filter(Boolean) as { kind: string; title: string; url: string; thumbnailUrl: string | null }[];
+        const primary = publicEmb[0]
           ? {
-              kind: allEmb[0].kind,
-              title: (allEmb[0].title ?? "").trim() || detectEvidenceUrl(allEmb[0].url ?? "").sourceLabel,
-              url: (allEmb[0].url ?? "").trim(),
+              kind: publicEmb[0].kind,
+              title: (publicEmb[0].title ?? "").trim() || detectEvidenceUrl(publicEmb[0].url ?? "").sourceLabel,
+              url: (publicEmb[0].url ?? "").trim(),
+              thumbnailUrl: (publicEmb[0].thumbnail_url ?? "").trim() || null,
             }
           : null;
         const safePrimary = primary && primary.url ? primary : null;
@@ -386,6 +407,7 @@ async function run() {
             role: p.role,
             outcome: p.outcome,
             technologyNames: techNames,
+            coverImagePath: (p.cover_image_path ?? "").trim() || null,
             embeds: embedsForCard,
             primaryEmbed: safePrimary,
           },
@@ -396,7 +418,7 @@ async function run() {
             density: ownerPresDensity,
             cardIndex: idx,
             motionStagger: motionOn,
-            totalEmbedCount: allEmb.length,
+            totalEmbedCount: publicEmb.length,
           },
         );
       })

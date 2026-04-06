@@ -22,6 +22,26 @@ function hostOf(raw: string): string | null {
   }
 }
 
+/**
+ * Dominios donde no debemos usar iframe (X-Frame-Options / UX): GitHub y derivados.
+ * Oleada A del roadmap portfolio/evidencias.
+ */
+export function evidenceUrlBlocksIframe(url: string): boolean {
+  const host = hostOf(url);
+  if (!host) return false;
+  const h = host.toLowerCase();
+  if (h === "github.com" || h.endsWith(".github.com")) return true;
+  if (h.endsWith(".github.io")) return true;
+  if (h.endsWith(".githubusercontent.com")) return true;
+  return false;
+}
+
+/** Fuerza «solo enlace» aunque en BD venga kind iframe (datos viejos o elección manual). */
+export function coerceEvidenceDisplayKind(url: string, stored: "iframe" | "link"): "iframe" | "link" {
+  if (evidenceUrlBlocksIframe(url)) return "link";
+  return stored;
+}
+
 export function detectEvidenceUrl(raw: string): EvidenceUrlDetection {
   const t = raw.trim();
   if (!t) {
@@ -48,7 +68,25 @@ export function detectEvidenceUrl(raw: string): EvidenceUrlDetection {
       sourceKey: "github",
       sourceLabel: "GitHub",
       suggestedKind: "link",
-      hint: "Los repos suelen mostrarse mejor como enlace; el visitante abre GitHub en otra pestaña.",
+      hint: "GitHub no permite iframe fiable: siempre como enlace (también si guardaras «embebido»).",
+    };
+  }
+
+  if (host.endsWith(".github.io")) {
+    return {
+      sourceKey: "github_pages",
+      sourceLabel: "GitHub Pages",
+      suggestedKind: "link",
+      hint: "GitHub Pages suele bloquear iframe; mejor enlace al sitio publicado.",
+    };
+  }
+
+  if (host.endsWith(".githubusercontent.com")) {
+    return {
+      sourceKey: "githubusercontent",
+      sourceLabel: "GitHub (archivo)",
+      suggestedKind: "link",
+      hint: "Enlaces raw o assets de GitHub no se incrustan; usa enlace o la página del repo.",
     };
   }
 
@@ -162,11 +200,42 @@ export const IFRAME_EMBED_ALLOW =
   "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen";
 
 export function embedIframeSrc(url: string): string {
+  if (evidenceUrlBlocksIframe(url)) return url;
   const h = hostOf(url);
   if (!h) return url;
   if (h.includes("tableau")) return normalizeTableauEmbedUrl(url);
   if (h === "youtu.be" || isYouTubeHostname(h)) return normalizeYouTubeEmbedUrl(url);
   return url;
+}
+
+function isSafeHttpsForOgProxy(url: string): boolean {
+  try {
+    const u = new URL(url.trim());
+    if (u.protocol !== "https:") return false;
+    const h = u.hostname.toLowerCase();
+    if (h === "localhost" || h.endsWith(".local")) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Miniatura en tarjetas públicas: URL custom (HTTPS) > captura YouTube > proxy og en `/api/evidence-thumb`.
+ */
+export function resolveEvidenceThumbnailForDisplay(
+  customThumbnail: string | null | undefined,
+  evidenceUrl: string,
+): string | null {
+  const c = (customThumbnail ?? "").trim();
+  if (c && /^https:\/\//i.test(c)) return c;
+  const id = extractYouTubeVideoId(evidenceUrl);
+  if (id) return `https://img.youtube.com/vi/${encodeURIComponent(id)}/hqdefault.jpg`;
+  const ev = evidenceUrl.trim();
+  if (isSafeHttpsForOgProxy(ev)) {
+    return `/api/evidence-thumb?url=${encodeURIComponent(ev)}`;
+  }
+  return null;
 }
 
 /** Icono del sitio para previews en lista/modal (sin peticiones propias al dominio del usuario). */

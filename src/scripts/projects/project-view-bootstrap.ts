@@ -1,6 +1,7 @@
 import { EVIDENCE_QUICK_TEMPLATES } from "@config/evidence-templates";
 import {
   detectEvidenceUrl,
+  coerceEvidenceDisplayKind,
   embedIframeSrc,
   evidenceSiteIconUrl,
   IFRAME_EMBED_ALLOW,
@@ -10,6 +11,7 @@ import { getSessionUserId } from "@scripts/core/auth-session";
 import { runProjectDetailInits } from "@scripts/projects/project-detail/runner";
 import { loadPrefs } from "@scripts/core/prefs";
 import { recordRecentActivity } from "@scripts/app/recent-activity";
+import { initProjectCoverUpload } from "@scripts/projects/project-detail/project-cover";
 
 function esc(s: string | null | undefined) {
   return (s ?? "")
@@ -92,7 +94,7 @@ export async function bootstrapProjectDetailPage() {
 
   const projRes = await supabase
     .from("projects")
-    .select("id, slug, title, description, role, outcome")
+    .select("id, slug, title, description, role, outcome, cover_image_path")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -111,7 +113,10 @@ export async function bootstrapProjectDetailPage() {
     description: string | null;
     role: string | null;
     outcome: string | null;
+    cover_image_path?: string | null;
   };
+
+  const coverPath = (project.cover_image_path ?? "").trim() || null;
 
   recordRecentActivity({ kind: "project", slug: project.slug, label: project.title });
 
@@ -123,7 +128,7 @@ export async function bootstrapProjectDetailPage() {
     supabase.from("project_concepts").select("concept_id").eq("project_id", project.id),
     supabase
       .from("project_embeds")
-      .select("id, kind, title, url, sort_order")
+      .select("id, kind, title, url, sort_order, show_in_public, thumbnail_url")
       .eq("project_id", project.id)
       .order("sort_order", { ascending: true }),
     supabase.from("technologies").select("id, slug, name").order("name"),
@@ -138,6 +143,8 @@ export async function bootstrapProjectDetailPage() {
     title: string;
     url: string;
     sort_order: number;
+    show_in_public?: boolean | null;
+    thumbnail_url?: string | null;
   }[];
 
   const allTechRows = (allTechRes.data ?? []) as { id: string; slug: string; name: string }[];
@@ -215,7 +222,10 @@ export async function bootstrapProjectDetailPage() {
       // Robustez: en datos viejos o mal migrados puede venir `url`/`title` como `null`.
       const embedUrl = embed.url ?? "";
       const embedTitle = embed.title ?? "";
-      const embedKind = embed.kind === "iframe" ? "iframe" : "link";
+      const storedKind = embed.kind === "iframe" ? "iframe" : "link";
+      const embedKind = coerceEvidenceDisplayKind(embedUrl, storedKind);
+      const showInPublic = embed.show_in_public !== false;
+      const thumbStored = (embed.thumbnail_url ?? "").trim();
 
       const det = detectEvidenceUrl(embedUrl);
       const kindLabel = embedKind === "iframe" ? "iframe" : "enlace";
@@ -236,6 +246,11 @@ export async function bootstrapProjectDetailPage() {
               <div class="flex flex-wrap items-center gap-2 gap-y-1 min-w-0">
               <span class="text-[10px] uppercase tracking-wide font-semibold text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full bg-emerald-100/80 dark:bg-emerald-950/50">${esc(det.sourceLabel)}</span>
               <span class="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">${esc(kindLabel)}</span>
+              ${
+                showInPublic
+                  ? ""
+                  : `<span class="text-[10px] uppercase tracking-wide font-semibold text-amber-800 dark:text-amber-200 px-2 py-0.5 rounded-full bg-amber-100/90 dark:bg-amber-950/50">Solo app</span>`
+              }
               </div>
             </div>
             <h3 class="m-0 text-sm font-semibold">${esc(embedTitle)}</h3>
@@ -243,7 +258,7 @@ export async function bootstrapProjectDetailPage() {
           </article>
         </div>
         <div class="project-embeds-actions flex flex-wrap items-center gap-2 pl-11">
-          <button type="button" data-project-embed-edit data-embed-id="${esc(embed.id)}" data-embed-kind="${esc(embedKind)}" data-embed-title="${esc(embedTitle)}" data-embed-url="${esc(embedUrl)}" class="inline-flex rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">Editar</button>
+          <button type="button" data-project-embed-edit data-embed-id="${esc(embed.id)}" data-embed-kind="${esc(storedKind)}" data-embed-title="${esc(embedTitle)}" data-embed-url="${esc(embedUrl)}" data-embed-show-public="${showInPublic ? "1" : "0"}" data-embed-thumbnail-url="${escAttr(thumbStored)}" class="inline-flex rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">Editar</button>
           <button type="button" data-project-embed-remove data-embed-id="${esc(embed.id)}" class="inline-flex rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">Eliminar</button>
           <button type="button" data-project-embed-move data-embed-id="${esc(embed.id)}" data-direction="up" class="inline-flex rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50" ${idx === 0 ? "disabled" : ""}>Subir</button>
           <button type="button" data-project-embed-move data-embed-id="${esc(embed.id)}" data-direction="down" class="inline-flex rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50" ${idx === embeds.length - 1 ? "disabled" : ""}>Bajar</button>
@@ -331,7 +346,26 @@ export async function bootstrapProjectDetailPage() {
       </div>
     </dialog>`;
 
-  mount.innerHTML = `<section class="space-y-6" data-project-id="${esc(project.slug)}" data-project-detail-slug="${escAttr(project.slug)}" data-project-title="${esc(project.title)}" data-project-description="${esc(project.description ?? "")}" data-project-role="${escAttr(role)}" data-project-outcome="${escAttr(outcome)}">
+  const coverSectionHtml = `<section class="rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4 space-y-2" aria-labelledby="project-cover-heading">
+      <h2 id="project-cover-heading" class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Portada del proyecto</h2>
+      <p class="m-0 text-xs text-gray-500 dark:text-gray-400">Visible en portfolio y CV público. JPG, PNG, WebP, GIF o AVIF; máx. 12 MB de entrada; se comprime en el navegador (WebP o JPEG).</p>
+      <div class="flex flex-wrap items-start gap-4">
+        <div class="relative h-28 w-44 shrink-0 overflow-hidden rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-100 dark:bg-gray-900/50" data-project-cover-path="${escAttr(coverPath ?? "")}">
+          <img data-project-cover-preview alt="" class="absolute inset-0 h-full w-full object-cover hidden" loading="lazy" decoding="async" />
+          <div data-project-cover-placeholder class="flex h-full w-full items-center justify-center p-2 text-center text-[11px] text-gray-500 dark:text-gray-400">Sin portada</div>
+        </div>
+        <div class="flex min-w-0 flex-1 flex-col gap-2">
+          <label class="text-xs font-medium text-gray-700 dark:text-gray-200">
+            Subir imagen
+            <input type="file" data-project-cover-file accept="image/jpeg,image/png,image/webp,image/gif,image/avif" class="mt-1 block w-full max-w-xs text-xs file:mr-2 file:rounded file:border-0 file:bg-gray-100 file:px-2 file:py-1 dark:file:bg-gray-800" />
+          </label>
+          <button type="button" data-project-cover-remove class="inline-flex w-fit rounded-lg border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 ${coverPath ? "" : "hidden"}">Quitar portada</button>
+          <p data-project-cover-feedback class="m-0 min-h-4 text-xs text-gray-600 dark:text-gray-400"></p>
+        </div>
+      </div>
+    </section>`;
+
+  mount.innerHTML = `<section class="space-y-6" data-project-id="${esc(project.slug)}" data-project-db-id="${esc(project.id)}" data-project-detail-slug="${escAttr(project.slug)}" data-project-title="${esc(project.title)}" data-project-description="${esc(project.description ?? "")}" data-project-role="${escAttr(role)}" data-project-outcome="${escAttr(outcome)}">
     <header class="space-y-3">
       <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div class="min-w-0 flex-1 space-y-2">
@@ -357,6 +391,8 @@ export async function bootstrapProjectDetailPage() {
         </div>
       </div>
     </header>
+
+    ${coverSectionHtml}
 
     <section class="space-y-4" aria-labelledby="project-evidence-heading">
       <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -393,6 +429,12 @@ export async function bootstrapProjectDetailPage() {
   </section>`;
 
     await runProjectDetailInits(supabase, project.slug);
+    initProjectCoverUpload(supabase, {
+      projectSlug: project.slug,
+      projectId: project.id,
+      userId,
+      currentPath: coverPath,
+    });
   } catch (err) {
     console.error("bootstrapProjectDetailPage error", err);
     const slugErr =

@@ -1,8 +1,12 @@
 ---
-/** Aplica prefs desde localStorage antes del primer paint (debe coincidir con `core/prefs.ts` / `loadPrefs`). */
+import { FONT_CATALOG, FONT_GOOGLE_LINK_ID } from "../../config/font-catalog";
+/** Aplica prefs desde localStorage antes del primer paint (alineado con `core/prefs.ts` / `loadPrefs`). */
 ---
 
-<script is:inline>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+<script is:inline define:vars={{ fontBootCatalog: FONT_CATALOG, fontLinkId: FONT_GOOGLE_LINK_ID }}>
   (() => {
     const STORAGE_KEY = "skillatlas_prefs_v1";
     const safeParse = (raw) => {
@@ -14,12 +18,20 @@
       }
     };
 
+    const knownIds = new Set(fontBootCatalog.map((e) => e.id));
+    const normFont = (raw) => {
+      if (typeof raw === "string" && knownIds.has(raw)) return raw;
+      const leg = { inter: "inter", mono: "mono", serif: "serif", system: "system" };
+      if (typeof raw === "string" && leg[raw]) return leg[raw];
+      return "system";
+    };
+
     const prefs = safeParse(localStorage.getItem(STORAGE_KEY)) ?? {};
-    const legacyTheme = localStorage.getItem("theme"); // "dark" | "light" | null
+    const legacyTheme = localStorage.getItem("theme");
     const themeMode =
       prefs?.themeMode ?? (legacyTheme === "dark" || legacyTheme === "light" ? legacyTheme : "auto");
     const density = prefs?.density ?? "comfortable";
-    const font = prefs?.font ?? "system";
+    const fontRaw = prefs?.font ?? "system";
     const accent = prefs?.accent ?? "indigo";
     const motion = prefs?.motion ?? "normal";
     const technologiesView = prefs?.technologiesView ?? "cards";
@@ -37,7 +49,6 @@
     root.dataset.theme = isDark ? "dark" : "light";
     root.dataset.themeMode = themeMode;
     root.dataset.density = density;
-    root.dataset.font = font;
     root.dataset.accent = accent;
     root.dataset.motion = motion;
     root.dataset.technologiesView = technologiesView;
@@ -48,13 +59,23 @@
     root.dataset.langPref = lang;
     root.style.colorScheme = isDark ? "dark" : "light";
 
-    const fontFamily =
-      font === "mono"
-        ? 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
-        : font === "inter"
-          ? 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"'
-          : 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"';
-    root.style.setProperty("--app-font-family", fontFamily);
+    const fontId = normFont(fontRaw);
+    const entry = fontBootCatalog.find((e) => e.id === fontId) || fontBootCatalog[0];
+    root.dataset.font = fontId;
+    if (entry.googleQuery) {
+      const href = `https://fonts.googleapis.com/css2?family=${entry.googleQuery}&display=swap`;
+      let link = document.getElementById(fontLinkId);
+      if (!link) {
+        link = document.createElement("link");
+        link.id = fontLinkId;
+        link.rel = "stylesheet";
+        document.head.appendChild(link);
+      }
+      link.href = href;
+    } else {
+      document.getElementById(fontLinkId)?.remove();
+    }
+    root.style.setProperty("--app-font-family", entry.stack);
 
     const mainPy = density === "compact" ? "1rem" : "1.5rem";
     const mainPx = density === "compact" ? "1rem" : "1.25rem";

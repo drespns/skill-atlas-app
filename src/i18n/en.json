@@ -32,7 +32,11 @@
     "paletteSectionNav": "Navigation",
     "paletteSectionActions": "Quick actions",
     "paletteSectionTech": "Your technologies",
-    "paletteSectionProject": "Your projects"
+    "paletteSectionProject": "Your projects",
+    "langQuickToggleAria": "Current language — tap to switch",
+    "userMenuTriggerAria": "Account menu",
+    "userMenuLabel": "Account",
+    "userMenuPublicProfile": "Public profile"
   },
   "fab": {
     "tabShortcuts": "Shortcuts",
@@ -98,6 +102,7 @@
     "publicLoadError": "Could not load the public CV.",
     "publicNotFound": "This CV does not exist or is not published.",
     "publicNoProjects": "No projects.",
+    "publicEvidence": "Evidence",
     "kicker": "Private document",
     "pageTitle": "CV",
     "intro": "A private preview of your résumé. Nobody can see this page without your session.",
@@ -327,6 +332,13 @@
     "todayLi3": "Project story: role + outcome to explain impact, not just tasks.",
     "todayLi4": "Public portfolio by slug or token, profile and sharing from Settings; demo, pricing, and access requests with an admin queue.",
     "todayLi5": "Dark mode, ES/EN, View Transitions, sidebar-style Settings, guided step-by-step tour, and daily polish you can feel.",
+    "chartsPreviewKicker": "Metrics",
+    "chartsPreviewTitle": "Charts that show your progress",
+    "chartsPreviewBody": "On the dashboard you’ll see bars and summaries from your real technologies. This is only a visual sample (not real user data).",
+    "chartsPreviewBadge": "Sample",
+    "chartsPreviewDemoTitle": "Sample: concepts by stack (fictional)",
+    "chartsPreviewCtaApp": "Open my dashboard",
+    "chartsPreviewCtaLogin": "Sign in",
     "workflowVizKicker": "Inside the app",
     "workflowVizTitle": "From your base to your portfolio—and beyond.",
     "workflowVizSubtitle": "Real workflow: skill map, projects with evidence, public outputs, and exam-prep space.",
@@ -424,8 +436,27 @@
     "linkShortcuts": "Shortcuts",
     "mockHydrateHint": "No Supabase client in the browser: A–Z lists are not available here. Use the header routes or set PUBLIC_DATA_SOURCE=supabase.",
     "signedOutListHint": "Sign in to load your project and technology lists.",
+    "kpi": {
+      "kicker": "Metrics",
+      "masteryLabel": "Mastery",
+      "masterySub": "{{mastered}} of {{total}} marked Mastered",
+      "noConceptsYet": "No concepts yet",
+      "embedsLabel": "Evidence",
+      "embedsSub": "Total embeds",
+      "projectsEvidenceLabel": "Projects with evidence",
+      "projectsEvidenceSub": "At least one embed",
+      "linkedLabel": "In projects",
+      "linkedSub": "Linked concepts",
+      "soloLabel": "Stack only",
+      "soloSub": "Not linked to a project",
+      "emptyTechsLabel": "Empty techs",
+      "emptyTechsSub": "No concepts yet",
+      "emptyTechsHint": "Add concepts first in:",
+      "allTechsHaveConcepts": "Every technology has at least one concept."
+    },
     "recent": {
       "sectionKicker": "Activity",
+      "sectionTitle": "Recent activity",
       "sectionIntro": "The last items you opened on this device. Open a project or technology to see it here again.",
       "projectsTitle": "Recent projects",
       "techTitle": "Recent technologies",
@@ -435,6 +466,34 @@
       "minutesAgo": "{{count}} min ago",
       "hoursAgo": "{{count}} h ago",
       "daysAgo": "{{count}} d ago"
+    },
+    "charts": {
+      "sectionKicker": "Visualizations",
+      "sectionTitle": "Your knowledge map",
+      "sectionIntro": "Charts from your concepts and projects (your session only; live data from Supabase).",
+      "needSession": "Sign in to see charts with your data.",
+      "emptyData": "No data",
+      "stackedTitle": "Concepts by technology",
+      "stackedHint": "Add concepts from each technology.",
+      "pieTitle": "Progress mix",
+      "pieHint": "States across all your concepts.",
+      "projectsTitle": "Projects by technology",
+      "projectsHint": "Project ↔ technology links in your data.",
+      "gaugeTitle": "Overall mastery",
+      "gaugeAxis": "Mastery",
+      "gaugeHint": "Share of concepts in the Mastered state.",
+      "treemapTitle": "Concepts by technology (area)",
+      "treemapHint": "Each block is a technology; size reflects concept count.",
+      "coverageTitle": "Project coverage",
+      "coverageInProjects": "In projects",
+      "coverageSolo": "Stack only",
+      "coverageHint": "Concepts linked to projects versus concepts only under technologies.",
+      "noTechLink": "Some concepts are not linked to a known technology; check your data.",
+      "progress": {
+        "aprendido": "Learned",
+        "practicado": "Practiced",
+        "mastered": "Mastered"
+      }
     }
   },
   "technologies": {
@@ -664,6 +723,11 @@
       "densityComfortable": "Comfortable",
       "densityCompact": "Compact",
       "font": "Font",
+      "fontGroupBuiltin": "Built-in",
+      "fontGroupSans": "Sans (Google Fonts)",
+      "fontGroupSerif": "Serif (Google Fonts)",
+      "fontGroupMono": "Monospace (Google Fonts)",
+      "fontGoogleHint": "Fonts in these groups load from Google Fonts when selected.",
       "fontSystem": "System",
       "fontInter": "Inter",
       "fontMono": "Mono",
@@ -684,8 +748,8 @@
       "viewList": "List",
       "language": "Language",
       "showHeaderIcons": "Header icons",
-      "showLangSelector": "Language selector (header)",
-      "showLangSelectorHint": "Shown in the header by default; you can turn it off here.",
+      "showLangSelector": "Language flag (header)",
+      "showLangSelectorHint": "Language is fully controlled here; the header flag only toggles EN/ES.",
       "show": "Show",
       "hide": "Hide"
     },
@@ -705,7 +769,9 @@
       "goToLogin": "Go to login",
       "currentUser": "Current user",
       "refresh": "Refresh status",
-      "logout": "Log out"
+      "logout": "Log out",
+      "logoutSuccess": "Signed out.",
+      "logoutError": "Could not sign out: {{message}}"
     }
   }
   ,

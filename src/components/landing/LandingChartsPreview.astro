@@ -1,0 +1,54 @@
+---
+/** Vista previa de métricas (datos de ejemplo; los reales están en /app con sesión). */
+---
+
+<section
+  data-landing-reveal
+  style="--lr-delay: 96ms"
+  class="rounded-3xl border border-violet-200/50 dark:border-violet-900/40 bg-white/55 dark:bg-gray-950/45 shadow-sm overflow-hidden"
+>
+  <div
+    class="px-6 py-5 border-b border-gray-200/70 dark:border-gray-800/70 bg-linear-to-r from-violet-50/60 via-white/55 to-transparent dark:from-violet-950/35 dark:via-gray-950/50 dark:to-transparent backdrop-blur"
+  >
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div class="space-y-1 max-w-2xl">
+        <p class="m-0 text-xs font-semibold tracking-wide text-violet-600 dark:text-violet-300 uppercase" data-i18n="landing.chartsPreviewKicker">
+          Métricas
+        </p>
+        <h2 class="m-0 text-xl md:text-2xl font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.chartsPreviewTitle">
+          Gráficos que cuentan tu progreso
+        </h2>
+        <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="landing.chartsPreviewBody">
+          En el dashboard verás barras y resúmenes con tus tecnologías reales. Aquí solo hay un ejemplo visual.
+        </p>
+      </div>
+      <span
+        class="shrink-0 rounded-full border border-amber-200/90 dark:border-amber-800/60 bg-amber-50/90 dark:bg-amber-950/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-900 dark:text-amber-200"
+        data-i18n="landing.chartsPreviewBadge"
+      >
+        Ejemplo
+      </span>
+    </div>
+  </div>
+  <div class="p-6 space-y-4">
+    <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/50 p-3">
+      <div class="h-[240px] w-full" data-landing-insights-chart aria-hidden="true"></div>
+    </div>
+    <div class="flex flex-wrap gap-2 justify-center">
+      <a
+        href="/app"
+        class="inline-flex items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 no-underline"
+        data-i18n="landing.chartsPreviewCtaApp"
+      >
+        Ver mi dashboard
+      </a>
+      <a
+        href="/login"
+        class="inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+        data-i18n="landing.chartsPreviewCtaLogin"
+      >
+        Entrar
+      </a>
+    </div>
+  </div>
+</section>

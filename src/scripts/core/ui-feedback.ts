@@ -1,5 +1,5 @@
 import { getTechnologyIconSrc } from "@config/icons";
-import { detectEvidenceUrl, evidenceSiteIconUrl } from "@lib/evidence-url";
+import { coerceEvidenceDisplayKind, detectEvidenceUrl, evidenceSiteIconUrl } from "@lib/evidence-url";
 
 export type ToastType = "success" | "error" | "info" | "warning";
 
@@ -357,6 +357,57 @@ export function confirmModal(options: {
   });
 }
 
+function textareaCurrentLineBounds(text: string, caret: number): { start: number; end: number; lineIndex: number } {
+  const before = text.slice(0, Math.min(caret, text.length));
+  const start = before.lastIndexOf("\n") + 1;
+  const nextNl = text.indexOf("\n", start);
+  const end = nextNl === -1 ? text.length : nextNl;
+  const lineIndex = (before.match(/\n/g) ?? []).length;
+  return { start, end, lineIndex };
+}
+
+/** Alt+↑/↓ mover línea; Shift+Alt+↑/↓ duplicar línea (estilo IDE). */
+function attachMarkdownLineShortcuts(ta: HTMLTextAreaElement) {
+  ta.addEventListener("keydown", (e) => {
+    if (!e.altKey || e.metaKey || e.ctrlKey) return;
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    const v = ta.value;
+    const caret = ta.selectionStart;
+    const { start, end, lineIndex } = textareaCurrentLineBounds(v, caret);
+    const line = v.slice(start, end);
+    const lines = v.split("\n");
+    if (lineIndex < 0 || lineIndex >= lines.length) return;
+
+    if (e.shiftKey) {
+      e.preventDefault();
+      if (e.key === "ArrowDown") {
+        const insert = `\n${line}`;
+        ta.value = v.slice(0, end) + insert + v.slice(end);
+        const pos = end + insert.length;
+        ta.setSelectionRange(pos, pos);
+      } else {
+        const insert = `${line}\n`;
+        ta.value = v.slice(0, start) + insert + v.slice(start);
+        const pos = start + line.length + 1;
+        ta.setSelectionRange(pos, pos);
+      }
+      return;
+    }
+
+    const dir = e.key === "ArrowUp" ? -1 : 1;
+    const j = lineIndex + dir;
+    if (j < 0 || j >= lines.length) return;
+    e.preventDefault();
+    [lines[lineIndex], lines[j]] = [lines[j], lines[lineIndex]];
+    const newVal = lines.join("\n");
+    ta.value = newVal;
+    const newStart = lines.slice(0, j).join("\n").length + (j > 0 ? 1 : 0);
+    const offset = Math.min(Math.max(0, caret - start), line.length);
+    const pos = newStart + offset;
+    ta.setSelectionRange(pos, pos);
+  });
+}
+
 /** Modal con textarea amplia para pegar o editar Markdown (importación de conceptos). */
 export function markdownEditorModal(options: {
   title: string;
@@ -373,7 +424,7 @@ export function markdownEditorModal(options: {
       <div data-modal-panel class="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 space-y-3 opacity-0 scale-[0.98] transition-all duration-200">
         <h3 class="m-0 text-base font-semibold shrink-0">${escapeHtml(options.title)}</h3>
         <textarea data-modal-markdown rows="18" class="w-full min-h-48 flex-1 resize-y rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 bg-white dark:bg-gray-950 font-mono text-sm"></textarea>
-        <p class="m-0 text-xs text-gray-500 dark:text-gray-400 shrink-0">Atajos: <kbd class="px-1 rounded border border-gray-300 dark:border-gray-600 text-[10px]">Esc</kbd> cancela si el foco está fuera del área de texto.</p>
+        <p class="m-0 text-xs text-gray-500 dark:text-gray-400 shrink-0 leading-relaxed">Atajos en el editor: <kbd class="px-1 rounded border border-gray-300 dark:border-gray-600 text-[10px]">Alt</kbd>+<kbd class="px-1 rounded border border-gray-300 dark:border-gray-600 text-[10px]">↑</kbd>/<kbd class="px-1 rounded border border-gray-300 dark:border-gray-600 text-[10px]">↓</kbd> mover línea · <kbd class="px-1 rounded border border-gray-300 dark:border-gray-600 text-[10px]">Shift</kbd>+<kbd class="px-1 rounded border border-gray-300 dark:border-gray-600 text-[10px]">Alt</kbd>+<kbd class="px-1 rounded border border-gray-300 dark:border-gray-600 text-[10px]">↑</kbd>/<kbd class="px-1 rounded border border-gray-300 dark:border-gray-600 text-[10px]">↓</kbd> duplicar línea.</p>
         <div class="flex justify-end gap-2 shrink-0">
           <button data-modal-cancel type="button" class="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">Cancelar</button>
           <button data-modal-confirm type="button" class="rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200">${escapeHtml(options.confirmLabel ?? "Aplicar al importador")}</button>
@@ -382,6 +433,7 @@ export function markdownEditorModal(options: {
     `;
     const ta = root.querySelector<HTMLTextAreaElement>("[data-modal-markdown]");
     if (ta) ta.value = options.initialMarkdown;
+    if (ta) attachMarkdownLineShortcuts(ta);
 
     requestAnimationFrame(() => {
       root.querySelector("[data-modal-overlay]")?.classList.remove("opacity-0");
@@ -608,6 +660,8 @@ export function embedEditModal(options: {
   initialKind: "iframe" | "link";
   initialTitle: string;
   initialUrl: string;
+  initialShowInPublic?: boolean;
+  initialThumbnailUrl?: string;
 }) {
   const root = getModalRoot();
   root.classList.remove("hidden");
@@ -618,13 +672,17 @@ export function embedEditModal(options: {
         kind: "iframe" | "link";
         title: string;
         url: string;
+        showInPublic: boolean;
+        thumbnailUrl: string | null;
       }
     | null
   >((resolve) => {
     const safeTitle = escapeHtml(options.initialTitle);
     const safeUrl = escapeHtml(options.initialUrl);
+    const safeThumb = escapeHtml((options.initialThumbnailUrl ?? "").trim());
     const iframeSel = options.initialKind === "iframe" ? "selected" : "";
     const linkSel = options.initialKind === "link" ? "selected" : "";
+    const showPubChecked = options.initialShowInPublic !== false ? "checked" : "";
     root.innerHTML = `
       <div data-modal-overlay class="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-200"></div>
       <div data-modal-panel class="relative w-full max-w-lg rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 space-y-3 opacity-0 scale-[0.98] transition-all duration-200">
@@ -662,6 +720,20 @@ export function embedEditModal(options: {
               value="${safeTitle}"
               placeholder="Si lo dejas vacío, usamos el tipo detectado (p. ej. GitHub)"
               class="w-full rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 bg-white dark:bg-gray-950"
+            />
+          </label>
+          <label class="flex items-start gap-2.5 cursor-pointer rounded-lg border border-gray-100 dark:border-gray-800/80 px-2 py-2">
+            <input type="checkbox" data-modal-show-public class="mt-0.5 rounded border-gray-300 dark:border-gray-600" ${showPubChecked} />
+            <span class="text-xs text-gray-700 dark:text-gray-300 leading-snug">Visible en portfolio y CV público. Desmarcado: solo en la app.</span>
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">Miniatura (opcional, HTTPS)</span>
+            <input
+              data-modal-thumbnail-url
+              type="url"
+              value="${safeThumb}"
+              placeholder="Vacío → YouTube automático u Open Graph"
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 bg-white dark:bg-gray-950 text-sm"
             />
           </label>
         </div>
@@ -731,7 +803,19 @@ export function embedEditModal(options: {
       if (det.sourceKey === "invalid") return;
       const titleRaw = (titleInput?.value ?? "").trim();
       const title = titleRaw || det.sourceLabel;
-      cleanup({ kind, title, url });
+      const safeKind = coerceEvidenceDisplayKind(url, kind);
+      const showInPublic = root.querySelector<HTMLInputElement>("[data-modal-show-public]")?.checked !== false;
+      const thumbRaw = (root.querySelector<HTMLInputElement>("[data-modal-thumbnail-url]")?.value ?? "").trim();
+      let thumbnailUrl: string | null = null;
+      if (thumbRaw) {
+        try {
+          const u = new URL(thumbRaw);
+          if (u.protocol === "https:") thumbnailUrl = thumbRaw;
+        } catch {
+          /* invalid */
+        }
+      }
+      cleanup({ kind: safeKind, title, url, showInPublic, thumbnailUrl });
     });
   });
 }

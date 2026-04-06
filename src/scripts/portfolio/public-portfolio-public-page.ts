@@ -38,8 +38,9 @@ export type RpcPublicProject = {
   role: string;
   outcome: string;
   technologyNames: string[];
-  primaryEmbed: { kind: string; title: string; url: string } | null;
-  embeds?: { kind: string; title: string; url: string }[];
+  coverImagePath?: string | null;
+  primaryEmbed: { kind: string; title: string; url: string; thumbnailUrl?: string | null } | null;
+  embeds?: { kind: string; title: string; url: string; thumbnailUrl?: string | null }[];
 };
 
 export type RpcPublicPayload = {
@@ -102,7 +103,15 @@ function isHttpUrl(s: string): boolean {
   }
 }
 
-function normalizeEmbedsForProject(p: RpcPublicProject, cap: number): { kind: string; title: string; url: string }[] {
+function embedRpcThumb(e: { thumbnailUrl?: string | null } | null | undefined): string | null {
+  const t = e && typeof e.thumbnailUrl === "string" ? e.thumbnailUrl.trim() : "";
+  return t || null;
+}
+
+function normalizeEmbedsForProject(
+  p: RpcPublicProject,
+  cap: number,
+): { kind: string; title: string; url: string; thumbnailUrl: string | null }[] {
   const raw = Array.isArray(p.embeds) ? p.embeds : [];
   const list =
     raw.length > 0
@@ -110,7 +119,7 @@ function normalizeEmbedsForProject(p: RpcPublicProject, cap: number): { kind: st
       : p.primaryEmbed?.url
         ? [p.primaryEmbed]
         : [];
-  const out: { kind: string; title: string; url: string }[] = [];
+  const out: { kind: string; title: string; url: string; thumbnailUrl: string | null }[] = [];
   for (const e of list) {
     if (!e?.url || typeof e.url !== "string") continue;
     const url = e.url.trim();
@@ -119,6 +128,7 @@ function normalizeEmbedsForProject(p: RpcPublicProject, cap: number): { kind: st
       kind: typeof e.kind === "string" ? e.kind : "link",
       title: typeof e.title === "string" ? e.title : "",
       url,
+      thumbnailUrl: embedRpcThumb(e),
     });
     if (out.length >= cap) break;
   }
@@ -352,6 +362,7 @@ export async function initPublicPortfolioPage(opts: InitPublicPortfolioPageOpts)
             role: p.role,
             outcome: p.outcome,
             technologyNames: p.technologyNames ?? [],
+            coverImagePath: p.coverImagePath ?? null,
             embeds,
             primaryEmbed: p.primaryEmbed,
           },

@@ -1,5 +1,17 @@
 ---
 /** Campos de preferencias (compartidos: vista tablero y vista clásica). */
+import { FONT_CATALOG, fontDisplayLabel } from "@config/font-catalog";
+
+type FontCategory = (typeof FONT_CATALOG)[number]["category"];
+const byCategory: Record<FontCategory, typeof FONT_CATALOG> = {
+  builtin: [],
+  sans: [],
+  serif: [],
+  mono: [],
+};
+for (const e of FONT_CATALOG) {
+  byCategory[e.category].push(e);
+}
 ---
 
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -16,58 +28,38 @@
 
   <div class="space-y-1 sm:col-span-2">
     <span class="text-sm font-semibold" data-i18n="settings.prefs.font">Fuente</span>
-    <div data-pref-font-picker class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-      <button
-        type="button"
-        data-pref-font-choice="system"
-        aria-pressed="true"
-        class="text-left rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+    <select
+      data-pref-font
+      class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+    >
+      <optgroup
+        label="Built-in"
+        data-i18n="settings.prefs.fontGroupBuiltin"
+        data-i18n-attr="label"
       >
-        <div class="flex items-center justify-between gap-3">
-          <span style="font-family: var(--font-system);" data-i18n="settings.prefs.fontSystem">Sistema</span>
-          <span class="text-xs text-gray-500 dark:text-gray-400">Aa</span>
-        </div>
-      </button>
-      <button
-        type="button"
-        data-pref-font-choice="inter"
-        aria-pressed="false"
-        class="text-left rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-      >
-        <div class="flex items-center justify-between gap-3">
-          <span style="font-family: var(--font-inter);" data-i18n="settings.prefs.fontInter">Inter</span>
-          <span class="text-xs text-gray-500 dark:text-gray-400">Aa</span>
-        </div>
-      </button>
-      <button
-        type="button"
-        data-pref-font-choice="serif"
-        aria-pressed="false"
-        class="text-left rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-      >
-        <div class="flex items-center justify-between gap-3">
-          <span style="font-family: var(--font-serif);">Serif</span>
-          <span class="text-xs text-gray-500 dark:text-gray-400">Aa</span>
-        </div>
-      </button>
-      <button
-        type="button"
-        data-pref-font-choice="mono"
-        aria-pressed="false"
-        class="text-left rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-      >
-        <div class="flex items-center justify-between gap-3">
-          <span style="font-family: var(--font-mono);" data-i18n="settings.prefs.fontMono">Mono</span>
-          <span class="text-xs text-gray-500 dark:text-gray-400">Aa</span>
-        </div>
-      </button>
-    </div>
-    <select data-pref-font class="hidden">
-      <option value="system">system</option>
-      <option value="inter">inter</option>
-      <option value="serif">serif</option>
-      <option value="mono">mono</option>
+        {byCategory.builtin.map((e) => (
+          <option value={e.id}>{fontDisplayLabel(e)}</option>
+        ))}
+      </optgroup>
+      <optgroup label="Sans" data-i18n="settings.prefs.fontGroupSans" data-i18n-attr="label">
+        {byCategory.sans.map((e) => (
+          <option value={e.id}>{fontDisplayLabel(e)}</option>
+        ))}
+      </optgroup>
+      <optgroup label="Serif" data-i18n="settings.prefs.fontGroupSerif" data-i18n-attr="label">
+        {byCategory.serif.map((e) => (
+          <option value={e.id}>{fontDisplayLabel(e)}</option>
+        ))}
+      </optgroup>
+      <optgroup label="Mono" data-i18n="settings.prefs.fontGroupMono" data-i18n-attr="label">
+        {byCategory.mono.map((e) => (
+          <option value={e.id}>{fontDisplayLabel(e)}</option>
+        ))}
+      </optgroup>
     </select>
+    <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.fontGoogleHint">
+      Las fuentes marcadas se cargan desde Google Fonts al elegirlas.
+    </p>
   </div>
 
   <label class="space-y-1">
@@ -171,7 +163,7 @@
   </label>
 
   <label class="space-y-1">
-    <span class="text-sm font-semibold" data-i18n="settings.prefs.showLangSelector">Selector de idioma (header)</span>
+    <span class="text-sm font-semibold" data-i18n="settings.prefs.showLangSelector">Bandera de idioma (header)</span>
     <select
       data-pref-show-lang-selector
       class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
@@ -180,7 +172,7 @@
       <option value="no" data-i18n="settings.prefs.hide">Ocultar</option>
     </select>
     <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.showLangSelectorHint">
-      Por defecto está oculto en la barra; el idioma puedes cambiarlo siempre aquí.
+      El idioma se controla aquí con detalle; la bandera del header solo alterna ES/EN.
     </p>
   </label>
 </div>

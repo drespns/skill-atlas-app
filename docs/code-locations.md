@@ -8,9 +8,9 @@ Rutas públicas o de app según `src/pages/`. Los scripts viven en `src/scripts/
 
 | Ruta | Página (`src/pages/…`) | Script(s) principal(es) (`src/scripts/…`) |
 |------|-------------------------|-------------------------------------------|
-| `/` (landing) | `index.astro` | `landing/landing-page.ts` |
+| `/` (landing) | `index.astro` | `landing/landing-page.ts`, `landing/landing-charts-preview.ts` (gráfico demo) |
 | `/login` | `login.astro` | `login/login-auth.ts`, `login/login-earth.ts` |
-| `/app` | `app.astro` | `app/app-dashboard.ts`, `app/app-onboarding.ts` |
+| `/app` | `app.astro` | `app/app-dashboard.ts`, `app/app-dashboard-charts.ts` (Apache ECharts), `app/app-onboarding.ts` |
 | `/settings` | `settings.astro` | `settings/settings-auth.ts`, `settings/settings-prefs.ts`, `settings/settings-classic-ui.ts`, `settings/settings-profile.ts`, `settings/settings-qa.ts` |
 | `/cv` | `cv.astro` | `cv/cv-page.ts` |
 | `/cv/p/[token]` (CV público) | `cv/p/[token].astro` | `cv/public-cv-by-token.ts` |

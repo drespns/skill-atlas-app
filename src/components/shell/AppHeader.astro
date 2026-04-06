@@ -17,26 +17,10 @@ const APP_LOGO_SRC = "/favicon.svg";
       <a
         href="/"
         data-home-link
-        class="flex min-w-0 items-center gap-2 md:gap-3 no-underline rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+        class="flex min-w-0 items-center gap-2.5 md:gap-3 no-underline rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
       >
-        <img src={APP_LOGO_SRC} alt="SkillAtlas" class="h-8 w-8 shrink-0 rounded-md" />
-        <span class="font-bold text-lg hover:underline truncate">SkillAtlas</span>
-      </a>
-      <a
-        href="/settings#portfolio-profile"
-        data-auth-header-profile
-        data-auth-avatar-wrap
-        class="hidden shrink-0 items-center justify-center rounded-full no-underline ring-2 ring-transparent hover:ring-indigo-500/35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-        data-i18n="common.openPublicProfileSettings"
-        data-i18n-attr="aria-label,title"
-      >
-        <img
-          data-auth-avatar
-          alt=""
-          class="h-8 w-8 rounded-full border border-gray-200/80 dark:border-gray-800 object-cover"
-          loading="lazy"
-          referrerpolicy="no-referrer"
-        />
+        <img src={APP_LOGO_SRC} alt="SkillAtlas" class="h-11 w-11 sm:h-12 sm:w-12 shrink-0 rounded-lg" />
+        <span class="font-bold text-xl sm:text-2xl hover:underline truncate tracking-tight">SkillAtlas</span>
       </a>
 
       <div
@@ -135,7 +119,7 @@ const APP_LOGO_SRC = "/favicon.svg";
       </a>
     </nav>
 
-    <div class="flex min-w-0 flex-1 items-center justify-end gap-3 md:min-w-0">
+    <div class="flex min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3 md:min-w-0">
       <a
         href="/admin"
         data-admin-header-link
@@ -175,103 +159,85 @@ const APP_LOGO_SRC = "/favicon.svg";
           </kbd>
         </button>
 
-        <div
-          data-lang-flags
-          class="hidden items-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 p-0.5 gap-0.5"
-          role="group"
-          aria-label="Idioma"
-          data-i18n="common.language"
-          data-i18n-attr="aria-label"
-        >
-          <button
-            type="button"
-            data-lang-flag="es"
-            class="rounded-md px-2 py-1.5 leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
-            aria-pressed="true"
-            title="Español"
-          >
-            <img
-              data-flag-img="es"
-              src="/icons/flags/Spain.svg"
-              alt=""
-              class="h-5 w-5 rounded-sm"
-              loading="lazy"
-              decoding="async"
-            />
-          </button>
-          <button
-            type="button"
-            data-lang-flag="en"
-            class="rounded-md px-2 py-1.5 leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
-            aria-pressed="false"
-            title="English"
-          >
-            <img
-              data-flag-img="en"
-              src="/icons/flags/United_Kingdom.svg"
-              alt=""
-              class="h-5 w-5 rounded-sm"
-              loading="lazy"
-              decoding="async"
-            />
-          </button>
-        </div>
-
         <button
           type="button"
-          data-auth-header-signout
-          class="hidden items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
-          aria-label="Cerrar sesión"
-          title="Cerrar sesión"
-        >
-          <svg
-            class="h-5 w-5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <path d="M16 17l5-5-5-5" />
-            <path d="M21 12H9" />
-          </svg>
-        </button>
-
-        <a
-          href="/settings"
-          data-auth-header-settings
-          class={`header-settings-rainbow ${isActive("/settings") ? "header-settings-rainbow--active" : ""} hidden`}
-          aria-label="Ajustes"
-          title="Ajustes"
-          data-i18n="nav.settings"
+          data-lang-quick-toggle
+          class="hidden items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 p-1.5 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+          data-i18n="common.langQuickToggleAria"
           data-i18n-attr="aria-label,title"
         >
-          <span class="header-settings-rainbow__inner">
-            <svg
-              class="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
+          <img
+            data-lang-quick-flag
+            src="/icons/flags/Spain.svg"
+            alt=""
+            class="h-5 w-5 rounded-sm"
+            width="20"
+            height="20"
+            loading="lazy"
+            decoding="async"
+          />
+        </button>
+
+        <div data-header-user-menu class="relative hidden">
+          <button
+            type="button"
+            data-user-menu-trigger
+            class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 ring-2 ring-transparent hover:ring-indigo-500/35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 overflow-hidden"
+            aria-expanded="false"
+            aria-haspopup="menu"
+            data-i18n="common.userMenuTriggerAria"
+            data-i18n-attr="aria-label"
+          >
+            <img
+              data-auth-avatar
+              alt=""
+              class="absolute inset-0 h-full w-full object-cover hidden"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+            />
+            <span
+              data-user-menu-initial
+              class="text-xs font-semibold text-gray-600 dark:text-gray-300"
+              aria-hidden="true">?</span>
+          </button>
+          <div
+            data-user-menu-panel
+            class="hidden absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/98 dark:bg-gray-950/98 backdrop-blur shadow-lg py-1.5"
+            role="menu"
+            aria-label="Usuario"
+            data-i18n="common.userMenuLabel"
+            data-i18n-attr="aria-label"
+          >
+            <a
+              href="/settings#portfolio-profile"
+              role="menuitem"
+              data-user-menu-profile
+              class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+              data-i18n="common.userMenuPublicProfile"
             >
-              <path d="M21 4H14" />
-              <path d="M10 4H3" />
-              <path d="M21 12H12" />
-              <path d="M8 12H3" />
-              <path d="M21 20H16" />
-              <path d="M12 20H3" />
-              <path d="M14 2v4" />
-              <path d="M8 10v4" />
-              <path d="M16 18v4" />
-            </svg>
-          </span>
-        </a>
+              Perfil público
+            </a>
+            <a
+              href="/settings"
+              role="menuitem"
+              data-user-menu-settings
+              class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+              data-i18n="nav.settings"
+            >
+              Ajustes
+            </a>
+            <div class="my-1 border-t border-gray-200/80 dark:border-gray-800" aria-hidden="true"></div>
+            <button
+              type="button"
+              role="menuitem"
+              data-user-menu-signout
+              class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30"
+              data-i18n="settings.auth.logout"
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
 
         <button
           type="button"
