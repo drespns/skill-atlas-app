@@ -115,6 +115,55 @@
         Al regenerar, el enlace anterior deja de funcionar.
       </p>
     </div>
+
+    <div class="space-y-4 pt-8 border-t border-gray-200/90 dark:border-[#30363d]" data-settings-cv-public>
+      <h2 class="m-0 text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+        <span data-i18n="cv.publicShareTitle">CV público</span>
+      </h2>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
+        <span data-i18n="cv.publicShareSettingsHint">
+          Este enlace se gestiona desde Ajustes y es revocable (puedes regenerarlo).
+        </span>
+      </p>
+      <div data-cv-share class="space-y-3 hidden">
+        <label class="flex items-start gap-2 cursor-pointer">
+          <input type="checkbox" data-cv-share-enabled class="rounded border-gray-300 dark:border-gray-600 shrink-0 mt-0.5" />
+          <span class="text-sm text-gray-900 dark:text-gray-100" data-i18n="cv.publicShareEnable">Activar</span>
+        </label>
+        <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+          <input
+            type="text"
+            readonly
+            data-cv-share-url
+            class="w-full rounded-md border border-gray-200 dark:border-[#30363d] bg-white dark:bg-[#0d1117] px-3 py-2 text-sm settings-classic-input"
+          />
+          <div class="flex gap-2">
+            <button
+              type="button"
+              data-cv-share-copy
+              class="inline-flex items-center justify-center rounded-md border border-gray-200 dark:border-[#30363d] bg-white dark:bg-[#21262d] px-3 py-2 text-sm font-medium"
+              title="Copiar"
+            >
+              <span class="sr-only" data-i18n="settings.portfolio.copyPublicUrl">Copiar enlace</span>
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+            <button
+              type="button"
+              data-cv-share-rotate
+              class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:underline"
+            >
+              <span data-i18n="cv.publicShareRotate">Regenerar</span>
+            </button>
+          </div>
+        </div>
+        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="cv.publicShareWarn">
+          Al regenerar, el enlace anterior deja de funcionar.
+        </p>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -284,63 +333,6 @@
         placeholder="slug-proyecto-uno&#10;otro-slug"
       ></textarea>
       <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-profile-featured-slugs-hint></p>
-    </div>
-  </div>
-</section>
-
-<section
-  id="cv-public"
-  data-settings-section="cv_public"
-  data-settings-panel
-  hidden
-  class="settings-classic-panel hidden max-w-3xl pb-10"
->
-  <div class="space-y-4 max-w-3xl">
-    <h1 class="m-0 text-3xl font-normal tracking-tight text-gray-900 dark:text-gray-100 border-b border-gray-200/90 dark:border-[#30363d] pb-5">
-      <span data-i18n="cv.publicShareTitle">CV público</span>
-    </h1>
-    <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
-      <span data-i18n="cv.publicShareSettingsHint">
-        Este enlace se gestiona desde Ajustes y es revocable (puedes regenerarlo).
-      </span>
-    </p>
-    <div data-cv-share class="space-y-3 hidden">
-      <label class="flex items-start gap-2 cursor-pointer">
-        <input type="checkbox" data-cv-share-enabled class="rounded border-gray-300 dark:border-gray-600 shrink-0 mt-0.5" />
-        <span class="text-sm text-gray-900 dark:text-gray-100" data-i18n="cv.publicShareEnable">Activar</span>
-      </label>
-      <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
-        <input
-          type="text"
-          readonly
-          data-cv-share-url
-          class="w-full rounded-md border border-gray-200 dark:border-[#30363d] bg-white dark:bg-[#0d1117] px-3 py-2 text-sm settings-classic-input"
-        />
-        <div class="flex gap-2">
-          <button
-            type="button"
-            data-cv-share-copy
-            class="inline-flex items-center justify-center rounded-md border border-gray-200 dark:border-[#30363d] bg-white dark:bg-[#21262d] px-3 py-2 text-sm font-medium"
-            title="Copiar"
-          >
-            <span class="sr-only" data-i18n="settings.portfolio.copyPublicUrl">Copiar enlace</span>
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <rect x="9" y="9" width="13" height="13" rx="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-          </button>
-          <button
-            type="button"
-            data-cv-share-rotate
-            class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:underline"
-          >
-            <span data-i18n="cv.publicShareRotate">Regenerar</span>
-          </button>
-        </div>
-      </div>
-      <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="cv.publicShareWarn">
-        Al regenerar, el enlace anterior deja de funcionar.
-      </p>
     </div>
   </div>
 </section>

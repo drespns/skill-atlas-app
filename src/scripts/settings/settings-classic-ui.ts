@@ -215,7 +215,9 @@ function initSettingsShell() {
   };
 
   applySidebarLayout();
-  const hadNoHash = !window.location.hash.replace(/^#/, "").trim();
+  const rawHashOnLoad = window.location.hash.replace(/^#/, "").trim();
+  const scrollCvFromLegacy = rawHashOnLoad === "cv-public";
+  const hadNoHash = !rawHashOnLoad;
   activate(initialId(), { syncHash: false, persistPrefs: false, animate: false });
   if (hadNoHash) {
     history.replaceState(null, "", "#prefs");
@@ -227,6 +229,12 @@ function initSettingsShell() {
     if (cur !== hash) {
       updatePrefs({ settingsActiveSection: hash as SettingsPanelId });
     }
+  }
+
+  if (scrollCvFromLegacy) {
+    requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>("[data-settings-cv-public]")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
   }
 
   nav?.querySelectorAll<HTMLAnchorElement>("a[data-settings-nav-link]").forEach((a) => {

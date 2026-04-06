@@ -198,6 +198,36 @@ const FLAG_FILES = [
           Muestra la bandera de región (la interfaz sigue en español).
         </p>
       </label>
+
+      <label class="space-y-1">
+        <span class="text-sm font-semibold" data-i18n="settings.prefs.headerLangPopoverOpen">Selector de idioma (barra)</span>
+        <select
+          data-pref-header-lang-popover
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+        >
+          <option value="hover" data-i18n="settings.prefs.popoverHover">Al pasar el cursor</option>
+          <option value="click" data-i18n="settings.prefs.popoverClick">Al hacer clic</option>
+        </select>
+        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.headerLangPopoverHint">
+          Cómo abrir el menú de idiomas.
+        </p>
+      </label>
+
+      <label class="space-y-1">
+        <span class="text-sm font-semibold" data-i18n="settings.prefs.headerUserMenuPopoverOpen">Menú de cuenta (avatar)</span>
+        <select
+          data-pref-header-user-menu-popover
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+        >
+          <option value="hover" data-i18n="settings.prefs.popoverHover">Al pasar el cursor</option>
+          <option value="click" data-i18n="settings.prefs.popoverClick">Al hacer clic</option>
+        </select>
+        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.headerUserMenuPopoverHint">
+          Cómo abrir el menú de usuario.
+        </p>
+      </label>
+
+      <!-- Pref menú logo (hover|clic): desactivado; el logo usa solo hover (ver auth-header-bootstrap comentario). -->
     </div>
   </fieldset>
 

@@ -12,6 +12,7 @@ import {
   type Motion,
   type SettingsSidebarSide,
   type ThemeMode,
+  type HeaderPopoverTrigger,
   type UiFontScale,
 } from "@scripts/core/prefs";
 
@@ -33,6 +34,9 @@ function isMotion(v: string): v is Motion {
 function isDefaultView(v: string): v is DefaultView {
   return v === "cards" || v === "list";
 }
+function isHeaderPopoverTrigger(v: string): v is HeaderPopoverTrigger {
+  return v === "hover" || v === "click";
+}
 function initSettingsPrefs() {
   if (document.body.dataset.settingsPrefsInit === "1") return;
 
@@ -45,7 +49,10 @@ function initSettingsPrefs() {
   const projectsViewEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-projects-view]");
   const showHeaderIconsEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-show-header-icons]");
   const showLangSelectorEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-show-lang-selector]");
-
+  const headerLangPopoverEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-header-lang-popover]");
+  const headerUserMenuPopoverEls = document.querySelectorAll<HTMLSelectElement>(
+    "[data-pref-header-user-menu-popover]",
+  );
   if (
     !theme ||
     fontEls.length === 0 ||
@@ -55,7 +62,9 @@ function initSettingsPrefs() {
     technologiesViewEls.length === 0 ||
     projectsViewEls.length === 0 ||
     showHeaderIconsEls.length === 0 ||
-    showLangSelectorEls.length === 0
+    showLangSelectorEls.length === 0 ||
+    headerLangPopoverEls.length === 0 ||
+    headerUserMenuPopoverEls.length === 0
   )
     return;
 
@@ -99,6 +108,12 @@ function initSettingsPrefs() {
     showLangSelectorEls.forEach((el) => {
       el.value = p.showLangSelector ? "yes" : "no";
     });
+    headerLangPopoverEls.forEach((el) => {
+      el.value = p.headerLangPopover ?? "hover";
+    });
+    headerUserMenuPopoverEls.forEach((el) => {
+      el.value = p.headerUserMenuPopover ?? "click";
+    });
   };
 
   render();
@@ -140,7 +155,8 @@ function initSettingsPrefs() {
   bindSelectAll(motionEls, isMotion, (v) => ({ motion: v }));
   bindSelectAll(technologiesViewEls, isDefaultView, (v) => ({ technologiesView: v }));
   bindSelectAll(projectsViewEls, isDefaultView, (v) => ({ projectsView: v }));
-
+  bindSelectAll(headerLangPopoverEls, isHeaderPopoverTrigger, (v) => ({ headerLangPopover: v }));
+  bindSelectAll(headerUserMenuPopoverEls, isHeaderPopoverTrigger, (v) => ({ headerUserMenuPopover: v }));
   showHeaderIconsEls.forEach((el) => {
     el.addEventListener("change", () => {
       const v = el.value === "yes";
@@ -169,7 +185,9 @@ function initSettingsPrefs() {
         technologiesView: "cards",
         projectsView: "cards",
         showHeaderIcons: true,
-        showLangSelector: true,
+        showLangSelector: false,
+        headerLangPopover: "hover",
+        headerUserMenuPopover: "click",
         settingsSidebarSide: "left" as SettingsSidebarSide,
         settingsActiveSection: "prefs",
         qaTesterMode: false,
