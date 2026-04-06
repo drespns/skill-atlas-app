@@ -9,4 +9,9 @@ export function initLayoutVars() {
 
   apply();
   window.addEventListener("resize", apply);
+
+  if (typeof ResizeObserver !== "undefined") {
+    const ro = new ResizeObserver(() => apply());
+    ro.observe(header);
+  }
 }

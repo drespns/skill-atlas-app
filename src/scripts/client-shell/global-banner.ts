@@ -1,7 +1,10 @@
+/** Debe coincidir con `max-h-*` del banner en `AppGlobalBanner.astro`. */
+const BANNER_MAX_OPEN = "max-h-28";
+
 function applyGlobalBannerOpen(root: HTMLElement, glow: HTMLElement | null) {
   root.dataset.bannerState = "open";
-  root.classList.remove("max-h-0", "opacity-0", "-translate-y-2", "pointer-events-none");
-  root.classList.add("max-h-24", "opacity-100", "translate-y-0", "pointer-events-auto");
+  root.classList.remove("max-h-0", "max-h-24", "opacity-0", "-translate-y-2", "pointer-events-none");
+  root.classList.add(BANNER_MAX_OPEN, "opacity-100", "translate-y-0", "pointer-events-auto");
   glow?.classList.remove("opacity-0");
   glow?.classList.add("opacity-100");
 }
@@ -9,7 +12,7 @@ function applyGlobalBannerOpen(root: HTMLElement, glow: HTMLElement | null) {
 function applyGlobalBannerClosed(root: HTMLElement, glow: HTMLElement | null) {
   root.dataset.bannerState = "closed";
   root.classList.add("max-h-0", "opacity-0", "-translate-y-2", "pointer-events-none");
-  root.classList.remove("max-h-24", "opacity-100", "translate-y-0", "pointer-events-auto");
+  root.classList.remove(BANNER_MAX_OPEN, "max-h-24", "opacity-100", "translate-y-0", "pointer-events-auto");
   glow?.classList.add("opacity-0");
   glow?.classList.remove("opacity-100");
 }
