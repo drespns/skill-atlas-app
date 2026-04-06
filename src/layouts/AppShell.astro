@@ -39,6 +39,7 @@ const showMobileLandingGate = !mobileFullSitePaths.has(pathNorm);
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
+    <AppShellBannerDismissScript bannerId={GLOBAL_BANNER.id} />
     <title>{documentTitle}</title>
     <SiteMeta
       documentTitle={documentTitle}
@@ -50,7 +51,6 @@ const showMobileLandingGate = !mobileFullSitePaths.has(pathNorm);
     <ClientRouter />
 
     <AppShellHeadBootstrap />
-    <AppShellBannerDismissScript bannerId={GLOBAL_BANNER.id} />
   </head>
   <body
     class="bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100 min-h-svh flex flex-col"

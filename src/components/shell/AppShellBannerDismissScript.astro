@@ -13,3 +13,16 @@ const { bannerId } = Astro.props;
     document.documentElement.dataset.saBannerDismissed = "0";
   }
 </script>
+<style is:inline>
+  /* Crítico: tras fijar `data-sa-banner-dismissed`; sin depender solo de `max-height` en flex (`shrink-0` + `min-height:auto`). */
+  html[data-sa-banner-dismissed="1"][data-sa-banner-hydrated="0"] [data-global-banner-wrap] {
+    display: none !important;
+    max-height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    visibility: hidden !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+</style>

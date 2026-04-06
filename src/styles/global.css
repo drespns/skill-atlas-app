@@ -60,10 +60,13 @@ html[data-motion="reduced"] [data-app-header] {
   color: rgb(249 250 251);
 }
 
-/* Banner cerrado en localStorage: ocultar antes de hidratar JS (evita flash en carga y View Transitions). */
+/* Banner cerrado en localStorage: refuerzo tras cargar hoja (el crítico está en `AppShellBannerDismissScript.astro`). */
 html[data-sa-banner-dismissed="1"][data-sa-banner-hydrated="0"] [data-global-banner-wrap] {
+  display: none !important;
   max-height: 0 !important;
+  min-height: 0 !important;
   overflow: hidden !important;
+  visibility: hidden !important;
   transition: none !important;
 }
 
