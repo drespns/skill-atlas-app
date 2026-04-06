@@ -3,7 +3,8 @@ import AppShell from "../layouts/AppShell.astro";
 import LandingBackground from "../components/landing/LandingBackground.astro";
 import LandingHeroGrid from "../components/landing/LandingHeroGrid.astro";
 import LandingDevStripAndFlow from "../components/landing/LandingDevStripAndFlow.astro";
-import LandingRoadmapToday from "../components/landing/LandingRoadmapToday.astro";
+import LandingTodayAvailable from "../components/landing/LandingTodayAvailable.astro";
+import LandingFacetsCarousel from "../components/landing/LandingFacetsCarousel.astro";
 import LandingHowFaq from "../components/landing/LandingHowFaq.astro";
 import LandingWorkflowCta from "../components/landing/LandingWorkflowCta.astro";
 import LandingChartsPreview from "../components/landing/LandingChartsPreview.astro";
@@ -16,10 +17,13 @@ import LandingPageStyles from "../components/landing/LandingPageStyles.astro";
     class="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 overflow-x-clip text-gray-900 dark:text-gray-100"
   >
     <LandingBackground />
-    <div class="relative z-10 max-w-screen-2xl mx-auto py-10 md:py-14 space-y-18">
+    <div
+      class="relative z-10 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 md:py-14 space-y-18"
+    >
       <LandingHeroGrid />
       <LandingDevStripAndFlow />
-      <LandingRoadmapToday />
+      <LandingTodayAvailable />
+      <LandingFacetsCarousel />
       <LandingChartsPreview />
       <LandingHowFaq />
       <LandingWorkflowCta />
@@ -28,5 +32,6 @@ import LandingPageStyles from "../components/landing/LandingPageStyles.astro";
 
   <LandingPageStyles />
   <script src="../scripts/landing/landing-page.ts"></script>
+  <script src="../scripts/landing/landing-facets-carousel.ts"></script>
   <script src="../scripts/landing/landing-charts-preview.ts"></script>
 </AppShell>

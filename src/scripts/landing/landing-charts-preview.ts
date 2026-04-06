@@ -33,6 +33,7 @@ function renderDemo(el: HTMLElement) {
   inst?.dispose();
   ro?.disconnect();
   inst = echarts.init(el, undefined, { renderer: "canvas" });
+  /** Barras horizontales: proyectos por tecnología (demo ficticio), alineado con el foco del dashboard. */
   inst.setOption({
     title: {
       text: t("landing.chartsPreviewDemoTitle"),
@@ -40,48 +41,25 @@ function renderDemo(el: HTMLElement) {
       textStyle: { fontSize: 12, fontWeight: 600, color: textPrimary() },
     },
     tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-    legend: {
-      bottom: 0,
-      data: [
-        t("dashboard.charts.progress.aprendido"),
-        t("dashboard.charts.progress.practicado"),
-        t("dashboard.charts.progress.mastered"),
-      ],
-      textStyle: { color: textMuted(), fontSize: 10 },
-    },
-    grid: { left: 8, right: 8, top: 40, bottom: 40, containLabel: true },
+    grid: { left: 8, right: 16, top: 40, bottom: 8, containLabel: true },
     xAxis: {
+      type: "value",
+      minInterval: 1,
+      axisLabel: { color: textMuted(), fontSize: 10 },
+      splitLine: { lineStyle: { color: borderSubtle(), opacity: 0.5 } },
+    },
+    yAxis: {
       type: "category",
       data: ["SQL", "Python", "Tableau", "Power BI", "Spark"],
       axisLabel: { color: textMuted(), fontSize: 10 },
       axisLine: { lineStyle: { color: borderSubtle() } },
     },
-    yAxis: {
-      type: "value",
-      axisLabel: { color: textMuted() },
-      splitLine: { lineStyle: { color: borderSubtle(), opacity: 0.5 } },
-    },
     series: [
       {
-        name: t("dashboard.charts.progress.aprendido"),
+        name: t("dashboard.charts.projectsTitle"),
         type: "bar",
-        stack: "x",
-        itemStyle: { color: "#34d399" },
-        data: [4, 6, 3, 5, 2],
-      },
-      {
-        name: t("dashboard.charts.progress.practicado"),
-        type: "bar",
-        stack: "x",
-        itemStyle: { color: "#fbbf24" },
-        data: [2, 3, 4, 2, 3],
-      },
-      {
-        name: t("dashboard.charts.progress.mastered"),
-        type: "bar",
-        stack: "x",
-        itemStyle: { color: "#a78bfa" },
-        data: [1, 2, 1, 1, 4],
+        data: [3, 5, 2, 4, 3],
+        itemStyle: { color: "#8b5cf6", borderRadius: [0, 6, 6, 0] },
       },
     ],
   });

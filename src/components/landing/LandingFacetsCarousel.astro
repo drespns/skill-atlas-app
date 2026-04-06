@@ -1,0 +1,129 @@
+---
+/** Carrusel “center mode” compacto (facetas del producto). */
+const slides = [
+  {
+    key: "projects",
+    gradient: "from-indigo-600/90 via-violet-600/85 to-sky-600/80",
+    emoji: "📁",
+  },
+  {
+    key: "tech",
+    gradient: "from-emerald-600/90 via-teal-600/85 to-cyan-600/80",
+    emoji: "⚙️",
+  },
+  {
+    key: "portfolio",
+    gradient: "from-rose-600/90 via-fuchsia-600/85 to-violet-600/80",
+    emoji: "✨",
+  },
+  {
+    key: "cv",
+    gradient: "from-amber-600/90 via-orange-600/85 to-rose-600/80",
+    emoji: "📄",
+  },
+  {
+    key: "study",
+    gradient: "from-sky-600/90 via-indigo-600/85 to-violet-600/80",
+    emoji: "📚",
+  },
+];
+const last = slides.length - 1;
+---
+
+<section
+  data-landing-reveal
+  data-landing-facets-carousel
+  style="--lr-delay: 96ms"
+  class="rounded-3xl border border-violet-200/50 dark:border-violet-900/40 bg-white/55 dark:bg-gray-950/45 shadow-sm overflow-hidden"
+  aria-labelledby="landing-facets-heading"
+>
+  <div
+    class="px-5 sm:px-6 py-5 border-b border-gray-200/70 dark:border-gray-800/70 bg-linear-to-r from-violet-50/60 via-white/55 to-transparent dark:from-violet-950/35 dark:via-gray-950/50 dark:to-transparent backdrop-blur"
+  >
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div class="space-y-1 max-w-2xl">
+        <p class="m-0 text-xs font-semibold tracking-wide text-violet-600 dark:text-violet-300 uppercase" data-i18n="landing.facetsKicker">
+          Recorrido
+        </p>
+        <h2 id="landing-facets-heading" class="m-0 text-xl md:text-2xl font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.facetsTitle">
+          Facetas de SkillAtlas
+        </h2>
+        <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="landing.facetsIntro">
+          Desliza o usa los puntos: proyectos, stack, portfolio, CV y estudio en un solo lugar.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="relative px-3 sm:px-5 pb-7 pt-5 md:px-6">
+    <div
+      class="landing-facets-track flex gap-4 overflow-x-auto snap-x snap-proximity overscroll-x-contain pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x cursor-grab select-none [scroll-behavior:auto]"
+      data-landing-facets-track
+      tabindex="0"
+      aria-roledescription="carrusel"
+    >
+      {
+        slides.map((s, i) => (
+          <article
+            data-landing-facet-slide
+            data-slide-index={i}
+            class:list={[
+              "landing-facet-card shrink-0 snap-center rounded-[1.35rem] border border-white/20 shadow-lg transition-all duration-300 w-[min(100%,22rem)] sm:w-[24rem] md:w-[26rem]",
+              i === 0 ? "opacity-100 scale-100" : "opacity-55 scale-[0.97] md:opacity-50 md:scale-[0.96]",
+            ]}
+            style="min-height: 14.5rem"
+          >
+            <div
+              class:list={[
+                "h-full rounded-[1.25rem] p-5 sm:p-6 md:p-7 flex flex-col justify-between text-white bg-linear-to-br min-h-[14.5rem]",
+                s.gradient,
+              ]}
+            >
+              <div class="space-y-2">
+                <span class="text-3xl" aria-hidden="true">
+                  {s.emoji}
+                </span>
+                <h3 class="m-0 text-lg font-semibold tracking-tight" data-i18n={`landing.facet.${s.key}.title`}>
+                  {" "}
+                </h3>
+                <p class="m-0 text-sm text-white/90 leading-relaxed" data-i18n={`landing.facet.${s.key}.body`}>
+                  {" "}
+                </p>
+              </div>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+
+    <div class="flex justify-center gap-2 mt-5" data-landing-facets-dots role="tablist" aria-label="Facetas">
+      {
+        slides.map((_, i) => {
+          const edge = i === 0 || i === last;
+          return (
+            <button
+              type="button"
+              role="tab"
+              data-landing-facet-dot={i}
+              tabindex={edge ? -1 : 0}
+              aria-disabled={edge ? "true" : undefined}
+              class:list={[
+                "group relative h-2 rounded-full overflow-hidden transition-[width] duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-950",
+                edge ? "cursor-default pointer-events-none" : "cursor-pointer hover:opacity-90",
+                i === 0 ? "w-8" : "w-2",
+              ]}
+              aria-selected={i === 0 ? "true" : "false"}
+              aria-label={edge ? `Faceta ${i + 1} (usa arrastre o puntos centrales)` : `Ir a faceta ${i + 1}`}
+            >
+              <span class="absolute inset-0 rounded-full bg-gray-300 dark:bg-gray-600" aria-hidden="true" />
+              <span
+                data-landing-facet-dot-fill
+                class="absolute inset-y-0 left-0 rounded-full bg-indigo-600 dark:bg-indigo-400"
+                style="width: 0%"
+              />
+            </button>
+          );
+        })
+      }
+    </div>
+  </div>
+</section>

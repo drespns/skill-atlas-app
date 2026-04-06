@@ -17,7 +17,7 @@
           </div>
 
           <h1
-            class="landing-hero-enter m-0 text-4xl md:text-6xl font-semibold tracking-tight leading-[1.05]"
+            class="landing-hero-enter m-0 text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.05]"
             style="--le-delay: 70ms"
           >
             <span data-i18n="landing.heroTitleBefore">Tu conocimiento técnico,</span>
@@ -108,7 +108,7 @@
             </a>
           </div>
 
-          <div class="landing-hero-enter grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2" style="--le-delay: 260ms">
+          <div class="landing-hero-enter grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2" style="--le-delay: 260ms">
             <div class="landing-pill-card rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-4 shadow-sm">
               <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                 <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/10 dark:bg-indigo-400/10 text-indigo-700 dark:text-indigo-300">T</span>
@@ -148,54 +148,196 @@
           </div>
         </div>
 
-        <div class="relative landing-hero-enter" style="--le-delay: 120ms">
-          <div class="landing-hero-glow-pulse absolute -inset-3 rounded-3xl bg-linear-to-br from-indigo-200/70 via-transparent to-rose-200/55 dark:from-indigo-500/15 dark:to-rose-500/12 blur-2xl" />
-          <div class="landing-preview-mock relative rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/85 dark:bg-gray-950/85 shadow-sm overflow-hidden ring-1 ring-black/5 dark:ring-white/10">
-            <div class="px-5 py-4 border-b border-gray-200/80 dark:border-gray-800 flex items-center justify-between bg-white/60 dark:bg-gray-950/40 backdrop-blur">
-              <div class="flex items-center gap-2">
-                <div class="h-2.5 w-2.5 rounded-full bg-rose-400/80" />
-                <div class="h-2.5 w-2.5 rounded-full bg-amber-300/80" />
-                <div class="h-2.5 w-2.5 rounded-full bg-emerald-300/80" />
+        <div class="relative landing-hero-enter lg:sticky lg:top-28" style="--le-delay: 120ms">
+          <div class="landing-hero-glow-pulse absolute -inset-4 rounded-4xl bg-linear-to-br from-indigo-300/50 via-fuchsia-200/35 to-rose-200/45 dark:from-indigo-500/20 dark:via-fuchsia-500/12 dark:to-rose-500/14 blur-2xl" />
+          <div
+            class="landing-preview-mock relative overflow-hidden rounded-3xl border border-gray-200/80 dark:border-gray-800/90 bg-linear-to-b from-white/95 via-white/90 to-gray-50/95 dark:from-gray-950/95 dark:via-gray-950/90 dark:to-gray-900/95 shadow-[0_22px_50px_-12px_rgba(79,70,229,0.18)] dark:shadow-[0_24px_60px_-16px_rgba(0,0,0,0.65)] ring-1 ring-indigo-500/10 dark:ring-indigo-400/15"
+          >
+            <div
+              class="px-4 py-3 sm:px-5 border-b border-gray-200/80 dark:border-gray-800 flex items-center justify-between bg-linear-to-r from-gray-50/90 to-white/80 dark:from-gray-950/80 dark:to-gray-900/60 backdrop-blur-sm"
+            >
+              <div class="flex items-center gap-2" aria-hidden="true">
+                <div class="h-2.5 w-2.5 rounded-full bg-rose-400/90 shadow-sm" />
+                <div class="h-2.5 w-2.5 rounded-full bg-amber-300/90 shadow-sm" />
+                <div class="h-2.5 w-2.5 rounded-full bg-emerald-400/90 shadow-sm" />
               </div>
-              <span class="text-xs font-semibold text-gray-500 dark:text-gray-400" data-i18n="landing.previewLabel">Vista previa</span>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-600/90 dark:text-indigo-300/90" data-i18n="landing.previewLabel">Vista previa</span>
             </div>
-            <div class="p-6 space-y-4">
-              <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-950/40">
-                <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewProjectTitle">
-                  Proyecto · “Tableau Water Intake”
-                </p>
-                <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.previewProjectBody">
-                  Rol: data analyst · Resultado: dashboard público + insights accionables.
-                </p>
-                <div class="mt-3 flex flex-wrap gap-2">
-                  <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">Tableau</span>
-                  <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">SQL</span>
-                  <span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">Storytelling</span>
-                </div>
-              </div>
-              <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-950/40">
-                <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewEvidenceTitle">Evidencias</p>
-                <div class="mt-3 grid grid-cols-1 gap-2">
-                  <div class="rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/20 px-3 py-2">
-                    <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewEmbedTitle">
-                      Dashboard embebido
-                    </p>
-                    <p class="mt-1 mb-0 text-xs text-gray-600 dark:text-gray-400 truncate" data-i18n="landing.previewEmbedUrl">
-                      tableau.com / vistas / …
-                    </p>
+
+            <div
+              class="flex items-center gap-2 px-3 sm:px-4 py-2 border-b border-gray-200/70 dark:border-gray-800 bg-gray-100/80 dark:bg-gray-950/70"
+            >
+              <svg class="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path
+                  d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v7.8z"
+                ></path>
+              </svg>
+              <span
+                class="min-w-0 flex-1 truncate text-[11px] font-mono text-gray-600 dark:text-gray-400"
+                data-i18n="landing.previewUrlBar"
+              >
+                skillatlas.app · …
+              </span>
+            </div>
+
+            <div
+              class="flex flex-wrap gap-1.5 px-3 sm:px-4 py-2 border-b border-gray-200/60 dark:border-gray-800/80 bg-white/50 dark:bg-gray-950/40"
+            >
+              <span
+                class="rounded-full bg-indigo-600 px-2.5 py-0.5 text-[10px] font-semibold text-white shadow-sm shadow-indigo-500/25"
+                data-i18n="landing.previewNavProjects"
+              >
+                Proyectos
+              </span>
+              <span
+                class="rounded-full border border-gray-200/90 bg-white/90 px-2.5 py-0.5 text-[10px] font-medium text-gray-600 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400"
+                data-i18n="landing.previewNavTechnologies"
+              >
+                Tecnologías
+              </span>
+              <span
+                class="rounded-full border border-gray-200/90 bg-white/90 px-2.5 py-0.5 text-[10px] font-medium text-gray-600 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-400"
+                data-i18n="landing.previewNavPortfolio"
+              >
+                Portfolio
+              </span>
+            </div>
+
+            <div class="max-h-[min(58vh,32rem)] overflow-y-auto overscroll-y-contain p-4 sm:p-5 space-y-4 [scrollbar-width:thin]">
+              <article
+                class="overflow-hidden rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white/90 dark:bg-gray-950/50 shadow-sm"
+              >
+                <div class="relative aspect-video overflow-hidden bg-linear-to-br from-indigo-600 via-sky-600 to-violet-700">
+                  <div
+                    class="pointer-events-none absolute inset-0 opacity-40"
+                    style="background-image: linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px); background-size: 24px 24px;"
+                  >
                   </div>
-                  <div class="rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/20 px-3 py-2">
-                    <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewRepoTitle">Repositorio</p>
-                    <p class="mt-1 mb-0 text-xs text-gray-600 dark:text-gray-400 truncate" data-i18n="landing.previewRepoUrl">github.com / …</p>
+                  <div
+                    class="pointer-events-none absolute inset-0 bg-linear-to-t from-black/35 via-transparent to-transparent"
+                  >
+                  </div>
+                  <div class="absolute left-3 top-3 flex items-center gap-2">
+                    <span
+                      class="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm"
+                      data-i18n="landing.previewBadgeLive"
+                    >
+                      En portfolio
+                    </span>
+                  </div>
+                  <div class="absolute bottom-3 right-3 flex gap-1" aria-hidden="true">
+                    <span class="h-8 w-12 rounded bg-white/25 backdrop-blur-sm"></span>
+                    <span class="h-8 w-20 rounded bg-white/20 backdrop-blur-sm"></span>
                   </div>
                 </div>
-              </div>
-              <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 bg-white/60 dark:bg-gray-950/40">
-                <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewPortfolioTitle">Portfolio</p>
-                <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.previewPortfolioBody">
-                  Tarjetas claras, filtro por tecnología y evidencia principal destacada.
-                </p>
-              </div>
+                <div class="p-4 space-y-3">
+                  <div class="flex items-start justify-between gap-3">
+                    <p class="m-0 text-sm font-bold leading-snug text-gray-900 dark:text-gray-50" data-i18n="landing.previewProjectTitle">
+                      Proyecto · …
+                    </p>
+                    <span class="mt-0.5 inline-flex h-2 w-2 shrink-0 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]" title="OK" aria-hidden="true"></span>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    <span
+                      class="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200/80 bg-indigo-50/90 px-2.5 py-1 text-[11px] font-medium text-indigo-900 dark:border-indigo-800/60 dark:bg-indigo-950/50 dark:text-indigo-100"
+                    >
+                      <span class="text-[10px] font-semibold uppercase tracking-wide text-indigo-600/80 dark:text-indigo-300/80">Rol</span>
+                      <span data-i18n="landing.previewRoleBadge">Data analyst</span>
+                    </span>
+                    <span
+                      class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200/80 bg-emerald-50/90 px-2.5 py-1 text-[11px] font-medium text-emerald-900 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-100"
+                    >
+                      <span class="text-[10px] font-semibold uppercase tracking-wide text-emerald-700/80 dark:text-emerald-300/80" data-i18n="landing.previewOutcomeLabel">Resultado</span>
+                      <span data-i18n="landing.previewOutcomeBadge">Dashboard público</span>
+                    </span>
+                  </div>
+                  <p class="m-0 text-sm leading-relaxed text-gray-600 dark:text-gray-400" data-i18n="landing.previewProjectBody"></p>
+                  <div class="flex flex-wrap gap-1.5">
+                    <span
+                      class="border-l-2 border-indigo-500 pl-2 text-[11px] font-medium text-gray-800 dark:text-gray-200"
+                    >
+                      Tableau
+                    </span>
+                    <span
+                      class="border-l-2 border-sky-500 pl-2 text-[11px] font-medium text-gray-800 dark:text-gray-200"
+                    >
+                      SQL
+                    </span>
+                    <span
+                      class="border-l-2 border-rose-500 pl-2 text-[11px] font-medium text-gray-800 dark:text-gray-200"
+                    >
+                      Storytelling
+                    </span>
+                  </div>
+                </div>
+              </article>
+
+              <section
+                class="rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white/80 dark:bg-gray-950/45 p-4 shadow-sm"
+              >
+                <p class="m-0 text-xs font-bold text-gray-900 dark:text-gray-100" data-i18n="landing.previewEvidenceTitle">Evidencias</p>
+                <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                  <div class="overflow-hidden rounded-xl border border-gray-200/80 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/40">
+                    <div class="aspect-video bg-linear-to-br from-slate-700 via-slate-800 to-slate-900 p-2">
+                      <div
+                        class="flex h-full flex-col rounded-md border border-white/10 bg-linear-to-b from-white/10 to-white/5 p-2 shadow-inner"
+                      >
+                        <div class="mb-1 flex items-center gap-1 border-b border-white/10 pb-1">
+                          <span class="h-1.5 w-1.5 rounded-full bg-rose-400/90"></span>
+                          <span class="h-1.5 w-1.5 rounded-full bg-amber-300/80"></span>
+                          <span class="h-1 w-full rounded bg-white/10"></span>
+                        </div>
+                        <div class="flex flex-1 items-center justify-center rounded bg-linear-to-br from-indigo-500/30 to-sky-500/20">
+                          <span class="text-[10px] font-semibold text-white/70">embed</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="px-3 py-2">
+                      <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewEmbedTitle">
+                        Dashboard embebido
+                      </p>
+                      <p class="mt-0.5 mb-0 truncate text-[11px] text-gray-500 dark:text-gray-400" data-i18n="landing.previewEmbedUrl"></p>
+                    </div>
+                  </div>
+                  <div
+                    class="flex flex-col justify-center rounded-xl border border-gray-200/80 dark:border-gray-800 bg-gray-50/80 px-3 py-3 dark:bg-gray-900/40"
+                  >
+                    <div class="flex items-center gap-2">
+                      <img src="/icons/GitHub.svg" alt="" class="h-5 w-5 opacity-90" width="20" height="20" loading="lazy" />
+                      <div class="min-w-0 flex-1">
+                        <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewRepoTitle">
+                          Repositorio
+                        </p>
+                        <p class="mt-0.5 mb-0 truncate text-[11px] text-gray-500 dark:text-gray-400" data-i18n="landing.previewRepoUrl"></p>
+                      </div>
+                    </div>
+                    <div class="mt-3 h-1.5 w-full rounded-full bg-gray-200/90 dark:bg-gray-800">
+                      <div class="h-full w-2/3 rounded-full bg-linear-to-r from-emerald-500 to-sky-500"></div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section
+                class="rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-linear-to-br from-indigo-50/50 via-white/90 to-violet-50/40 p-4 dark:from-indigo-950/30 dark:via-gray-950/50 dark:to-violet-950/25"
+              >
+                <p class="m-0 text-xs font-bold text-gray-900 dark:text-gray-100" data-i18n="landing.previewPortfolioTitle">Portfolio</p>
+                <p class="mt-1.5 mb-3 text-sm leading-relaxed text-gray-600 dark:text-gray-400" data-i18n="landing.previewPortfolioBody"></p>
+                <div class="grid grid-cols-2 gap-2">
+                  <div
+                    class="overflow-hidden rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/90 shadow-sm dark:bg-gray-950/60"
+                  >
+                    <div class="aspect-4/3 bg-linear-to-br from-fuchsia-500/80 via-indigo-600/70 to-sky-500/70"></div>
+                    <p class="m-0 px-2.5 py-2 text-[11px] font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewMiniCard1Title"></p>
+                  </div>
+                  <div
+                    class="overflow-hidden rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/90 shadow-sm dark:bg-gray-950/60"
+                  >
+                    <div class="aspect-4/3 bg-linear-to-br from-amber-500/70 via-orange-600/60 to-rose-600/70"></div>
+                    <p class="m-0 px-2.5 py-2 text-[11px] font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.previewMiniCard2Title"></p>
+                  </div>
+                </div>
+              </section>
             </div>
           </div>
         </div>

@@ -1,9 +1,10 @@
 ---
 import AppShell from "../layouts/AppShell.astro";
+import PrepRoadmap from "../components/prep/PrepRoadmap.astro";
 ---
 
 <AppShell title="Preparación">
-  <section class="max-w-3xl mx-auto space-y-8 py-4">
+  <section class="max-w-5xl mx-auto space-y-10 py-4">
     <header class="space-y-3">
       <p class="m-0 text-xs font-semibold tracking-wide text-emerald-600 dark:text-emerald-400 uppercase" data-i18n="prep.kicker">
         En construcción
@@ -29,6 +30,8 @@ import AppShell from "../layouts/AppShell.astro";
         NotebookLM no ofrece una API pública estable para “sincronizar” cuentas; lo razonable es integrar vía enlaces, exportaciones o flujos manuales que definamos contigo.
       </p>
     </div>
+
+    <PrepRoadmap />
 
     <div class="flex flex-wrap gap-3">
       <a
