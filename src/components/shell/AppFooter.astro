@@ -1,8 +1,10 @@
 ---
-import { repoUrl } from "../../data";
-
 const year = new Date().getFullYear();
 const APP_LOGO_SRC = "/favicon.svg";
+
+/** Borde superior en forma de “V” (centro hacia abajo). */
+const FOOTER_CLIP =
+  "polygon(50% 17%, 100% 0, 100% 100%, 0 100%, 0 0)";
 
 const FOOTER_BUILD_ICONS = [
   { src: "/icons/Astro.svg", label: "Astro" },
@@ -12,126 +14,140 @@ const FOOTER_BUILD_ICONS = [
 ] as const;
 ---
 
-<footer
-  class="mt-auto border-t border-gray-200/80 dark:border-gray-800 bg-linear-to-b from-transparent to-gray-50/90 dark:to-gray-950/90"
-  style="padding: 2rem var(--app-main-px, 1.25rem) 1.75rem;"
-  aria-label="Site"
->
-  <div class="max-w-screen-2xl mx-auto flex flex-col gap-8">
-    <div class="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-      <div class="space-y-2 max-w-md">
-        <div class="flex items-center gap-2">
-          <img src={APP_LOGO_SRC} alt="" class="h-7 w-7 rounded-md opacity-90" />
-          <span class="font-bold text-base tracking-tight">SkillAtlas</span>
+<footer class="relative mt-auto" aria-label="Site">
+  <div
+    class="relative overflow-hidden border-t border-indigo-200/50 dark:border-indigo-900/40"
+    style={`clip-path: ${FOOTER_CLIP};`}
+  >
+    <div
+      class="pointer-events-none absolute inset-0 bg-linear-to-b from-indigo-50/90 via-white/95 to-slate-100/90 dark:from-indigo-950/35 dark:via-gray-950 dark:to-slate-950/95"
+      aria-hidden="true"
+    >
+    </div>
+    <div
+      class="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-indigo-400/55 to-transparent dark:via-indigo-500/35"
+      aria-hidden="true"
+    >
+    </div>
+    <div
+      class="pointer-events-none absolute -top-24 right-[-10%] h-48 w-[48%] rounded-full bg-indigo-400/15 blur-3xl dark:bg-indigo-500/10"
+      aria-hidden="true"
+    >
+    </div>
+    <div
+      class="pointer-events-none absolute -bottom-24 left-[-8%] h-48 w-[48%] rounded-full bg-violet-400/12 blur-3xl dark:bg-violet-500/10"
+      aria-hidden="true"
+    >
+    </div>
+
+    <div class="relative px-[clamp(1rem,4vw,2.5rem)] pt-16 sm:pt-20 pb-10">
+      <div class="max-w-screen-2xl mx-auto w-full flex flex-col gap-10">
+        <div class="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
+          <div class="space-y-4 max-w-lg">
+            <div
+              class="inline-flex items-center gap-3 rounded-2xl border border-indigo-200/70 bg-white/70 px-4 py-3 shadow-sm shadow-indigo-500/10 ring-1 ring-indigo-500/5 dark:border-indigo-800/50 dark:bg-gray-950/60 dark:ring-white/5"
+            >
+              <img src={APP_LOGO_SRC} alt="" class="h-10 w-10 rounded-xl shadow-sm shadow-indigo-500/20" />
+              <div>
+                <p class="m-0 text-base font-bold tracking-tight text-gray-900 dark:text-white">SkillAtlas</p>
+                <p class="m-0 text-xs font-medium text-indigo-600/90 dark:text-indigo-300/90" data-i18n="footer.kicker">
+                  Conocimiento técnico, listo para enseñar
+                </p>
+              </div>
+            </div>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="footer.tagline"></p>
+          </div>
+          <nav
+            class="flex flex-wrap gap-x-2 gap-y-2 text-sm font-medium lg:justify-end"
+            aria-label="Footer"
+          >
+            <a
+              href="/pricing"
+              data-public-footer-pricing
+              class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 hover:text-indigo-700 dark:hover:text-indigo-200 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
+            >
+              <span data-i18n="nav.pricing"></span>
+            </a>
+            <a
+              href="/cv"
+              data-auth-footer-nav
+              class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
+            >
+              <span data-i18n="nav.cv"></span>
+            </a>
+            <a
+              href="/technologies"
+              data-auth-footer-nav
+              class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
+            >
+              <span data-i18n="nav.technologies"></span>
+            </a>
+            <a
+              href="/projects"
+              data-auth-footer-nav
+              class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
+            >
+              <span data-i18n="nav.projects"></span>
+            </a>
+            <a
+              href="/portfolio"
+              data-auth-footer-nav
+              class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
+            >
+              <span data-i18n="nav.portfolio"></span>
+            </a>
+            <a
+              href="/study"
+              data-auth-footer-nav
+              class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
+            >
+              <span data-i18n="nav.study"></span>
+            </a>
+            <a
+              href="/settings#prefs"
+              data-auth-footer-nav
+              class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
+            >
+              <span data-i18n="nav.settings"></span>
+            </a>
+          </nav>
         </div>
-        <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="footer.tagline"></p>
+
+        <div
+          class="flex flex-col items-center justify-between gap-4 border-t border-indigo-200/40 dark:border-indigo-900/30 pt-8 sm:flex-row"
+        >
+          <p class="m-0 text-xs text-gray-500 dark:text-gray-500 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 sm:justify-start">
+            <span class="font-medium text-gray-600 dark:text-gray-400">© {year} SkillAtlas</span>
+          </p>
+          <div class="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
+            <span
+              class="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-500"
+              data-i18n="footer.builtWith"
+            >
+            </span>
+            <span class="inline-flex items-center gap-2 rounded-full border border-gray-200/90 bg-white/80 px-3 py-1.5 shadow-sm dark:border-gray-700/80 dark:bg-gray-900/80" aria-hidden="true">
+              {
+                FOOTER_BUILD_ICONS.map((ico) => (
+                  <img
+                    src={ico.src}
+                    alt=""
+                    title={ico.label}
+                    class="h-4 w-auto max-h-4 max-w-10 object-contain opacity-90"
+                    loading="lazy"
+                  />
+                ))
+              }
+              <img
+                src="/icons/supabase-logo-icon.svg"
+                alt=""
+                title="Supabase"
+                class="h-4 w-auto max-h-4 object-contain opacity-90"
+                loading="lazy"
+              />
+            </span>
+          </div>
+        </div>
       </div>
-      <nav
-        class="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-        aria-label="Footer"
-      >
-        <a
-          href="/pricing"
-          data-public-footer-pricing
-          class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
-        >
-          <span data-i18n="nav.pricing"></span>
-        </a>
-        <a
-          href="/cv"
-          data-auth-footer-nav
-          class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
-        >
-          <span data-i18n="nav.cv"></span>
-        </a>
-        <a
-          href="/technologies"
-          data-auth-footer-nav
-          class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
-        >
-          <span data-i18n="nav.technologies"></span>
-        </a>
-        <a
-          href="/projects"
-          data-auth-footer-nav
-          class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
-        >
-          <span data-i18n="nav.projects"></span>
-        </a>
-        <a
-          href="/portfolio"
-          data-auth-footer-nav
-          class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
-        >
-          <span data-i18n="nav.portfolio"></span>
-        </a>
-        <a
-          href="/study"
-          data-auth-footer-nav
-          class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
-        >
-          <span data-i18n="nav.study"></span>
-        </a>
-        <a
-          href="/settings#prefs"
-          data-auth-footer-nav
-          class="hover:text-gray-900 dark:hover:text-white no-underline transition-colors hidden"
-        >
-          <span data-i18n="nav.settings"></span>
-        </a>
-        <a
-          href={repoUrl}
-          target="_blank"
-          rel="noreferrer"
-          class="inline-flex items-center gap-1.5 hover:text-gray-900 dark:hover:text-white no-underline transition-colors"
-        >
-          <span data-i18n="footer.openSource"></span>
-          <svg class="h-3.5 w-3.5 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-            <polyline points="15 3 21 3 21 9"></polyline>
-            <line x1="10" y1="14" x2="21" y2="3"></line>
-          </svg>
-        </a>
-      </nav>
     </div>
   </div>
-  <p class="max-w-screen-2xl mx-auto mt-8 pt-6 border-t border-gray-200/60 dark:border-gray-800/80 text-center text-xs text-gray-500 dark:text-gray-500 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
-    <span>© {year} SkillAtlas</span>
-    <span aria-hidden="true" class="opacity-50">|</span>
-    <span class="inline-flex items-center gap-2">
-      <span class="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-80" data-i18n="footer.builtWith"></span>
-      <span class="inline-flex items-center gap-1.5 opacity-70" aria-hidden="true">
-        {
-          FOOTER_BUILD_ICONS.map((ico) => (
-            <img
-              src={ico.src}
-              alt=""
-              title={ico.label}
-              class="h-4 w-auto max-h-4 max-w-10 object-contain"
-              loading="lazy"
-            />
-          ))
-        }
-        <img
-          src="/icons/supabase-logo-icon.svg"
-          alt=""
-          title="Supabase"
-          class="h-4 w-auto max-h-4 object-contain"
-          loading="lazy"
-        />
-        <a
-          href={repoUrl}
-          target="_blank"
-          rel="noreferrer"
-          class="inline-flex items-center justify-center rounded-md border border-gray-200/80 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          aria-label="Ver repositorio en GitHub"
-          title="GitHub"
-          data-i18n="common.githubRepo"
-          data-i18n-attr="aria-label,title"
-        >
-          <img src="/icons/GitHub.svg" alt="" class="h-4 w-4" loading="lazy" />
-        </a>
-      </span>
-    </span>
-  </p>
 </footer>

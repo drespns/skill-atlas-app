@@ -1,4 +1,14 @@
 ---
+import AppGlobalBanner from "./AppGlobalBanner.astro";
+import { LANG_PICKER_OPTIONS, mapPickerOptionIdToUiLang } from "../../lib/lang-picker-options";
+
+function hintForPickerRow(id: string): string {
+  const m = mapPickerOptionIdToUiLang(id);
+  if (m === "es") return "es";
+  if (m === "en") return "en";
+  return "—";
+}
+
 export interface Props {
   pathname: string;
 }
@@ -7,12 +17,16 @@ const isActive = (href: string) => pathname === href || pathname.startsWith(`${h
 const APP_LOGO_SRC = "/favicon.svg";
 ---
 
-<header
-  class="border-b border-gray-200/80 dark:border-gray-800"
+<div
+  class="fixed top-0 left-0 right-0 z-50 flex flex-col transition-transform duration-300 ease-out will-change-transform"
   data-app-header
-  style="padding: var(--app-header-py, 1rem) var(--app-header-px, 1.25rem);"
 >
-  <div class="max-w-screen-2xl mx-auto flex w-full min-w-0 items-center gap-4">
+  <AppGlobalBanner />
+  <header
+    class="shrink-0 border-b border-gray-200/80 dark:border-gray-800 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-gray-950/85"
+    style="padding-top: var(--app-header-py, 1rem); padding-bottom: var(--app-header-py, 1rem);"
+  >
+  <div class="max-w-screen-2xl mx-auto flex w-full min-w-0 items-center gap-3 sm:gap-4 px-4 sm:px-6 lg:px-8">
     <div class="relative flex shrink-0 items-center gap-2 md:gap-3 min-w-0" data-home-wrap data-header-brand>
       <a
         href="/"
@@ -55,7 +69,7 @@ const APP_LOGO_SRC = "/favicon.svg";
 
     <nav
       data-header-nav
-      class="hidden md:flex md:flex-1 flex-wrap items-center justify-center gap-1 text-sm relative min-w-0"
+      class="hidden md:flex md:flex-1 flex-wrap items-center justify-center gap-x-0.5 gap-y-1 lg:gap-1 text-sm relative min-w-0"
       data-i18n-scope="nav"
     >
       <div
@@ -77,7 +91,7 @@ const APP_LOGO_SRC = "/favicon.svg";
         data-auth-nav
         data-header-nav-link
         data-nav-active={isActive("/cv") ? "true" : "false"}
-        class="header-nav-link relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+        class="header-nav-link relative px-2 lg:px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
       >
         <span data-i18n="nav.cv">CV</span>
       </a>
@@ -86,7 +100,7 @@ const APP_LOGO_SRC = "/favicon.svg";
         data-auth-nav
         data-header-nav-link
         data-nav-active={isActive("/technologies") ? "true" : "false"}
-        class="header-nav-link relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+        class="header-nav-link relative px-2 lg:px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
       >
         <span data-i18n="nav.technologies">Tecnologías</span>
       </a>
@@ -95,7 +109,7 @@ const APP_LOGO_SRC = "/favicon.svg";
         data-auth-nav
         data-header-nav-link
         data-nav-active={isActive("/projects") ? "true" : "false"}
-        class="header-nav-link relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+        class="header-nav-link relative px-2 lg:px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
       >
         <span data-i18n="nav.projects">Proyectos</span>
       </a>
@@ -104,7 +118,7 @@ const APP_LOGO_SRC = "/favicon.svg";
         data-auth-nav
         data-header-nav-link
         data-nav-active={isActive("/portfolio") ? "true" : "false"}
-        class="header-nav-link relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+        class="header-nav-link relative px-2 lg:px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
       >
         <span data-i18n="nav.portfolio">Portfolio</span>
       </a>
@@ -113,7 +127,7 @@ const APP_LOGO_SRC = "/favicon.svg";
         data-auth-nav
         data-header-nav-link
         data-nav-active={isActive("/study") ? "true" : "false"}
-        class="header-nav-link relative px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+        class="header-nav-link relative px-2 lg:px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
       >
         <span data-i18n="nav.study">Estudio</span>
       </a>
@@ -124,7 +138,7 @@ const APP_LOGO_SRC = "/favicon.svg";
         href="/admin"
         data-admin-header-link
         data-nav-active={isActive("/admin") ? "true" : "false"}
-        class="header-admin-link relative shrink-0 px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+        class="header-admin-link relative shrink-0 px-2 lg:px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
       >
         <span data-i18n="nav.admin">Admin</span>
       </a>
@@ -159,24 +173,69 @@ const APP_LOGO_SRC = "/favicon.svg";
           </kbd>
         </button>
 
-        <button
-          type="button"
-          data-lang-quick-toggle
-          class="hidden items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 p-1.5 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
-          data-i18n="common.langQuickToggleAria"
-          data-i18n-attr="aria-label,title"
-        >
-          <img
-            data-lang-quick-flag
-            src="/icons/flags/Spain.svg"
-            alt=""
-            class="h-5 w-5 rounded-sm"
-            width="20"
-            height="20"
-            loading="lazy"
-            decoding="async"
-          />
-        </button>
+        <div class="relative hidden shrink-0 items-center" data-lang-wrap>
+          <button
+            type="button"
+            data-lang-quick-toggle
+            class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 p-1.5 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring"
+            aria-expanded="false"
+            aria-haspopup="menu"
+            data-i18n="common.langQuickToggleAria"
+            data-i18n-attr="aria-label,title"
+          >
+            <img
+              data-lang-quick-flag
+              src="/icons/flags/Spain.svg"
+              alt=""
+              class="h-5 w-5 rounded-sm"
+              width="20"
+              height="20"
+              loading="lazy"
+              decoding="async"
+            />
+          </button>
+          <div
+            data-lang-popover
+            class="hidden absolute right-0 top-full z-40 mt-2 w-[min(92vw,18rem)] rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur shadow-lg p-2"
+            role="menu"
+            data-i18n="common.langPickerMenuAria"
+            data-i18n-attr="aria-label"
+          >
+            <p class="m-0 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              <span data-i18n="common.langPickerKicker">Elegir idioma</span>
+            </p>
+            <div class="max-h-[min(70vh,24rem)] overflow-y-auto space-y-1">
+              {
+                LANG_PICKER_OPTIONS.map((o) => (
+                  <button
+                    type="button"
+                    data-lang-picker-option={o.id}
+                    class="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring disabled:pointer-events-none"
+                  >
+                    <span class="flex min-w-0 items-center gap-2.5">
+                      <img
+                        src={`/icons/flags/${o.flag}.svg`}
+                        alt=""
+                        class="h-6 w-6 shrink-0 rounded-sm"
+                        width="24"
+                        height="24"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <span class="truncate">{o.label}</span>
+                    </span>
+                    <span class="shrink-0 text-xs font-mono text-gray-500 dark:text-gray-400">
+                      {hintForPickerRow(o.id)}
+                    </span>
+                  </button>
+                ))
+              }
+            </div>
+            <p class="m-0 mt-2 px-2 text-xs text-gray-500 dark:text-gray-400" data-i18n="common.langPickerFooter">
+              Español e inglés disponibles; más idiomas, próximamente.
+            </p>
+          </div>
+        </div>
 
         <div data-header-user-menu class="relative hidden">
           <button
@@ -208,15 +267,6 @@ const APP_LOGO_SRC = "/favicon.svg";
             data-i18n="common.userMenuLabel"
             data-i18n-attr="aria-label"
           >
-            <a
-              href="/settings#portfolio-profile"
-              role="menuitem"
-              data-user-menu-profile
-              class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
-              data-i18n="common.userMenuPublicProfile"
-            >
-              Perfil público
-            </a>
             <a
               href="/settings#prefs"
               role="menuitem"
@@ -286,4 +336,6 @@ const APP_LOGO_SRC = "/favicon.svg";
       </div>
     </div>
   </div>
-</header>
+
+  </header>
+</div>

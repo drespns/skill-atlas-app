@@ -2,16 +2,36 @@
 import "../styles/global.css";
 import { ClientRouter } from "astro:transitions";
 import { GLOBAL_BANNER } from "../config/banner";
+import { SITE_DEFAULT_DESCRIPTION, SITE_NAME } from "../config/site-meta";
 import AppShellHeadBootstrap from "../components/shell/AppShellHeadBootstrap.astro";
 import AppShellBannerDismissScript from "../components/shell/AppShellBannerDismissScript.astro";
-import AppGlobalBanner from "../components/shell/AppGlobalBanner.astro";
+import SiteMeta from "../components/shell/SiteMeta.astro";
 import AppHeader from "../components/shell/AppHeader.astro";
 import AppFooter from "../components/shell/AppFooter.astro";
 import AppCommandPalette from "../components/shell/AppCommandPalette.astro";
 import AppFabShell from "../components/shell/AppFabShell.astro";
+import MobileLandingScreen from "../components/shell/MobileLandingScreen.astro";
 
-const { title = "SkillAtlas" } = Astro.props;
+export interface Props {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+  noindex?: boolean;
+}
+
+const {
+  title = "SkillAtlas",
+  description = SITE_DEFAULT_DESCRIPTION,
+  ogImage,
+  noindex = false,
+} = Astro.props;
+
+const documentTitle = title.includes(SITE_NAME) ? title : `${title} · ${SITE_NAME}`;
 const pathname = Astro.url.pathname;
+const pathNorm = pathname.replace(/\/$/, "") || "/";
+/** En estas rutas se muestra la app completa también en móvil (formularios). */
+const mobileFullSitePaths = new Set(["/login", "/request-access"]);
+const showMobileLandingGate = !mobileFullSitePaths.has(pathNorm);
 ---
 
 <!doctype html>
@@ -19,7 +39,13 @@ const pathname = Astro.url.pathname;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <title>{title}</title>
+    <title>{documentTitle}</title>
+    <SiteMeta
+      documentTitle={documentTitle}
+      description={description}
+      ogImage={ogImage}
+      noindex={noindex}
+    />
     <slot name="head" />
     <ClientRouter />
 
@@ -30,20 +56,25 @@ const pathname = Astro.url.pathname;
     class="bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100 min-h-svh flex flex-col"
     style="font-family: var(--app-font-family);"
   >
-    <AppGlobalBanner />
-    <AppHeader pathname={pathname} />
+    {showMobileLandingGate && <MobileLandingScreen />}
 
-    <main
-      class="max-w-screen-2xl mx-auto flex-1 w-full"
-      data-app-main
-      style="padding: var(--app-main-py, 1.5rem) var(--app-main-px, 1.25rem);"
+    <div
+      class:list={[showMobileLandingGate ? "hidden md:flex" : "flex", "flex-col flex-1 w-full min-h-svh"]}
+      data-app-desktop-chrome
     >
-      <slot />
-    </main>
+      <AppHeader pathname={pathname} />
 
-    <AppFooter />
-    <AppCommandPalette />
-    <AppFabShell />
+      <main
+        class="app-main-shell max-w-screen-2xl mx-auto flex-1 w-full"
+        data-app-main
+      >
+        <slot />
+      </main>
+
+      <AppFooter />
+      <AppCommandPalette />
+      <AppFabShell />
+    </div>
 
     <script src="../scripts/client.ts"></script>
     <script src="../scripts/shell/fab-bubbles.ts"></script>

@@ -17,6 +17,37 @@ body {
   overflow-x: hidden;
 }
 
+/* AppShell: cabecera fija + hueco para el contenido (`--app-header-h` en `layout-vars.ts`). */
+.app-main-shell {
+  /* Más aire en portátiles/tablets; en desktop grande converge con ~2rem */
+  --app-shell-inline: clamp(1rem, 4vw, 2.5rem);
+  padding: var(--app-main-py, 1.5rem) var(--app-shell-inline);
+  padding-top: calc(var(--app-header-h, 4rem) + var(--app-main-py, 1.5rem));
+}
+
+.landing-facets-track.is-dragging {
+  cursor: grabbing;
+}
+
+.landing-facets-track.is-dragging .landing-facet-card {
+  transition-duration: 0ms !important;
+}
+
+[data-app-header].is-header-hidden {
+  transform: translateY(-100%);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-app-header] {
+    transition-duration: 0.001ms !important;
+  }
+}
+
+html[data-motion="reduced"] [data-app-header] {
+  transition-duration: 0.001ms !important;
+}
+
 /* Nav activo: el cliente actualiza `data-nav-active` en cada ruta (View Transitions). */
 [data-header-nav] .header-nav-link[data-nav-active="true"],
 [data-app-header] .header-admin-link[data-nav-active="true"] {
@@ -368,7 +399,18 @@ dialog[data-project-concepts-dialog].project-concepts-dialog[open] .project-conc
 
   body.cv-print-mode [data-app-main] {
     padding: 0 !important;
+    padding-top: 0 !important;
     max-width: none !important;
+  }
+
+  /* Escala tipográfica del CV según páginas objetivo + jerarquía por sección */
+  body.cv-print-mode [data-cv-document],
+  body.cv-print-mode [data-public-cv-doc] {
+    font-size: calc(10.5pt * var(--cv-print-scale, 1));
+  }
+
+  body.cv-print-mode [data-cv-weight="support"] {
+    font-size: 0.94em;
   }
 
   /* Forzar bordes claros aunque el DOM tenga clases `dark:*`. */
@@ -387,6 +429,11 @@ dialog[data-project-concepts-dialog].project-concepts-dialog[open] .project-conc
     page-break-inside: avoid;
   }
 
+  /* Enlaces sociales del CV: iconos siguen siendo clicables en PDF si el motor lo permite */
+  body.cv-print-mode [data-cv-document] a.cv-social-link {
+    color: inherit;
+  }
+
   h2,
   h3,
   h4 {
@@ -397,6 +444,29 @@ dialog[data-project-concepts-dialog].project-concepts-dialog[open] .project-conc
     orphans: 3;
     widows: 3;
   }
+}
+
+/* CV: escala tipográfica (vista previa alineada con impresión) */
+[data-cv-document],
+[data-public-cv-doc] {
+  font-size: calc(0.9375rem * var(--cv-print-scale, 1));
+}
+
+[data-cv-document] [data-cv-weight="support"],
+[data-public-cv-doc] [data-cv-weight="support"] {
+  font-size: 0.94em;
+}
+
+/* CV: plantilla minimal (primera iteración) */
+.cv-template-minimal[data-cv-document] {
+  border-radius: 0.75rem;
+}
+.cv-template-minimal[data-cv-document] .cv-doc-project {
+  border-left: 3px solid rgb(199 210 254);
+  padding-left: 0.75rem;
+}
+.dark .cv-template-minimal[data-cv-document] .cv-doc-project {
+  border-left-color: rgb(99 102 241 / 0.45);
 }
 
 /* Preferencias globales (UI) */

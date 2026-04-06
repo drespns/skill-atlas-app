@@ -4,34 +4,52 @@ import { GLOBAL_BANNER } from "../../config/banner";
 
 <div
   data-global-banner-wrap
-  class="sticky top-0 z-1001"
+  class="relative shrink-0 w-full overflow-hidden"
   transition:persist="skillatlas-global-banner"
 >
+  <div
+    class="pointer-events-none absolute -left-[15%] top-1/2 h-40 w-[45%] -translate-y-1/2 rounded-full bg-indigo-400/20 blur-3xl dark:bg-indigo-500/15"
+    aria-hidden="true"
+  >
+  </div>
+  <div
+    class="pointer-events-none absolute -right-[12%] top-0 h-36 w-[40%] rounded-full bg-violet-400/18 blur-3xl dark:bg-violet-500/12"
+    aria-hidden="true"
+  >
+  </div>
+  <div
+    class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-indigo-400/45 to-transparent dark:via-indigo-500/30"
+    aria-hidden="true"
+  >
+  </div>
+
   <div
     data-global-banner
     data-banner-id={GLOBAL_BANNER.id}
     data-banner-state="open"
-    class="relative overflow-hidden border-b border-white/40 dark:border-white/10 backdrop-blur transition-[max-height,opacity,transform] duration-300 ease-out max-h-24 opacity-100 translate-y-0 pointer-events-auto bg-linear-to-r from-fuchsia-500/25 via-indigo-500/15 to-sky-400/20 dark:from-fuchsia-400/15 dark:via-indigo-400/10 dark:to-sky-300/10"
+    class="relative overflow-hidden border-b border-indigo-200/55 dark:border-indigo-900/45 bg-linear-to-r from-indigo-50/95 via-white/90 to-violet-50/85 dark:from-indigo-950/55 dark:via-gray-950/92 dark:to-violet-950/45 backdrop-blur-md transition-[max-height,opacity,transform] duration-300 ease-out max-h-28 opacity-100 translate-y-0 pointer-events-auto shadow-[0_8px_30px_-12px_rgba(79,70,229,0.25)] dark:shadow-[0_8px_36px_-14px_rgba(0,0,0,0.55)] ring-1 ring-indigo-500/10 dark:ring-indigo-400/15"
   >
     <div
       aria-hidden="true"
-      class="pointer-events-none absolute inset-0 opacity-70"
+      class="pointer-events-none absolute inset-0 opacity-75"
       style="
             background-image:
-              radial-gradient(12px 12px at 12% 35%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.0) 70%),
-              radial-gradient(10px 10px at 35% 65%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.0) 70%),
-              radial-gradient(8px 8px at 62% 30%, rgba(255,255,255,0.40) 0%, rgba(255,255,255,0.0) 70%),
-              radial-gradient(9px 9px at 78% 70%, rgba(255,255,255,0.42) 0%, rgba(255,255,255,0.0) 70%),
-              linear-gradient(90deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02));
+              radial-gradient(14px 14px at 10% 40%, rgba(99,102,241,0.35) 0%, rgba(99,102,241,0) 72%),
+              radial-gradient(11px 11px at 32% 68%, rgba(139,92,246,0.28) 0%, rgba(139,92,246,0) 70%),
+              radial-gradient(9px 9px at 58% 32%, rgba(56,189,248,0.22) 0%, rgba(56,189,248,0) 70%),
+              radial-gradient(10px 10px at 76% 62%, rgba(244,114,182,0.18) 0%, rgba(244,114,182,0) 70%),
+              linear-gradient(100deg, rgba(255,255,255,0.14), rgba(255,255,255,0.02));
           "
     >
     </div>
-    <div class="max-w-screen-2xl mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-2">
+    <div class="relative max-w-screen-2xl mx-auto flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 py-2.5">
       <div class="flex flex-wrap items-center gap-2 min-w-0">
-        <span class="text-[11px] font-semibold rounded-full px-2 py-0.5 border border-white/50 dark:border-white/15 bg-white/55 dark:bg-gray-950/40">
+        <span
+          class="text-[11px] font-bold rounded-full px-2.5 py-0.5 border border-indigo-300/60 dark:border-indigo-600/45 bg-white/85 dark:bg-gray-950/55 text-indigo-800 dark:text-indigo-100 shadow-sm"
+        >
           {GLOBAL_BANNER.version}
         </span>
-        <span data-banner-text class="text-xs text-gray-900 dark:text-gray-100 truncate">{GLOBAL_BANNER.text}</span>
+        <span data-banner-text class="text-xs text-gray-800 dark:text-gray-100 truncate font-medium">{GLOBAL_BANNER.text}</span>
         {
           GLOBAL_BANNER.href ? (
             <a
@@ -39,7 +57,7 @@ import { GLOBAL_BANNER } from "../../config/banner";
               href={GLOBAL_BANNER.href}
               target={GLOBAL_BANNER.href.startsWith("http") ? "_blank" : undefined}
               rel={GLOBAL_BANNER.href.startsWith("http") ? "noreferrer" : undefined}
-              class="text-xs font-semibold underline decoration-white/60 hover:decoration-white dark:decoration-white/40 dark:hover:decoration-white"
+              class="text-xs font-semibold text-indigo-700 dark:text-indigo-200 underline decoration-indigo-400/70 underline-offset-2 hover:decoration-indigo-600 dark:hover:decoration-indigo-300"
             >
               {GLOBAL_BANNER.hrefLabel ?? "Ver más"}
             </a>
@@ -49,7 +67,7 @@ import { GLOBAL_BANNER } from "../../config/banner";
       <button
         type="button"
         data-banner-close
-        class="text-xs font-semibold rounded-lg border border-white/50 dark:border-white/15 bg-white/40 dark:bg-gray-950/35 px-2.5 py-1 hover:bg-white/55 dark:hover:bg-gray-900/40 transition-colors"
+        class="text-xs font-semibold rounded-xl border border-indigo-200/80 dark:border-indigo-700/50 bg-white/90 dark:bg-gray-950/50 px-3 py-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors shadow-sm"
         aria-label="Cerrar anuncio"
         title="Cerrar"
       >
@@ -57,5 +75,4 @@ import { GLOBAL_BANNER } from "../../config/banner";
       </button>
     </div>
   </div>
-  <div class="pointer-events-none absolute inset-0 -z-10 bg-linear-to-r from-indigo-200/40 via-transparent to-rose-200/40 dark:from-indigo-500/10 dark:to-rose-500/10 opacity-100" data-banner-glow></div>
 </div>

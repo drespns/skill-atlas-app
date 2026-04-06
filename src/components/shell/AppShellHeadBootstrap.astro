@@ -39,8 +39,8 @@ import { FONT_CATALOG, FONT_GOOGLE_LINK_ID } from "../../config/font-catalog";
     const projectsView = prefs?.projectsView ?? "cards";
     const projectEvidenceLayout = prefs?.projectEvidenceLayout === "grid" ? "grid" : "large";
     const showHeaderIcons = prefs?.showHeaderIcons ?? true;
-    const showLangSelector = prefs?.showLangSelector ?? true;
-    const lang = prefs?.lang ?? "es";
+    const showLangSelector = prefs?.showLangSelector ?? false;
+    const lang = prefs?.lang === "en" ? "en" : "es";
 
     const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;
     const isDark = themeMode === "dark" ? true : themeMode === "light" ? false : Boolean(prefersDark);
@@ -58,7 +58,6 @@ import { FONT_CATALOG, FONT_GOOGLE_LINK_ID } from "../../config/font-catalog";
     root.dataset.showHeaderIcons = showHeaderIcons ? "true" : "false";
     root.dataset.showLangSelector = showLangSelector ? "true" : "false";
     root.dataset.langPref = lang;
-    root.dataset.langUiLocked = "1";
     root.dataset.uiFontScale = uiFontScale;
     root.style.colorScheme = isDark ? "dark" : "light";
 
