@@ -5,27 +5,32 @@ import { loadPrefs, updatePrefs } from "@scripts/core/prefs";
 import { refreshHeaderIconsFromPrefs } from "@scripts/client-shell/header-icons";
 import { syncThemeToggleAria } from "@scripts/client-shell/theme-toggle-sync";
 
+function isLangUiLocked(): boolean {
+  return document.documentElement.dataset.langUiLocked === "1";
+}
+
 export async function initI18n() {
   await i18next.init({
-    lng: loadPrefs().lang,
+    lng: "es",
     fallbackLng: "es",
     resources: {
       es: { translation: es as any },
       en: { translation: en as any },
     },
   });
+  await i18next.changeLanguage("es");
 
   const notifyLangChanged = (lang: "es" | "en") => {
     window.dispatchEvent(new CustomEvent("skillatlas:ui-lang-changed", { detail: { lang } }));
   };
 
-  const setLangAttr = (lng: string) => {
-    document.documentElement.lang = lng?.startsWith("en") ? "en" : "es";
+  const setLangAttr = () => {
+    document.documentElement.lang = "es";
   };
 
   const render = () => {
-    setLangAttr(i18next.language);
-    const lng = i18next.language.startsWith("en") ? "en" : "es";
+    setLangAttr();
+    const lng: "es" | "en" = "es";
 
     const inferCountryForSpanish = (): "Spain" | "Mexico" | "Argentina" | "Chile" | "Ecuador" => {
       try {
@@ -88,8 +93,8 @@ export async function initI18n() {
 
     const quickFlagImg = document.querySelector<HTMLImageElement>("[data-lang-quick-flag]");
     if (quickFlagImg) {
-      quickFlagImg.src = lng === "en" ? "/icons/flags/United_Kingdom.svg" : esFlagSrc;
-      quickFlagImg.alt = lng === "en" ? "English" : esTitle;
+      quickFlagImg.src = esFlagSrc;
+      quickFlagImg.alt = esTitle;
     }
 
     const show = loadPrefs().showLangSelector;
@@ -101,6 +106,15 @@ export async function initI18n() {
       } else {
         langQuick.classList.remove("hidden");
         langQuick.classList.add("inline-flex");
+      }
+      if (isLangUiLocked()) {
+        langQuick.setAttribute("aria-disabled", "true");
+        langQuick.setAttribute("tabindex", "-1");
+        langQuick.classList.add("pointer-events-none", "cursor-default", "opacity-90");
+      } else {
+        langQuick.removeAttribute("aria-disabled");
+        langQuick.removeAttribute("tabindex");
+        langQuick.classList.remove("pointer-events-none", "cursor-default", "opacity-90");
       }
     }
     const langFlags = document.querySelector<HTMLElement>("[data-lang-flags]");
@@ -135,13 +149,15 @@ export async function initI18n() {
   };
 
   render();
-  notifyLangChanged(i18next.language.startsWith("en") ? "en" : "es");
+  notifyLangChanged("es");
 
   window.skillatlas = window.skillatlas ?? {};
   window.skillatlas.setUiLang = async (lng: "es" | "en") => {
-    await i18next.changeLanguage(lng);
+    await i18next.changeLanguage("es");
+    void lng;
+    updatePrefs({ lang: "es" });
     render();
-    notifyLangChanged(lng);
+    notifyLangChanged("es");
   };
   window.skillatlas.refreshI18nDom = render;
 
@@ -158,6 +174,7 @@ export async function initI18n() {
     if (btn.dataset.bound === "1") return;
     btn.dataset.bound = "1";
     btn.addEventListener("click", async () => {
+      if (isLangUiLocked()) return;
       const next = btn.dataset.langFlag === "en" ? "en" : "es";
       await i18next.changeLanguage(next);
       updatePrefs({ lang: next });
@@ -170,6 +187,7 @@ export async function initI18n() {
     if (btn.dataset.bound === "1") return;
     btn.dataset.bound = "1";
     btn.addEventListener("click", async () => {
+      if (isLangUiLocked()) return;
       const cur = i18next.language.startsWith("en") ? "en" : "es";
       const next: "es" | "en" = cur === "en" ? "es" : "en";
       await i18next.changeLanguage(next);

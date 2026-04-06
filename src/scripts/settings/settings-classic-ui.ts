@@ -1,5 +1,6 @@
 import i18next from "i18next";
 import {
+  isSettingsPanelId,
   loadPrefs,
   migrateSettingsPanelHashFragment,
   updatePrefs,
@@ -187,8 +188,13 @@ function initSettingsShell() {
 
   const initialId = (): SettingsPanelId => {
     const ids = new Set(panelIds(panelsRoot));
-    const hash = readHashPanel();
-    if (hash && ids.has(hash)) return hash as SettingsPanelId;
+    const raw = window.location.hash.replace(/^#/, "").trim();
+    if (!raw) {
+      return DEFAULT_PANEL_ID as SettingsPanelId;
+    }
+    const migrated = migrateSettingsPanelHashFragment(raw);
+    const candidate = migrated ?? (isSettingsPanelId(raw) ? raw : null);
+    if (candidate && ids.has(candidate)) return candidate;
     const saved = loadPrefs().settingsActiveSection;
     if (saved && ids.has(saved)) return saved;
     return DEFAULT_PANEL_ID as SettingsPanelId;
@@ -209,7 +215,11 @@ function initSettingsShell() {
   };
 
   applySidebarLayout();
+  const hadNoHash = !window.location.hash.replace(/^#/, "").trim();
   activate(initialId(), { syncHash: false, persistPrefs: false, animate: false });
+  if (hadNoHash) {
+    history.replaceState(null, "", "#prefs");
+  }
 
   const hash = readHashPanel();
   if (hash && panelIds(panelsRoot).includes(hash)) {

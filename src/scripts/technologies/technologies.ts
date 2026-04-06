@@ -302,7 +302,7 @@ async function bootstrapTechnologiesGrid() {
   if (!userId) {
     mount.innerHTML = `<div class="border border-gray-200 rounded-xl p-5 bg-gray-50 col-span-full">
       <p class="m-0 text-sm text-amber-700">Inicia sesión en Ajustes para ver tus tecnologías.</p>
-      <a href="/settings" class="inline-flex mt-3 rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Ir a Ajustes</a>
+      <a href="/settings#prefs" class="inline-flex mt-3 rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Ir a Ajustes</a>
     </div>`;
     if (countEl) countEl.textContent = "0 total";
     return;

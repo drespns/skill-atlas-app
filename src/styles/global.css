@@ -8,6 +8,8 @@ html {
   background-color: #ffffff;
   color: #111827;
   overflow-x: hidden;
+  /* Preferencias: escala de texto (`--app-root-font-size` en `core/prefs.ts` + bootstrap inline). */
+  font-size: var(--app-root-font-size, 100%);
 }
 
 body {

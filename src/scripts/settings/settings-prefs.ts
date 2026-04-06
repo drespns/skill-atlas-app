@@ -1,25 +1,28 @@
-import { isValidFontId } from "@config/font-catalog";
+import {
+  FONT_GOOGLE_CATALOG_PREVIEW_LINK_ID,
+  googleFontsCatalogPreviewHref,
+  isValidFontId,
+} from "@config/font-catalog";
 import {
   loadPrefs,
   updatePrefs,
   type Accent,
-  type Density,
   type DefaultView,
   type FontPreset,
-  type Lang,
   type Motion,
   type SettingsSidebarSide,
   type ThemeMode,
+  type UiFontScale,
 } from "@scripts/core/prefs";
 
 function isThemeMode(v: string): v is ThemeMode {
   return v === "auto" || v === "light" || v === "dark";
 }
-function isDensity(v: string): v is Density {
-  return v === "comfortable" || v === "compact";
-}
 function isFont(v: string): v is FontPreset {
-  return v === "system" || v === "inter" || v === "mono" || v === "serif";
+  return isValidFontId(v);
+}
+function isUiFontScale(v: string): v is UiFontScale {
+  return v === "sm" || v === "md" || v === "lg";
 }
 function isAccent(v: string): v is Accent {
   return v === "indigo" || v === "emerald" || v === "rose" || v === "amber" || v === "sky" || v === "violet";
@@ -30,16 +33,13 @@ function isMotion(v: string): v is Motion {
 function isDefaultView(v: string): v is DefaultView {
   return v === "cards" || v === "list";
 }
-function isLang(v: string): v is Lang {
-  return v === "es" || v === "en";
-}
 function initSettingsPrefs() {
   if (document.body.dataset.settingsPrefsInit === "1") return;
 
   const theme = document.querySelector<HTMLSelectElement>("[data-pref-theme]");
   const fontEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-font]");
+  const uiFontScaleEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-ui-font-scale]");
   const accentEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-accent]");
-  const densityEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-density]");
   const motionEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-motion]");
   const technologiesViewEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-technologies-view]");
   const projectsViewEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-projects-view]");
@@ -49,8 +49,8 @@ function initSettingsPrefs() {
   if (
     !theme ||
     fontEls.length === 0 ||
+    uiFontScaleEls.length === 0 ||
     accentEls.length === 0 ||
-    densityEls.length === 0 ||
     motionEls.length === 0 ||
     technologiesViewEls.length === 0 ||
     projectsViewEls.length === 0 ||
@@ -61,17 +61,28 @@ function initSettingsPrefs() {
 
   document.body.dataset.settingsPrefsInit = "1";
 
+  if (!document.getElementById(FONT_GOOGLE_CATALOG_PREVIEW_LINK_ID)) {
+    const href = googleFontsCatalogPreviewHref();
+    if (href) {
+      const link = document.createElement("link");
+      link.id = FONT_GOOGLE_CATALOG_PREVIEW_LINK_ID;
+      link.rel = "stylesheet";
+      link.href = href;
+      document.head.appendChild(link);
+    }
+  }
+
   const render = () => {
     const p = loadPrefs();
     theme.value = p.themeMode;
     fontEls.forEach((font) => {
       font.value = p.font;
     });
+    uiFontScaleEls.forEach((el) => {
+      el.value = p.uiFontScale;
+    });
     accentEls.forEach((el) => {
       el.value = p.accent;
-    });
-    densityEls.forEach((el) => {
-      el.value = p.density;
     });
     motionEls.forEach((el) => {
       el.value = p.motion;
@@ -124,8 +135,8 @@ function initSettingsPrefs() {
     });
   };
 
+  bindSelectAll(uiFontScaleEls, isUiFontScale, (v) => ({ uiFontScale: v }));
   bindSelectAll(accentEls, isAccent, (v) => ({ accent: v }));
-  bindSelectAll(densityEls, isDensity, (v) => ({ density: v }));
   bindSelectAll(motionEls, isMotion, (v) => ({ motion: v }));
   bindSelectAll(technologiesViewEls, isDefaultView, (v) => ({ technologiesView: v }));
   bindSelectAll(projectsViewEls, isDefaultView, (v) => ({ projectsView: v }));
@@ -143,21 +154,6 @@ function initSettingsPrefs() {
     });
   });
 
-  document.querySelectorAll<HTMLElement>("[data-pref-lang-flags]").forEach((langFlags) => {
-    langFlags.querySelectorAll<HTMLButtonElement>("[data-pref-lang-flag]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        const v = btn.dataset.prefLangFlag;
-        if (!v || !isLang(v)) return;
-        updatePrefs({ lang: v });
-        if (window.skillatlas?.setUiLang) {
-          await window.skillatlas.setUiLang(v);
-        } else {
-          window.location.reload();
-        }
-      });
-    });
-  });
-
   document.querySelectorAll<HTMLButtonElement>("[data-pref-reset]").forEach((reset) => {
     if (reset.dataset.bound === "1") return;
     reset.dataset.bound = "1";
@@ -167,14 +163,13 @@ function initSettingsPrefs() {
       updatePrefs({
         themeMode: "auto",
         font: "system",
+        uiFontScale: "md",
         accent: "indigo",
-        density: "comfortable",
         motion: "normal",
         technologiesView: "cards",
         projectsView: "cards",
         showHeaderIcons: true,
         showLangSelector: true,
-        lang: "es",
         settingsSidebarSide: "left" as SettingsSidebarSide,
         settingsActiveSection: "prefs",
         qaTesterMode: false,

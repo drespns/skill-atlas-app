@@ -47,7 +47,7 @@ export async function bootstrapTechnologyDetailPage() {
     const userId = await getSessionUserId(supabase);
     if (!userId) {
       mount.innerHTML = `<section class="space-y-3" data-technology-detail-slug="${escAttr(slug)}"><p class="text-amber-700 dark:text-amber-400 text-sm">Inicia sesión en Ajustes para ver esta tecnología.</p>
-      <a href="/settings" class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Ir a Ajustes</a></section>`;
+      <a href="/settings#prefs" class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Ir a Ajustes</a></section>`;
       return;
     }
 

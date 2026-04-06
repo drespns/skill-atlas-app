@@ -21,7 +21,7 @@ function currentPath(): string {
 
 function isOnRoute(target: string): boolean {
   const p = currentPath();
-  const t = target.replace(/\/$/, "") || "/";
+  const t = target.split("#")[0].replace(/\/$/, "") || "/";
   return t === "/" ? p === "/" : p === t || p.startsWith(`${t}/`);
 }
 
@@ -91,14 +91,14 @@ const STEPS: Step[] = [
   },
   {
     id: "settings_profile",
-    route: "/settings",
+    route: "/settings#prefs",
     selector: "[data-profile-public-name]",
     titleKey: "onboardingV2.step5Title",
     titleFallback: "5/7 · Perfil y privacidad",
     bodyKey: "onboardingV2.step5Body",
     bodyFallback:
       "Completa tu nombre y bio, ajusta la privacidad de portfolio/CV y añade tu stack de ayuda.",
-    cta: { route: "/settings", labelKey: "onboarding.goSettings", labelFallback: "Ir a Ajustes" },
+    cta: { route: "/settings#prefs", labelKey: "onboarding.goSettings", labelFallback: "Ir a Ajustes" },
     action: "assist",
   },
   {

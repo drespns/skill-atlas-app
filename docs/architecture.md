@@ -63,6 +63,12 @@ Si en el futuro queremos detección real por país, hay opciones:
 - **Endpoint propio** (serverless) que devuelva país/region y el cliente consuma (con rate-limit/cache).
 - **Servicio externo** de geolocalización por IP (con cuidado de privacidad/consentimiento).
 
+### Ajustes (`/settings`) y preferencias (abr. 2026)
+
+- **Fragmento por defecto:** sin `#` en la URL se abre la sección **Preferencias** (`#prefs`) y se sincroniza el hash con `history.replaceState` (`settings-classic-ui.ts`). Los enlaces genéricos a Ajustes apuntan a **`/settings#prefs`**.
+- **Modelo (`skillatlas_prefs_v1` / `AppPrefsV1`):** incluye **`uiFontScale`** (`sm` \| `md` \| `lg`) aplicado vía `--app-root-font-size` en `html` (`global.css` + `applyPrefs` + `AppShellHeadBootstrap.astro`). La **densidad compacta del shell** dejó de exponerse; se mantiene `density: "comfortable"` en datos por compatibilidad.
+- **Idioma:** la UI va **solo en español**; `lang` en prefs se fuerza a `es`, `document.documentElement.dataset.langUiLocked = "1"`, i18n arranca en `es` (`i18n-bootstrap.ts`) y el toggle rápido de bandera en cabecera no cambia idioma. `en.json` queda como recurso **sin mantenimiento activo** hasta reactivar traducciones. **Futuro:** modal de idiomas con banderas (SVG en `public/icons/flags/*`) y más locales.
+
 ## Capa de datos
 
 `src/data/index.ts` es la entrada unica:

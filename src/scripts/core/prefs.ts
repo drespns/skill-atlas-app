@@ -8,8 +8,10 @@ export type Accent = "indigo" | "emerald" | "rose" | "amber" | "sky" | "violet";
 export type Motion = "normal" | "reduced";
 export type DefaultView = "cards" | "list";
 /** Vista de la lista de evidencias en detalle de proyecto (CSR). */
-export type ProjectEvidenceLayout = "large" | "grid";
+export type ProjectEvidenceLayout = "large" | "grid" | "list";
 export type Lang = "es" | "en";
+/** Escala del texto base de la UI (rem); pensado para pocos saltos seguros. */
+export type UiFontScale = "sm" | "md" | "lg";
 
 /** Posición de la barra lateral en /settings. */
 export type SettingsSidebarSide = "left" | "right";
@@ -96,8 +98,11 @@ export type CvEducationV1 = {
 export type AppPrefsV1 = {
   v: 1;
   themeMode: ThemeMode;
+  /** Legado: la UI ya no expone densidad; se normaliza siempre a `comfortable`. */
   density: Density;
   font: FontPreset;
+  /** Tamaño base del texto de la interfaz (afecta `rem` / Tailwind). */
+  uiFontScale: UiFontScale;
   accent: Accent;
   motion: Motion;
   technologiesView: DefaultView;
@@ -131,6 +136,7 @@ const DEFAULT_PREFS: AppPrefsV1 = {
   themeMode: "auto",
   density: "comfortable",
   font: "system",
+  uiFontScale: "md",
   accent: "indigo",
   motion: "normal",
   technologiesView: "cards",
@@ -163,6 +169,16 @@ function normalizeSettingsActiveSection(raw: unknown): SettingsPanelId | undefin
   if (isSettingsPanelId(raw)) return raw;
   const migrated = LEGACY_SETTINGS_PANEL_ID[raw];
   return migrated && isSettingsPanelId(migrated) ? migrated : undefined;
+}
+
+function normalizeProjectEvidenceLayout(raw: unknown): ProjectEvidenceLayout {
+  if (raw === "grid" || raw === "large" || raw === "list") return raw;
+  return "large";
+}
+
+function normalizeUiFontScale(raw: unknown): UiFontScale {
+  if (raw === "sm" || raw === "lg") return raw;
+  return "md";
 }
 
 function normalizeCvProjectSlugs(raw: unknown): string[] | undefined {
@@ -291,12 +307,22 @@ export function loadPrefs(): AppPrefsV1 {
       const dismissed = typeof raw.dismissed === "boolean" ? Boolean(raw.dismissed) : false;
       return { done, step, dismissed, completedIds: Array.from(new Set(completedIds)).slice(0, 30) };
     })(),
-    projectEvidenceLayout:
-      (base as Partial<AppPrefsV1>).projectEvidenceLayout === "grid" ? "grid" : "large",
+    projectEvidenceLayout: normalizeProjectEvidenceLayout((base as Partial<AppPrefsV1>).projectEvidenceLayout),
     font: normalizeFontId((base as Partial<AppPrefsV1>).font ?? DEFAULT_PREFS.font),
+    uiFontScale: normalizeUiFontScale((base as Partial<AppPrefsV1>).uiFontScale),
   };
 
-  return migrateLegacyPrefs(merged);
+  return finalizeAppPrefs(migrateLegacyPrefs(merged));
+}
+
+/** Política de producto: solo ES en UI; densidad de shell fija; escala de texto normalizada. */
+function finalizeAppPrefs(prefs: AppPrefsV1): AppPrefsV1 {
+  return {
+    ...prefs,
+    lang: "es",
+    density: "comfortable",
+    uiFontScale: normalizeUiFontScale(prefs.uiFontScale),
+  };
 }
 
 function migrateLegacyPrefs(prefs: AppPrefsV1): AppPrefsV1 {
@@ -322,12 +348,13 @@ export function savePrefs(next: AppPrefsV1) {
 
 export function updatePrefs(patch: Partial<Omit<AppPrefsV1, "v">>): AppPrefsV1 {
   const current = loadPrefs();
-  const next: AppPrefsV1 = {
+  const next: AppPrefsV1 = finalizeAppPrefs({
     ...current,
     ...patch,
     v: 1,
     font: normalizeFontId(patch.font !== undefined ? patch.font : current.font),
-  };
+    uiFontScale: normalizeUiFontScale(patch.uiFontScale !== undefined ? patch.uiFontScale : current.uiFontScale),
+  });
   savePrefs(next);
   applyPrefs(next);
   window.dispatchEvent(new CustomEvent("skillatlas:prefs-updated", { detail: next }));
@@ -336,56 +363,63 @@ export function updatePrefs(patch: Partial<Omit<AppPrefsV1, "v">>): AppPrefsV1 {
 
 export function applyPrefs(prefs: AppPrefsV1) {
   const root = document.documentElement;
+  const p = finalizeAppPrefs(prefs);
 
-  root.dataset.themeMode = prefs.themeMode;
-  root.dataset.density = prefs.density;
-  root.dataset.accent = prefs.accent;
+  root.dataset.themeMode = p.themeMode;
+  root.dataset.density = p.density;
+  root.dataset.accent = p.accent;
   root.dataset.motion = prefs.motion;
-  root.dataset.technologiesView = prefs.technologiesView;
-  root.dataset.projectsView = prefs.projectsView;
-  root.dataset.projectEvidenceLayout = prefs.projectEvidenceLayout;
-  root.dataset.showHeaderIcons = prefs.showHeaderIcons ? "true" : "false";
-  root.dataset.showLangSelector = prefs.showLangSelector ? "true" : "false";
-  root.dataset.langPref = prefs.lang;
-  root.dataset.settingsSidebarSide = prefs.settingsSidebarSide;
+  root.dataset.technologiesView = p.technologiesView;
+  root.dataset.projectsView = p.projectsView;
+  root.dataset.projectEvidenceLayout = p.projectEvidenceLayout;
+  root.dataset.showHeaderIcons = p.showHeaderIcons ? "true" : "false";
+  root.dataset.showLangSelector = p.showLangSelector ? "true" : "false";
+  root.dataset.langPref = p.lang;
+  root.dataset.settingsSidebarSide = p.settingsSidebarSide;
+  root.dataset.uiFontScale = p.uiFontScale;
+  /** Fase solo-ES: selector de idioma desactivado en cabecera y ajustes. */
+  root.dataset.langUiLocked = "1";
 
   // Theme
   const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;
   const isDark =
-    prefs.themeMode === "dark" ? true : prefs.themeMode === "light" ? false : Boolean(prefersDark);
+    p.themeMode === "dark" ? true : p.themeMode === "light" ? false : Boolean(prefersDark);
 
   root.classList.toggle("dark", isDark);
   root.dataset.theme = isDark ? "dark" : "light";
   root.style.colorScheme = isDark ? "dark" : "light";
 
-  applyFontToDocument(prefs.font);
+  applyFontToDocument(p.font);
 
-  // Density (affects AppShell paddings)
-  const mainPy = prefs.density === "compact" ? "1rem" : "1.5rem";
-  const mainPx = prefs.density === "compact" ? "1rem" : "1.25rem";
-  const headerPy = prefs.density === "compact" ? "0.75rem" : "1rem";
-  const headerPx = prefs.density === "compact" ? "1rem" : "1.25rem";
+  // Shell paddings (densidad fija “cómoda”)
+  const mainPy = "1.5rem";
+  const mainPx = "1.25rem";
+  const headerPy = "1rem";
+  const headerPx = "1.25rem";
   root.style.setProperty("--app-main-py", mainPy);
   root.style.setProperty("--app-main-px", mainPx);
   root.style.setProperty("--app-header-py", headerPy);
   root.style.setProperty("--app-header-px", headerPx);
 
+  const rootFontPct = p.uiFontScale === "sm" ? "93.75%" : p.uiFontScale === "lg" ? "106.25%" : "100%";
+  root.style.setProperty("--app-root-font-size", rootFontPct);
+
   // Accent (HSL is easy to reuse in CSS)
   const accentHsl =
-    prefs.accent === "emerald"
+    p.accent === "emerald"
       ? "152 76% 36%"
-      : prefs.accent === "rose"
+      : p.accent === "rose"
         ? "346 77% 49%"
-        : prefs.accent === "amber"
+        : p.accent === "amber"
           ? "38 92% 50%"
-          : prefs.accent === "sky"
+          : p.accent === "sky"
             ? "199 89% 48%"
-            : prefs.accent === "violet"
+            : p.accent === "violet"
               ? "262 83% 58%"
               : "239 84% 67%"; // indigo default
   root.style.setProperty("--app-accent-hsl", accentHsl);
 
   // Motion
-  root.style.setProperty("--app-motion", prefs.motion);
+  root.style.setProperty("--app-motion", p.motion);
 }
 

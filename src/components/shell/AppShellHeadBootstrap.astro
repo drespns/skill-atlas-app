@@ -30,7 +30,8 @@ import { FONT_CATALOG, FONT_GOOGLE_LINK_ID } from "../../config/font-catalog";
     const legacyTheme = localStorage.getItem("theme");
     const themeMode =
       prefs?.themeMode ?? (legacyTheme === "dark" || legacyTheme === "light" ? legacyTheme : "auto");
-    const density = prefs?.density ?? "comfortable";
+    const density = "comfortable";
+    const uiFontScale = prefs?.uiFontScale === "sm" || prefs?.uiFontScale === "lg" ? prefs.uiFontScale : "md";
     const fontRaw = prefs?.font ?? "system";
     const accent = prefs?.accent ?? "indigo";
     const motion = prefs?.motion ?? "normal";
@@ -57,13 +58,15 @@ import { FONT_CATALOG, FONT_GOOGLE_LINK_ID } from "../../config/font-catalog";
     root.dataset.showHeaderIcons = showHeaderIcons ? "true" : "false";
     root.dataset.showLangSelector = showLangSelector ? "true" : "false";
     root.dataset.langPref = lang;
+    root.dataset.langUiLocked = "1";
+    root.dataset.uiFontScale = uiFontScale;
     root.style.colorScheme = isDark ? "dark" : "light";
 
     const fontId = normFont(fontRaw);
     const entry = fontBootCatalog.find((e) => e.id === fontId) || fontBootCatalog[0];
     root.dataset.font = fontId;
     if (entry.googleQuery) {
-      const href = `https://fonts.googleapis.com/css2?family=${entry.googleQuery}&display=swap`;
+      const href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(entry.googleQuery)}&display=swap`;
       let link = document.getElementById(fontLinkId);
       if (!link) {
         link = document.createElement("link");
@@ -77,14 +80,17 @@ import { FONT_CATALOG, FONT_GOOGLE_LINK_ID } from "../../config/font-catalog";
     }
     root.style.setProperty("--app-font-family", entry.stack);
 
-    const mainPy = density === "compact" ? "1rem" : "1.5rem";
-    const mainPx = density === "compact" ? "1rem" : "1.25rem";
-    const headerPy = density === "compact" ? "0.75rem" : "1rem";
-    const headerPx = density === "compact" ? "1rem" : "1.25rem";
+    const mainPy = "1.5rem";
+    const mainPx = "1.25rem";
+    const headerPy = "1rem";
+    const headerPx = "1.25rem";
     root.style.setProperty("--app-main-py", mainPy);
     root.style.setProperty("--app-main-px", mainPx);
     root.style.setProperty("--app-header-py", headerPy);
     root.style.setProperty("--app-header-px", headerPx);
+
+    const rootFontPct = uiFontScale === "sm" ? "93.75%" : uiFontScale === "lg" ? "106.25%" : "100%";
+    root.style.setProperty("--app-root-font-size", rootFontPct);
 
     const accentHsl =
       accent === "emerald"

@@ -87,7 +87,7 @@ function initCommandPalette() {
     { id: "go-portfolio", label: "Portfolio", href: "/portfolio", hint: "/portfolio", section: "nav" },
     { id: "go-study", label: "Estudio", href: "/study", hint: "/study", section: "nav" },
     { id: "go-cv", label: "CV", href: "/cv", hint: "/cv", section: "nav" },
-    { id: "go-settings", label: "Ajustes", href: "/settings", hint: "/settings", section: "nav" },
+    { id: "go-settings", label: "Ajustes", href: "/settings#prefs", hint: "/settings#prefs", section: "nav" },
   ];
 
   const authedActionItems: PaletteItem[] = [

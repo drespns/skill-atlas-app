@@ -26,11 +26,11 @@ const QA_ITEMS: QaItem[] = [
   { id: "auth-login", labelKey: "settings.qa.itemAuthLogin", labelFallback: "Login/logout + sesión expirada", href: "/login" },
   { id: "crud-tech", labelKey: "settings.qa.itemCrudTech", labelFallback: "CRUD Tecnologías/Conceptos", href: "/technologies" },
   { id: "crud-proj", labelKey: "settings.qa.itemCrudProj", labelFallback: "CRUD Proyectos/Embeds", href: "/projects" },
-  { id: "share-portfolio-slug", labelKey: "settings.qa.itemShareSlug", labelFallback: "Portfolio público por slug (/portfolio/<slug>)", href: "/settings" },
-  { id: "share-portfolio-token", labelKey: "settings.qa.itemShareToken", labelFallback: "Portfolio público por token (/p/<token>)", href: "/settings" },
-  { id: "share-cv-token", labelKey: "settings.qa.itemShareCv", labelFallback: "CV público por token (/cv/p/<token>)", href: "/settings" },
+  { id: "share-portfolio-slug", labelKey: "settings.qa.itemShareSlug", labelFallback: "Portfolio público por slug (/portfolio/<slug>)", href: "/settings#prefs" },
+  { id: "share-portfolio-token", labelKey: "settings.qa.itemShareToken", labelFallback: "Portfolio público por token (/p/<token>)", href: "/settings#prefs" },
+  { id: "share-cv-token", labelKey: "settings.qa.itemShareCv", labelFallback: "CV público por token (/cv/p/<token>)", href: "/settings#prefs" },
   { id: "prefs-cv", labelKey: "settings.qa.itemPrefsCv", labelFallback: "Prefs CV: selección/orden + cvProfile", href: "/cv" },
-  { id: "prefs-settings", labelKey: "settings.qa.itemPrefsSettings", labelFallback: "Ajustes: navegación lateral + preferencias", href: "/settings" },
+  { id: "prefs-settings", labelKey: "settings.qa.itemPrefsSettings", labelFallback: "Ajustes: navegación lateral + preferencias", href: "/settings#prefs" },
 ];
 
 function readState(): Record<string, boolean> {

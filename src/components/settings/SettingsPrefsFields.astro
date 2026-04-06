@@ -1,6 +1,6 @@
 ---
 /** Campos de preferencias (compartidos: vista tablero y vista clásica). */
-import { FONT_CATALOG, fontDisplayLabel } from "@config/font-catalog";
+import { FONT_CATALOG, fontDisplayLabel, fontOptionStyle } from "@config/font-catalog";
 
 type FontCategory = (typeof FONT_CATALOG)[number]["category"];
 const byCategory: Record<FontCategory, typeof FONT_CATALOG> = {
@@ -8,175 +8,232 @@ const byCategory: Record<FontCategory, typeof FONT_CATALOG> = {
   sans: [],
   serif: [],
   mono: [],
+  display: [],
 };
 for (const e of FONT_CATALOG) {
   byCategory[e.category].push(e);
 }
+
+/** Banderas en `public/icons/flags` (decorativas mientras la UI es solo ES). */
+const FLAG_FILES = [
+  "Spain",
+  "Mexico",
+  "Argentina",
+  "Chile",
+  "Ecuador",
+  "United_Kingdom",
+  "United_States",
+  "France",
+  "Germany",
+  "Italy",
+  "Portugal",
+  "Brazil",
+] as const;
 ---
 
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-  <label class="space-y-1">
-    <span class="text-sm font-semibold" data-i18n="settings.prefs.density">Densidad</span>
-    <select
-      data-pref-density
-      class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-    >
-      <option value="comfortable" data-i18n="settings.prefs.densityComfortable">Cómoda</option>
-      <option value="compact" data-i18n="settings.prefs.densityCompact">Compacta</option>
-    </select>
-  </label>
+<div class="space-y-8">
+  <fieldset class="space-y-4 rounded-xl border border-gray-200/90 dark:border-[#30363d] bg-white/40 dark:bg-[#0d1117]/40 p-4 sm:p-5">
+    <legend class="text-sm font-semibold text-gray-900 dark:text-gray-100 px-1">
+      <span data-i18n="settings.prefs.sectionAppearance">Apariencia</span>
+    </legend>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div class="space-y-1 sm:col-span-2">
+        <span class="text-sm font-semibold" data-i18n="settings.prefs.font">Fuente</span>
+        <select
+          data-pref-font
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+        >
+          <optgroup
+            label="Built-in"
+            data-i18n="settings.prefs.fontGroupBuiltin"
+            data-i18n-attr="label"
+          >
+            {byCategory.builtin.map((e) => (
+              <option value={e.id} style={fontOptionStyle(e)}>
+                {fontDisplayLabel(e)}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="Sans" data-i18n="settings.prefs.fontGroupSans" data-i18n-attr="label">
+            {byCategory.sans.map((e) => (
+              <option value={e.id} style={fontOptionStyle(e)}>
+                {fontDisplayLabel(e)}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="Serif" data-i18n="settings.prefs.fontGroupSerif" data-i18n-attr="label">
+            {byCategory.serif.map((e) => (
+              <option value={e.id} style={fontOptionStyle(e)}>
+                {fontDisplayLabel(e)}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="Mono" data-i18n="settings.prefs.fontGroupMono" data-i18n-attr="label">
+            {byCategory.mono.map((e) => (
+              <option value={e.id} style={fontOptionStyle(e)}>
+                {fontDisplayLabel(e)}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="Display" data-i18n="settings.prefs.fontGroupDisplay" data-i18n-attr="label">
+            {byCategory.display.map((e) => (
+              <option value={e.id} style={fontOptionStyle(e)}>
+                {fontDisplayLabel(e)}
+              </option>
+            ))}
+          </optgroup>
+        </select>
+        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.fontGoogleHint">
+          Las fuentes de estos grupos se cargan desde Google Fonts al seleccionarlas.
+        </p>
+      </div>
 
-  <div class="space-y-1 sm:col-span-2">
-    <span class="text-sm font-semibold" data-i18n="settings.prefs.font">Fuente</span>
-    <select
-      data-pref-font
-      class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-    >
-      <optgroup
-        label="Built-in"
-        data-i18n="settings.prefs.fontGroupBuiltin"
-        data-i18n-attr="label"
-      >
-        {byCategory.builtin.map((e) => (
-          <option value={e.id}>{fontDisplayLabel(e)}</option>
-        ))}
-      </optgroup>
-      <optgroup label="Sans" data-i18n="settings.prefs.fontGroupSans" data-i18n-attr="label">
-        {byCategory.sans.map((e) => (
-          <option value={e.id}>{fontDisplayLabel(e)}</option>
-        ))}
-      </optgroup>
-      <optgroup label="Serif" data-i18n="settings.prefs.fontGroupSerif" data-i18n-attr="label">
-        {byCategory.serif.map((e) => (
-          <option value={e.id}>{fontDisplayLabel(e)}</option>
-        ))}
-      </optgroup>
-      <optgroup label="Mono" data-i18n="settings.prefs.fontGroupMono" data-i18n-attr="label">
-        {byCategory.mono.map((e) => (
-          <option value={e.id}>{fontDisplayLabel(e)}</option>
-        ))}
-      </optgroup>
-    </select>
-    <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.fontGoogleHint">
-      Las fuentes marcadas se cargan desde Google Fonts al elegirlas.
-    </p>
-  </div>
+      <label class="space-y-1">
+        <span class="text-sm font-semibold" data-i18n="settings.prefs.uiFontScale">Tamaño del texto</span>
+        <select
+          data-pref-ui-font-scale
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+        >
+          <option value="sm" data-i18n="settings.prefs.uiFontScaleSm">Pequeño</option>
+          <option value="md" data-i18n="settings.prefs.uiFontScaleMd">Mediano</option>
+          <option value="lg" data-i18n="settings.prefs.uiFontScaleLg">Grande</option>
+        </select>
+        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.uiFontScaleHint">
+          Afecta a la interfaz en general; si algo se ve cortado, usa Mediano.
+        </p>
+      </label>
 
-  <label class="space-y-1">
-    <span class="text-sm font-semibold" data-i18n="settings.prefs.accent">Acento</span>
-    <select
-      data-pref-accent
-      class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-    >
-      <option value="indigo" data-i18n="settings.prefs.accentIndigo">Índigo</option>
-      <option value="emerald" data-i18n="settings.prefs.accentEmerald">Esmeralda</option>
-      <option value="rose" data-i18n="settings.prefs.accentRose">Rosa</option>
-      <option value="amber" data-i18n="settings.prefs.accentAmber">Ámbar</option>
-      <option value="sky" data-i18n="settings.prefs.accentSky">Cielo</option>
-      <option value="violet" data-i18n="settings.prefs.accentViolet">Violeta</option>
-    </select>
-  </label>
+      <label class="space-y-1">
+        <span class="text-sm font-semibold" data-i18n="settings.prefs.accent">Color de resalte</span>
+        <select
+          data-pref-accent
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+        >
+          <option value="indigo" data-i18n="settings.prefs.accentIndigo">Índigo</option>
+          <option value="emerald" data-i18n="settings.prefs.accentEmerald">Esmeralda</option>
+          <option value="rose" data-i18n="settings.prefs.accentRose">Rosa</option>
+          <option value="amber" data-i18n="settings.prefs.accentAmber">Ámbar</option>
+          <option value="sky" data-i18n="settings.prefs.accentSky">Cielo</option>
+          <option value="violet" data-i18n="settings.prefs.accentViolet">Violeta</option>
+        </select>
+        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.accentHint">
+          Enlaces, foco y acentos de la interfaz.
+        </p>
+      </label>
 
-  <label class="space-y-1">
-    <span class="text-sm font-semibold" data-i18n="settings.prefs.motion">Movimiento</span>
-    <select
-      data-pref-motion
-      class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-    >
-      <option value="normal" data-i18n="settings.prefs.motionNormal">Normal</option>
-      <option value="reduced" data-i18n="settings.prefs.motionReduced">Reducido</option>
-    </select>
-  </label>
-
-  <label class="space-y-1">
-    <span class="text-sm font-semibold" data-i18n="settings.prefs.technologiesView">Vista (Tecnologías)</span>
-    <select
-      data-pref-technologies-view
-      class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-    >
-      <option value="cards" data-i18n="settings.prefs.viewCards">Cards</option>
-      <option value="list" data-i18n="settings.prefs.viewList">Lista</option>
-    </select>
-  </label>
-
-  <label class="space-y-1">
-    <span class="text-sm font-semibold" data-i18n="settings.prefs.projectsView">Vista (Proyectos)</span>
-    <select
-      data-pref-projects-view
-      class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-    >
-      <option value="cards" data-i18n="settings.prefs.viewCards">Cards</option>
-      <option value="list" data-i18n="settings.prefs.viewList">Lista</option>
-    </select>
-  </label>
-
-  <div class="space-y-1 sm:col-span-2">
-    <span class="text-sm font-semibold" data-i18n="settings.prefs.language">Idioma</span>
-    <div
-      class="inline-flex rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 p-0.5 gap-0.5"
-      data-pref-lang-flags
-    >
-      <button
-        type="button"
-        data-pref-lang-flag="es"
-        class="rounded-md px-2.5 py-1.5 leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
-        aria-pressed="true"
-        title="Español"
-      >
-        <img
-          data-flag-img="es"
-          src="/icons/flags/Spain.svg"
-          alt=""
-          class="h-5 w-5 rounded-sm"
-          loading="lazy"
-          decoding="async"
-        />
-      </button>
-      <button
-        type="button"
-        data-pref-lang-flag="en"
-        class="rounded-md px-2.5 py-1.5 leading-none hover:bg-gray-100 dark:hover:bg-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-400 dark:aria-pressed:ring-gray-500"
-        aria-pressed="false"
-        title="English"
-      >
-        <img
-          data-flag-img="en"
-          src="/icons/flags/United_Kingdom.svg"
-          alt=""
-          class="h-5 w-5 rounded-sm"
-          loading="lazy"
-          decoding="async"
-        />
-      </button>
+      <label class="space-y-1 sm:col-span-2">
+        <span class="text-sm font-semibold" data-i18n="settings.prefs.motion">Animaciones</span>
+        <select
+          data-pref-motion
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+        >
+          <option value="normal" data-i18n="settings.prefs.motionNormal">Normales</option>
+          <option value="reduced" data-i18n="settings.prefs.motionReduced">Reducidas</option>
+        </select>
+        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.motionHint">
+          “Reducidas” respeta mejor el ahorro de movimiento del sistema.
+        </p>
+      </label>
     </div>
-  </div>
+  </fieldset>
 
-  <label class="space-y-1">
-    <span class="text-sm font-semibold" data-i18n="settings.prefs.showHeaderIcons">Iconos del header</span>
-    <select
-      data-pref-show-header-icons
-      class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-    >
-      <option value="yes" data-i18n="settings.prefs.show">Mostrar</option>
-      <option value="no" data-i18n="settings.prefs.hide">Ocultar</option>
-    </select>
-  </label>
+  <fieldset class="space-y-4 rounded-xl border border-gray-200/90 dark:border-[#30363d] bg-white/40 dark:bg-[#0d1117]/40 p-4 sm:p-5">
+    <legend class="text-sm font-semibold text-gray-900 dark:text-gray-100 px-1">
+      <span data-i18n="settings.prefs.sectionViews">Vistas de listas</span>
+    </legend>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <label class="space-y-1">
+        <span class="text-sm font-semibold" data-i18n="settings.prefs.technologiesView">Tecnologías</span>
+        <select
+          data-pref-technologies-view
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+        >
+          <option value="cards" data-i18n="settings.prefs.viewCards">Cuadrícula (tarjetas)</option>
+          <option value="list" data-i18n="settings.prefs.viewList">Lista</option>
+        </select>
+      </label>
 
-  <label class="space-y-1">
-    <span class="text-sm font-semibold" data-i18n="settings.prefs.showLangSelector">Bandera de idioma (header)</span>
-    <select
-      data-pref-show-lang-selector
-      class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-    >
-      <option value="yes" data-i18n="settings.prefs.show">Mostrar</option>
-      <option value="no" data-i18n="settings.prefs.hide">Ocultar</option>
-    </select>
-    <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.showLangSelectorHint">
-      El idioma se controla aquí con detalle; la bandera del header solo alterna ES/EN.
+      <label class="space-y-1">
+        <span class="text-sm font-semibold" data-i18n="settings.prefs.projectsView">Proyectos</span>
+        <select
+          data-pref-projects-view
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+        >
+          <option value="cards" data-i18n="settings.prefs.viewCards">Cuadrícula (tarjetas)</option>
+          <option value="list" data-i18n="settings.prefs.viewList">Lista</option>
+        </select>
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset class="space-y-4 rounded-xl border border-gray-200/90 dark:border-[#30363d] bg-white/40 dark:bg-[#0d1117]/40 p-4 sm:p-5">
+    <legend class="text-sm font-semibold text-gray-900 dark:text-gray-100 px-1">
+      <span data-i18n="settings.prefs.sectionHeader">Cabecera</span>
+    </legend>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <label class="space-y-1">
+        <span class="text-sm font-semibold" data-i18n="settings.prefs.showHeaderIcons">Iconos de accesos rápidos</span>
+        <select
+          data-pref-show-header-icons
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+        >
+          <option value="yes" data-i18n="settings.prefs.show">Mostrar</option>
+          <option value="no" data-i18n="settings.prefs.hide">Ocultar</option>
+        </select>
+        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.showHeaderIconsHint">
+          Enlaces a CV, tecnologías, proyectos y portfolio en la barra superior.
+        </p>
+      </label>
+
+      <label class="space-y-1">
+        <span class="text-sm font-semibold" data-i18n="settings.prefs.showLangSelector">Indicador de idioma en la barra</span>
+        <select
+          data-pref-show-lang-selector
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
+        >
+          <option value="yes" data-i18n="settings.prefs.show">Mostrar</option>
+          <option value="no" data-i18n="settings.prefs.hide">Ocultar</option>
+        </select>
+        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.showLangSelectorHint">
+          Muestra la bandera de región (la interfaz sigue en español).
+        </p>
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset class="space-y-3 rounded-xl border border-gray-200/90 dark:border-[#30363d] bg-white/40 dark:bg-[#0d1117]/40 p-4 sm:p-5">
+    <legend class="text-sm font-semibold text-gray-900 dark:text-gray-100 px-1">
+      <span data-i18n="settings.prefs.sectionLanguage">Idioma</span>
+    </legend>
+    <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="settings.prefs.languageEsOnlyNote">
+      La interfaz está en español. Más idiomas y selector ampliado llegarán más adelante.
     </p>
-  </label>
+    <div
+      class="flex flex-wrap gap-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 p-2"
+      aria-hidden="true"
+    >
+      {
+        FLAG_FILES.map((file) => (
+          <span
+            class:list={[
+              "inline-flex rounded-md p-1.5 ring-1",
+              file === "Spain"
+                ? "ring-indigo-500/80 bg-indigo-50/80 dark:bg-indigo-950/40"
+                : "ring-transparent opacity-45 grayscale",
+            ]}
+          >
+            <img
+              src={`/icons/flags/${file}.svg`}
+              alt=""
+              class="h-6 w-6 rounded-sm"
+              width="24"
+              height="24"
+              loading="lazy"
+              decoding="async"
+            />
+          </span>
+        ))
+      }
+    </div>
+  </fieldset>
 </div>
-
-<p class="m-0 text-xs text-gray-600 dark:text-gray-400">
-  <span data-i18n="settings.prefs.localFirstHint">Cambios aplicados al instante en toda la app.</span>
-</p>
