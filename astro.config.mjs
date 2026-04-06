@@ -9,6 +9,8 @@ import tailwindcss from "@tailwindcss/vite";
 // Para servidor Node propio (Docker/VPS): `adapter: node({ mode: "standalone" })` +
 // `node ./dist/server/entry.mjs` según la guía de Astro.
 export default defineConfig({
+  /** URL canónica (OG, sitemap). Opcional: `PUBLIC_SITE_URL` en build. */
+  site: process.env.PUBLIC_SITE_URL || undefined,
   adapter: vercel(),
   prefetch: {
     defaultStrategy: "viewport",
