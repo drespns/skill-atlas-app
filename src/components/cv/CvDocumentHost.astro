@@ -5,9 +5,9 @@
 <div data-cv-doc-host>
   <article
     data-cv-document
-    class="hidden rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-8 shadow-sm print:border-0 print:shadow-none print:p-0"
+    class="cv-template-classic hidden rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-8 shadow-sm print:border-0 print:shadow-none print:p-0"
   >
-    <div class="border-b border-gray-200/80 dark:border-gray-800 pb-6 print:border-gray-300">
+    <div class="border-b border-gray-200/80 dark:border-gray-800 pb-6 print:border-gray-300" data-cv-weight="hero">
       <div class="flex items-start gap-5">
         <img
           data-cv-doc-photo
@@ -25,32 +25,46 @@
         </div>
       </div>
     </div>
-    <section class="pt-8 hidden" data-cv-doc-experience-section>
+    <div data-cv-doc-sections class="flex flex-col">
+    <section class="pt-8 hidden" data-cv-doc-experience-section data-cv-section="experience" data-cv-weight="core">
       <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.docExperienceHeading">
         Experiencia
       </h3>
       <div data-cv-doc-experience class="mt-4 space-y-7"></div>
     </section>
-    <section class="pt-8 hidden" data-cv-doc-education-section>
+    <section class="pt-8 hidden" data-cv-doc-education-section data-cv-section="education" data-cv-weight="support">
       <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.docEducationHeading">
         Educación
       </h3>
       <div data-cv-doc-education class="mt-4 space-y-6"></div>
     </section>
-    <section class="pt-6" data-cv-doc-projects-section>
+    <section class="pt-8 hidden" data-cv-doc-certifications-section data-cv-section="certifications" data-cv-weight="support">
+      <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.docCertificationsHeading">
+        Certificaciones
+      </h3>
+      <div data-cv-doc-certifications class="mt-4 space-y-5"></div>
+    </section>
+    <section class="pt-8 hidden" data-cv-doc-languages-section data-cv-section="languages" data-cv-weight="support">
+      <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.docLanguagesHeading">
+        Idiomas
+      </h3>
+      <div data-cv-doc-languages class="mt-4 space-y-3"></div>
+    </section>
+    <section class="pt-6" data-cv-doc-projects-section data-cv-section="projects" data-cv-weight="core">
       <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.docProjectsHeading">
         Proyectos
       </h3>
       <div data-cv-doc-projects class="mt-4 space-y-8"></div>
     </section>
-    <section class="pt-8" data-cv-doc-highlights-section>
+    <section class="pt-8" data-cv-doc-highlights-section data-cv-section="highlights" data-cv-weight="core">
       <h3
         class="m-0 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
         data-i18n="cv.docHighlightsHeading"
       >
-        Experiencia
+        Logros
       </h3>
       <ul data-cv-doc-highlights class="mt-4 space-y-2 pl-5 text-sm text-gray-700 dark:text-gray-300"></ul>
     </section>
+    </div>
   </article>
 </div>

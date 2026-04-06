@@ -4,6 +4,16 @@ import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 import { getSessionUserId } from "@scripts/core/auth-session";
 import { loadPrefs, updatePrefs } from "@scripts/core/prefs";
 import { showToast } from "@scripts/core/ui-feedback";
+import {
+  CV_LINK_SLOT_COUNT,
+  buildCvSocialChipsHtml,
+  migrateCvLinksToSlots,
+  slotsToPersistedLinks,
+  type CvSocialLinkDisplay,
+} from "@lib/cv-contact-html";
+import { clampCvPrintMaxPages, cvPrintTypographicScale } from "@lib/cv-print-scale";
+import { applyCvDocumentSectionOrder, normalizeCvDocumentSectionOrder } from "@lib/cv-document-section-order";
+import { parseEducationBlocksFromPaste, parseExperienceBlocksFromPaste } from "@lib/cv-paste-import";
 
 function tt(key: string, fallback: string): string {
   const v = i18next.t(key);
@@ -41,12 +51,21 @@ type CvProfile = {
   location?: string;
   email?: string;
   links?: { label: string; url: string }[];
+  cvLinkSlots?: string[];
+  socialLinkDisplay?: CvSocialLinkDisplay;
+  cvTemplate?: "classic" | "minimal";
+  cvSectionVisibility?: Record<string, boolean>;
+  cvDocumentSectionOrder?: string[];
   summary?: string;
   showHelpStack?: boolean;
   highlights?: string;
   showPhoto?: boolean;
   experiences?: CvExperience[];
   education?: CvEducation[];
+  certifications?: { name?: string; issuer?: string; year?: string; url?: string }[];
+  languages?: { name?: string; level?: string }[];
+  /** Objetivo de extensión al imprimir (1–6); ajusta escala tipográfica. */
+  cvPrintMaxPages?: number;
 };
 
 type CvExperience = {
@@ -125,6 +144,7 @@ async function boot() {
   const editorEl = document.querySelector<HTMLElement>("[data-cv-editor]");
   const listEl = document.querySelector<HTMLElement>("[data-cv-project-list]");
   const docEl = document.querySelector<HTMLElement>("[data-cv-document]");
+  const docSectionsHost = docEl?.querySelector<HTMLElement>("[data-cv-doc-sections]") ?? null;
   const docName = document.querySelector<HTMLElement>("[data-cv-doc-name]");
   const docHeadline = document.querySelector<HTMLElement>("[data-cv-doc-headline]");
   const docContact = document.querySelector<HTMLElement>("[data-cv-doc-contact]");
@@ -138,6 +158,11 @@ async function boot() {
   const docExperience = document.querySelector<HTMLElement>("[data-cv-doc-experience]");
   const docEducationSection = document.querySelector<HTMLElement>("[data-cv-doc-education-section]");
   const docEducation = document.querySelector<HTMLElement>("[data-cv-doc-education]");
+  const docProjectsSection = document.querySelector<HTMLElement>("[data-cv-doc-projects-section]");
+  const docCertSection = document.querySelector<HTMLElement>("[data-cv-doc-certifications-section]");
+  const docCert = document.querySelector<HTMLElement>("[data-cv-doc-certifications]");
+  const docLangSection = document.querySelector<HTMLElement>("[data-cv-doc-languages-section]");
+  const docLang = document.querySelector<HTMLElement>("[data-cv-doc-languages]");
   const printBtn = document.querySelector<HTMLButtonElement>("[data-cv-print]");
   const selAll = document.querySelector<HTMLButtonElement>("[data-cv-select-all]");
   const selNone = document.querySelector<HTMLButtonElement>("[data-cv-select-none]");
@@ -145,6 +170,13 @@ async function boot() {
   const eduAddBtn = document.querySelector<HTMLButtonElement>("[data-cv-edu-add]");
   const expList = document.querySelector<HTMLElement>("[data-cv-exp-list]");
   const eduList = document.querySelector<HTMLElement>("[data-cv-edu-list]");
+  const certList = document.querySelector<HTMLElement>("[data-cv-cert-list]");
+  const langList = document.querySelector<HTMLElement>("[data-cv-lang-list]");
+  const certAddBtn = document.querySelector<HTMLButtonElement>("[data-cv-cert-add]");
+  const langAddBtn = document.querySelector<HTMLButtonElement>("[data-cv-lang-add]");
+  const socialDisplaySelect = document.querySelector<HTMLSelectElement>("[data-cv-social-display]");
+  const templateSelect = document.querySelector<HTMLSelectElement>("[data-cv-template]");
+  const printMaxPagesSelect = document.querySelector<HTMLSelectElement>("[data-cv-print-max-pages]");
   const headlineInput = document.querySelector<HTMLInputElement>("[data-cv-headline]");
   const locationInput = document.querySelector<HTMLInputElement>("[data-cv-location]");
   const emailInput = document.querySelector<HTMLInputElement>("[data-cv-email]");
@@ -169,6 +201,16 @@ async function boot() {
   const previewModal = document.querySelector<HTMLElement>("[data-cv-preview-modal]");
   const previewCloseBtn = document.querySelector<HTMLButtonElement>("[data-cv-preview-close]");
   const previewBody = document.querySelector<HTMLElement>("[data-cv-preview-body]");
+  const previewSectionList = document.querySelector<HTMLElement>("[data-cv-preview-section-list]");
+  const previewTemplateSelect = document.querySelector<HTMLSelectElement>("[data-cv-preview-template]");
+  const importPaste = document.querySelector<HTMLTextAreaElement>("[data-cv-import-paste]");
+  const importExpBtn = document.querySelector<HTMLButtonElement>("[data-cv-import-experience]");
+  const importEduBtn = document.querySelector<HTMLButtonElement>("[data-cv-import-education]");
+  const importDetails = document.querySelector<HTMLDetailsElement>("[data-cv-import-details]");
+  const kickerBadge = document.querySelector<HTMLElement>("[data-cv-kicker-badge]");
+  const kickerPulse = document.querySelector<HTMLElement>("[data-cv-kicker-pulse]");
+  const importPdfInput = document.querySelector<HTMLInputElement>("[data-cv-import-pdf-input]");
+  const importPdfOpen = document.querySelector<HTMLButtonElement>("[data-cv-import-pdf-open]");
   const docHost = document.querySelector<HTMLElement>("[data-cv-doc-host]");
 
   if (!loadingEl || !listEl || !docEl || !docName || !docBio || !docProjects) return;
@@ -244,6 +286,16 @@ async function boot() {
     cvShareToken = typeof st === "string" && st ? st : null;
   }
 
+  const applyHeaderKicker = () => {
+    const pub = Boolean(cvShareEnabled);
+    if (!kickerBadge) return;
+    kickerBadge.textContent = pub ? tt("cv.kickerPublicWord", "público") : tt("cv.kickerPrivateWord", "privado");
+    kickerBadge.className = pub
+      ? "font-semibold text-emerald-600 dark:text-emerald-400"
+      : "font-semibold text-rose-600 dark:text-rose-400";
+    kickerPulse?.classList.toggle("hidden", !pub);
+  };
+
   if (avatarPath) {
     const signed = await supabase.storage.from("portfolio_avatars").createSignedUrl(avatarPath, 60 * 60);
     avatarSignedUrl = signed.data?.signedUrl ?? null;
@@ -306,6 +358,7 @@ async function boot() {
             cvShareToken = typeof (up1.data as any)?.cv_share_token === "string" ? (up1.data as any).cv_share_token : nextToken;
           }
           updateShareUrl();
+          applyHeaderKicker();
           showToast(nextEnabled ? tt("cv.publicShareEnabledToast", "Enlace público activado.") : tt("cv.publicShareDisabledToast", "Enlace público desactivado."), "success");
         } catch (e: any) {
           showToast(e?.message ?? tt("cv.publicShareSaveError", "No se pudo guardar."), "error");
@@ -343,6 +396,8 @@ async function boot() {
     }
   }
 
+  applyHeaderKicker();
+
   const techName = new Map<string, string>();
   for (const t of techRes.data ?? []) {
     if (t?.id && typeof t.name === "string") techName.set(t.id, t.name);
@@ -374,10 +429,37 @@ async function boot() {
   let selectedSlugs = new Set<string>();
   let selectedOrder: string[] = [];
   let cvProfile: CvProfile = (prefs as any).cvProfile ?? {};
-  cvProfile = { showHelpStack: true, showPhoto: true, experiences: [], education: [], ...cvProfile };
+  cvProfile = {
+    showHelpStack: true,
+    showPhoto: true,
+    experiences: [],
+    education: [],
+    certifications: [],
+    languages: [],
+    socialLinkDisplay: "both",
+    cvTemplate: "classic",
+    cvSectionVisibility: {},
+    cvPrintMaxPages: 3,
+    ...cvProfile,
+  };
   if (!cvProfile.photoSource) {
     cvProfile.photoSource = avatarSignedUrl ? "uploaded" : linkedinAvatar ? "linkedin" : "provider";
   }
+
+  const getCvLinkSlots = (): string[] => {
+    if (Array.isArray(cvProfile.cvLinkSlots) && cvProfile.cvLinkSlots.length === CV_LINK_SLOT_COUNT) {
+      return cvProfile.cvLinkSlots.map((x) => (typeof x === "string" ? x : ""));
+    }
+    return migrateCvLinksToSlots(cvProfile.links);
+  };
+
+  const slotLabels = () => [
+    tt("cv.linkLabel1", "LinkedIn"),
+    tt("cv.linkLabel2", "GitHub"),
+    tt("cv.linkLabel3", "Portfolio"),
+    tt("cv.linkLabel4", "X / Twitter"),
+    tt("cv.linkLabel5", "Web / otro"),
+  ];
 
   const applyProfileToInputs = () => {
     if (fullNameInput) fullNameInput.value = displayName;
@@ -393,10 +475,20 @@ async function boot() {
     if (photoUseUploadedBtn) photoUseUploadedBtn.classList.add("hidden");
     if (photoUseLinkedinBtn && linkedinAvatar) photoUseLinkedinBtn.classList.remove("hidden");
     if (photoUseUploadedBtn && avatarSignedUrl) photoUseUploadedBtn.classList.remove("hidden");
+    const slots = getCvLinkSlots();
     linkInputs.forEach((inp) => {
       const idx = Number(inp.dataset.cvLinkUrl ?? "0");
-      const url = cvProfile.links?.[idx]?.url ?? "";
-      inp.value = url;
+      inp.value = slots[idx] ?? "";
+    });
+    if (socialDisplaySelect) socialDisplaySelect.value = cvProfile.socialLinkDisplay ?? "both";
+    if (templateSelect) templateSelect.value = cvProfile.cvTemplate === "minimal" ? "minimal" : "classic";
+    if (previewTemplateSelect) previewTemplateSelect.value = cvProfile.cvTemplate === "minimal" ? "minimal" : "classic";
+    if (printMaxPagesSelect) printMaxPagesSelect.value = String(clampCvPrintMaxPages(cvProfile.cvPrintMaxPages));
+    document.querySelectorAll<HTMLInputElement>("input[data-cv-sec-show]").forEach((cb) => {
+      const k = cb.dataset.cvSecShow ?? "";
+      if (!k) return;
+      const vis = cvProfile.cvSectionVisibility ?? {};
+      cb.checked = (vis as Record<string, boolean>)[k] !== false;
     });
   };
 
@@ -449,7 +541,7 @@ async function boot() {
         const bullets = esc((x.bullets ?? "").toString());
         return `<div class="rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/50 dark:bg-gray-950/40 p-4 space-y-3" data-cv-exp-row="${idx}">
           <div class="flex items-center justify-between gap-3">
-            <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">${role || company || esc(tt("cv.newExperience", "Nueva experiencia"))}</p>
+            <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-cv-exp-title>${role || company || esc(tt("cv.newExperience", "Nueva experiencia"))}</p>
             <button type="button" class="text-xs font-semibold text-rose-700 dark:text-rose-300 hover:underline" data-cv-exp-del="${idx}">${esc(tt("cv.remove", "Quitar"))}</button>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -498,7 +590,7 @@ async function boot() {
         const details = esc((x.details ?? "").toString());
         return `<div class="rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/50 dark:bg-gray-950/40 p-4 space-y-3" data-cv-edu-row="${idx}">
           <div class="flex items-center justify-between gap-3">
-            <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">${degree || school || esc(tt("cv.newEducation", "Nueva educación"))}</p>
+            <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-cv-edu-title>${degree || school || esc(tt("cv.newEducation", "Nueva educación"))}</p>
             <button type="button" class="text-xs font-semibold text-rose-700 dark:text-rose-300 hover:underline" data-cv-edu-del="${idx}">${esc(tt("cv.remove", "Quitar"))}</button>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -534,6 +626,113 @@ async function boot() {
       .join("");
   };
 
+  const renderCertificationEditor = () => {
+    if (!certList) return;
+    const certs = Array.isArray(cvProfile.certifications) ? cvProfile.certifications : [];
+    certList.innerHTML = certs
+      .map((x, idx) => {
+        const name = esc((x.name ?? "").toString());
+        const issuer = esc((x.issuer ?? "").toString());
+        const year = esc((x.year ?? "").toString());
+        const url = esc((x.url ?? "").toString());
+        return `<div class="rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/50 dark:bg-gray-950/40 p-4 space-y-3" data-cv-cert-row="${idx}">
+          <div class="flex items-center justify-between gap-3">
+            <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-cv-cert-title>${name || issuer || esc(tt("cv.newCert", "Nueva certificación"))}</p>
+            <button type="button" class="text-xs font-semibold text-rose-700 dark:text-rose-300 hover:underline" data-cv-cert-del="${idx}">${esc(tt("cv.remove", "Quitar"))}</button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label class="space-y-1 md:col-span-2">
+              <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.certName", "Nombre"))}</span>
+              <input class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-cert-field="name" data-idx="${idx}" value="${name}" />
+            </label>
+            <label class="space-y-1">
+              <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.certIssuer", "Emisor"))}</span>
+              <input class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-cert-field="issuer" data-idx="${idx}" value="${issuer}" />
+            </label>
+            <label class="space-y-1">
+              <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.certYear", "Año"))}</span>
+              <input class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-cert-field="year" data-idx="${idx}" value="${year}" placeholder="2024" />
+            </label>
+            <label class="space-y-1 md:col-span-2">
+              <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.certUrl", "URL"))}</span>
+              <input class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-cert-field="url" data-idx="${idx}" value="${url}" placeholder="https://…" />
+            </label>
+          </div>
+        </div>`;
+      })
+      .join("");
+  };
+
+  const renderLanguageEditor = () => {
+    if (!langList) return;
+    const langs = Array.isArray(cvProfile.languages) ? cvProfile.languages : [];
+    langList.innerHTML = langs
+      .map((x, idx) => {
+        const name = esc((x.name ?? "").toString());
+        const level = esc((x.level ?? "").toString());
+        return `<div class="rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/50 dark:bg-gray-950/40 p-4 space-y-3" data-cv-lang-row="${idx}">
+          <div class="flex items-center justify-between gap-3">
+            <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-cv-lang-title>${name || esc(tt("cv.newLanguage", "Idioma"))}</p>
+            <button type="button" class="text-xs font-semibold text-rose-700 dark:text-rose-300 hover:underline" data-cv-lang-del="${idx}">${esc(tt("cv.remove", "Quitar"))}</button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label class="space-y-1">
+              <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.langName", "Idioma"))}</span>
+              <input class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-lang-field="name" data-idx="${idx}" value="${name}" />
+            </label>
+            <label class="space-y-1">
+              <span class="text-[11px] text-gray-600 dark:text-gray-400">${esc(tt("cv.langLevel", "Nivel"))}</span>
+              <input class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm" data-cv-lang-field="level" data-idx="${idx}" value="${level}" placeholder="C1 / fluido" />
+            </label>
+          </div>
+        </div>`;
+      })
+      .join("");
+  };
+
+  const updateCertRowTitle = (idx: number) => {
+    if (!certList) return;
+    const row = certList.querySelector(`[data-cv-cert-row="${idx}"]`);
+    const title = row?.querySelector("[data-cv-cert-title]");
+    if (!title) return;
+    const certs = Array.isArray(cvProfile.certifications) ? cvProfile.certifications : [];
+    const n = (certs[idx]?.name ?? "").trim();
+    const i = (certs[idx]?.issuer ?? "").trim();
+    title.textContent = n || i || tt("cv.newCert", "Nueva certificación");
+  };
+
+  const updateLangRowTitle = (idx: number) => {
+    if (!langList) return;
+    const row = langList.querySelector(`[data-cv-lang-row="${idx}"]`);
+    const title = row?.querySelector("[data-cv-lang-title]");
+    if (!title) return;
+    const langs = Array.isArray(cvProfile.languages) ? cvProfile.languages : [];
+    const n = (langs[idx]?.name ?? "").trim();
+    title.textContent = n || tt("cv.newLanguage", "Idioma");
+  };
+
+  const updateExpRowTitle = (idx: number) => {
+    if (!expList) return;
+    const row = expList.querySelector(`[data-cv-exp-row="${idx}"]`);
+    const title = row?.querySelector("[data-cv-exp-title]");
+    if (!title) return;
+    const exp = Array.isArray(cvProfile.experiences) ? cvProfile.experiences : [];
+    const r = (exp[idx]?.role ?? "").trim();
+    const c = (exp[idx]?.company ?? "").trim();
+    title.textContent = r || c || tt("cv.newExperience", "Nueva experiencia");
+  };
+
+  const updateEduRowTitle = (idx: number) => {
+    if (!eduList) return;
+    const row = eduList.querySelector(`[data-cv-edu-row="${idx}"]`);
+    const title = row?.querySelector("[data-cv-edu-title]");
+    if (!title) return;
+    const edu = Array.isArray(cvProfile.education) ? cvProfile.education : [];
+    const d = (edu[idx]?.degree ?? "").trim();
+    const s = (edu[idx]?.school ?? "").trim();
+    title.textContent = d || s || tt("cv.newEducation", "Nueva educación");
+  };
+
   const applySelectionFromPrefs = () => {
     const raw = prefs.cvProjectSlugs;
     selectedSlugs.clear();
@@ -566,9 +765,18 @@ async function boot() {
     const headline = (cvProfile.headline ?? "").trim();
     const location = (cvProfile.location ?? "").trim();
     const email = normalizeEmail((cvProfile.email ?? "").trim());
-    const links = Array.isArray(cvProfile.links) ? cvProfile.links : [];
     const summary = (cvProfile.summary ?? "").trim();
     const showHelp = cvProfile.showHelpStack ?? true;
+    const vis = cvProfile.cvSectionVisibility ?? {};
+    const showBlock = (key: string) => (vis as Record<string, boolean>)[key] !== false;
+
+    if (docEl) {
+      docEl.classList.remove("cv-template-classic", "cv-template-minimal");
+      docEl.classList.add(cvProfile.cvTemplate === "minimal" ? "cv-template-minimal" : "cv-template-classic");
+      const maxP = clampCvPrintMaxPages(cvProfile.cvPrintMaxPages);
+      docEl.style.setProperty("--cv-print-scale", String(cvPrintTypographicScale(maxP)));
+      docEl.dataset.cvPrintMaxPages = String(maxP);
+    }
 
     if (docHeadline) {
       docHeadline.textContent = headline;
@@ -580,12 +788,9 @@ async function boot() {
       if (email && isProbablyEmail(email)) {
         chips.push(`<a class="no-underline hover:underline" href="mailto:${esc(email)}">${esc(email)}</a>`);
       }
-      for (const l of links) {
-        const url = normalizeUrl(String(l?.url ?? ""));
-        if (!url) continue;
-        const label = String(l?.label ?? "").trim() || url;
-        chips.push(`<a class="no-underline hover:underline" href="${esc(url)}" target="_blank" rel="noreferrer">${esc(label)}</a>`);
-      }
+      const slots = getCvLinkSlots();
+      const mode = (cvProfile.socialLinkDisplay ?? "both") as CvSocialLinkDisplay;
+      chips.push(...buildCvSocialChipsHtml({ slots, slotLabels: slotLabels(), display: mode, esc }));
       docContact.innerHTML = chips.length > 0 ? chips.join(`<span class="text-gray-300 dark:text-gray-700">•</span>`) : "";
       docContact.classList.toggle("hidden", chips.length === 0);
     }
@@ -618,6 +823,9 @@ async function boot() {
 
     const bySlug = new Map(projects.map((p) => [p.slug, p]));
     const chosen = selectedOrder.map((s) => bySlug.get(s)).filter(Boolean) as ProjectRow[];
+    if (docProjectsSection) {
+      docProjectsSection.classList.toggle("hidden", chosen.length === 0 || !showBlock("projects"));
+    }
     if (chosen.length === 0) {
       docProjects.innerHTML = `<p class="m-0 text-sm text-gray-500 dark:text-gray-400">${esc(tt("cv.noProjectsSelected", "No hay proyectos seleccionados."))}</p>`;
     } else {
@@ -653,7 +861,7 @@ async function boot() {
     // Highlights (experience / achievements)
     const lines = linesToBullets(cvProfile.highlights ?? "");
     if (docHighlightsSection && docHighlights) {
-      const show = lines.length > 0;
+      const show = lines.length > 0 && showBlock("highlights");
       docHighlightsSection.classList.toggle("hidden", !show);
       docHighlights.innerHTML = show ? lines.map((s) => `<li>${esc(s)}</li>`).join("") : "";
     }
@@ -676,7 +884,7 @@ async function boot() {
     // Experience
     if (docExperienceSection && docExperience) {
       const exp = Array.isArray(cvProfile.experiences) ? cvProfile.experiences : [];
-      const show = exp.length > 0;
+      const show = exp.length > 0 && showBlock("experience");
       docExperienceSection.classList.toggle("hidden", !show);
       docExperience.innerHTML = show
         ? exp
@@ -712,7 +920,7 @@ async function boot() {
     // Education
     if (docEducationSection && docEducation) {
       const edu = Array.isArray(cvProfile.education) ? cvProfile.education : [];
-      const show = edu.length > 0;
+      const show = edu.length > 0 && showBlock("education");
       docEducationSection.classList.toggle("hidden", !show);
       docEducation.innerHTML = show
         ? edu
@@ -744,7 +952,123 @@ async function boot() {
             .join("")
         : "";
     }
-    docEl.classList.remove("hidden");
+
+    // Certifications
+    if (docCertSection && docCert) {
+      const certs = Array.isArray(cvProfile.certifications) ? cvProfile.certifications : [];
+      const show = certs.length > 0 && showBlock("certifications");
+      docCertSection.classList.toggle("hidden", !show);
+      docCert.innerHTML = show
+        ? certs
+            .map((c) => {
+              const name = (c.name ?? "").trim();
+              const issuer = (c.issuer ?? "").trim();
+              const year = (c.year ?? "").trim();
+              const url = normalizeUrl((c.url ?? "").trim());
+              const title = name || issuer || tt("cv.untitled", "—");
+              const sub = [issuer, year].filter(Boolean).join(" · ");
+              const link = url
+                ? ` <a class="text-sm font-medium no-underline hover:underline" href="${esc(url)}" target="_blank" rel="noreferrer">${esc(tt("cv.certLink", "Enlace"))}</a>`
+                : "";
+              return `<section class="cv-doc-project">
+                <p class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100">${esc(title)}</p>
+                ${sub ? `<p class="m-0 mt-1 text-sm text-gray-600 dark:text-gray-400">${esc(sub)}</p>` : ""}
+                ${link}
+              </section>`;
+            })
+            .join("")
+        : "";
+    }
+
+    // Languages
+    if (docLangSection && docLang) {
+      const langs = Array.isArray(cvProfile.languages) ? cvProfile.languages : [];
+      const show = langs.length > 0 && showBlock("languages");
+      docLangSection.classList.toggle("hidden", !show);
+      docLang.innerHTML = show
+        ? `<ul class="m-0 space-y-1 pl-5 text-sm text-gray-700 dark:text-gray-300">${langs
+            .map((l) => {
+              const name = (l.name ?? "").trim();
+              const level = (l.level ?? "").trim();
+              const line = [name, level].filter(Boolean).join(" — ");
+              return line ? `<li>${esc(line)}</li>` : "";
+            })
+            .filter(Boolean)
+            .join("")}</ul>`
+        : "";
+    }
+
+    applyCvDocumentSectionOrder(docSectionsHost, cvProfile.cvDocumentSectionOrder);
+
+    docEl?.classList.remove("hidden");
+  };
+
+  const sectionRailLabel = (id: string) => {
+    const map: Record<string, string> = {
+      experience: tt("cv.docExperienceHeading", "Experiencia"),
+      education: tt("cv.docEducationHeading", "Educación"),
+      certifications: tt("cv.docCertificationsHeading", "Certificaciones"),
+      languages: tt("cv.docLanguagesHeading", "Idiomas"),
+      projects: tt("cv.docProjectsHeading", "Proyectos"),
+      highlights: tt("cv.docHighlightsHeading", "Logros"),
+    };
+    return map[id] ?? id;
+  };
+
+  const refreshPreviewSectionRail = () => {
+    if (!previewSectionList) return;
+    const order = normalizeCvDocumentSectionOrder(cvProfile.cvDocumentSectionOrder);
+    previewSectionList.innerHTML = order
+      .map(
+        (id) =>
+          `<li data-cv-preview-sec-row="${esc(id)}" draggable="true" class="flex items-center gap-2 rounded-lg border border-gray-200/70 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 px-2 py-1.5 text-xs text-gray-800 dark:text-gray-200 cursor-grab active:cursor-grabbing select-none"><span class="text-gray-400 shrink-0">⋮⋮</span><span class="min-w-0 flex-1">${esc(sectionRailLabel(id))}</span></li>`,
+      )
+      .join("");
+  };
+
+  const bindPreviewSectionRail = () => {
+    if (!previewSectionList || previewSectionList.dataset.cvSecBound === "1") return;
+    previewSectionList.dataset.cvSecBound = "1";
+    previewSectionList.addEventListener("dragstart", (e) => {
+      const row = (e.target as HTMLElement).closest<HTMLElement>("li[data-cv-preview-sec-row]");
+      if (!row || !previewSectionList.contains(row)) return;
+      const id = row.getAttribute("data-cv-preview-sec-row") ?? "";
+      e.dataTransfer?.setData("text/plain", `cvsec:${id}`);
+      row.classList.add("opacity-70");
+    });
+    previewSectionList.addEventListener("dragend", (e) => {
+      const row = (e.target as HTMLElement).closest<HTMLElement>("li[data-cv-preview-sec-row]");
+      row?.classList.remove("opacity-70");
+    });
+    previewSectionList.addEventListener("dragover", (e) => {
+      const row = (e.target as HTMLElement).closest<HTMLElement>("li[data-cv-preview-sec-row]");
+      if (!row || !previewSectionList.contains(row)) return;
+      e.preventDefault();
+      row.classList.add("ring-2", "ring-indigo-400/40", "dark:ring-indigo-300/25");
+    });
+    previewSectionList.addEventListener("dragleave", (e) => {
+      const row = (e.target as HTMLElement).closest<HTMLElement>("li[data-cv-preview-sec-row]");
+      row?.classList.remove("ring-2", "ring-indigo-400/40", "dark:ring-indigo-300/25");
+    });
+    previewSectionList.addEventListener("drop", (e) => {
+      const row = (e.target as HTMLElement).closest<HTMLElement>("li[data-cv-preview-sec-row]");
+      if (!row || !previewSectionList.contains(row)) return;
+      e.preventDefault();
+      row.classList.remove("ring-2", "ring-indigo-400/40", "dark:ring-indigo-300/25");
+      const from = (e.dataTransfer?.getData("text/plain") ?? "").replace(/^cvsec:/, "");
+      const to = row.getAttribute("data-cv-preview-sec-row") ?? "";
+      if (!from || !to || from === to) return;
+      const cur = [...normalizeCvDocumentSectionOrder(cvProfile.cvDocumentSectionOrder)];
+      const fromIdx = cur.indexOf(from);
+      const toIdx = cur.indexOf(to);
+      if (fromIdx < 0 || toIdx < 0) return;
+      cur.splice(fromIdx, 1);
+      cur.splice(toIdx, 0, from);
+      cvProfile = { ...cvProfile, cvDocumentSectionOrder: cur };
+      persistProfile();
+      renderDocument();
+      refreshPreviewSectionRail();
+    });
   };
 
   const renderList = () => {
@@ -821,10 +1145,13 @@ async function boot() {
     editorEl?.classList.remove("hidden");
   };
 
+  bindPreviewSectionRail();
   renderList();
   applyProfileToInputs();
   renderExperienceEditor();
   renderEducationEditor();
+  renderCertificationEditor();
+  renderLanguageEditor();
   renderDocument();
 
   const bindProfileInput = () => {
@@ -906,7 +1233,7 @@ async function boot() {
       exp[idx] = row;
       cvProfile = { ...cvProfile, experiences: exp };
       schedule();
-      renderExperienceEditor();
+      updateExpRowTitle(idx);
     });
     expList?.addEventListener("click", (e) => {
       const btn = (e.target as HTMLElement | null)?.closest("[data-cv-exp-del]") as HTMLElement | null;
@@ -932,7 +1259,7 @@ async function boot() {
       edu[idx] = row;
       cvProfile = { ...cvProfile, education: edu };
       schedule();
-      renderEducationEditor();
+      updateEduRowTitle(idx);
     });
     eduList?.addEventListener("click", (e) => {
       const btn = (e.target as HTMLElement | null)?.closest("[data-cv-edu-del]") as HTMLElement | null;
@@ -948,25 +1275,190 @@ async function boot() {
     });
     linkInputs.forEach((inp) => {
       inp.addEventListener("input", () => {
-        const idx = Number(inp.dataset.cvLinkUrl ?? "0");
         const urls = Array.from(linkInputs).map((x) => x.value.trim());
-        const labels = [
-          tt("cv.linkLabel1", "LinkedIn"),
-          tt("cv.linkLabel2", "GitHub"),
-          tt("cv.linkLabel3", "Portfolio"),
-        ];
-        const nextLinks = urls
-          .map((u, i) => ({ label: labels[i] ?? `Link ${i + 1}`, url: u }))
-          .filter((x) => x.url.trim().length > 0);
-        cvProfile = { ...cvProfile, links: nextLinks };
-        // keep current edit responsive
-        if (!Number.isNaN(idx)) void idx;
+        const labels = slotLabels();
+        const nextSlots = Array.from({ length: CV_LINK_SLOT_COUNT }, (_, i) => urls[i] ?? "");
+        cvProfile.cvLinkSlots = nextSlots;
+        cvProfile.links = slotsToPersistedLinks(nextSlots, labels);
         schedule();
       });
+    });
+
+    document.addEventListener(
+      "keydown",
+      (e) => {
+        if (e.key !== "ArrowRight") return;
+        const el = e.target as HTMLElement | null;
+        if (!el?.matches?.("input[data-cv-link-url]")) return;
+        const input = el as HTMLInputElement;
+        const ph = input.placeholder?.trim() ?? "";
+        if (!/^https?:\/\//i.test(ph)) return;
+        const v = input.value;
+        if (v !== "" && !ph.startsWith(v)) return;
+        e.preventDefault();
+        input.value = ph;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      },
+      true,
+    );
+
+    socialDisplaySelect?.addEventListener("change", () => {
+      const v = socialDisplaySelect.value as CvSocialLinkDisplay;
+      if (v === "url" || v === "icon" || v === "both") {
+        cvProfile.socialLinkDisplay = v;
+        schedule();
+      }
+    });
+
+    templateSelect?.addEventListener("change", () => {
+      cvProfile.cvTemplate = templateSelect.value === "minimal" ? "minimal" : "classic";
+      if (previewTemplateSelect) previewTemplateSelect.value = cvProfile.cvTemplate === "minimal" ? "minimal" : "classic";
+      schedule();
+    });
+
+    printMaxPagesSelect?.addEventListener("change", () => {
+      const n = Number(printMaxPagesSelect.value);
+      cvProfile = {
+        ...cvProfile,
+        cvPrintMaxPages: clampCvPrintMaxPages(Number.isFinite(n) ? n : 3),
+      };
+      schedule();
+    });
+
+    document.querySelectorAll<HTMLInputElement>("input[data-cv-sec-show]").forEach((cb) => {
+      cb.addEventListener("change", () => {
+        const k = cb.dataset.cvSecShow ?? "";
+        if (!k) return;
+        cvProfile.cvSectionVisibility = { ...(cvProfile.cvSectionVisibility ?? {}), [k]: cb.checked };
+        schedule();
+      });
+    });
+
+    certList?.addEventListener("input", (e) => {
+      const el = e.target as HTMLInputElement | null;
+      const field = (el as any)?.dataset?.cvCertField as string | undefined;
+      const idx = Number((el as any)?.dataset?.idx ?? "");
+      if (!el || !field || !Number.isFinite(idx)) return;
+      const certs = Array.isArray(cvProfile.certifications) ? [...cvProfile.certifications] : [];
+      const row = { ...(certs[idx] ?? {}) } as any;
+      row[field] = el.value;
+      certs[idx] = row;
+      cvProfile = { ...cvProfile, certifications: certs };
+      schedule();
+      updateCertRowTitle(idx);
+    });
+    certList?.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement | null)?.closest("[data-cv-cert-del]") as HTMLElement | null;
+      if (!btn) return;
+      const idx = Number(btn.getAttribute("data-cv-cert-del") ?? "");
+      if (!Number.isFinite(idx)) return;
+      const certs = Array.isArray(cvProfile.certifications) ? [...cvProfile.certifications] : [];
+      certs.splice(idx, 1);
+      cvProfile = { ...cvProfile, certifications: certs };
+      schedule();
+      renderCertificationEditor();
+      renderDocument();
+    });
+
+    langList?.addEventListener("input", (e) => {
+      const el = e.target as HTMLInputElement | null;
+      const field = (el as any)?.dataset?.cvLangField as string | undefined;
+      const idx = Number((el as any)?.dataset?.idx ?? "");
+      if (!el || !field || !Number.isFinite(idx)) return;
+      const langs = Array.isArray(cvProfile.languages) ? [...cvProfile.languages] : [];
+      const row = { ...(langs[idx] ?? {}) } as any;
+      row[field] = el.value;
+      langs[idx] = row;
+      cvProfile = { ...cvProfile, languages: langs };
+      schedule();
+      updateLangRowTitle(idx);
+    });
+    langList?.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement | null)?.closest("[data-cv-lang-del]") as HTMLElement | null;
+      if (!btn) return;
+      const idx = Number(btn.getAttribute("data-cv-lang-del") ?? "");
+      if (!Number.isFinite(idx)) return;
+      const langs = Array.isArray(cvProfile.languages) ? [...cvProfile.languages] : [];
+      langs.splice(idx, 1);
+      cvProfile = { ...cvProfile, languages: langs };
+      schedule();
+      renderLanguageEditor();
+      renderDocument();
     });
   };
 
   bindProfileInput();
+
+  previewTemplateSelect?.addEventListener("change", () => {
+    const v = previewTemplateSelect.value === "minimal" ? "minimal" : "classic";
+    cvProfile = { ...cvProfile, cvTemplate: v };
+    if (templateSelect) templateSelect.value = v;
+    persistProfile();
+    renderDocument();
+  });
+
+  importExpBtn?.addEventListener("click", () => {
+    const raw = importPaste?.value?.trim() ?? "";
+    if (!raw) {
+      showToast(tt("cv.importEmptyToast", "Pega texto antes de importar."), "info");
+      return;
+    }
+    const rows = parseExperienceBlocksFromPaste(raw);
+    if (rows.length === 0) {
+      showToast(tt("cv.importParseFailedToast", "No se detectaron bloques válidos."), "error");
+      return;
+    }
+    const exp = [...(Array.isArray(cvProfile.experiences) ? cvProfile.experiences : [])];
+    for (const r of rows) exp.push({ ...r });
+    cvProfile = { ...cvProfile, experiences: exp };
+    persistProfile();
+    renderExperienceEditor();
+    renderDocument();
+    showToast(tt("cv.importToastExperience", "Bloques añadidos a experiencia."), "success");
+  });
+
+  importEduBtn?.addEventListener("click", () => {
+    const raw = importPaste?.value?.trim() ?? "";
+    if (!raw) {
+      showToast(tt("cv.importEmptyToast", "Pega texto antes de importar."), "info");
+      return;
+    }
+    const rows = parseEducationBlocksFromPaste(raw);
+    if (rows.length === 0) {
+      showToast(tt("cv.importParseFailedToast", "No se detectaron bloques válidos."), "error");
+      return;
+    }
+    const edu = [...(Array.isArray(cvProfile.education) ? cvProfile.education : [])];
+    for (const r of rows) edu.push({ ...r });
+    cvProfile = { ...cvProfile, education: edu };
+    persistProfile();
+    renderEducationEditor();
+    renderDocument();
+    showToast(tt("cv.importToastEducation", "Bloques añadidos a educación."), "success");
+  });
+
+  importPdfOpen?.addEventListener("click", () => importPdfInput?.click());
+  importPdfInput?.addEventListener("change", async () => {
+    const file = importPdfInput.files?.[0];
+    importPdfInput.value = "";
+    if (!file) return;
+    try {
+      const { extractTextFromPdfFile } = await import("@lib/cv-pdf-text");
+      const text = await extractTextFromPdfFile(file);
+      if (!text.trim()) {
+        showToast(tt("cv.importPdfEmptyText", "No se extrajo texto del PDF."), "warning");
+        return;
+      }
+      if (importPaste) {
+        importPaste.value = (importPaste.value ? `${importPaste.value}\n\n` : "") + text;
+      }
+      if (importDetails) importDetails.open = true;
+      showToast(tt("cv.importPdfToast", "Texto extraído del PDF. Revísalo y usa los botones de importación."), "success");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "";
+      showToast(msg || tt("cv.importPdfError", "No se pudo leer el PDF."), "error");
+    }
+  });
 
   // Photo source toggles (CV-only; does not overwrite uploaded avatar)
   photoUseLinkedinBtn?.addEventListener("click", () => {
@@ -989,6 +1481,8 @@ async function boot() {
     if (!previewModal || !previewBody || !docEl) return;
     previewBody.innerHTML = "";
     previewBody.appendChild(docEl);
+    if (previewTemplateSelect) previewTemplateSelect.value = cvProfile.cvTemplate === "minimal" ? "minimal" : "classic";
+    refreshPreviewSectionRail();
     previewModal.classList.remove("hidden");
     previewModal.classList.add("flex");
     document.body.style.overflow = "hidden";
@@ -1006,7 +1500,9 @@ async function boot() {
     if (e.target === previewModal) closePreview();
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closePreview();
+    if (e.key !== "Escape") return;
+    if (!previewModal || previewModal.classList.contains("hidden")) return;
+    closePreview();
   });
 
   expAddBtn?.addEventListener("click", () => {
@@ -1023,6 +1519,23 @@ async function boot() {
     cvProfile = { ...cvProfile, education: edu };
     persistProfile();
     renderEducationEditor();
+    renderDocument();
+  });
+
+  certAddBtn?.addEventListener("click", () => {
+    const certs = Array.isArray(cvProfile.certifications) ? [...cvProfile.certifications] : [];
+    certs.push({ name: "", issuer: "", year: "", url: "" });
+    cvProfile = { ...cvProfile, certifications: certs };
+    persistProfile();
+    renderCertificationEditor();
+    renderDocument();
+  });
+  langAddBtn?.addEventListener("click", () => {
+    const langs = Array.isArray(cvProfile.languages) ? [...cvProfile.languages] : [];
+    langs.push({ name: "", level: "" });
+    cvProfile = { ...cvProfile, languages: langs };
+    persistProfile();
+    renderLanguageEditor();
     renderDocument();
   });
 

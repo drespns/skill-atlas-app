@@ -1,5 +1,6 @@
 ---
 /** Formulario de edición del CV; hidratado por `cv-page.ts`. */
+const h2 = "cv-section-heading m-0 text-lg md:text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100 border-b border-gray-200/90 dark:border-gray-800 pb-2";
 ---
 
 <div data-cv-editor class="hidden space-y-6 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 p-5 shadow-sm print:hidden">
@@ -9,8 +10,102 @@
       Ir a Ajustes
     </a>
   </div>
+
+  <div class="rounded-xl border border-gray-200/70 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/40 p-4">
+    <p class="m-0 text-xs font-semibold text-gray-800 dark:text-gray-200" data-i18n="cv.sectionVisibilityTitle">Visibilidad en el CV</p>
+    <p class="m-0 mt-1 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="cv.sectionVisibilityHint">
+      Desmarca lo que no quieres mostrar en la vista previa ni al imprimir.
+    </p>
+    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" data-cv-sec-show="highlights" checked class="rounded border-gray-300 dark:border-gray-600" />
+        <span data-i18n="cv.secHighlights">Logros</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" data-cv-sec-show="projects" checked class="rounded border-gray-300 dark:border-gray-600" />
+        <span data-i18n="cv.secProjects">Proyectos</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" data-cv-sec-show="experience" checked class="rounded border-gray-300 dark:border-gray-600" />
+        <span data-i18n="cv.secExperience">Experiencia</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" data-cv-sec-show="education" checked class="rounded border-gray-300 dark:border-gray-600" />
+        <span data-i18n="cv.secEducation">Educación</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" data-cv-sec-show="certifications" checked class="rounded border-gray-300 dark:border-gray-600" />
+        <span data-i18n="cv.secCertifications">Certificaciones</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" data-cv-sec-show="languages" checked class="rounded border-gray-300 dark:border-gray-600" />
+        <span data-i18n="cv.secLanguages">Idiomas</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="rounded-xl border border-gray-200/70 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/40 p-4">
+    <p class="m-0 text-xs font-semibold text-gray-800 dark:text-gray-200" data-i18n="cv.printLayoutTitle">Impresión y PDF</p>
+    <p class="m-0 mt-1 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="cv.printLayoutHint">
+      Objetivo de extensión: el documento usa una escala tipográfica acorde (secciones secundarias algo más compactas).
+    </p>
+    <label class="mt-3 block max-w-xs space-y-1">
+      <span class="text-sm font-semibold text-gray-800 dark:text-gray-200" data-i18n="cv.printMaxPagesLabel">Máximo de páginas (objetivo)</span>
+      <select
+        data-cv-print-max-pages
+        class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+      >
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+      </select>
+    </label>
+  </div>
+
+  <details data-cv-import-details class="group rounded-xl border border-dashed border-gray-300/90 dark:border-gray-600/80 bg-white/40 dark:bg-gray-950/30 p-4 open:border-indigo-300/50 dark:open:border-indigo-800/50">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
+      <h2 class="m-0 text-base font-bold text-gray-900 dark:text-gray-100">
+        <span data-i18n="cv.importSectionTitle">Importar desde texto</span>
+      </h2>
+      <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.importFoldHint">Pegar CV previo (beta)</span>
+    </summary>
+    <p class="m-0 mt-2 text-xs text-gray-600 dark:text-gray-400" data-i18n="cv.importPasteHint">
+      Separa cada puesto o titulación con una línea en blanco. Primera línea: rol en empresa o título en centro (usa « en », « @ », « | » o « — »). Opcional: línea de fechas (años o mes+año). El resto como viñetas (- o •).
+    </p>
+    <p class="m-0 mt-2 text-xs text-amber-900/90 dark:text-amber-100/90 rounded-lg border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/90 dark:bg-amber-950/35 px-3 py-2" data-i18n="cv.importReviewNote">
+      Revisa siempre los datos importados. Más adelante integraremos IA para ayudar con importaciones desde PDF y otros formatos.
+    </p>
+    <textarea
+      rows={6}
+      data-cv-import-paste
+      class="mt-3 w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 font-mono/90"
+      placeholder=""
+      data-i18n-attr="placeholder"
+      data-i18n="cv.importPlaceholder"
+    ></textarea>
+    <div class="mt-3 flex flex-wrap gap-2">
+      <button
+        type="button"
+        data-cv-import-experience
+        class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+      >
+        <span data-i18n="cv.importExperienceBtn">Añadir a experiencia</span>
+      </button>
+      <button
+        type="button"
+        data-cv-import-education
+        class="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-xs font-semibold text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900"
+      >
+        <span data-i18n="cv.importEducationBtn">Añadir a educación</span>
+      </button>
+    </div>
+  </details>
+
   <div class="space-y-3">
-    <h2 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">
+    <h2 class={h2}>
       <span data-i18n="cv.profileSectionTitle">Datos del CV</span>
     </h2>
     <p class="m-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="cv.settingsSyncHint">
@@ -94,9 +189,9 @@
         />
       </label>
     </div>
-    <div class="space-y-2">
+    <div class="space-y-3">
       <p class="m-0 text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.linksLabel">Enlaces</p>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <label class="space-y-1">
           <span class="text-[11px] text-gray-600 dark:text-gray-400" data-i18n="cv.linkLabel1">LinkedIn</span>
           <input
@@ -120,9 +215,50 @@
           <input
             type="url"
             data-cv-link-url="2"
-            placeholder="https://skillatlas.app/portfolio/..."
+            placeholder="https://…"
             class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
           />
+        </label>
+        <label class="space-y-1">
+          <span class="text-[11px] text-gray-600 dark:text-gray-400" data-i18n="cv.linkLabel4">X / Twitter</span>
+          <input
+            type="url"
+            data-cv-link-url="3"
+            placeholder="https://x.com/…"
+            class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+          />
+        </label>
+        <label class="space-y-1">
+          <span class="text-[11px] text-gray-600 dark:text-gray-400" data-i18n="cv.linkLabel5">Web u otro</span>
+          <input
+            type="url"
+            data-cv-link-url="4"
+            placeholder="https://…"
+            class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+          />
+        </label>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label class="space-y-1">
+          <span class="text-[11px] font-medium text-gray-600 dark:text-gray-400" data-i18n="cv.socialDisplayLabel">Mostrar enlaces como</span>
+          <select
+            data-cv-social-display
+            class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+          >
+            <option value="both" data-i18n="cv.socialDisplayBoth">Icono + texto</option>
+            <option value="url" data-i18n="cv.socialDisplayUrl">Solo texto (URL visible)</option>
+            <option value="icon" data-i18n="cv.socialDisplayIcon">Solo icono (clic / PDF)</option>
+          </select>
+        </label>
+        <label class="space-y-1">
+          <span class="text-[11px] font-medium text-gray-600 dark:text-gray-400" data-i18n="cv.templateLabel">Plantilla</span>
+          <select
+            data-cv-template
+            class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+          >
+            <option value="classic" data-i18n="cv.templateClassic">Clásica</option>
+            <option value="minimal" data-i18n="cv.templateMinimal">Minimal (beta)</option>
+          </select>
         </label>
       </div>
       <p class="m-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="cv.profileHint">
@@ -157,7 +293,7 @@
   </div>
 
   <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-    <h2 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">
+    <h2 class={h2}>
       <span data-i18n="cv.projectsSectionTitle">Proyectos en el CV</span>
     </h2>
     <div class="flex flex-wrap gap-3 text-xs font-semibold">
@@ -173,8 +309,8 @@
 
   <div class="pt-2 space-y-3">
     <div class="flex items-end justify-between gap-3">
-      <h2 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="cv.experienceTitle">Experiencia</h2>
-      <button type="button" data-cv-exp-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
+      <h2 class={h2} data-i18n="cv.experienceTitle">Experiencia</h2>
+      <button type="button" data-cv-exp-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline shrink-0">
         <span data-i18n="cv.addExperience">Añadir</span>
       </button>
     </div>
@@ -183,11 +319,45 @@
 
   <div class="pt-2 space-y-3">
     <div class="flex items-end justify-between gap-3">
-      <h2 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="cv.educationTitle">Educación</h2>
-      <button type="button" data-cv-edu-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
+      <h2 class={h2} data-i18n="cv.educationTitle">Educación</h2>
+      <button type="button" data-cv-edu-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline shrink-0">
         <span data-i18n="cv.addEducation">Añadir</span>
       </button>
     </div>
     <div data-cv-edu-list class="space-y-3"></div>
   </div>
+
+  <details class="group rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/40 dark:bg-gray-950/30 p-4 open:shadow-sm">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
+      <h2 class="m-0 text-base font-bold text-gray-900 dark:text-gray-100">
+        <span data-i18n="cv.certificationsTitle">Certificaciones</span>
+      </h2>
+      <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.foldHintExpand">Pulsa para editar</span>
+    </summary>
+    <div class="mt-4 space-y-3">
+      <div class="flex justify-end">
+        <button type="button" data-cv-cert-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
+          <span data-i18n="cv.addCertification">Añadir</span>
+        </button>
+      </div>
+      <div data-cv-cert-list class="space-y-3"></div>
+    </div>
+  </details>
+
+  <details class="group rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/40 dark:bg-gray-950/30 p-4 open:shadow-sm">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
+      <h2 class="m-0 text-base font-bold text-gray-900 dark:text-gray-100">
+        <span data-i18n="cv.languagesTitle">Idiomas</span>
+      </h2>
+      <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.foldHintExpand">Pulsa para editar</span>
+    </summary>
+    <div class="mt-4 space-y-3">
+      <div class="flex justify-end">
+        <button type="button" data-cv-lang-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
+          <span data-i18n="cv.addLanguage">Añadir</span>
+        </button>
+      </div>
+      <div data-cv-lang-list class="space-y-3"></div>
+    </div>
+  </details>
 </div>

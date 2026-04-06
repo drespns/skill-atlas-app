@@ -3,6 +3,13 @@ import { getHelpStackItem, HELP_STACK_ITEMS } from "@config/help-stack";
 import { resolveEvidenceThumbnailForDisplay } from "@lib/evidence-url";
 import { publicStorageObjectUrl } from "@lib/supabase-public-storage-url";
 import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
+import {
+  buildCvSocialChipsHtml,
+  migrateCvLinksToSlots,
+  type CvSocialLinkDisplay,
+} from "@lib/cv-contact-html";
+import { clampCvPrintMaxPages, cvPrintTypographicScale } from "@lib/cv-print-scale";
+import { applyCvDocumentSectionOrder } from "@lib/cv-document-section-order";
 
 function tt(key: string, fallback: string): string {
   const v = i18next.t(key);
@@ -78,10 +85,13 @@ type RpcCvProfile = {
   location?: string;
   email?: string;
   links?: { label: string; url: string }[];
+  cvLinkSlots?: string[];
+  socialLinkDisplay?: CvSocialLinkDisplay;
   summary?: string;
   showHelpStack?: boolean;
   highlights?: string;
   showPhoto?: boolean;
+  cvSectionVisibility?: Record<string, boolean>;
   experiences?: {
     company?: string;
     role?: string;
@@ -98,6 +108,10 @@ type RpcCvProfile = {
     end?: string;
     details?: string;
   }[];
+  certifications?: { name?: string; issuer?: string; year?: string; url?: string }[];
+  languages?: { name?: string; level?: string }[];
+  cvDocumentSectionOrder?: string[];
+  cvPrintMaxPages?: number;
 };
 
 type RpcPayload = {
@@ -126,6 +140,11 @@ async function run() {
   const docExperience = document.querySelector<HTMLElement>("[data-public-cv-doc-experience]");
   const docEducationSection = document.querySelector<HTMLElement>("[data-public-cv-doc-education-section]");
   const docEducation = document.querySelector<HTMLElement>("[data-public-cv-doc-education]");
+  const docCertSection = document.querySelector<HTMLElement>("[data-public-cv-doc-certifications-section]");
+  const docCert = document.querySelector<HTMLElement>("[data-public-cv-doc-certifications]");
+  const docLangSection = document.querySelector<HTMLElement>("[data-public-cv-doc-languages-section]");
+  const docLang = document.querySelector<HTMLElement>("[data-public-cv-doc-languages]");
+  const docProjectsSection = document.querySelector<HTMLElement>("[data-public-cv-doc-projects-section]");
   const docPhoto = document.querySelector<HTMLImageElement>("[data-public-cv-doc-photo]");
   const printBtn = document.querySelector<HTMLButtonElement>("[data-public-cv-print]");
 
@@ -174,6 +193,22 @@ async function run() {
   const bio = (payload.bio ?? "").trim();
   const cvProfile = (payload.cvProfile && typeof payload.cvProfile === "object" ? (payload.cvProfile as RpcCvProfile) : {}) as RpcCvProfile;
   const projects = Array.isArray(payload.projects) ? (payload.projects as RpcProject[]) : [];
+  const vis = cvProfile.cvSectionVisibility ?? {};
+  const showBlock = (key: string) => (vis as Record<string, boolean>)[key] !== false;
+
+  const slotLabels = () => [
+    tt("cv.linkLabel1", "LinkedIn"),
+    tt("cv.linkLabel2", "GitHub"),
+    tt("cv.linkLabel3", "Portfolio"),
+    tt("cv.linkLabel4", "X / Twitter"),
+    tt("cv.linkLabel5", "Web / other"),
+  ];
+  const getCvLinkSlots = (): string[] => {
+    if (Array.isArray(cvProfile.cvLinkSlots) && cvProfile.cvLinkSlots.length === 5) {
+      return cvProfile.cvLinkSlots.map((x) => (typeof x === "string" ? x : ""));
+    }
+    return migrateCvLinksToSlots(cvProfile.links);
+  };
 
   docName.textContent = displayName;
   document.title = `${displayName} · CV`;
@@ -188,17 +223,14 @@ async function run() {
     const chips: string[] = [];
     const location = (cvProfile.location ?? "").trim();
     const email = normalizeEmail((cvProfile.email ?? "").trim());
-    const links = Array.isArray(cvProfile.links) ? cvProfile.links : [];
     if (location) chips.push(`<span class="inline-flex items-center gap-1"><span class="text-gray-400">📍</span> ${esc(location)}</span>`);
     if (email && isProbablyEmail(email)) {
       chips.push(`<a class="no-underline hover:underline" href="mailto:${esc(email)}">${esc(email)}</a>`);
     }
-    for (const l of links) {
-      const url = normalizeUrl(String((l as any)?.url ?? ""));
-      if (!url) continue;
-      const label = String((l as any)?.label ?? "").trim() || url;
-      chips.push(`<a class="no-underline hover:underline" href="${esc(url)}" target="_blank" rel="noreferrer">${esc(label)}</a>`);
-    }
+    const mode = (cvProfile.socialLinkDisplay ?? "both") as CvSocialLinkDisplay;
+    chips.push(
+      ...buildCvSocialChipsHtml({ slots: getCvLinkSlots(), slotLabels: slotLabels(), display: mode, esc }),
+    );
     docContact.innerHTML = chips.length > 0 ? chips.join(`<span class="text-gray-300 dark:text-gray-700">•</span>`) : "";
     docContact.classList.toggle("hidden", chips.length === 0);
   }
@@ -238,6 +270,9 @@ async function run() {
   }
 
   // Projects
+  if (docProjectsSection) {
+    docProjectsSection.classList.toggle("hidden", projects.length === 0 || !showBlock("projects"));
+  }
   if (projects.length === 0) {
     docProjects.innerHTML = `<p class="m-0 text-sm text-gray-500 dark:text-gray-400">${esc(tt("cv.publicNoProjects", "No hay proyectos."))}</p>`;
   } else {
@@ -305,7 +340,7 @@ async function run() {
   // Highlights
   const hl = linesToBullets(cvProfile.highlights ?? "");
   if (docHighlightsSection && docHighlights) {
-    const show = hl.length > 0;
+    const show = hl.length > 0 && showBlock("highlights");
     docHighlightsSection.classList.toggle("hidden", !show);
     docHighlights.innerHTML = show ? hl.map((s) => `<li>${esc(s)}</li>`).join("") : "";
   }
@@ -313,7 +348,7 @@ async function run() {
   // Experience
   if (docExperienceSection && docExperience) {
     const exp = Array.isArray(cvProfile.experiences) ? cvProfile.experiences : [];
-    const show = exp.length > 0;
+    const show = exp.length > 0 && showBlock("experience");
     docExperienceSection.classList.toggle("hidden", !show);
     docExperience.innerHTML = show
       ? exp
@@ -349,7 +384,7 @@ async function run() {
   // Education
   if (docEducationSection && docEducation) {
     const edu = Array.isArray(cvProfile.education) ? cvProfile.education : [];
-    const show = edu.length > 0;
+    const show = edu.length > 0 && showBlock("education");
     docEducationSection.classList.toggle("hidden", !show);
     docEducation.innerHTML = show
       ? edu
@@ -381,6 +416,58 @@ async function run() {
           .join("")
       : "";
   }
+
+  // Certifications
+  if (docCertSection && docCert) {
+    const certs = Array.isArray(cvProfile.certifications) ? cvProfile.certifications : [];
+    const show = certs.length > 0 && showBlock("certifications");
+    docCertSection.classList.toggle("hidden", !show);
+    docCert.innerHTML = show
+      ? certs
+          .map((c) => {
+            const name = (c.name ?? "").trim();
+            const issuer = (c.issuer ?? "").trim();
+            const year = (c.year ?? "").trim();
+            const url = normalizeUrl((c.url ?? "").trim());
+            const title = name || issuer || tt("cv.untitled", "—");
+            const sub = [issuer, year].filter(Boolean).join(" · ");
+            const link = url
+              ? ` <a class="text-sm font-medium no-underline hover:underline" href="${esc(url)}" target="_blank" rel="noreferrer">${esc(tt("cv.certLink", "Enlace"))}</a>`
+              : "";
+            return `<section class="cv-doc-project">
+              <p class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100">${esc(title)}</p>
+              ${sub ? `<p class="m-0 mt-1 text-sm text-gray-600 dark:text-gray-400">${esc(sub)}</p>` : ""}
+              ${link}
+            </section>`;
+          })
+          .join("")
+      : "";
+  }
+
+  // Languages
+  if (docLangSection && docLang) {
+    const langs = Array.isArray(cvProfile.languages) ? cvProfile.languages : [];
+    const show = langs.length > 0 && showBlock("languages");
+    docLangSection.classList.toggle("hidden", !show);
+    docLang.innerHTML = show
+      ? `<ul class="m-0 space-y-1 pl-5 text-sm text-gray-700 dark:text-gray-300">${langs
+          .map((l) => {
+            const name = (l.name ?? "").trim();
+            const level = (l.level ?? "").trim();
+            const line = [name, level].filter(Boolean).join(" — ");
+            return line ? `<li>${esc(line)}</li>` : "";
+          })
+          .filter(Boolean)
+          .join("")}</ul>`
+      : "";
+  }
+
+  const sectionsHost = docEl.querySelector<HTMLElement>("[data-cv-doc-sections]");
+  applyCvDocumentSectionOrder(sectionsHost, cvProfile.cvDocumentSectionOrder);
+
+  const maxP = clampCvPrintMaxPages(cvProfile.cvPrintMaxPages);
+  docEl.style.setProperty("--cv-print-scale", String(cvPrintTypographicScale(maxP)));
+  docEl.dataset.cvPrintMaxPages = String(maxP);
 
   docEl.classList.remove("hidden");
 }
