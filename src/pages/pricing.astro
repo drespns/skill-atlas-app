@@ -4,6 +4,7 @@ import PricingPageDecor from "../components/pricing/PricingPageDecor.astro";
 import PricingWarningBanner from "../components/pricing/PricingWarningBanner.astro";
 import PricingHero from "../components/pricing/PricingHero.astro";
 import PricingCards from "../components/pricing/PricingCards.astro";
+import PricingLifetime from "../components/pricing/PricingLifetime.astro";
 import PricingCompareTable from "../components/pricing/PricingCompareTable.astro";
 import PricingFaqs from "../components/pricing/PricingFaqs.astro";
 import PricingBottomCta from "../components/pricing/PricingBottomCta.astro";
@@ -15,10 +16,11 @@ const title = "Precios · SkillAtlas";
   <div class="relative overflow-hidden" data-pricing-page>
     <PricingPageDecor />
 
-    <div class="max-w-7xl mx-auto space-y-14 md:space-y-20">
+    <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 space-y-14 md:space-y-20">
       <PricingWarningBanner />
       <PricingHero />
       <PricingCards />
+      <PricingLifetime />
       <PricingCompareTable />
       <PricingFaqs />
       <PricingBottomCta />
