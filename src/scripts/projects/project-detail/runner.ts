@@ -1,5 +1,6 @@
 import { initProjectConceptForm, initProjectConceptsDialog } from "@scripts/projects/project-detail/concepts";
 import {
+  initEmbedInlineTitleEdit,
   initProjectEvidenceQuickAdd,
   initProjectEvidenceTemplates,
   initProjectEmbedAdd,
@@ -24,6 +25,7 @@ export async function runProjectDetailInits(supabase: any, projectSlug: string) 
   await initProjectEmbedEdit(supabase, projectSlug);
   await initProjectEmbedRemove(supabase);
   await initProjectEmbedMove(supabase, projectSlug);
+  initEmbedInlineTitleEdit(supabase);
   await initProjectDelete(supabase, projectSlug);
 }
 

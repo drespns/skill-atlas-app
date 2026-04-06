@@ -1,6 +1,8 @@
+import { publicStorageObjectUrl } from "@lib/supabase-public-storage-url";
 import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 import { getSessionUserId } from "@scripts/core/auth-session";
 import { showToast } from "@scripts/core/ui-feedback";
+import i18next from "i18next";
 import { loadPrefs } from "@scripts/core/prefs";
 
 declare global {
@@ -30,6 +32,61 @@ function toSlug(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+function tt(key: string, fallback: string): string {
+  const v = i18next.t(key);
+  return typeof v === "string" && v.length > 0 && v !== key ? v : fallback;
+}
+
+function normalizeProjectTags(raw: unknown): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.filter((x): x is string => typeof x === "string").map((s) => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function projectStatusLabel(raw: string | null | undefined): string {
+  const s = String(raw ?? "in_progress").trim();
+  if (s === "draft") return tt("projects.statusDraft", "Borrador");
+  if (s === "portfolio_visible") return tt("projects.statusPortfolioVisible", "Visible en portfolio");
+  if (s === "archived") return tt("projects.statusArchived", "Archivado");
+  return tt("projects.statusInProgress", "En proceso");
+}
+
+function projectStatusBadgeHtml(status: string | null | undefined): string {
+  return `<span class="inline-flex rounded-full border border-indigo-200/80 dark:border-indigo-800/60 bg-indigo-50/80 dark:bg-indigo-950/40 px-2 py-0.5 text-[11px] font-semibold text-indigo-900 dark:text-indigo-100">${escHtml(projectStatusLabel(status))}</span>`;
+}
+
+function projectDateRangeHtml(ds: string | null | undefined, de: string | null | undefined): string {
+  const a = ds ? String(ds).slice(0, 10) : "";
+  const b = de ? String(de).slice(0, 10) : "";
+  if (!a && !b) return "";
+  const arrow = tt("projects.metaDateArrow", "→");
+  return `<span class="text-[11px] text-gray-500 dark:text-gray-400 whitespace-nowrap">${escHtml(`${a || "…"} ${arrow} ${b || "…"}`)}</span>`;
+}
+
+function projectCustomTagsHtml(tags: string[]): string {
+  if (tags.length === 0) return "";
+  return tags
+    .map(
+      (t) =>
+        `<span class="inline-flex rounded-full border border-violet-200/85 dark:border-violet-800/55 bg-violet-50/75 dark:bg-violet-950/40 px-2 py-0.5 text-[11px] font-medium text-violet-900 dark:text-violet-100">${escHtml(t)}</span>`,
+    )
+    .join("");
+}
+
+/** URL pública del bucket `project_covers` (misma lógica que portfolio / detalle). */
+function projectCoverPublicUrl(path: string | null | undefined): string {
+  const p = (path ?? "").trim();
+  if (!p) return "";
+  return publicStorageObjectUrl("project_covers", p);
+}
+
+/** `url('…')` en atributo HTML (comillas simples escapadas). */
+function cssUrlInStyleAttr(u: string): string {
+  return u.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
 async function initProjectForm() {
   const form = document.querySelector<HTMLFormElement>("[data-project-form]");
   if (!form || form.dataset.skillatlasBound === "1") return;
@@ -39,6 +96,10 @@ async function initProjectForm() {
   const descInput = form.querySelector<HTMLTextAreaElement>("[name='description']");
   const roleInput = form.querySelector<HTMLInputElement>("[name='role']");
   const outcomeInput = form.querySelector<HTMLInputElement>("[name='outcome']");
+  const statusSelect = form.querySelector<HTMLSelectElement>("[name='status']");
+  const tagsInput = form.querySelector<HTMLInputElement>("[name='tags']");
+  const dateStartInput = form.querySelector<HTMLInputElement>("[name='date_start']");
+  const dateEndInput = form.querySelector<HTMLInputElement>("[name='date_end']");
   const feedback = form.querySelector<HTMLElement>("[data-project-feedback]");
   const submitButtons = Array.from(form.querySelectorAll<HTMLButtonElement>("button[type='submit']"));
   if (!titleInput || !descInput || !feedback || submitButtons.length === 0) return;
@@ -81,7 +142,33 @@ async function initProjectForm() {
     const description = descInput.value.trim();
     const role = (roleInput?.value ?? "").trim();
     const outcome = (outcomeInput?.value ?? "").trim();
+    const rawStatus = (statusSelect?.value ?? "in_progress").trim();
+    const status =
+      rawStatus === "draft" ||
+      rawStatus === "in_progress" ||
+      rawStatus === "portfolio_visible" ||
+      rawStatus === "archived"
+        ? rawStatus
+        : "in_progress";
+    const tags = (tagsInput?.value ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const dateStart = (dateStartInput?.value ?? "").trim() || null;
+    const dateEnd = (dateEndInput?.value ?? "").trim() || null;
     if (!title) return;
+
+    if (dateStart && dateEnd && dateEnd < dateStart) {
+      const msg = String(
+        i18next.t("projects.editDateOrderError", {
+          defaultValue: "La fecha de fin debe ser posterior o igual al inicio.",
+        }),
+      );
+      feedback.textContent = msg;
+      feedback.className = "text-sm text-amber-600";
+      showToast(msg, "warning");
+      return;
+    }
 
     submitButtons.forEach((b) => {
       b.disabled = true;
@@ -113,9 +200,20 @@ async function initProjectForm() {
       return;
     }
 
-    const insertRes = await supabase
-      .from("projects")
-      .insert([{ slug, title, description, role, outcome, user_id: userId }] as any);
+    const insertRes = await supabase.from("projects").insert([
+      {
+        slug,
+        title,
+        description,
+        role,
+        outcome,
+        user_id: userId,
+        status,
+        tags,
+        date_start: dateStart,
+        date_end: dateEnd,
+      },
+    ] as any);
     if (insertRes.error) {
       feedback.textContent = `Error al guardar: ${insertRes.error.message}`;
       feedback.className = "text-sm text-red-600";
@@ -138,6 +236,10 @@ async function initProjectForm() {
     descInput.value = "";
     if (roleInput) roleInput.value = "";
     if (outcomeInput) outcomeInput.value = "";
+    if (statusSelect) statusSelect.value = "in_progress";
+    if (tagsInput) tagsInput.value = "";
+    if (dateStartInput) dateStartInput.value = "";
+    if (dateEndInput) dateEndInput.value = "";
     submitButtons.forEach((b) => {
       b.disabled = false;
     });
@@ -156,7 +258,7 @@ async function bootstrapProjectsList() {
 
   const countEl = document.querySelector<HTMLElement>("[data-projects-count]");
 
-  const cacheKey = (userId: string) => `skillatlas_cache_projects_list_v1:${userId}`;
+  const cacheKey = (userId: string) => `skillatlas_cache_projects_list_v3:${userId}`;
   const readCache = (userId: string) => {
     try {
       const raw = sessionStorage.getItem(cacheKey(userId));
@@ -195,7 +297,7 @@ async function bootstrapProjectsList() {
   if (!userId) {
     mount.innerHTML = `<div class="border border-gray-200 rounded-xl p-5 bg-gray-50 col-span-full">
       <p class="m-0 text-sm text-amber-700">Inicia sesión en Ajustes para ver tus proyectos.</p>
-      <a href="/settings" class="inline-flex mt-3 rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Ir a Ajustes</a>
+      <a href="/settings#prefs" class="inline-flex mt-3 rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Ir a Ajustes</a>
     </div>`;
     if (countEl) countEl.textContent = "0 proyectos";
     return;
@@ -221,7 +323,10 @@ async function bootstrapProjectsList() {
   }
 
   const [projRes, ptRes, techRes, pcRes] = await Promise.all([
-    supabase.from("projects").select("id, slug, title, description, role, outcome").order("title"),
+    supabase
+      .from("projects")
+      .select("id, slug, title, description, role, outcome, status, tags, date_start, date_end, cover_image_path")
+      .order("title"),
     supabase.from("project_technologies").select("project_id, technology_id"),
     supabase.from("technologies").select("id, slug, name"),
     supabase.from("project_concepts").select("project_id"),
@@ -239,6 +344,11 @@ async function bootstrapProjectsList() {
     description: string | null;
     role: string | null;
     outcome: string | null;
+    status?: string | null;
+    tags?: unknown;
+    date_start?: string | null;
+    date_end?: string | null;
+    cover_image_path?: string | null;
   }[];
   const techRows = (techRes.data ?? []) as { id: string; slug: string; name: string }[];
   const techNameById = new Map(techRows.map((t) => [t.id, t.name]));
@@ -284,32 +394,44 @@ async function bootstrapProjectsList() {
           ${(projects ?? [])
             .map((project) => {
               const technologyNames = techSlugsByProject.get(project.id) ?? [];
+              const customTags = normalizeProjectTags(project.tags);
               const nConcepts = conceptCountByProject.get(project.id) ?? 0;
               const href = `/projects/view?project=${encodeURIComponent(project.slug)}`;
               const techLabel = technologyNames.slice(0, 3).map(escHtml).join(" · ");
               const more = Math.max(0, technologyNames.length - 3);
               const techSummary = techLabel ? `${techLabel}${more ? ` · +${more}` : ""}` : "";
               const roleLine = (project.role ?? "").trim();
-              return `<a href="${href}" class="block no-underline px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-900/40 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
-                <div class="flex items-start justify-between gap-4">
-                  <div class="min-w-0">
-                    <p class="m-0 font-semibold truncate">${escHtml(project.title)}</p>
-                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-300 truncate">${escHtml(project.description ?? "")}</p>
+              const coverUrl = projectCoverPublicUrl(project.cover_image_path);
+              const dateMeta = projectDateRangeHtml(project.date_start, project.date_end);
+              const tagPills = projectCustomTagsHtml(customTags);
+              const metaRow = `<div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5">${projectStatusBadgeHtml(project.status)}${dateMeta}</div>`;
+              const tagsRow = tagPills
+                ? `<div class="mt-1.5 flex flex-wrap gap-1.5">${tagPills}</div>`
+                : "";
+              const thumbBlock = coverUrl
+                ? `<div class="project-list-row__thumb border border-gray-200/85 dark:border-gray-800/90 bg-white dark:bg-gray-950 relative"><img src="${escHtml(coverUrl)}" alt="" width="160" height="120" class="absolute inset-0 h-full w-full object-contain bg-white/95 dark:bg-gray-950/50" loading="lazy" decoding="async" /></div>`
+                : `<div class="project-list-row__thumb project-list-row__thumb--accent border border-gray-200/80 dark:border-gray-800/80" aria-hidden="true"></div>`;
+              return `<a href="${href}" class="flex no-underline items-stretch gap-3 px-4 py-3.5 hover:bg-gray-50 dark:hover:bg-gray-900/40 border-b border-gray-100 dark:border-gray-800 last:border-b-0 transition-colors">
+                ${thumbBlock}
+                <div class="min-w-0 flex-1">
+                    <p class="m-0 font-semibold text-gray-900 dark:text-gray-100 leading-snug">${escHtml(project.title)}</p>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-300 line-clamp-2">${escHtml(project.description ?? "")}</p>
+                    ${metaRow}
                     ${
                       roleLine
-                        ? `<p class="mt-1 text-xs text-emerald-700 dark:text-emerald-300 truncate">${escHtml(roleLine)}</p>`
+                        ? `<p class="mt-1.5 text-xs text-emerald-700 dark:text-emerald-300 truncate">${escHtml(roleLine)}</p>`
                         : ""
                     }
+                    ${tagsRow}
                     ${
                       techSummary
-                        ? `<p class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">${techSummary}</p>`
+                        ? `<p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400 truncate" title="${escHtml(technologyNames.join(", "))}">${techSummary}</p>`
                         : ""
                     }
                   </div>
-                  <div class="shrink-0 text-right">
-                    <span class="text-xs text-gray-500 dark:text-gray-400">${nConcepts} conceptos</span>
+                <div class="shrink-0 text-right pt-0.5 self-start">
+                    <span class="inline-flex text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">${nConcepts} conceptos</span>
                   </div>
-                </div>
               </a>`;
             })
             .join("")}
@@ -317,28 +439,49 @@ async function bootstrapProjectsList() {
       : projects
           .map((project) => {
             const technologyNames = techSlugsByProject.get(project.id) ?? [];
+            const customTags = normalizeProjectTags(project.tags);
             const pills = technologyNames
               .map(
                 (name) =>
-                  `<span class="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 whitespace-nowrap">${escHtml(name)}</span>`,
+                  `<span class="text-xs px-2 py-1 rounded-full border border-gray-200/90 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/80 text-gray-900 dark:text-gray-100 whitespace-nowrap">${escHtml(name)}</span>`,
               )
               .join("");
             const nConcepts = conceptCountByProject.get(project.id) ?? 0;
             const href = `/projects/view?project=${encodeURIComponent(project.slug)}`;
             const roleLine = (project.role ?? "").trim();
-            return `<article class="border border-gray-200/80 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 flex flex-col gap-3 shadow-sm">
-              <div class="flex items-start justify-between gap-3"><div>
-                <h3 class="m-0 text-base font-semibold">${escHtml(project.title)}</h3>
-                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">${escHtml(project.description ?? "")}</p>
+            const coverUrl = projectCoverPublicUrl(project.cover_image_path);
+            const dateMeta = projectDateRangeHtml(project.date_start, project.date_end);
+            const tagPills = projectCustomTagsHtml(customTags);
+            const metaRow = `<div class="flex flex-wrap items-center gap-x-2 gap-y-1.5">${projectStatusBadgeHtml(project.status)}${dateMeta}</div>`;
+            const tagsRow = tagPills
+              ? `<div class="mt-2 flex flex-wrap gap-1.5"><span class="text-[10px] font-bold uppercase tracking-wider text-violet-600/90 dark:text-violet-400/90 self-center mr-0.5">${escHtml(tt("projects.listTagsKicker", "Etiquetas"))}</span>${tagPills}</div>`
+              : "";
+            const stackRow = pills
+              ? `<div class="mt-2 space-y-1.5"><p class="m-0 text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">${escHtml(tt("projects.listStackKicker", "Stack"))}</p><div class="flex flex-wrap gap-2">${pills}</div></div>`
+              : "";
+            const cardCoverMod = coverUrl ? "project-list-card--has-cover" : "project-list-card--accent-fallback";
+            const coverBgStyle = coverUrl
+              ? ` style="background-image:url('${cssUrlInStyleAttr(coverUrl)}')"`
+              : "";
+            return `<article class="project-list-card border border-gray-200/80 dark:border-gray-800 rounded-xl ${cardCoverMod} shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
+              <div class="project-list-card__bg"${coverBgStyle} aria-hidden="true"></div>
+              <div class="project-list-card__body p-4 sm:p-5">
+              <div class="space-y-2 min-w-0">
+                <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-50 leading-snug">${escHtml(project.title)}</h3>
+                <p class="m-0 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">${escHtml(project.description ?? "")}</p>
+                ${metaRow}
                 ${
                   roleLine
-                    ? `<p class="mt-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">${escHtml(roleLine)}</p>`
+                    ? `<p class="m-0 text-xs font-medium text-emerald-700 dark:text-emerald-300">${escHtml(roleLine)}</p>`
                     : ""
-                }</div></div>
-              <div class="flex flex-wrap gap-2">${pills}</div>
-              <div class="flex items-center justify-between gap-3">
+                }
+                ${tagsRow}
+                ${stackRow}
+              </div>
+              <div class="flex items-center justify-between gap-3 pt-3 mt-1 border-t border-gray-200/70 dark:border-gray-700/80">
                 <span class="text-xs text-gray-500 dark:text-gray-400">${nConcepts} conceptos</span>
-                <a class="btn-primary no-underline" href="${href}">Ver proyecto</a>
+                <a class="btn-primary no-underline shrink-0" href="${href}">${escHtml(tt("projects.listOpenProject", "Ver proyecto"))}</a>
+              </div>
               </div>
             </article>`;
           })
@@ -354,7 +497,7 @@ window.skillatlas.bootstrapProjectsList = async () => {
   const userId = await getSessionUserId(supabase);
   if (!userId) return;
   try {
-    sessionStorage.removeItem(`skillatlas_cache_projects_list_v1:${userId}`);
+    sessionStorage.removeItem(`skillatlas_cache_projects_list_v3:${userId}`);
   } catch {
     // ignore
   }
@@ -367,7 +510,7 @@ window.skillatlas.clearProjectsCache = () => {
     const userId = await getSessionUserId(supabase);
     if (!userId) return;
     try {
-      sessionStorage.removeItem(`skillatlas_cache_projects_list_v1:${userId}`);
+      sessionStorage.removeItem(`skillatlas_cache_projects_list_v3:${userId}`);
     } catch {
       // ignore
     }

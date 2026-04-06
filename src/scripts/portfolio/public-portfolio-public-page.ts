@@ -31,6 +31,14 @@ function esc(s: string) {
     .replace(/"/g, "&quot;");
 }
 
+function rpcTagsToStrings(raw: unknown): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.filter((x): x is string => typeof x === "string").map((s) => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+
 export type RpcPublicProject = {
   slug: string;
   title: string;
@@ -41,6 +49,11 @@ export type RpcPublicProject = {
   coverImagePath?: string | null;
   primaryEmbed: { kind: string; title: string; url: string; thumbnailUrl?: string | null } | null;
   embeds?: { kind: string; title: string; url: string; thumbnailUrl?: string | null }[];
+  /** saas-018: JSON del RPC usa camelCase. */
+  status?: string | null;
+  tags?: unknown;
+  dateStart?: string | null;
+  dateEnd?: string | null;
 };
 
 export type RpcPublicPayload = {
@@ -365,6 +378,10 @@ export async function initPublicPortfolioPage(opts: InitPublicPortfolioPageOpts)
             coverImagePath: p.coverImagePath ?? null,
             embeds,
             primaryEmbed: p.primaryEmbed,
+            status: typeof p.status === "string" ? p.status : null,
+            tags: rpcTagsToStrings(p.tags),
+            dateStart: typeof p.dateStart === "string" ? p.dateStart : null,
+            dateEnd: typeof p.dateEnd === "string" ? p.dateEnd : null,
           },
           {
             variant: "public",

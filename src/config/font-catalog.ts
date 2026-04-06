@@ -8,7 +8,7 @@ export type FontCatalogEntry = {
   /** Parámetro `family` para `fonts.googleapis.com/css2?family=…` (sin URL-encode de `&`). */
   googleQuery?: string;
   /** Agrupa el selector en Ajustes. */
-  category: "builtin" | "sans" | "serif" | "mono";
+  category: "builtin" | "sans" | "serif" | "mono" | "display";
 };
 
 export const FONT_CATALOG: FontCatalogEntry[] = [
@@ -118,6 +118,18 @@ export const FONT_CATALOG: FontCatalogEntry[] = [
     category: "sans",
   },
   {
+    id: "sen",
+    stack: '"Sen", var(--font-system)',
+    googleQuery: "Sen:wght@400;500;600;700",
+    category: "sans",
+  },
+  {
+    id: "sekuya",
+    stack: '"Sekuya", var(--font-system)',
+    googleQuery: "Sekuya:wght@400",
+    category: "sans",
+  },
+  {
     id: "merriweather",
     stack: '"Merriweather", var(--font-serif)',
     googleQuery: "Merriweather:wght@400;700",
@@ -171,6 +183,18 @@ export const FONT_CATALOG: FontCatalogEntry[] = [
     googleQuery: "Space+Mono:wght@400;700",
     category: "mono",
   },
+  {
+    id: "sedgwick-ave-display",
+    stack: '"Sedgwick Ave Display", var(--font-system)',
+    googleQuery: "Sedgwick+Ave+Display:wght@400",
+    category: "display",
+  },
+  {
+    id: "sedgwick-ave",
+    stack: '"Sedgwick Ave", var(--font-system)',
+    googleQuery: "Sedgwick+Ave:wght@400",
+    category: "display",
+  },
 ];
 
 const FONT_BY_ID = new Map(FONT_CATALOG.map((e) => [e.id, e]));
@@ -199,6 +223,25 @@ export function normalizeFontId(raw: unknown): string {
 
 export const FONT_GOOGLE_LINK_ID = "skillatlas-google-font";
 
+/** Id para el `<link>` que carga todas las familias del catálogo (previsualización en el selector de Ajustes). */
+export const FONT_GOOGLE_CATALOG_PREVIEW_LINK_ID = "skillatlas-google-font-catalog-preview";
+
+/**
+ * Una sola petición CSS con todas las familias del catálogo (Google Fonts) para que el desplegable
+ * pueda pintar cada opción con su `font-family`.
+ */
+export function googleFontsCatalogPreviewHref(): string {
+  const families = FONT_CATALOG.map((e) => e.googleQuery).filter((q): q is string => Boolean(q));
+  if (families.length === 0) return "";
+  const q = families.map((f) => `family=${encodeURIComponent(f)}`).join("&");
+  return `https://fonts.googleapis.com/css2?${q}&display=swap`;
+}
+
+/** Valor `style` del `<option>` para previsualizar la fuente (comillas simples en nombres para no romper el atributo HTML). */
+export function fontOptionStyle(entry: FontCatalogEntry): string {
+  return `font-family: ${entry.stack.replace(/"/g, "'")}`;
+}
+
 const FONT_LABEL_OVERRIDES: Record<string, string> = {
   system: "Sistema",
   serif: "Serif (sistema)",
@@ -216,6 +259,10 @@ const FONT_LABEL_OVERRIDES: Record<string, string> = {
   "source-serif-4": "Source Serif 4",
   "playfair-display": "Playfair Display",
   "libre-baskerville": "Libre Baskerville",
+  sekuya: "Sekuya",
+  sen: "Sen",
+  "sedgwick-ave-display": "Sedgwick Ave Display",
+  "sedgwick-ave": "Sedgwick Ave",
 };
 
 /** Texto en el selector de Ajustes (español / nombres propios). */
@@ -235,7 +282,7 @@ export function applyFontToDocument(fontId: string): void {
 
   const href =
     entry.googleQuery != null
-      ? `https://fonts.googleapis.com/css2?family=${entry.googleQuery}&display=swap`
+      ? `https://fonts.googleapis.com/css2?family=${encodeURIComponent(entry.googleQuery)}&display=swap`
       : null;
 
   let link = document.getElementById(FONT_GOOGLE_LINK_ID) as HTMLLinkElement | null;

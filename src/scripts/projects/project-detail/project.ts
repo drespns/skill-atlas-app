@@ -1,4 +1,4 @@
-import { confirmModal, projectEditModal, showToast, userFacingDbError } from "@scripts/core/ui-feedback";
+import { confirmModal, projectEditModal, showToast, userFacingDbError, type ProjectEditStatus } from "@scripts/core/ui-feedback";
 import { refreshProjectDetailPage } from "@scripts/projects/project-detail/refresh-ui";
 
 export async function initProjectEdit(supabase: any, projectSlug: string) {
@@ -12,6 +12,17 @@ export async function initProjectEdit(supabase: any, projectSlug: string) {
     const initialDescription = container.dataset.projectDescription ?? "";
     const initialRole = container.dataset.projectRole ?? "";
     const initialOutcome = container.dataset.projectOutcome ?? "";
+    const initialStatus = (container.dataset.projectStatus ?? "in_progress") as ProjectEditStatus;
+    let initialTags: string[] = [];
+    try {
+      const raw = container.dataset.projectTagsJson?.trim();
+      if (raw) initialTags = JSON.parse(raw) as string[];
+    } catch {
+      initialTags = [];
+    }
+    if (!Array.isArray(initialTags)) initialTags = [];
+    const initialDateStart = (container.dataset.projectDateStart ?? "").trim() || null;
+    const initialDateEnd = (container.dataset.projectDateEnd ?? "").trim() || null;
 
     const result = await projectEditModal({
       title: "Editar proyecto",
@@ -19,13 +30,23 @@ export async function initProjectEdit(supabase: any, projectSlug: string) {
       initialDescription,
       initialRole,
       initialOutcome,
+      initialStatus,
+      initialTags,
+      initialDateStart,
+      initialDateEnd,
     });
     if (!result) return;
+    const tagsEqual =
+      JSON.stringify([...initialTags].sort()) === JSON.stringify([...result.tags].sort());
     if (
       result.title === initialTitle &&
       result.description === initialDescription &&
       result.role === initialRole &&
-      result.outcome === initialOutcome
+      result.outcome === initialOutcome &&
+      result.status === initialStatus &&
+      tagsEqual &&
+      (result.dateStart ?? "") === (initialDateStart ?? "") &&
+      (result.dateEnd ?? "") === (initialDateEnd ?? "")
     ) {
       return;
     }
@@ -43,6 +64,10 @@ export async function initProjectEdit(supabase: any, projectSlug: string) {
         description: result.description,
         role: result.role || null,
         outcome: result.outcome || null,
+        status: result.status,
+        tags: result.tags,
+        date_start: result.dateStart || null,
+        date_end: result.dateEnd || null,
       })
       .eq("slug", projectSlug);
 

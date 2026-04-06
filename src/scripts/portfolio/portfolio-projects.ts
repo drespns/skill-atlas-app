@@ -38,6 +38,14 @@ function esc(s: string) {
     .replace(/"/g, "&quot;");
 }
 
+function dbTagsToStrings(raw: unknown): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.filter((x): x is string => typeof x === "string").map((s) => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+
 type DbProject = {
   id: string;
   slug: string;
@@ -46,6 +54,10 @@ type DbProject = {
   role: string | null;
   outcome: string | null;
   cover_image_path?: string | null;
+  status?: string | null;
+  tags?: unknown;
+  date_start?: string | null;
+  date_end?: string | null;
 };
 
 type DbTech = { id: string; slug: string; name: string };
@@ -228,7 +240,7 @@ async function run() {
   if (!userId) {
     mount.innerHTML = `<div class="col-span-full border border-gray-200/80 dark:border-gray-800 rounded-xl p-5 bg-white/60 dark:bg-gray-950/40">
       <p class="m-0 text-sm text-amber-700 dark:text-amber-300">Inicia sesión para ver tu portfolio.</p>
-      <a href="/settings" class="inline-flex mt-3 rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Ir a Ajustes</a>
+      <a href="/settings#prefs" class="inline-flex mt-3 rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Ir a Ajustes</a>
     </div>`;
     stopLoading();
     return;
@@ -237,7 +249,7 @@ async function run() {
   const [projRes, ptRes, techRes, embRes, profRes] = await Promise.all([
     supabase
       .from("projects")
-      .select("id, slug, title, description, role, outcome, cover_image_path")
+      .select("id, slug, title, description, role, outcome, cover_image_path, status, tags, date_start, date_end")
       .eq("user_id", userId)
       .order("title"),
     supabase.from("project_technologies").select("project_id, technology_id"),
@@ -400,6 +412,8 @@ async function run() {
             }
           : null;
         const safePrimary = primary && primary.url ? primary : null;
+        const ds = p.date_start ? String(p.date_start).slice(0, 10) : "";
+        const de = p.date_end ? String(p.date_end).slice(0, 10) : "";
         return renderPortfolioVisitorCard(
           {
             title: p.title,
@@ -410,6 +424,10 @@ async function run() {
             coverImagePath: (p.cover_image_path ?? "").trim() || null,
             embeds: embedsForCard,
             primaryEmbed: safePrimary,
+            status: typeof p.status === "string" ? p.status : null,
+            tags: dbTagsToStrings(p.tags),
+            dateStart: ds || null,
+            dateEnd: de || null,
           },
           {
             variant: "preview",

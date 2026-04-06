@@ -1,8 +1,16 @@
 import { coerceEvidenceDisplayKind, detectEvidenceUrl } from "@lib/evidence-url";
+import i18next from "i18next";
 import { embedEditModal, showToast, userFacingDbError } from "@scripts/core/ui-feedback";
+import { getSessionUserId } from "@scripts/core/auth-session";
 import { loadPrefs, updatePrefs, type ProjectEvidenceLayout } from "@scripts/core/prefs";
 import { getProjectDbId } from "@scripts/projects/project-detail/helpers";
 import { refreshProjectDetailPage } from "@scripts/projects/project-detail/refresh-ui";
+
+function currentEvidenceLayout(): ProjectEvidenceLayout {
+  const v = loadPrefs().projectEvidenceLayout;
+  return v === "grid" || v === "list" || v === "large" ? v : "large";
+}
+import { removeEmbedThumbnailIfOwn, uploadEmbedThumbnail } from "@scripts/projects/project-detail/embed-thumbnail";
 
 async function insertProjectEmbed(
   supabase: any,
@@ -13,6 +21,7 @@ async function insertProjectEmbed(
     url: string;
     showInPublic: boolean;
     thumbnailUrl: string | null;
+    thumbnailFile?: File | null;
   },
   feedback: HTMLElement | null,
 ): Promise<boolean> {
@@ -41,17 +50,22 @@ async function insertProjectEmbed(
   const sortOrder = countRes.count ?? 0;
 
   const kind = coerceEvidenceDisplayKind(result.url, result.kind);
-  const insertRes = await supabase.from("project_embeds").insert([
-    {
-      project_id: projectDbId,
-      kind,
-      title: result.title,
-      url: result.url,
-      sort_order: sortOrder,
-      show_in_public: result.showInPublic,
-      thumbnail_url: result.thumbnailUrl,
-    },
-  ] as any);
+  const thumbFromUrl = result.thumbnailFile ? null : result.thumbnailUrl;
+  const insertRes = await supabase
+    .from("project_embeds")
+    .insert([
+      {
+        project_id: projectDbId,
+        kind,
+        title: result.title,
+        url: result.url,
+        sort_order: sortOrder,
+        show_in_public: result.showInPublic,
+        thumbnail_url: thumbFromUrl,
+      },
+    ] as any)
+    .select("id")
+    .single();
 
   if (insertRes.error) {
     const hint = userFacingDbError(insertRes.error.message, "Error al guardar evidencia.");
@@ -61,6 +75,24 @@ async function insertProjectEmbed(
     }
     showToast(hint, "error");
     return false;
+  }
+
+  const newId = (insertRes.data as { id?: string } | null)?.id;
+  if (result.thumbnailFile && newId) {
+    const userId = await getSessionUserId(supabase);
+    if (userId) {
+      const publicUrl = await uploadEmbedThumbnail(supabase, {
+        userId,
+        projectId: projectDbId,
+        embedId: newId,
+        file: result.thumbnailFile,
+      });
+      if (publicUrl) {
+        await supabase.from("project_embeds").update({ thumbnail_url: publicUrl }).eq("id", newId).eq("project_id", projectDbId);
+      } else {
+        showToast("La evidencia se guardó, pero la miniatura no se pudo subir (revisa bucket embed_thumbnails o tamaño).", "warning");
+      }
+    }
   }
 
   if (feedback) {
@@ -187,6 +219,7 @@ export async function initProjectEmbedEdit(supabase: any, projectSlug: string) {
       const initialCoerced = coerceEvidenceDisplayKind(initialUrl, storedKind === "link" ? "link" : "iframe");
       const resultThumb = (result.thumbnailUrl ?? "").trim();
       if (
+        !result.thumbnailFile &&
         result.kind === initialCoerced &&
         result.title === initialTitle &&
         result.url === initialUrl &&
@@ -213,6 +246,19 @@ export async function initProjectEmbedEdit(supabase: any, projectSlug: string) {
       }
 
       const resolvedKind = coerceEvidenceDisplayKind(result.url, result.kind);
+      const userId = await getSessionUserId(supabase);
+      let thumbnailUrlOut: string | null = result.thumbnailUrl;
+      if (result.thumbnailFile && userId) {
+        await removeEmbedThumbnailIfOwn(supabase, userId, initialThumb);
+        const up = await uploadEmbedThumbnail(supabase, {
+          userId,
+          projectId: projectDbId,
+          embedId,
+          file: result.thumbnailFile,
+        });
+        if (up) thumbnailUrlOut = up;
+      }
+
       const updateRes = await supabase
         .from("project_embeds")
         .update({
@@ -220,7 +266,7 @@ export async function initProjectEmbedEdit(supabase: any, projectSlug: string) {
           title: result.title,
           url: result.url,
           show_in_public: result.showInPublic,
-          thumbnail_url: result.thumbnailUrl,
+          thumbnail_url: thumbnailUrlOut,
         })
         .eq("id", embedId)
         .eq("project_id", projectDbId);
@@ -241,7 +287,7 @@ export async function initProjectEmbedEdit(supabase: any, projectSlug: string) {
         feedback.className = "text-sm text-green-600";
       }
       showToast("Evidencia actualizada.", "success");
-      window.location.reload();
+      await refreshProjectDetailPage();
     });
   }
 }
@@ -402,36 +448,137 @@ export async function initProjectEmbedMove(supabase: any, projectSlug: string) {
 }
 
 function isProjectEvidenceLayout(v: string | null): v is ProjectEvidenceLayout {
-  return v === "large" || v === "grid";
+  return v === "large" || v === "grid" || v === "list";
+}
+
+function tt(key: string, fallback: string): string {
+  const v = i18next.t(key);
+  return typeof v === "string" && v.length > 0 && v !== key ? v : fallback;
+}
+
+function escapeHtmlTitle(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function renderEmbedTitleInner(raw: string): string {
+  const t = raw.trim();
+  const ph = tt("projects.evidenceTitlePlaceholder", "Especificar título…");
+  if (t) return `<span class="embed-title-text">${escapeHtmlTitle(t)}</span>`;
+  return `<span class="embed-title-placeholder text-gray-400 dark:text-gray-500 italic font-normal">${escapeHtmlTitle(ph)}</span>`;
+}
+
+let embedInlineTitleListener = false;
+
+/** Clic en el título → edición inline (sin abrir el modal). */
+export function initEmbedInlineTitleEdit(supabase: any) {
+  if (embedInlineTitleListener) return;
+  embedInlineTitleListener = true;
+
+  document.addEventListener("click", (e) => {
+    const el = (e.target as HTMLElement).closest<HTMLElement>("[data-embed-inline-title]");
+    if (!el || el.dataset.embedInlineDisabled === "1") return;
+    if ((e.target as HTMLElement).closest("a[href]")) return;
+    if (el.querySelector("[data-embed-inline-title-input]")) return;
+    const mount = el.closest("[data-project-csr-mount]");
+    if (!mount || mount.querySelector("[data-project-view=\"missing-project-param\"]")) return;
+    e.preventDefault();
+    const embedId = el.dataset.embedId?.trim();
+    if (!embedId) return;
+    const slug =
+      mount.querySelector<HTMLElement>("[data-project-detail-slug]")?.getAttribute("data-project-detail-slug")?.trim() ?? "";
+    if (!slug) return;
+
+    const current = (el.getAttribute("data-embed-title") ?? "").trim();
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.setAttribute("data-embed-inline-title-input", "");
+    input.className =
+      "w-full min-w-0 max-w-full rounded border border-indigo-400/80 dark:border-indigo-600/80 px-2 py-1 text-sm font-semibold bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100";
+    input.value = current;
+    input.placeholder = tt("projects.evidenceTitlePlaceholder", "Especificar título…");
+    input.setAttribute("aria-label", tt("projects.evidenceTitleLabel", "Título"));
+
+    el.textContent = "";
+    el.appendChild(input);
+    input.focus();
+    input.select();
+
+    let gone = false;
+
+    const restore = (rawTitle: string) => {
+      el.innerHTML = renderEmbedTitleInner(rawTitle);
+    };
+
+    input.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape") {
+        ev.preventDefault();
+        gone = true;
+        input.remove();
+        restore(current);
+      }
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        input.blur();
+      }
+    });
+
+    input.addEventListener("blur", () => {
+      if (gone) return;
+      void (async () => {
+        const next = input.value.trim();
+        if (next === current) {
+          input.remove();
+          restore(current);
+          return;
+        }
+        input.disabled = true;
+        const projectDbId = await getProjectDbId(supabase, slug);
+        if (!projectDbId) {
+          input.remove();
+          restore(current);
+          showToast("No se pudo guardar el título.", "error");
+          return;
+        }
+        const { error } = await supabase
+          .from("project_embeds")
+          .update({ title: next })
+          .eq("id", embedId)
+          .eq("project_id", projectDbId);
+        input.remove();
+        if (error) {
+          showToast(userFacingDbError(error.message, "No se pudo guardar el título."), "error");
+          restore(current);
+          return;
+        }
+        el.setAttribute("data-embed-title", next);
+        showToast("Título actualizado.", "success");
+        await refreshProjectDetailPage();
+      })();
+    });
+  });
 }
 
 export function initProjectEvidenceLayoutToggle() {
   const group = document.querySelector<HTMLElement>("[data-project-evidence-layout-toggle]");
-  const list = document.querySelector<HTMLElement>("[data-project-embeds-list]");
-  if (!group || !list || group.dataset.skillatlasBound === "1") return;
+  if (!group || group.dataset.skillatlasBound === "1") return;
   group.dataset.skillatlasBound = "1";
 
-  const applyLayout = (layout: ProjectEvidenceLayout) => {
-    list.dataset.layout = layout;
-    list.setAttribute("data-layout", layout);
-    group.querySelectorAll<HTMLButtonElement>("[data-evidence-layout]").forEach((btn) => {
-      const v = btn.getAttribute("data-evidence-layout");
-      const pressed = v === layout;
-      btn.setAttribute("aria-pressed", String(pressed));
-      btn.classList.toggle("bg-gray-100", pressed);
-      btn.classList.toggle("dark:bg-gray-900", pressed);
-      btn.classList.toggle("shadow-inner", pressed);
-    });
-  };
-
-  applyLayout(loadPrefs().projectEvidenceLayout);
-
+  /**
+   * El markup de cada evidencia depende del modo (lista = sin iframe; grandes/cuadrícula = iframe).
+   * Solo cambiar `data-layout` en el `<ol>` no regenera ese cuerpo: hay que rehidratar el detalle.
+   */
   group.addEventListener("click", (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-evidence-layout]");
     if (!btn) return;
     const v = btn.getAttribute("data-evidence-layout");
     if (!v || !isProjectEvidenceLayout(v)) return;
+    if (v === currentEvidenceLayout()) return;
     updatePrefs({ projectEvidenceLayout: v });
-    applyLayout(v);
+    void refreshProjectDetailPage();
   });
 }

@@ -118,6 +118,7 @@ export function initProjectCoverUpload(
     }
     showToast("Portada del proyecto guardada.", "success");
     setPreviewFromPath(path);
+    if (window.skillatlas?.clearProjectsCache) window.skillatlas.clearProjectsCache();
     await refreshProjectDetailPage();
   });
 
@@ -160,6 +161,7 @@ export function initProjectCoverUpload(
     }
     showToast("Portada eliminada.", "success");
     setPreviewFromPath(null);
+    if (window.skillatlas?.clearProjectsCache) window.skillatlas.clearProjectsCache();
     await refreshProjectDetailPage();
   });
 }

@@ -1,5 +1,11 @@
 import { getTechnologyIconSrc } from "@config/icons";
 import { coerceEvidenceDisplayKind, detectEvidenceUrl, evidenceSiteIconUrl } from "@lib/evidence-url";
+import i18next from "i18next";
+
+function tt(key: string, fallback: string): string {
+  const v = i18next.t(key);
+  return typeof v === "string" && v.length > 0 && v !== key ? v : fallback;
+}
 
 export type ToastType = "success" | "error" | "info" | "warning";
 
@@ -561,22 +567,44 @@ export function technologyEditModal(options: { title?: string; initialName: stri
   });
 }
 
+export type ProjectEditStatus = "draft" | "in_progress" | "portfolio_visible" | "archived";
+
 export function projectEditModal(options: {
   title?: string;
   initialTitle: string;
   initialDescription: string;
   initialRole: string;
   initialOutcome: string;
+  initialStatus?: ProjectEditStatus;
+  initialTags?: string[];
+  initialDateStart?: string | null;
+  initialDateEnd?: string | null;
 }) {
   const root = getModalRoot();
   root.classList.remove("hidden");
   root.classList.add("flex");
 
-  return new Promise<{ title: string; description: string; role: string; outcome: string } | null>((resolve) => {
+  return new Promise<{
+    title: string;
+    description: string;
+    role: string;
+    outcome: string;
+    status: ProjectEditStatus;
+    tags: string[];
+    dateStart: string | null;
+    dateEnd: string | null;
+  } | null>((resolve) => {
     const safeTitle = escapeHtml(options.initialTitle);
     const safeDesc = escapeHtml(options.initialDescription);
     const safeRole = escapeHtml(options.initialRole);
     const safeOutcome = escapeHtml(options.initialOutcome);
+    const st = options.initialStatus ?? "in_progress";
+    const tagsJoined = escapeHtml((options.initialTags ?? []).join(", "));
+    const ds = (options.initialDateStart ?? "").trim();
+    const de = (options.initialDateEnd ?? "").trim();
+    const safeDs = escapeHtml(ds);
+    const safeDe = escapeHtml(de);
+    const sel = (v: ProjectEditStatus) => (st === v ? "selected" : "");
     root.innerHTML = `
       <div data-modal-overlay class="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-200"></div>
       <div data-modal-panel class="relative w-full max-w-lg rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 space-y-3 opacity-0 scale-[0.98] transition-all duration-200 max-h-[90vh] overflow-y-auto">
@@ -586,38 +614,61 @@ export function projectEditModal(options: {
             data-modal-title
             type="text"
             value="${safeTitle}"
-            placeholder="Título"
+            placeholder="${escapeHtml(tt("projects.editTitlePlaceholder", "Título"))}"
             class="w-full rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 bg-white dark:bg-gray-950"
           />
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">${escapeHtml(tt("projects.editStatusLabel", "Estado"))}</span>
+            <select data-modal-status class="w-full rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 bg-white dark:bg-gray-950 text-sm">
+              <option value="draft" ${sel("draft")}>${escapeHtml(tt("projects.statusDraft", "Borrador"))}</option>
+              <option value="in_progress" ${sel("in_progress")}>${escapeHtml(tt("projects.statusInProgress", "En proceso"))}</option>
+              <option value="portfolio_visible" ${sel("portfolio_visible")}>${escapeHtml(tt("projects.statusPortfolioVisible", "Visible en portfolio"))}</option>
+              <option value="archived" ${sel("archived")}>${escapeHtml(tt("projects.statusArchived", "Archivado"))}</option>
+            </select>
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">${escapeHtml(tt("projects.editTagsLabel", "Etiquetas (separadas por coma)"))}</span>
+            <input data-modal-tags type="text" value="${tagsJoined}" placeholder="${escapeHtml(tt("projects.editTagsPlaceholder", "master, trabajo, personal…"))}" class="w-full rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 bg-white dark:bg-gray-950 text-sm" />
+          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <label class="block space-y-1">
+              <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">${escapeHtml(tt("projects.editDateStartLabel", "Inicio"))}</span>
+              <input data-modal-date-start type="date" value="${safeDs}" class="w-full rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 bg-white dark:bg-gray-950 text-sm" />
+            </label>
+            <label class="block space-y-1">
+              <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">${escapeHtml(tt("projects.editDateEndLabel", "Fin"))}</span>
+              <input data-modal-date-end type="date" value="${safeDe}" class="w-full rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 bg-white dark:bg-gray-950 text-sm" />
+            </label>
+          </div>
           <textarea
             data-modal-description
             rows="3"
-            placeholder="Descripción (historia)"
+            placeholder="${escapeHtml(tt("projects.editDescPlaceholder", "Descripción (historia)"))}"
             class="w-full rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 bg-white dark:bg-gray-950"
           >${safeDesc}</textarea>
           <label class="block space-y-1">
-            <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">Rol</span>
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">${escapeHtml(tt("projects.editRoleLabel", "Rol"))}</span>
             <input
               data-modal-role
               type="text"
               value="${safeRole}"
-              placeholder="p. ej. Data analyst, Tech lead"
+              placeholder="${escapeHtml(tt("projects.editRolePlaceholder", "p. ej. Data analyst, Tech lead"))}"
               class="w-full rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 bg-white dark:bg-gray-950 text-sm"
             />
           </label>
           <label class="block space-y-1">
-            <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">Resultado / impacto</span>
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">${escapeHtml(tt("projects.editOutcomeLabel", "Resultado / impacto"))}</span>
             <textarea
               data-modal-outcome
               rows="2"
-              placeholder="Qué se logró o qué demuestra el proyecto"
+              placeholder="${escapeHtml(tt("projects.editOutcomePlaceholder", "Qué se logró o qué demuestra el proyecto"))}"
               class="w-full rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 bg-white dark:bg-gray-950 text-sm"
             >${safeOutcome}</textarea>
           </label>
         </div>
         <div class="flex justify-end gap-2">
-          <button data-modal-cancel type="button" class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold hover:bg-gray-50">Cancelar</button>
-          <button data-modal-confirm type="button" class="rounded-lg bg-gray-900 text-white px-3 py-2 text-sm font-semibold hover:bg-gray-800">Guardar</button>
+          <button data-modal-cancel type="button" class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold hover:bg-gray-50">${escapeHtml(tt("common.cancel", "Cancelar"))}</button>
+          <button data-modal-confirm type="button" class="rounded-lg bg-gray-900 text-white px-3 py-2 text-sm font-semibold hover:bg-gray-800">${escapeHtml(tt("common.save", "Guardar"))}</button>
         </div>
       </div>
     `;
@@ -630,9 +681,24 @@ export function projectEditModal(options: {
     const descInput = root.querySelector<HTMLTextAreaElement>("[data-modal-description]");
     const roleInput = root.querySelector<HTMLInputElement>("[data-modal-role]");
     const outcomeInput = root.querySelector<HTMLTextAreaElement>("[data-modal-outcome]");
+    const statusInput = root.querySelector<HTMLSelectElement>("[data-modal-status]");
+    const tagsInput = root.querySelector<HTMLInputElement>("[data-modal-tags]");
+    const dateStartInput = root.querySelector<HTMLInputElement>("[data-modal-date-start]");
+    const dateEndInput = root.querySelector<HTMLInputElement>("[data-modal-date-end]");
     if (titleInput) titleInput.focus();
 
-    const cleanup = (value: { title: string; description: string; role: string; outcome: string } | null) => {
+    const cleanup = (
+      value: {
+        title: string;
+        description: string;
+        role: string;
+        outcome: string;
+        status: ProjectEditStatus;
+        tags: string[];
+        dateStart: string | null;
+        dateEnd: string | null;
+      } | null,
+    ) => {
       root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
       root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
       setTimeout(() => {
@@ -650,8 +716,87 @@ export function projectEditModal(options: {
       const role = (roleInput?.value ?? "").trim();
       const outcome = (outcomeInput?.value ?? "").trim();
       if (!title) return;
-      cleanup({ title, description, role, outcome });
+      const statusRaw = (statusInput?.value ?? "in_progress").trim() as ProjectEditStatus;
+      const status: ProjectEditStatus =
+        statusRaw === "draft" ||
+        statusRaw === "in_progress" ||
+        statusRaw === "portfolio_visible" ||
+        statusRaw === "archived"
+          ? statusRaw
+          : "in_progress";
+      const tagsRaw = (tagsInput?.value ?? "")
+        .split(/[,;\n]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const tags = Array.from(new Set(tagsRaw)).slice(0, 24);
+      const d1 = (dateStartInput?.value ?? "").trim();
+      const d2 = (dateEndInput?.value ?? "").trim();
+      if (d1 && d2 && d2 < d1) {
+        showToast(tt("projects.editDateOrderError", "La fecha de fin debe ser posterior o igual al inicio."), "warning");
+        return;
+      }
+      cleanup({
+        title,
+        description,
+        role,
+        outcome,
+        status,
+        tags,
+        dateStart: d1 || null,
+        dateEnd: d2 || null,
+      });
     });
+  });
+}
+
+/** PR1: quitar tecnología del proyecto vs eliminarla del catálogo global. */
+export function projectTechRemoveModal(options: { technologyName: string }) {
+  const root = getModalRoot();
+  root.classList.remove("hidden");
+  root.classList.add("flex");
+
+  return new Promise<"unlink" | "delete_global" | null>((resolve) => {
+    const name = escapeHtml(options.technologyName);
+    root.innerHTML = `
+      <div data-modal-overlay class="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-200"></div>
+      <div data-modal-panel class="relative w-full max-w-md rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 space-y-4 opacity-0 scale-[0.98] transition-all duration-200">
+        <h3 class="m-0 text-base font-semibold">${escapeHtml(tt("projects.techRemoveTitle", "Tecnología en este proyecto"))}</h3>
+        <p class="m-0 text-sm text-gray-600 dark:text-gray-400">${escapeHtml(tt("projects.techRemoveIntro", "Elige una acción para la tecnología"))} <strong>${name}</strong>.</p>
+        <div class="flex flex-col gap-2">
+          <button type="button" data-modal-unlink class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 px-3 py-2.5 text-left text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">
+            <span class="block">${escapeHtml(tt("projects.techRemoveUnlink", "Quitar solo de este proyecto"))}</span>
+            <span class="block text-xs font-normal text-gray-500 dark:text-gray-400 mt-0.5">${escapeHtml(tt("projects.techRemoveUnlinkHint", "La tecnología sigue en tu catálogo y en otros proyectos."))}</span>
+          </button>
+          <button type="button" data-modal-delete-global class="w-full rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50/80 dark:bg-red-950/30 px-3 py-2.5 text-left text-sm font-semibold text-red-900 dark:text-red-200 hover:bg-red-100/80 dark:hover:bg-red-950/50">
+            <span class="block">${escapeHtml(tt("projects.techRemoveGlobal", "Eliminar del catálogo"))}</span>
+            <span class="block text-xs font-normal opacity-90 mt-0.5">${escapeHtml(tt("projects.techRemoveGlobalHint", "Borra la tecnología, sus conceptos y enlaces en todos los proyectos."))}</span>
+          </button>
+        </div>
+        <div class="flex justify-end">
+          <button data-modal-cancel type="button" class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold hover:bg-gray-50">${escapeHtml(tt("common.cancel", "Cancelar"))}</button>
+        </div>
+      </div>
+    `;
+    requestAnimationFrame(() => {
+      root.querySelector("[data-modal-overlay]")?.classList.remove("opacity-0");
+      root.querySelector("[data-modal-panel]")?.classList.remove("opacity-0", "scale-[0.98]");
+    });
+
+    const cleanup = (v: "unlink" | "delete_global" | null) => {
+      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
+      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
+      setTimeout(() => {
+        root.classList.add("hidden");
+        root.classList.remove("flex");
+        root.innerHTML = "";
+        resolve(v);
+      }, 180);
+    };
+
+    root.querySelector("[data-modal-cancel]")?.addEventListener("click", () => cleanup(null));
+    root.querySelector("[data-modal-overlay]")?.addEventListener("click", () => cleanup(null));
+    root.querySelector("[data-modal-unlink]")?.addEventListener("click", () => cleanup("unlink"));
+    root.querySelector("[data-modal-delete-global]")?.addEventListener("click", () => cleanup("delete_global"));
   });
 }
 
@@ -674,9 +819,11 @@ export function embedEditModal(options: {
         url: string;
         showInPublic: boolean;
         thumbnailUrl: string | null;
+        thumbnailFile: File | null;
       }
     | null
   >((resolve) => {
+    const phTitle = escapeHtml(tt("projects.evidenceTitlePlaceholder", "Especificar título…"));
     const safeTitle = escapeHtml(options.initialTitle);
     const safeUrl = escapeHtml(options.initialUrl);
     const safeThumb = escapeHtml((options.initialThumbnailUrl ?? "").trim());
@@ -713,12 +860,12 @@ export function embedEditModal(options: {
             </select>
           </label>
           <label class="block space-y-1">
-            <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">Título</span>
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">${escapeHtml(tt("projects.evidenceTitleLabel", "Título"))}</span>
             <input
               data-modal-title
               type="text"
               value="${safeTitle}"
-              placeholder="Si lo dejas vacío, usamos el tipo detectado (p. ej. GitHub)"
+              placeholder="${phTitle}"
               class="w-full rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 bg-white dark:bg-gray-950"
             />
           </label>
@@ -727,15 +874,28 @@ export function embedEditModal(options: {
             <span class="text-xs text-gray-700 dark:text-gray-300 leading-snug">Visible en portfolio y CV público. Desmarcado: solo en la app.</span>
           </label>
           <label class="block space-y-1">
-            <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">Miniatura (opcional, HTTPS)</span>
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">${escapeHtml(tt("projects.evidenceThumbUrlLabel", "Miniatura por URL (opcional, HTTPS)"))}</span>
             <input
               data-modal-thumbnail-url
               type="url"
               value="${safeThumb}"
-              placeholder="Vacío → YouTube automático u Open Graph"
+              placeholder="${escapeHtml(tt("projects.evidenceThumbUrlPlaceholder", "Vacío → YouTube automático u Open Graph"))}"
               class="w-full rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 bg-white dark:bg-gray-950 text-sm"
             />
           </label>
+          <div class="rounded-lg border border-dashed border-gray-200 dark:border-gray-700 px-3 py-2 space-y-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">${escapeHtml(tt("projects.evidenceThumbUploadLabel", "Subir miniatura"))}</span>
+              <span class="text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">${escapeHtml(tt("projects.evidenceThumbProBadge", "Pro"))}</span>
+            </div>
+            <p class="text-[11px] text-gray-500 dark:text-gray-400 m-0">${escapeHtml(tt("projects.evidenceThumbUploadHint", "Sustituye la URL si subes archivo. Máx. 8 MB; se comprime en el navegador."))}</p>
+            <input
+              data-modal-thumbnail-file
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+              class="block w-full max-w-full text-xs file:mr-2 file:rounded file:border-0 file:bg-gray-100 file:px-2 file:py-1 dark:file:bg-gray-800"
+            />
+          </div>
         </div>
         <div class="flex justify-end gap-2">
           <button data-modal-cancel type="button" class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold hover:bg-gray-50">Cancelar</button>
@@ -802,12 +962,13 @@ export function embedEditModal(options: {
       const det = detectEvidenceUrl(url);
       if (det.sourceKey === "invalid") return;
       const titleRaw = (titleInput?.value ?? "").trim();
-      const title = titleRaw || det.sourceLabel;
+      const title = titleRaw;
       const safeKind = coerceEvidenceDisplayKind(url, kind);
       const showInPublic = root.querySelector<HTMLInputElement>("[data-modal-show-public]")?.checked !== false;
       const thumbRaw = (root.querySelector<HTMLInputElement>("[data-modal-thumbnail-url]")?.value ?? "").trim();
+      const thumbFile = root.querySelector<HTMLInputElement>("[data-modal-thumbnail-file]")?.files?.[0] ?? null;
       let thumbnailUrl: string | null = null;
-      if (thumbRaw) {
+      if (!thumbFile && thumbRaw) {
         try {
           const u = new URL(thumbRaw);
           if (u.protocol === "https:") thumbnailUrl = thumbRaw;
@@ -815,7 +976,7 @@ export function embedEditModal(options: {
           /* invalid */
         }
       }
-      cleanup({ kind: safeKind, title, url, showInPublic, thumbnailUrl });
+      cleanup({ kind: safeKind, title, url, showInPublic, thumbnailUrl, thumbnailFile: thumbFile });
     });
   });
 }

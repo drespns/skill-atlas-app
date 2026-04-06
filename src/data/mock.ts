@@ -31,6 +31,9 @@ export type ProjectEmbed = {
   thumbnailUrl?: string | null;
 };
 
+/** Alineado con columna `projects.status` (saas-018). */
+export type ProjectStatus = "draft" | "in_progress" | "portfolio_visible" | "archived";
+
 export type Project = {
   id: string;
   title: string;
@@ -45,6 +48,10 @@ export type Project = {
   /** Ruta en Storage `project_covers` (Supabase); opcional. */
   coverImagePath?: string | null;
   updatedAtISO: string;
+  status?: ProjectStatus;
+  tags?: string[];
+  dateStart?: string | null;
+  dateEnd?: string | null;
 };
 
 // Public profile shown in `/portfolio` and `/settings`

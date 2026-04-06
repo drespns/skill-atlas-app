@@ -1,6 +1,6 @@
 import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 import { getSessionUserId } from "@scripts/core/auth-session";
-import { showToast, technologyPickerModal } from "@scripts/core/ui-feedback";
+import { projectTechRemoveModal, showToast, technologyPickerModal } from "@scripts/core/ui-feedback";
 import { getSeedCatalogEntries } from "@scripts/technologies/technology-detail/concept-seeds";
 import { getProjectDbId, getTechnologyDbId } from "@scripts/projects/project-detail/helpers";
 import { refreshProjectDetailPage } from "@scripts/projects/project-detail/refresh-ui";
@@ -137,11 +137,16 @@ export async function initProjectTechnologyRemove(supabase: any, projectSlug: st
   for (const button of removeButtons) {
     button.addEventListener("click", async () => {
       const technologySlug = button.dataset.techId;
+      const technologyName = (button.dataset.techName ?? technologySlug ?? "").trim() || technologySlug;
       if (!technologySlug) return;
+
+      const choice = await projectTechRemoveModal({ technologyName: technologyName ?? technologySlug });
+      if (!choice) return;
 
       button.disabled = true;
       if (feedback) {
-        feedback.textContent = "Quitando tecnología...";
+        feedback.textContent =
+          choice === "unlink" ? "Quitando tecnología del proyecto..." : "Eliminando tecnología del catálogo...";
         feedback.className = "text-sm text-gray-600";
       }
 
@@ -156,27 +161,51 @@ export async function initProjectTechnologyRemove(supabase: any, projectSlug: st
         return;
       }
 
-      const deleteRes = await supabase
-        .from("project_technologies")
-        .delete()
-        .eq("project_id", projectDbId)
-        .eq("technology_id", technologyDbId);
+      if (choice === "unlink") {
+        const deleteRes = await supabase
+          .from("project_technologies")
+          .delete()
+          .eq("project_id", projectDbId)
+          .eq("technology_id", technologyDbId);
 
-      if (deleteRes.error) {
+        if (deleteRes.error) {
+          if (feedback) {
+            feedback.textContent = `Error al quitar: ${deleteRes.error.message}`;
+            feedback.className = "text-sm text-red-600";
+          }
+          button.disabled = false;
+          return;
+        }
+
         if (feedback) {
-          feedback.textContent = `Error al quitar: ${deleteRes.error.message}`;
+          feedback.textContent = "Tecnología quitada del proyecto.";
+          feedback.className = "text-sm text-green-600";
+        }
+        showToast("Tecnología quitada del proyecto.", "success");
+        await refreshProjectDetailPage();
+        button.disabled = false;
+        return;
+      }
+
+      const delTech = await supabase.from("technologies").delete().eq("slug", technologySlug);
+      if (delTech.error) {
+        if (feedback) {
+          feedback.textContent = `Error al eliminar del catálogo: ${delTech.error.message}`;
           feedback.className = "text-sm text-red-600";
         }
+        showToast(delTech.error.message ?? "No se pudo eliminar la tecnología.", "error");
         button.disabled = false;
         return;
       }
 
       if (feedback) {
-        feedback.textContent = "Tecnología quitada correctamente.";
+        feedback.textContent = "Tecnología eliminada del catálogo.";
         feedback.className = "text-sm text-green-600";
       }
-      showToast("Tecnología quitada.", "success");
+      showToast("Tecnología eliminada del catálogo.", "success");
+      if (window.skillatlas?.clearTechnologiesCache) window.skillatlas.clearTechnologiesCache();
       await refreshProjectDetailPage();
+      button.disabled = false;
     });
   }
 }

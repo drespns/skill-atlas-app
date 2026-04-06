@@ -5,6 +5,7 @@ export type Technology = mock.Technology;
 export type Concept = mock.Concept;
 export type Project = mock.Project;
 export type ProjectEmbed = mock.ProjectEmbed;
+export type ProjectStatus = mock.ProjectStatus;
 
 export async function getTechnologies() {
   return mock.technologies;

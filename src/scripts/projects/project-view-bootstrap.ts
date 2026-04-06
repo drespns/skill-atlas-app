@@ -5,7 +5,9 @@ import {
   embedIframeSrc,
   evidenceSiteIconUrl,
   IFRAME_EMBED_ALLOW,
+  resolveEvidenceThumbnailForDisplay,
 } from "@lib/evidence-url";
+import i18next from "i18next";
 import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 import { getSessionUserId } from "@scripts/core/auth-session";
 import { runProjectDetailInits } from "@scripts/projects/project-detail/runner";
@@ -24,6 +26,19 @@ function esc(s: string | null | undefined) {
 /** Atributos HTML: sin saltos de línea. */
 function escAttr(s: string | null | undefined) {
   return esc((s ?? "").replace(/\r\n|\r|\n/g, " "));
+}
+
+function tt(key: string, fallback: string): string {
+  const v = i18next.t(key);
+  return typeof v === "string" && v.length > 0 && v !== key ? v : fallback;
+}
+
+function normalizeProjectTags(raw: unknown): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.filter((x): x is string => typeof x === "string").map((s) => s.trim()).filter(Boolean);
+  }
+  return [];
 }
 
 function progressBadgeClass(p: string) {
@@ -88,13 +103,13 @@ export async function bootstrapProjectDetailPage() {
   const userId = await getSessionUserId(supabase);
   if (!userId) {
     mount.innerHTML = `<section class="space-y-3" data-project-detail-slug="${escAttr(slug)}"><p class="text-amber-700 text-sm">Inicia sesión en Ajustes para ver este proyecto.</p>
-      <a href="/settings" class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Ir a Ajustes</a></section>`;
+      <a href="/settings#prefs" class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline">Ir a Ajustes</a></section>`;
     return;
   }
 
   const projRes = await supabase
     .from("projects")
-    .select("id, slug, title, description, role, outcome, cover_image_path")
+    .select("id, slug, title, description, role, outcome, cover_image_path, status, tags, date_start, date_end")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -114,6 +129,10 @@ export async function bootstrapProjectDetailPage() {
     role: string | null;
     outcome: string | null;
     cover_image_path?: string | null;
+    status?: string | null;
+    tags?: unknown;
+    date_start?: string | null;
+    date_end?: string | null;
   };
 
   const coverPath = (project.cover_image_path ?? "").trim() || null;
@@ -122,6 +141,41 @@ export async function bootstrapProjectDetailPage() {
 
   const role = (project.role ?? "").trim();
   const outcome = (project.outcome ?? "").trim();
+
+  const rawSt = String(project.status ?? "in_progress").trim();
+  const projectStatus =
+    rawSt === "draft" || rawSt === "in_progress" || rawSt === "portfolio_visible" || rawSt === "archived"
+      ? rawSt
+      : "in_progress";
+  const tagsArr = normalizeProjectTags(project.tags);
+  const ds = project.date_start ? String(project.date_start).slice(0, 10) : "";
+  const de = project.date_end ? String(project.date_end).slice(0, 10) : "";
+  const statusLabel =
+    projectStatus === "draft"
+      ? tt("projects.statusDraft", "Borrador")
+      : projectStatus === "portfolio_visible"
+        ? tt("projects.statusPortfolioVisible", "Visible en portfolio")
+        : projectStatus === "archived"
+          ? tt("projects.statusArchived", "Archivado")
+          : tt("projects.statusInProgress", "En proceso");
+  const dateRangeLine =
+    ds || de
+      ? `${ds || "…"} ${tt("projects.metaDateArrow", "→")} ${de || "…"}`
+      : "";
+  const projectMetaRowHtml = `<div class="flex flex-wrap items-center gap-2 pt-1">
+      <span class="inline-flex rounded-full border border-indigo-200/80 dark:border-indigo-800/60 bg-indigo-50/80 dark:bg-indigo-950/40 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-900 dark:text-indigo-100">${esc(statusLabel)}</span>
+      ${tagsArr
+        .map(
+          (tg) =>
+            `<span class="inline-flex rounded-full border border-gray-200/80 dark:border-gray-700 px-2 py-0.5 text-[11px] font-medium text-gray-700 dark:text-gray-200">${esc(tg)}</span>`,
+        )
+        .join("")}
+      ${
+        dateRangeLine
+          ? `<span class="text-[11px] text-gray-500 dark:text-gray-400">${esc(dateRangeLine)}</span>`
+          : ""
+      }
+    </div>`;
 
   const [ptRes, pcRes, embRes, allTechRes, allConceptRes] = await Promise.all([
     supabase.from("project_technologies").select("technology_id").eq("project_id", project.id),
@@ -173,7 +227,7 @@ export async function bootstrapProjectDetailPage() {
       return `<div class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 bg-white/60 dark:bg-gray-950/50" style="border-color:hsl(${hue} 72% 52% / 0.35); background-color:hsl(${hue} 72% 52% / 0.10)">
         ${techDotHtml(t.slug)}
         <span class="text-xs font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">${esc(t.name)}</span>
-        <button type="button" data-project-tech-remove data-tech-id="${esc(t.slug)}" class="text-xs rounded-full border border-gray-200/80 dark:border-gray-800 px-2 py-0.5 hover:bg-gray-50 dark:hover:bg-gray-900" title="Quitar ${esc(t.name)}">×</button>
+        <button type="button" data-project-tech-remove data-tech-id="${esc(t.slug)}" data-tech-name="${escAttr(t.name)}" class="text-xs rounded-full border border-gray-200/80 dark:border-gray-800 px-2 py-0.5 hover:bg-gray-50 dark:hover:bg-gray-900" title="${esc(tt("projects.techRemoveButtonTitle", "Quitar o eliminar tecnología"))}">×</button>
       </div>`;
     })
     .join("");
@@ -210,7 +264,9 @@ export async function bootstrapProjectDetailPage() {
           .join("")
       : `<option value="">No hay conceptos disponibles</option>`;
 
-  const evidenceLayout = loadPrefs().projectEvidenceLayout === "grid" ? "grid" : "large";
+  const rawLayout = loadPrefs().projectEvidenceLayout;
+  const evidenceLayout =
+    rawLayout === "grid" || rawLayout === "list" || rawLayout === "large" ? rawLayout : "large";
 
   const templateChipsHtml = EVIDENCE_QUICK_TEMPLATES.map(
     (t) =>
@@ -226,6 +282,8 @@ export async function bootstrapProjectDetailPage() {
       const embedKind = coerceEvidenceDisplayKind(embedUrl, storedKind);
       const showInPublic = embed.show_in_public !== false;
       const thumbStored = (embed.thumbnail_url ?? "").trim();
+      const isList = evidenceLayout === "list";
+      const thumbSrc = resolveEvidenceThumbnailForDisplay(thumbStored || null, embedUrl);
 
       const det = detectEvidenceUrl(embedUrl);
       const kindLabel = embedKind === "iframe" ? "iframe" : "enlace";
@@ -233,10 +291,29 @@ export async function bootstrapProjectDetailPage() {
       const iconHtml = iconSrc
         ? `<img src="${esc(iconSrc)}" alt="" width="24" height="24" class="rounded shrink-0 ring-1 ring-gray-200/80 dark:ring-gray-700 mt-0.5" loading="lazy" decoding="async" data-evidence-favicon onerror="this.remove()" />`
         : "";
+      const titleForIframe = embedTitle.trim() || tt("projects.evidenceTitlePlaceholder", "Especificar título…");
       const iframe =
         embedKind === "iframe"
-          ? `<iframe class="project-embed-iframe w-full aspect-video rounded-lg border border-gray-200/80 dark:border-gray-800" src="${esc(embedIframeSrc(embedUrl))}" title="${esc(embedTitle)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="${escAttr(IFRAME_EMBED_ALLOW)}" allowfullscreen></iframe>`
-          : `<a class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline" href="${esc(embedUrl)}" target="_blank" rel="noreferrer">Abrir enlace</a>`;
+          ? `<iframe class="project-embed-iframe w-full aspect-video rounded-lg border border-gray-200/80 dark:border-gray-800" src="${esc(embedIframeSrc(embedUrl))}" title="${esc(titleForIframe)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="${escAttr(IFRAME_EMBED_ALLOW)}" allowfullscreen></iframe>`
+          : `<a class="inline-flex rounded-lg border px-3 py-2 text-sm font-semibold no-underline" href="${esc(embedUrl)}" target="_blank" rel="noreferrer">${esc(tt("projects.evidenceOpenAsLink", "Abrir enlace"))}</a>`;
+      const linkOnlyRow = `<a class="inline-flex rounded-lg border border-indigo-200/80 dark:border-indigo-800/80 px-3 py-2 text-sm font-semibold no-underline text-indigo-800 dark:text-indigo-200 hover:bg-indigo-50/80 dark:hover:bg-indigo-950/40" href="${esc(embedUrl)}" target="_blank" rel="noreferrer">${esc(tt("projects.evidenceOpenLink", "Abrir evidencia"))}</a>`;
+      const thumbAbove =
+        thumbSrc && !isList
+          ? `<div class="w-full"><img src="${esc(thumbSrc)}" alt="" class="w-full max-h-52 object-cover rounded-lg border border-gray-200/80 dark:border-gray-800" loading="lazy" decoding="async" /></div>`
+          : "";
+      const thumbList =
+        thumbSrc && isList
+          ? `<img src="${esc(thumbSrc)}" alt="" class="h-14 w-24 shrink-0 object-cover rounded-lg border border-gray-200/80 dark:border-gray-800" loading="lazy" decoding="async" />`
+          : "";
+      const titleInner = embedTitle.trim()
+        ? esc(embedTitle)
+        : `<span class="text-gray-400 dark:text-gray-500 italic font-normal">${esc(tt("projects.evidenceTitlePlaceholder", "Especificar título…"))}</span>`;
+      const embedBody = isList
+        ? `<div class="flex flex-col gap-2 sm:flex-row sm:items-center min-w-0">
+            ${thumbList}
+            <div class="flex flex-col gap-2 min-w-0">${linkOnlyRow}</div>
+          </div>`
+        : `${thumbAbove}${iframe}`;
       return `<li class="project-embeds-list__item list-none space-y-2 min-w-0">
         <div class="flex flex-wrap items-start gap-3 min-w-0">
           <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-xs font-bold text-gray-700 dark:text-gray-200">${idx + 1}</span>
@@ -253,8 +330,8 @@ export async function bootstrapProjectDetailPage() {
               }
               </div>
             </div>
-            <h3 class="m-0 text-sm font-semibold">${esc(embedTitle)}</h3>
-            ${iframe}
+            <h3 class="m-0 text-sm font-semibold cursor-text rounded px-0.5 -mx-0.5 hover:ring-1 hover:ring-indigo-300/60 dark:hover:ring-indigo-600/50 min-h-[1.35rem]" data-embed-inline-title data-embed-id="${esc(embed.id)}" data-embed-title="${escAttr(embedTitle)}">${titleInner}</h3>
+            ${embedBody}
           </article>
         </div>
         <div class="project-embeds-actions flex flex-wrap items-center gap-2 pl-11">
@@ -267,9 +344,10 @@ export async function bootstrapProjectDetailPage() {
     })
     .join("");
 
-  const evidenceLayoutToggleHtml = `<div class="inline-flex items-center rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/70 p-0.5 gap-0.5 shadow-sm" data-project-evidence-layout-toggle role="group" aria-label="Vista de evidencias">
-    <button type="button" data-evidence-layout="large" aria-pressed="${evidenceLayout === "large" ? "true" : "false"}" class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-gray-100 dark:hover:bg-gray-900 ${evidenceLayout === "large" ? "bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-inner" : "text-gray-600 dark:text-gray-400"}">Grandes</button>
-    <button type="button" data-evidence-layout="grid" aria-pressed="${evidenceLayout === "grid" ? "true" : "false"}" class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-gray-100 dark:hover:bg-gray-900 ${evidenceLayout === "grid" ? "bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-inner" : "text-gray-600 dark:text-gray-400"}">Cuadrícula</button>
+  const evidenceLayoutToggleHtml = `<div class="inline-flex flex-wrap items-center rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/70 p-0.5 gap-0.5 shadow-sm" data-project-evidence-layout-toggle role="group" aria-label="Vista de evidencias">
+    <button type="button" data-evidence-layout="large" aria-pressed="${evidenceLayout === "large" ? "true" : "false"}" class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-gray-100 dark:hover:bg-gray-900 ${evidenceLayout === "large" ? "bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-inner" : "text-gray-600 dark:text-gray-400"}">${esc(tt("projects.evidenceLayoutLarge", "Grandes"))}</button>
+    <button type="button" data-evidence-layout="grid" aria-pressed="${evidenceLayout === "grid" ? "true" : "false"}" class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-gray-100 dark:hover:bg-gray-900 ${evidenceLayout === "grid" ? "bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-inner" : "text-gray-600 dark:text-gray-400"}">${esc(tt("projects.evidenceLayoutGrid", "Cuadrícula"))}</button>
+    <button type="button" data-evidence-layout="list" aria-pressed="${evidenceLayout === "list" ? "true" : "false"}" class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-gray-100 dark:hover:bg-gray-900 ${evidenceLayout === "list" ? "bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-inner" : "text-gray-600 dark:text-gray-400"}">${esc(tt("projects.evidenceLayoutList", "Lista"))}</button>
   </div>`;
 
   const relatedHtml = relatedConcepts
@@ -365,11 +443,12 @@ export async function bootstrapProjectDetailPage() {
       </div>
     </section>`;
 
-  mount.innerHTML = `<section class="space-y-6" data-project-id="${esc(project.slug)}" data-project-db-id="${esc(project.id)}" data-project-detail-slug="${escAttr(project.slug)}" data-project-title="${esc(project.title)}" data-project-description="${esc(project.description ?? "")}" data-project-role="${escAttr(role)}" data-project-outcome="${escAttr(outcome)}">
+  mount.innerHTML = `<section class="space-y-6" data-project-id="${esc(project.slug)}" data-project-db-id="${esc(project.id)}" data-project-detail-slug="${escAttr(project.slug)}" data-project-title="${esc(project.title)}" data-project-description="${esc(project.description ?? "")}" data-project-role="${escAttr(role)}" data-project-outcome="${escAttr(outcome)}" data-project-status="${escAttr(projectStatus)}" data-project-tags-json="${escAttr(JSON.stringify(tagsArr))}" data-project-date-start="${escAttr(ds)}" data-project-date-end="${escAttr(de)}">
     <header class="space-y-3">
       <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div class="min-w-0 flex-1 space-y-2">
           <h1 class="m-0 text-2xl font-semibold">${esc(project.title)}</h1>
+          ${projectMetaRowHtml}
           <p class="m-0 text-sm text-gray-600 dark:text-gray-400">${esc(project.description ?? "")}</p>
           <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3 m-0 pt-1 text-sm">
             <div>

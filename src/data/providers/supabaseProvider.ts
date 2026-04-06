@@ -1,5 +1,5 @@
 import { getSupabaseClient } from "../../lib/supabase";
-import type { Concept, Project, ProjectEmbed, Technology } from "./mockProvider";
+import type { Concept, Project, ProjectEmbed, ProjectStatus, Technology } from "./mockProvider";
 
 type DbTechnology = {
   id: string;
@@ -23,6 +23,10 @@ type DbProject = {
   role: string | null;
   outcome: string | null;
   cover_image_path?: string | null;
+  status?: string | null;
+  tags?: unknown;
+  date_start?: string | null;
+  date_end?: string | null;
 };
 
 type DbProjectEmbed = {
@@ -35,6 +39,20 @@ type DbProjectEmbed = {
   show_in_public?: boolean | null;
   thumbnail_url?: string | null;
 };
+
+function normalizeProjectTags(raw: unknown): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.filter((x): x is string => typeof x === "string").map((s) => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function normalizeProjectStatus(raw: string | null | undefined): ProjectStatus | undefined {
+  const s = String(raw ?? "").trim();
+  if (s === "draft" || s === "in_progress" || s === "portfolio_visible" || s === "archived") return s;
+  return undefined;
+}
 
 async function loadTechnologiesRows(): Promise<DbTechnology[]> {
   try {
@@ -188,6 +206,10 @@ export async function getProjects(): Promise<Project[]> {
     embeds: embedsByProjectSlug.get(p.slug) ?? [],
     coverImagePath: p.cover_image_path ?? null,
     updatedAtISO: new Date().toISOString(),
+    status: normalizeProjectStatus(p.status),
+    tags: normalizeProjectTags(p.tags),
+    dateStart: p.date_start ? String(p.date_start).slice(0, 10) : null,
+    dateEnd: p.date_end ? String(p.date_end).slice(0, 10) : null,
   }));
 }
 

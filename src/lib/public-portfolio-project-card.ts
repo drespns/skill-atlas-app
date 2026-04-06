@@ -28,6 +28,11 @@ export type PortfolioCardProject = {
   /** Lista ya recortada al límite efectivo (preferido sobre primaryEmbed). */
   embeds?: PortfolioEmbed[];
   primaryEmbed?: { kind: string; title: string; url: string; thumbnailUrl?: string | null } | null;
+  /** Valores alineados con `projects.status` (saas-018). */
+  status?: string | null;
+  tags?: string[] | null;
+  dateStart?: string | null;
+  dateEnd?: string | null;
 };
 
 function esc(s: string) {
@@ -41,6 +46,21 @@ function esc(s: string) {
 function tr(key: string, def: string, opts?: Record<string, string | number>) {
   const r = i18next.t(key, { defaultValue: def, ...(opts ?? {}) } as Record<string, unknown>);
   return typeof r === "string" && r.length > 0 ? r : def;
+}
+
+function projectStatusLabel(code: string): string {
+  switch (code) {
+    case "draft":
+      return tr("projects.statusDraft", "Borrador");
+    case "in_progress":
+      return tr("projects.statusInProgress", "En proceso");
+    case "portfolio_visible":
+      return tr("projects.statusPortfolioVisible", "Visible en portfolio");
+    case "archived":
+      return tr("projects.statusArchived", "Archivado");
+    default:
+      return code;
+  }
 }
 
 function techHue(input: string) {
@@ -128,6 +148,41 @@ export function renderPortfolioVisitorCard(
   const outcome = (project.outcome ?? "").trim();
   const hasStory = Boolean(role || outcome);
   const desc = (project.description ?? "").trim();
+
+  const rawStatus = String(project.status ?? "").trim();
+  const statusOk =
+    rawStatus === "draft" ||
+    rawStatus === "in_progress" ||
+    rawStatus === "portfolio_visible" ||
+    rawStatus === "archived"
+      ? rawStatus
+      : "";
+  const tagList = Array.isArray(project.tags)
+    ? project.tags.filter((x): x is string => typeof x === "string").map((s) => s.trim()).filter(Boolean)
+    : [];
+  const ds = (project.dateStart ?? "").trim().slice(0, 10);
+  const de = (project.dateEnd ?? "").trim().slice(0, 10);
+  const metaRow =
+    statusOk || tagList.length > 0 || ds || de
+      ? `<div class="flex flex-wrap items-center gap-2">
+      ${
+        statusOk
+          ? `<span class="inline-flex rounded-full border border-indigo-200/80 dark:border-indigo-800/60 bg-indigo-50/80 dark:bg-indigo-950/40 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-900 dark:text-indigo-100">${esc(projectStatusLabel(statusOk))}</span>`
+          : ""
+      }
+      ${tagList
+        .map(
+          (tg) =>
+            `<span class="inline-flex rounded-full border border-gray-200/80 dark:border-gray-700 px-2 py-0.5 text-[11px] font-medium text-gray-700 dark:text-gray-200">${esc(tg)}</span>`,
+        )
+        .join("")}
+      ${
+        ds || de
+          ? `<span class="text-[11px] text-gray-500 dark:text-gray-400">${esc(`${ds || "…"} ${tr("projects.metaDateArrow", "→")} ${de || "…"}`)}</span>`
+          : ""
+      }
+    </div>`
+      : "";
 
   const coverPath = (project.coverImagePath ?? "").trim();
   const coverUrl = coverPath ? publicStorageObjectUrl("project_covers", coverPath) : "";
@@ -251,6 +306,7 @@ export function renderPortfolioVisitorCard(
     <div class="portfolio-visitor-card__body flex flex-col gap-4 p-4 sm:p-5 min-w-0">
       ${coverBlock}
       <h2 class="portfolio-visitor-card__title m-0 text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100 text-balance break-words leading-snug">${esc(project.title)}</h2>
+      ${metaRow}
       ${stackBlock}
       ${storyBlock}
       ${descBlock}
