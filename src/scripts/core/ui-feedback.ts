@@ -1,6 +1,7 @@
 import { getTechnologyIconSrc } from "@config/icons";
 import { coerceEvidenceDisplayKind, detectEvidenceUrl, evidenceSiteIconUrl } from "@lib/evidence-url";
 import i18next from "i18next";
+import { analyzeGitHubRepoTechnologies, parseGitHubRepoUrl, type DetectedTechnology } from "@scripts/core/github-repo-analyzer";
 
 function tt(key: string, fallback: string): string {
   const v = i18next.t(key);
@@ -72,7 +73,7 @@ export function showToast(message: string, type: ToastType = "info", durationMs:
   node.setAttribute("role", "status");
   node.setAttribute("aria-live", "polite");
   node.className = `rounded-lg px-3 py-2 text-sm shadow-lg flex items-center gap-2 transition-all duration-200 ease-out opacity-0 translate-y-2 max-w-[min(24rem,calc(100vw-2rem))] ${tone}`;
-  node.innerHTML = `<span class="min-w-0 flex-1 break-words">${escapeHtml(message)}</span><button type="button" data-toast-close class="ml-1 shrink-0 text-white/90 hover:text-white" aria-label="Cerrar aviso">×</button>`;
+  node.innerHTML = `<span class="min-w-0 flex-1 wrap-break-word">${escapeHtml(message)}</span><button type="button" data-toast-close class="ml-1 shrink-0 text-white/90 hover:text-white" aria-label="Cerrar aviso">×</button>`;
   root.appendChild(node);
   requestAnimationFrame(() => {
     node.classList.remove("opacity-0", "translate-y-2");
@@ -112,7 +113,180 @@ function toSlug(value: string) {
 
 export type TechnologyPickerResult =
   | { kind: "pick"; slug: string }
+  | { kind: "pickMany"; slugs: string[] }
   | { kind: "create"; name: string; slug: string; importMode: "none" | "default" | "junior" };
+
+export type GitHubRepoTechImportResult = {
+  repoUrl: string;
+  technologies: { slug: string; name: string }[];
+};
+
+export function githubRepoTechImportModal(options: { title?: string; initialRepoUrl?: string }) {
+  const root = getModalRoot();
+  root.classList.remove("hidden");
+  root.classList.add("flex");
+
+  return new Promise<GitHubRepoTechImportResult | null>((resolve) => {
+    const cleanup = (value: GitHubRepoTechImportResult | null) => {
+      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
+      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
+      setTimeout(() => {
+        root.classList.add("hidden");
+        root.classList.remove("flex");
+        root.innerHTML = "";
+        resolve(value);
+      }, 180);
+    };
+
+    root.innerHTML = `
+      <div data-modal-overlay class="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-200"></div>
+      <div data-modal-panel class="relative w-full max-w-2xl rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 space-y-3 opacity-0 scale-[0.98] transition-all duration-200">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="m-0 text-base font-semibold">${escapeHtml(options.title ?? "Importar stack desde GitHub")}</h3>
+          <button data-modal-cancel type="button" class="rounded-lg border border-gray-200 dark:border-gray-700 px-2.5 py-1.5 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">Cerrar</button>
+        </div>
+        <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
+          Pega la URL del repositorio (público). Leeremos manifests típicos (package.json, requirements.txt, go.mod…).
+        </p>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input data-gh-repo-url type="url" placeholder="https://github.com/owner/repo" class="flex-1 rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 bg-white dark:bg-gray-950 text-sm" value="${escapeHtml(
+            (options.initialRepoUrl ?? "").trim(),
+          )}" />
+          <button type="button" data-gh-analyze class="inline-flex justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 shrink-0">Analizar</button>
+        </div>
+        <p data-gh-feedback class="m-0 text-xs text-gray-600 dark:text-gray-400 min-h-4"></p>
+        <div class="border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+          <div data-gh-list class="p-3 max-h-80 overflow-auto"></div>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <label class="inline-flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300 select-none">
+            <input type="checkbox" data-gh-select-all class="accent-indigo-600" checked />
+            Seleccionar todo
+          </label>
+          <button type="button" data-gh-apply class="rounded-lg bg-emerald-700 dark:bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60" disabled>Aplicar</button>
+        </div>
+      </div>
+    `;
+
+    requestAnimationFrame(() => {
+      root.querySelector("[data-modal-overlay]")?.classList.remove("opacity-0");
+      root.querySelector("[data-modal-panel]")?.classList.remove("opacity-0", "scale-[0.98]");
+    });
+
+    const urlInput = root.querySelector<HTMLInputElement>("[data-gh-repo-url]");
+    const analyzeBtn = root.querySelector<HTMLButtonElement>("[data-gh-analyze]");
+    const feedback = root.querySelector<HTMLElement>("[data-gh-feedback]");
+    const list = root.querySelector<HTMLElement>("[data-gh-list]");
+    const applyBtn = root.querySelector<HTMLButtonElement>("[data-gh-apply]");
+    const selectAll = root.querySelector<HTMLInputElement>("[data-gh-select-all]");
+
+    let lastRepoUrl = (options.initialRepoUrl ?? "").trim();
+    let detected: DetectedTechnology[] = [];
+
+    const render = () => {
+      if (!list) return;
+      if (detected.length === 0) {
+        list.innerHTML = `<p class="m-0 text-sm text-gray-600 dark:text-gray-400">Sin resultados todavía.</p>`;
+        if (applyBtn) applyBtn.disabled = true;
+        return;
+      }
+      const rows = detected
+        .map((t) => {
+          const reasons = t.reasons.slice(0, 3).map(escapeHtml).join(" · ");
+          return `<label class="flex items-start gap-3 px-1 py-2 text-sm cursor-pointer">
+            <input type="checkbox" data-gh-tech="${escapeHtml(t.slug)}" class="mt-1 accent-indigo-600" checked />
+            <span class="min-w-0 flex-1">
+              <span class="font-semibold text-gray-900 dark:text-gray-100">${escapeHtml(t.name)}</span>
+              <span class="block text-[11px] text-gray-500 dark:text-gray-400">${reasons}</span>
+            </span>
+            <span class="text-[11px] font-mono text-gray-500 dark:text-gray-400">${Math.round(t.confidence * 100)}%</span>
+          </label>`;
+        })
+        .join("");
+      list.innerHTML = rows;
+      if (applyBtn) applyBtn.disabled = false;
+    };
+
+    const syncSelectAll = () => {
+      if (!selectAll) return;
+      const boxes = root.querySelectorAll<HTMLInputElement>("[data-gh-tech]");
+      const checked = Array.from(boxes).filter((b) => b.checked).length;
+      selectAll.checked = boxes.length > 0 && checked === boxes.length;
+      if (applyBtn) applyBtn.disabled = checked === 0;
+    };
+
+    selectAll?.addEventListener("change", () => {
+      const boxes = root.querySelectorAll<HTMLInputElement>("[data-gh-tech]");
+      boxes.forEach((b) => (b.checked = Boolean(selectAll.checked)));
+      syncSelectAll();
+    });
+    root.addEventListener("change", (e) => {
+      const t = e.target as HTMLElement | null;
+      if (t instanceof HTMLInputElement && t.hasAttribute("data-gh-tech")) syncSelectAll();
+    });
+
+    const analyze = async () => {
+      const repoUrl = (urlInput?.value ?? "").trim();
+      lastRepoUrl = repoUrl;
+      if (!repoUrl) return;
+      const parsed = parseGitHubRepoUrl(repoUrl);
+      if (!parsed) {
+        if (feedback) feedback.textContent = "URL de GitHub no válida. Usa formato https://github.com/owner/repo";
+        return;
+      }
+      if (feedback) feedback.textContent = "Analizando…";
+      if (analyzeBtn) analyzeBtn.disabled = true;
+      if (applyBtn) applyBtn.disabled = true;
+      detected = [];
+      render();
+      try {
+        detected = await analyzeGitHubRepoTechnologies(parsed);
+        if (feedback) feedback.textContent = detected.length > 0 ? `Detectadas ${detected.length} tecnologías.` : "No se detectaron tecnologías.";
+        render();
+        syncSelectAll();
+      } catch (e: any) {
+        const msg = e?.message ? String(e.message) : "Error inesperado.";
+        if (feedback) feedback.textContent = `Error: ${escapeHtml(msg)} (¿repo privado o rate limit de GitHub?)`;
+      } finally {
+        if (analyzeBtn) analyzeBtn.disabled = false;
+      }
+    };
+
+    analyzeBtn?.addEventListener("click", () => void analyze());
+    urlInput?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        void analyze();
+      }
+    });
+
+    applyBtn?.addEventListener("click", () => {
+      const boxes = root.querySelectorAll<HTMLInputElement>("[data-gh-tech]");
+      const picked = Array.from(boxes)
+        .filter((b) => b.checked)
+        .map((b) => b.getAttribute("data-gh-tech") || "")
+        .filter(Boolean);
+      const technologies = detected
+        .filter((t) => picked.includes(t.slug))
+        .map((t) => ({ slug: t.slug, name: t.name }));
+      if (technologies.length === 0) {
+        cleanup(null);
+        return;
+      }
+      cleanup({ repoUrl: lastRepoUrl, technologies });
+    });
+
+    root.querySelector("[data-modal-cancel]")?.addEventListener("click", () => cleanup(null));
+    root.querySelector("[data-modal-overlay]")?.addEventListener("click", () => cleanup(null));
+    document.addEventListener(
+      "keydown",
+      (ev) => {
+        if (ev.key === "Escape") cleanup(null);
+      },
+      { once: true },
+    );
+  });
+}
 
 export function technologyPickerModal(options: {
   title?: string;
@@ -146,7 +320,17 @@ export function technologyPickerModal(options: {
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
           <section class="space-y-2">
             <p class="m-0 text-xs font-semibold text-gray-700 dark:text-gray-300">Seleccionar existente</p>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <label class="inline-flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300 select-none">
+                <input type="checkbox" class="accent-indigo-600" data-tech-pick-multi />
+                Modo múltiple
+              </label>
+              <button type="button" data-tech-pick-confirm class="hidden rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-xs font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200">
+                Añadir seleccionadas
+              </button>
+            </div>
             <input data-tech-pick-search type="search" placeholder="Buscar (Tableau, Python, CSS…)" class="w-full rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2 bg-white dark:bg-gray-950 text-sm" />
+            <div data-tech-pick-chips class="hidden flex-wrap gap-2"></div>
             <div class="border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
               <ul data-tech-pick-list class="max-h-72 overflow-auto m-0 p-0 divide-y divide-gray-200/70 dark:divide-gray-800"></ul>
             </div>
@@ -182,6 +366,9 @@ export function technologyPickerModal(options: {
 
     const search = root.querySelector<HTMLInputElement>("[data-tech-pick-search]");
     const listEl = root.querySelector<HTMLUListElement>("[data-tech-pick-list]");
+    const multiToggle = root.querySelector<HTMLInputElement>("[data-tech-pick-multi]");
+    const pickConfirmBtn = root.querySelector<HTMLButtonElement>("[data-tech-pick-confirm]");
+    const pickChipsWrap = root.querySelector<HTMLElement>("[data-tech-pick-chips]");
     const nameInput = root.querySelector<HTMLInputElement>("[data-tech-create-name]");
     const seedList = root.querySelector<HTMLUListElement>("[data-tech-seed-suggestions]");
     const createBtn = root.querySelector<HTMLButtonElement>("[data-tech-create-confirm]");
@@ -189,6 +376,46 @@ export function technologyPickerModal(options: {
 
     let pickedSeedSlug: string | null = null;
     let seedLabelLock: string | null = null;
+    let pickMultiMode = false;
+    const picked = new Map<string, { slug: string; name: string }>();
+
+    const renderPickChips = () => {
+      if (!pickChipsWrap) return;
+      if (!pickMultiMode) {
+        pickChipsWrap.innerHTML = "";
+        return;
+      }
+      const items = [...picked.values()].sort((a, b) => a.name.localeCompare(b.name, "es"));
+      if (items.length === 0) {
+        pickChipsWrap.innerHTML =
+          '<p class="m-0 text-[11px] text-gray-500 dark:text-gray-400">Selecciona varias del listado.</p>';
+        return;
+      }
+      pickChipsWrap.innerHTML = items
+        .map((it) => {
+          const iconSrc = getTechnologyIconSrc({ id: it.slug, name: it.name });
+          const iconHtml = iconSrc
+            ? `<img src="${escapeHtml(iconSrc)}" alt="" class="h-4 w-4 shrink-0 rounded-sm object-contain" loading="lazy" />`
+            : `<span class="h-4 w-4 shrink-0 rounded-sm bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>`;
+          return `<span class="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-950/30 px-2 py-1 text-xs">
+            ${iconHtml}
+            <span class="font-semibold text-gray-800 dark:text-gray-200">${escapeHtml(it.name)}</span>
+            <button type="button" data-pick-chip-remove="${escapeHtml(it.slug)}" class="ml-1 rounded-full px-1.5 py-0.5 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10">×</button>
+          </span>`;
+        })
+        .join("");
+    };
+
+    const setPickMultiMode = (next: boolean) => {
+      pickMultiMode = next;
+      if (pickConfirmBtn) pickConfirmBtn.classList.toggle("hidden", !pickMultiMode);
+      if (pickChipsWrap) pickChipsWrap.classList.toggle("hidden", !pickMultiMode);
+      if (!pickMultiMode) {
+        picked.clear();
+        renderPickChips();
+      }
+      renderPickList(search?.value ?? "");
+    };
 
     const renderPickList = (q: string) => {
       if (!listEl) return;
@@ -209,13 +436,21 @@ export function technologyPickerModal(options: {
           const iconHtml = iconSrc
             ? `<img src="${escapeHtml(iconSrc)}" alt="" class="h-5 w-5 shrink-0 rounded-sm object-contain" loading="lazy" />`
             : `<span class="h-5 w-5 shrink-0 rounded-sm bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>`;
+          const selected = picked.has(t.slug);
+          const selBadge = pickMultiMode && selected ? `<span class="text-[10px] font-bold text-indigo-700 dark:text-indigo-200">✓</span>` : "";
+          const rowTone = pickMultiMode
+            ? selected
+              ? "bg-indigo-50/60 dark:bg-indigo-950/25 hover:bg-indigo-50/80 dark:hover:bg-indigo-950/35"
+              : "hover:bg-gray-100 dark:hover:bg-gray-900"
+            : "hover:bg-gray-100 dark:hover:bg-gray-900";
           return `<li class="list-none">
-            <button type="button" data-pick-slug="${escapeHtml(t.slug)}" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-900 border-0 bg-transparent cursor-pointer flex items-start gap-2">
+            <button type="button" data-pick-slug="${escapeHtml(t.slug)}" class="w-full text-left px-3 py-2 text-sm ${rowTone} border-0 bg-transparent cursor-pointer flex items-start gap-2">
               ${iconHtml}
               <span class="min-w-0 flex-1">
                 <span class="font-medium text-gray-900 dark:text-gray-100">${escapeHtml(t.name)}</span>
                 <span class="block text-[11px] text-gray-500 dark:text-gray-400">slug <code class="text-[10px]">${escapeHtml(t.slug)}</code></span>
               </span>
+              ${selBadge}
             </button>
           </li>`;
         })
@@ -256,16 +491,47 @@ export function technologyPickerModal(options: {
 
     renderPickList("");
     renderSeedSuggestions("");
+    renderPickChips();
 
     search?.addEventListener("input", () => renderPickList(search.value));
     search?.addEventListener("focus", () => renderPickList(search.value));
+
+    multiToggle?.addEventListener("change", () => setPickMultiMode(Boolean(multiToggle.checked)));
+    setPickMultiMode(Boolean(multiToggle?.checked));
+
+    pickChipsWrap?.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-pick-chip-remove]");
+      if (!btn) return;
+      const slug = btn.dataset.pickChipRemove ?? "";
+      picked.delete(slug);
+      renderPickChips();
+      renderPickList(search?.value ?? "");
+    });
+
+    pickConfirmBtn?.addEventListener("click", () => {
+      const slugs = [...picked.keys()];
+      if (slugs.length === 0) {
+        cleanup(null);
+        return;
+      }
+      cleanup({ kind: "pickMany", slugs });
+    });
 
     listEl?.addEventListener("click", (e) => {
       const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-pick-slug]");
       if (!btn) return;
       const slug = (btn.dataset.pickSlug ?? "").trim();
       if (!slug) return;
-      cleanup({ kind: "pick", slug });
+      if (!pickMultiMode) {
+        cleanup({ kind: "pick", slug });
+        return;
+      }
+      const tech = options.technologies.find((t) => t.slug === slug);
+      if (!tech) return;
+      if (picked.has(slug)) picked.delete(slug);
+      else picked.set(slug, { slug, name: tech.name });
+      renderPickChips();
+      renderPickList(search?.value ?? "");
     });
 
     nameInput?.addEventListener("input", () => {

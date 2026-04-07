@@ -46,6 +46,11 @@ import { FONT_CATALOG, FONT_GOOGLE_LINK_ID } from "../../config/font-catalog";
     const isDark = themeMode === "dark" ? true : themeMode === "light" ? false : Boolean(prefersDark);
 
     const root = document.documentElement;
+    const uaPlatform = (navigator.platform || "").toLowerCase();
+    const ua = (navigator.userAgent || "").toLowerCase();
+    const isApplePlatform =
+      uaPlatform.includes("mac") || uaPlatform.includes("iphone") || uaPlatform.includes("ipad") || ua.includes("mac os");
+    root.dataset.platform = isApplePlatform ? "apple" : "other";
     root.classList.toggle("dark", isDark);
     root.dataset.theme = isDark ? "dark" : "light";
     root.dataset.themeMode = themeMode;

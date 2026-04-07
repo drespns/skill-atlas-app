@@ -2,9 +2,10 @@ import { getTechnologyIconSrc } from "@config/icons";
 import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 import { getSessionUserId } from "@scripts/core/auth-session";
 import i18next from "i18next";
-import { confirmModal, showToast, userFacingDbError } from "@scripts/core/ui-feedback";
+import { confirmModal, githubRepoTechImportModal, showToast, userFacingDbError } from "@scripts/core/ui-feedback";
 import { loadPrefs } from "@scripts/core/prefs";
-import { getSeedCatalogEntries } from "@scripts/technologies/technology-detail/concept-seeds";
+import { getCatalogEntryForSlug, getTechnologyCatalogEntries } from "@scripts/technologies/technology-detail/concept-seeds";
+import { supportsTechnologiesKindColumn } from "@scripts/core/supabase-schema";
 
 declare global {
   interface Window {
@@ -44,18 +45,138 @@ async function initTechnologyForm() {
   const feedback = form.querySelector<HTMLElement>("[data-tech-feedback]");
   const seedWrap = form.querySelector<HTMLElement>("[data-tech-seed-wrap]");
   const seedSuggestions = form.querySelector<HTMLUListElement>("[data-tech-seed-suggestions]");
+  const kindSelect = form.querySelector<HTMLSelectElement>("[data-tech-kind]");
+  const multiToggle = form.querySelector<HTMLInputElement>("[data-tech-multi-toggle]");
+  const chipsWrap = form.querySelector<HTMLElement>("[data-tech-multi-chips]");
+  const githubBtn = form.querySelector<HTMLButtonElement>("[data-tech-github-import]");
   if (!nameInput || !submitBtn || !feedback) return;
 
-  const seedCatalog = getSeedCatalogEntries();
+  const seedCatalog = getTechnologyCatalogEntries();
   let pickedSlug: string | null = null;
   let catalogLabelLock: string | null = null;
+  let multiMode = false;
+  const multiPicked: { name: string; slug: string; fromCatalog: boolean }[] = [];
+
+  const MULTI_DRAFT_KEY = "skillatlas_technologies_multi_draft_v1";
+  const loadDraft = () => {
+    try {
+      const raw = localStorage.getItem(MULTI_DRAFT_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as unknown;
+      if (!parsed || typeof parsed !== "object") return null;
+      const p = parsed as { multiMode?: unknown; items?: unknown };
+      const items = Array.isArray(p.items)
+        ? (p.items as any[])
+            .map((x) => ({
+              name: typeof x?.name === "string" ? x.name : "",
+              slug: typeof x?.slug === "string" ? x.slug : "",
+              fromCatalog: Boolean(x?.fromCatalog),
+            }))
+            .filter((x) => x.name.trim() && x.slug.trim())
+        : [];
+      return { multiMode: Boolean(p.multiMode), items };
+    } catch {
+      return null;
+    }
+  };
+  const saveDraft = () => {
+    try {
+      localStorage.setItem(MULTI_DRAFT_KEY, JSON.stringify({ multiMode, items: multiPicked }));
+    } catch {
+      // ignore
+    }
+  };
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(MULTI_DRAFT_KEY);
+    } catch {
+      // ignore
+    }
+  };
+
+  const setMultiMode = (next: boolean) => {
+    multiMode = next;
+    if (chipsWrap) chipsWrap.classList.toggle("hidden", !multiMode);
+    // Evita validación HTML ("Completa este campo") cuando hay chips y el input queda vacío.
+    try {
+      nameInput.required = !multiMode;
+    } catch {
+      // ignore
+    }
+    if (!multiMode) {
+      multiPicked.length = 0;
+      renderChips();
+      clearDraft();
+      // conserva el comportamiento anterior: un solo pick bloquea el label.
+      pickedSlug = null;
+      catalogLabelLock = null;
+    } else {
+      // En modo múltiple, el input no representa una tecnología única.
+      pickedSlug = null;
+      catalogLabelLock = null;
+      saveDraft();
+    }
+  };
+
+  const normalizeMultiTokens = (raw: string) =>
+    raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+  const addMultiItem = (name: string, slug: string, fromCatalog: boolean) => {
+    const key = slug.trim();
+    if (!key) return;
+    if (multiPicked.some((x) => x.slug === key)) return;
+    multiPicked.push({ name, slug: key, fromCatalog });
+    renderChips();
+    saveDraft();
+  };
+
+  const removeMultiItem = (slug: string) => {
+    const idx = multiPicked.findIndex((x) => x.slug === slug);
+    if (idx >= 0) multiPicked.splice(idx, 1);
+    renderChips();
+    saveDraft();
+  };
+
+  const renderChips = () => {
+    if (!chipsWrap) return;
+    if (!multiMode) {
+      chipsWrap.innerHTML = "";
+      return;
+    }
+    if (multiPicked.length === 0) {
+      chipsWrap.innerHTML =
+        '<p class="m-0 text-[11px] text-gray-500 dark:text-gray-400">Selecciona varias del catálogo o añade nombres con Enter.</p>';
+      return;
+    }
+    chipsWrap.innerHTML = multiPicked
+      .map((it) => {
+        const iconSrc = getTechnologyIconSrc({ id: it.slug, name: it.name });
+        const iconHtml = iconSrc
+          ? `<img src="${escHtml(iconSrc)}" alt="" class="h-4 w-4 shrink-0 rounded-sm object-contain" loading="lazy" />`
+          : `<span class="h-4 w-4 shrink-0 rounded-sm bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>`;
+        const tone = it.fromCatalog
+          ? "border-indigo-200 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-950/30"
+          : "border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/50";
+        return `<span class="inline-flex items-center gap-1.5 rounded-full border ${tone} px-2 py-1 text-xs">
+          ${iconHtml}
+          <span class="font-semibold text-gray-800 dark:text-gray-200">${escHtml(it.name)}</span>
+          <button type="button" data-chip-remove="${escHtml(it.slug)}" class="ml-1 rounded-full px-1.5 py-0.5 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10">×</button>
+        </span>`;
+      })
+      .join("");
+  };
 
   const renderSeedSuggestions = (q: string) => {
     if (!seedSuggestions) return;
     const ql = q.trim().toLowerCase();
+    const kindFilter = (kindSelect?.value ?? "all") as string;
+    const base = kindFilter === "all" ? seedCatalog : seedCatalog.filter((e) => e.kind === kindFilter);
     const hits = !ql
-      ? [...seedCatalog].sort((a, b) => a.label.localeCompare(b.label, "es"))
-      : seedCatalog
+      ? [...base].sort((a, b) => a.label.localeCompare(b.label, "es"))
+      : base
           .filter((e) => e.label.toLowerCase().includes(ql) || e.slug.includes(ql))
           .sort((a, b) => a.label.localeCompare(b.label, "es"));
     if (hits.length === 0) {
@@ -69,7 +190,27 @@ async function initTechnologyForm() {
         const iconHtml = iconSrc
           ? `<img src="${escHtml(iconSrc)}" alt="" class="h-5 w-5 shrink-0 rounded-sm object-contain" loading="lazy" />`
           : `<span class="h-5 w-5 shrink-0 rounded-sm bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>`;
-        return `<li role="option"><button type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-900 border-0 bg-transparent cursor-pointer flex items-start gap-2" data-seed-slug="${escHtml(e.slug)}" data-seed-label="${escHtml(e.label)}">${iconHtml}<span class="min-w-0 flex-1"><span class="font-medium text-gray-900 dark:text-gray-100">${escHtml(e.label)}</span><span class="block text-[11px] text-gray-500 dark:text-gray-400">Plantilla importación · slug <code class="text-[10px]">${escHtml(e.slug)}</code></span></span></button></li>`;
+        const kind = e.kind;
+        const kindLabel =
+          kind === "framework"
+            ? "Framework"
+            : kind === "library"
+              ? "Librería"
+              : kind === "package"
+                ? "Paquete"
+                : "Tecnología";
+        const kindTone =
+          kind === "framework"
+            ? "bg-violet-100/80 dark:bg-violet-950/40 text-violet-800 dark:text-violet-200"
+            : kind === "library"
+              ? "bg-sky-100/80 dark:bg-sky-950/40 text-sky-800 dark:text-sky-200"
+              : kind === "package"
+                ? "bg-amber-100/80 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200"
+                : "bg-gray-100/80 dark:bg-gray-900/60 text-gray-700 dark:text-gray-200";
+        const secondLine = e.hasSeed
+          ? `Plantilla importación · slug <code class="text-[10px]">${escHtml(e.slug)}</code>`
+          : `Catálogo · slug <code class="text-[10px]">${escHtml(e.slug)}</code>`;
+        return `<li role="option"><button type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-900 border-0 bg-transparent cursor-pointer flex items-start gap-2" data-seed-slug="${escHtml(e.slug)}" data-seed-label="${escHtml(e.label)}">${iconHtml}<span class="min-w-0 flex-1"><span class="flex flex-wrap items-center gap-2"><span class="font-medium text-gray-900 dark:text-gray-100">${escHtml(e.label)}</span><span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${kindTone}">${kindLabel}</span></span><span class="block text-[11px] text-gray-500 dark:text-gray-400">${secondLine}</span></span></button></li>`;
       })
       .join("");
     seedSuggestions.classList.remove("hidden");
@@ -84,11 +225,20 @@ async function initTechnologyForm() {
     renderSeedSuggestions(nameInput.value);
   });
 
+  kindSelect?.addEventListener("change", () => renderSeedSuggestions(nameInput.value));
+
   seedSuggestions?.addEventListener("click", (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-seed-slug]");
     if (!btn) return;
     const slug = btn.dataset.seedSlug ?? "";
     const label = btn.dataset.seedLabel ?? "";
+    if (multiMode) {
+      addMultiItem(label, slug, true);
+      nameInput.value = "";
+      seedSuggestions.classList.add("hidden");
+      nameInput.focus();
+      return;
+    }
     nameInput.value = label;
     pickedSlug = slug;
     catalogLabelLock = label;
@@ -98,6 +248,82 @@ async function initTechnologyForm() {
 
   document.addEventListener("click", (e) => {
     if (seedWrap && !seedWrap.contains(e.target as Node)) seedSuggestions?.classList.add("hidden");
+  });
+
+  multiToggle?.addEventListener("change", () => setMultiMode(Boolean(multiToggle.checked)));
+  // Hidrata borrador (chips + toggle) tras un refresh.
+  const draft = loadDraft();
+  if (draft?.multiMode && multiToggle) multiToggle.checked = true;
+  setMultiMode(Boolean(multiToggle?.checked));
+  if (draft?.multiMode && draft.items.length > 0) {
+    multiPicked.length = 0;
+    multiPicked.push(...draft.items);
+    renderChips();
+  }
+
+  chipsWrap?.addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-chip-remove]");
+    if (!btn) return;
+    const slug = btn.dataset.chipRemove ?? "";
+    removeMultiItem(slug);
+  });
+
+  githubBtn?.addEventListener("click", async () => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      showToast("Faltan variables de entorno de Supabase.", "error");
+      return;
+    }
+    const userId = await getSessionUserId(supabase);
+    if (!userId) {
+      showToast("Inicia sesión para importar tecnologías.", "warning");
+      return;
+    }
+
+    const result = await githubRepoTechImportModal({ title: "Importar tecnologías desde GitHub" });
+    if (!result || result.technologies.length === 0) return;
+
+    githubBtn.disabled = true;
+    submitBtn.disabled = true;
+    feedback.textContent = "Importando tecnologías...";
+    feedback.className = "text-sm text-gray-600";
+    try {
+      let ok = 0;
+      for (const t of result.technologies) {
+        const dup = await supabase.from("technologies").select("id").eq("slug", t.slug).eq("user_id", userId).maybeSingle();
+        if (dup.error) continue;
+        if (dup.data) continue;
+        const ins = await supabase.from("technologies").insert({ name: t.name, slug: t.slug, icon_key: t.slug, user_id: userId });
+        if (!ins.error) ok += 1;
+      }
+      showToast(ok > 0 ? `Tecnologías importadas: ${ok}.` : "No había tecnologías nuevas para crear.", ok > 0 ? "success" : "info");
+      clearDraft();
+      if (window.skillatlas?.clearTechnologiesCache) window.skillatlas.clearTechnologiesCache();
+      if (window.skillatlas?.bootstrapTechnologiesGrid) {
+        await window.skillatlas.bootstrapTechnologiesGrid();
+        void initTechnologyActions();
+      } else {
+        window.location.reload();
+      }
+    } catch (e: any) {
+      const msg = e?.message ? String(e.message) : "Error inesperado.";
+      feedback.textContent = `Error: ${msg}`;
+      feedback.className = "text-sm text-red-600";
+    } finally {
+      githubBtn.disabled = false;
+      submitBtn.disabled = false;
+    }
+  });
+
+  nameInput.addEventListener("keydown", (e) => {
+    if (!multiMode) return;
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const tokens = normalizeMultiTokens(nameInput.value);
+    if (tokens.length === 0) return;
+    for (const t of tokens) addMultiItem(t, toSlug(t), false);
+    nameInput.value = "";
+    seedSuggestions?.classList.add("hidden");
   });
 
   const supabase = getSupabaseBrowserClient();
@@ -128,57 +354,85 @@ async function initTechnologyForm() {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const name = nameInput.value.trim();
-    if (!name) return;
+    const singleName = nameInput.value.trim();
+    if (!multiMode && !singleName) return;
+    if (multiMode) {
+      const tokens = normalizeMultiTokens(singleName);
+      for (const t of tokens) addMultiItem(t, toSlug(t), false);
+      if (multiPicked.length === 0) {
+        feedback.textContent = "Añade al menos una tecnología (catálogo o nombres separados por coma).";
+        feedback.className = "text-sm text-amber-600 m-0";
+        nameInput.focus();
+        return;
+      }
+    }
 
     submitBtn.disabled = true;
     feedback.textContent = "Guardando...";
     feedback.className = "text-sm text-gray-600";
 
-    const slug = pickedSlug ?? toSlug(name);
-    const dup = await supabase
-      .from("technologies")
-      .select("id")
-      .eq("slug", slug)
-      .eq("user_id", userId)
-      .maybeSingle();
+    const createOne = async (name: string, slug: string) => {
+      const dup = await supabase
+        .from("technologies")
+        .select("id")
+        .eq("slug", slug)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (dup.error) return { ok: false as const, reason: userFacingDbError(dup.error.message, "Error al validar duplicado.") };
+      if (dup.data) return { ok: false as const, reason: "Ya tienes una tecnología con ese nombre (mismo slug)." };
 
-    if (dup.error) {
-      feedback.textContent = userFacingDbError(dup.error.message, "Error al validar duplicado.");
-      feedback.className = "text-sm text-red-600";
-      submitBtn.disabled = false;
-      return;
+      const kindFromCatalog = getCatalogEntryForSlug(slug)?.kind ?? null;
+      const kindFromUi =
+        (kindSelect?.value === "technology" ||
+        kindSelect?.value === "framework" ||
+        kindSelect?.value === "library" ||
+        kindSelect?.value === "package"
+          ? kindSelect.value
+          : null) ?? null;
+      const kind = kindFromCatalog ?? kindFromUi;
+      const supportsKind = kind ? await supportsTechnologiesKindColumn(supabase) : false;
+      const payload: any = { name, slug, icon_key: slug, user_id: userId };
+      if (supportsKind && kind) payload.kind = kind;
+      const { error } = await supabase.from("technologies").insert(payload);
+      if (error) {
+        return {
+          ok: false as const,
+          reason:
+            error.code === "23505"
+              ? "Conflicto de slug en la base de datos: suele indicar un índice único global en slug (heredado). En Supabase ejecuta el script docs/sql/saas-004-drop-global-slug-constraints.sql; debe quedar solo la unicidad (user_id, slug) de saas-001."
+              : userFacingDbError(error.message, "Error al guardar la tecnología."),
+        };
+      }
+      return { ok: true as const };
+    };
+
+    const targets = multiMode
+      ? [...multiPicked]
+      : [{ name: singleName, slug: pickedSlug ?? toSlug(singleName), fromCatalog: Boolean(pickedSlug) }];
+
+    let okCount = 0;
+    const errors: string[] = [];
+    for (const t of targets) {
+      feedback.textContent = multiMode ? `Guardando… (${okCount + 1}/${targets.length})` : "Guardando...";
+      const res = await createOne(t.name, t.slug);
+      if (res.ok) okCount += 1;
+      else errors.push(`${t.name}: ${res.reason}`);
     }
-    if (dup.data) {
-      feedback.textContent = "Ya tienes una tecnología con ese nombre (mismo slug).";
-      feedback.className = "text-sm text-amber-600";
-      submitBtn.disabled = false;
-      return;
-    }
 
-    const { error } = await supabase.from("technologies").insert({
-      name,
-      slug,
-      icon_key: slug,
-      user_id: userId,
-    });
+    if (okCount > 0) showToast(multiMode ? `Tecnologías creadas: ${okCount}.` : "Tecnología creada correctamente.", "success");
+    if (errors.length > 0) showToast(errors[0]!, "warning", 8000);
 
-    if (error) {
-      feedback.textContent =
-        error.code === "23505"
-          ? "Conflicto de slug en la base de datos: suele indicar un índice único global en slug (heredado). En Supabase ejecuta el script docs/sql/saas-004-drop-global-slug-constraints.sql; debe quedar solo la unicidad (user_id, slug) de saas-001."
-          : userFacingDbError(error.message, "Error al guardar la tecnología.");
-      feedback.className = "text-sm text-red-600";
-      submitBtn.disabled = false;
-      return;
-    }
+    feedback.textContent = errors.length > 0 ? `Algunas no se pudieron crear (${errors.length}).` : "Guardado.";
+    feedback.className = errors.length > 0 ? "text-sm text-amber-600 m-0" : "text-sm text-green-600 m-0";
 
-    feedback.textContent = "Tecnología creada correctamente.";
-    feedback.className = "text-sm text-green-600";
-    showToast("Tecnología creada correctamente.", "success");
     nameInput.value = "";
     pickedSlug = null;
     catalogLabelLock = null;
+    if (multiMode) {
+      multiPicked.length = 0;
+      renderChips();
+      clearDraft();
+    }
     submitBtn.disabled = false;
     if (window.skillatlas?.clearTechnologiesCache) window.skillatlas.clearTechnologiesCache();
     if (window.skillatlas?.bootstrapTechnologiesGrid) {
@@ -263,6 +517,7 @@ async function bootstrapTechnologiesGrid() {
   if (!mount) return;
 
   const countEl = document.querySelector<HTMLElement>("[data-technologies-count]");
+  const filterStackCb = document.querySelector<HTMLInputElement>("[data-tech-filter-stack]");
 
   const cacheKey = (userId: string) => `skillatlas_cache_technologies_grid_v1:${userId}`;
   const readCache = (userId: string) => {
@@ -310,6 +565,23 @@ async function bootstrapTechnologiesGrid() {
 
   const prefs = loadPrefs();
   const view = prefs.technologiesView;
+  const stackFilterKey = "skillatlas_tech_filter_stack_v1";
+  try {
+    if (filterStackCb && filterStackCb.dataset.hydrated !== "1") {
+      filterStackCb.checked = localStorage.getItem(stackFilterKey) === "1";
+      filterStackCb.dataset.hydrated = "1";
+      filterStackCb.addEventListener("change", () => {
+        try {
+          localStorage.setItem(stackFilterKey, filterStackCb.checked ? "1" : "0");
+        } catch {
+          // ignore
+        }
+        void bootstrapTechnologiesGrid().then(() => initTechnologyActions());
+      });
+    }
+  } catch {
+    // ignore
+  }
 
   const cached = readCache(userId);
   if (cached) {
@@ -328,9 +600,15 @@ async function bootstrapTechnologiesGrid() {
     return;
   }
 
-  const [techRes, conceptRes] = await Promise.all([
+  const [techRes, conceptRes, stackRes] = await Promise.all([
     supabase.from("technologies").select("id, slug, name").order("name"),
     supabase.from("concepts").select("technology_id"),
+    filterStackCb?.checked
+      ? supabase
+          .from("project_technologies")
+          .select("technology_id, projects!inner(user_id)")
+          .eq("projects.user_id", userId)
+      : Promise.resolve({ data: [], error: null } as any),
   ]);
 
   if (techRes.error) {
@@ -338,14 +616,22 @@ async function bootstrapTechnologiesGrid() {
     return;
   }
 
-  const techRows = (techRes.data ?? []) as { id: string; slug: string; name: string }[];
+  let techRows = (techRes.data ?? []) as { id: string; slug: string; name: string }[];
+  if (filterStackCb?.checked) {
+    const used = new Set<string>();
+    for (const row of (stackRes.data ?? []) as any[]) {
+      const tid = String(row?.technology_id ?? "").trim();
+      if (tid) used.add(tid);
+    }
+    techRows = techRows.filter((t) => used.has(t.id));
+  }
   const countByTechDbId = new Map<string, number>();
   for (const row of conceptRes.data ?? []) {
     const tid = (row as { technology_id: string }).technology_id;
     countByTechDbId.set(tid, (countByTechDbId.get(tid) ?? 0) + 1);
   }
 
-  const countText = `${techRows.length} total`;
+  const countText = `${techRows.length} total${filterStackCb?.checked ? " (stack)" : ""}`;
   if (countEl) countEl.textContent = countText;
 
   if (techRows.length === 0) {
@@ -371,6 +657,18 @@ async function bootstrapTechnologiesGrid() {
               const iconHtml = iconSrc
                 ? `<img src="${escHtml(iconSrc)}" alt="" class="h-5 w-5 shrink-0" loading="lazy" />`
                 : "";
+              const entry = getCatalogEntryForSlug(tech.slug);
+              const kind = entry?.kind ?? "technology";
+              const kindLabel =
+                kind === "framework" ? "Framework" : kind === "library" ? "Librería" : kind === "package" ? "Paquete" : "Tecnología";
+              const kindTone =
+                kind === "framework"
+                  ? "bg-violet-100/80 dark:bg-violet-950/40 text-violet-800 dark:text-violet-200"
+                  : kind === "library"
+                    ? "bg-sky-100/80 dark:bg-sky-950/40 text-sky-800 dark:text-sky-200"
+                    : kind === "package"
+                      ? "bg-amber-100/80 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200"
+                      : "bg-gray-100/80 dark:bg-gray-900/60 text-gray-700 dark:text-gray-200";
               const href = `/technologies/view?tech=${encodeURIComponent(tech.slug)}`;
               const conceptsLabel = i18next.t("technologies.concepts");
               return `<div class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
@@ -378,6 +676,7 @@ async function bootstrapTechnologiesGrid() {
                   <a href="${href}" class="flex items-center gap-2 min-w-0 flex-1 rounded-lg -mx-2 px-2 py-2 no-underline hover:bg-gray-50 dark:hover:bg-gray-900/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400">
                     ${iconHtml}
                     <span class="font-semibold truncate">${escHtml(tech.name)}</span>
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${kindTone}">${kindLabel}</span>
                     <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap shrink-0">${conceptsCount} ${escHtml(conceptsLabel)}</span>
                   </a>
                   <button type="button" data-tech-delete data-tech-id="${escHtml(tech.slug)}" data-tech-name="${escHtml(tech.name)}" class="inline-flex items-center justify-center rounded-lg border border-red-200 text-red-700 px-3 py-2 text-xs font-semibold hover:bg-red-50 shrink-0">Eliminar</button>
@@ -393,12 +692,33 @@ async function bootstrapTechnologiesGrid() {
             const iconHtml = iconSrc
               ? `<img src="${escHtml(iconSrc)}" alt="" class="h-5 w-5 shrink-0" loading="lazy" />`
               : "";
+            const entry = getCatalogEntryForSlug(tech.slug);
+            const kind = entry?.kind ?? "technology";
+            const kindLabel =
+              kind === "framework" ? "Framework" : kind === "library" ? "Librería" : kind === "package" ? "Paquete" : "Tecnología";
+            const kindTone =
+              kind === "framework"
+                ? "bg-violet-100/80 dark:bg-violet-950/40 text-violet-800 dark:text-violet-200"
+                : kind === "library"
+                  ? "bg-sky-100/80 dark:bg-sky-950/40 text-sky-800 dark:text-sky-200"
+                  : kind === "package"
+                    ? "bg-amber-100/80 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200"
+                    : "bg-gray-100/80 dark:bg-gray-900/60 text-gray-700 dark:text-gray-200";
             const href = `/technologies/view?tech=${encodeURIComponent(tech.slug)}`;
             const viewLabel = escHtml(i18next.t("technologies.viewDetail"));
             const conceptsLabel = escHtml(i18next.t("technologies.concepts"));
-            return `<article class="border border-gray-200/80 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 flex flex-col gap-3 shadow-sm">
+            const bg = iconSrc ? `style="position: relative; overflow: hidden;"` : `style="position: relative;"`;
+            const bgLayer = iconSrc
+              ? `<div aria-hidden="true" class="pointer-events-none absolute -right-4 -bottom-4 h-24 w-24 opacity-[0.10] dark:opacity-[0.12]" style="background: url('${escHtml(
+                  iconSrc,
+                )}') no-repeat center / contain;"></div>`
+              : "";
+            return `<article class="border border-gray-200/80 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 flex flex-col gap-3 shadow-sm" ${bg}>
+                ${bgLayer}
                 <a href="${href}" class="flex items-baseline justify-between gap-3 min-w-0 no-underline rounded-lg -m-1 p-1 hover:bg-gray-50 dark:hover:bg-gray-900/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400">
-                  <div class="flex items-center gap-2 min-w-0">${iconHtml}<h3 class="m-0 text-base font-semibold truncate text-gray-900 dark:text-gray-100">${escHtml(tech.name)}</h3></div>
+                  <div class="flex items-center gap-2 min-w-0">${iconHtml}<div class="min-w-0"><h3 class="m-0 text-base font-semibold truncate text-gray-900 dark:text-gray-100">${escHtml(
+                    tech.name,
+                  )}</h3><div class="mt-1 flex flex-wrap gap-1"><span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${kindTone}">${kindLabel}</span></div></div></div>
                   <span class="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 whitespace-nowrap shrink-0">${conceptsCount} ${conceptsLabel}</span>
                 </a>
                 <div class="flex flex-wrap items-center gap-2">

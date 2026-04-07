@@ -78,6 +78,27 @@ const technologiesCount = technologies.length;
       </div>
     </div>
 
+    <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-5 shadow-sm">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <div class="space-y-1">
+          <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase">
+            Stack
+          </p>
+          <h2 class="m-0 text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Tecnologías más usadas
+          </h2>
+          <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-2xl">
+            Prioridad: proyectos + qué tecnologías usas realmente. (También muestra pesos GitHub cuando hay importaciones.)
+          </p>
+        </div>
+      </div>
+      <div class="mt-4 rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/60 dark:bg-gray-950/40 p-4">
+        <div data-dashboard-tech-usage class="space-y-2">
+          <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="common.loading">Cargando…</p>
+        </div>
+      </div>
+    </div>
+
     <div
       class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-5 shadow-sm space-y-4"
       data-dashboard-charts-root
@@ -101,32 +122,32 @@ const technologiesCount = technologies.length;
           Métricas
         </p>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div class="rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/60 dark:bg-gray-950/40 p-3 min-h-[5.5rem] flex flex-col justify-between">
+          <div class="rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/60 dark:bg-gray-950/40 p-3 min-h-22 flex flex-col justify-between">
             <p class="m-0 text-[11px] font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide" data-i18n="dashboard.kpi.embedsLabel">Evidencias</p>
             <p class="m-0 text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100" data-dashboard-kpi-embeds>—</p>
             <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="dashboard.kpi.embedsSub">Total embeds</p>
           </div>
-          <div class="rounded-xl border border-indigo-200/70 dark:border-indigo-900/50 bg-indigo-50/50 dark:bg-indigo-950/25 p-3 min-h-[5.5rem] flex flex-col justify-between">
+          <div class="rounded-xl border border-indigo-200/70 dark:border-indigo-900/50 bg-indigo-50/50 dark:bg-indigo-950/25 p-3 min-h-22 flex flex-col justify-between">
             <p class="m-0 text-[11px] font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide" data-i18n="dashboard.kpi.projectsEvidenceLabel">Proyectos con evidencia</p>
             <p class="m-0 text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100" data-dashboard-kpi-projects-evidence>—</p>
             <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="dashboard.kpi.projectsEvidenceSub">Con al menos un embed</p>
           </div>
-          <div class="rounded-xl border border-emerald-200/60 dark:border-emerald-900/40 bg-emerald-50/40 dark:bg-emerald-950/20 p-3 min-h-[5.5rem] flex flex-col justify-between">
+          <div class="rounded-xl border border-emerald-200/60 dark:border-emerald-900/40 bg-emerald-50/40 dark:bg-emerald-950/20 p-3 min-h-22 flex flex-col justify-between">
             <p class="m-0 text-[11px] font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide" data-i18n="dashboard.kpi.emptyTechsLabel">Techs sin conceptos</p>
             <p class="m-0 text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100" data-dashboard-kpi-empty-techs>—</p>
             <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="dashboard.kpi.emptyTechsSub">A rellenar</p>
           </div>
-          <div class="rounded-xl border border-violet-200/70 dark:border-violet-900/50 bg-violet-50/50 dark:bg-violet-950/25 p-3 min-h-[5.5rem] flex flex-col justify-between">
+          <div class="rounded-xl border border-violet-200/70 dark:border-violet-900/50 bg-violet-50/50 dark:bg-violet-950/25 p-3 min-h-22 flex flex-col justify-between">
             <p class="m-0 text-[11px] font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide" data-i18n="dashboard.kpi.masteryLabel">Dominio</p>
             <p class="m-0 text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100"><span data-dashboard-kpi-mastery-pct>—</span><span class="text-base font-semibold">%</span></p>
             <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400 leading-snug" data-dashboard-kpi-mastery-sub>—</p>
           </div>
-          <div class="rounded-xl border border-indigo-200/60 dark:border-indigo-900/40 bg-indigo-50/40 dark:bg-indigo-950/20 p-3 min-h-[5.5rem] flex flex-col justify-between">
+          <div class="rounded-xl border border-indigo-200/60 dark:border-indigo-900/40 bg-indigo-50/40 dark:bg-indigo-950/20 p-3 min-h-22 flex flex-col justify-between">
             <p class="m-0 text-[11px] font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide" data-i18n="dashboard.kpi.linkedLabel">En proyectos</p>
             <p class="m-0 text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100" data-dashboard-kpi-concepts-linked>—</p>
             <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="dashboard.kpi.linkedSub">Conceptos vinculados</p>
           </div>
-          <div class="rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/60 dark:bg-gray-950/40 p-3 min-h-[5.5rem] flex flex-col justify-between col-span-2 sm:col-span-1 lg:col-span-1">
+          <div class="rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/60 dark:bg-gray-950/40 p-3 min-h-22 flex flex-col justify-between col-span-2 sm:col-span-1 lg:col-span-1">
             <p class="m-0 text-[11px] font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide" data-i18n="dashboard.kpi.soloLabel">Solo stack</p>
             <p class="m-0 text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100" data-dashboard-kpi-solo-concepts>—</p>
             <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="dashboard.kpi.soloSub">Sin proyecto</p>
@@ -134,7 +155,7 @@ const technologiesCount = technologies.length;
         </div>
         <div class="rounded-xl border border-dashed border-amber-200/80 dark:border-amber-800/50 bg-amber-50/20 dark:bg-amber-950/10 px-3 py-2">
           <p class="m-0 text-[11px] font-semibold text-amber-900/90 dark:text-amber-200/90 mb-1.5" data-i18n="dashboard.kpi.emptyTechsHint">Enlaces rápidos (hasta 5)</p>
-          <div class="flex flex-wrap gap-1 min-h-[1.5rem]" data-dashboard-kpi-empty-techs-list></div>
+          <div class="flex flex-wrap gap-1 min-h-6" data-dashboard-kpi-empty-techs-list></div>
         </div>
       </div>
 

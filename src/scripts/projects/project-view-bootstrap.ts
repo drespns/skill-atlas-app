@@ -379,6 +379,7 @@ export async function bootstrapProjectDetailPage() {
       <div class="flex flex-wrap gap-2">${linkedTechs.length > 0 ? techPillsHtml : `<p class="m-0 text-xs text-gray-500 dark:text-gray-400">Aún no has asociado tecnologías.</p>`}</div>
       <div class="flex flex-wrap items-center gap-2 gap-y-2">
         <button type="button" data-project-tech-picker-open class="inline-flex items-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-950/90 px-2.5 py-1.5 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">+ Añadir tecnología</button>
+        <button type="button" data-project-tech-github-import class="inline-flex items-center rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-950/25 px-2.5 py-1.5 text-xs font-semibold text-indigo-800 dark:text-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/35">Importar desde GitHub</button>
         ${
           allTechRows.length === 0
             ? `<span class="text-xs text-amber-700 dark:text-amber-200">Crea tecnologías desde la sección Tecnologías o al asociar aquí.</span>`

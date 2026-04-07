@@ -19,10 +19,15 @@
           <span class="shrink-0 font-medium" data-i18n="cv.previewTemplateLabel">Plantilla</span>
           <select
             data-cv-preview-template
-            class="max-w-[12rem] rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs font-semibold text-gray-900 dark:text-gray-100"
+            class="max-w-48 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs font-semibold text-gray-900 dark:text-gray-100"
           >
             <option value="classic" data-i18n="cv.templateClassic">Clásica</option>
             <option value="minimal" data-i18n="cv.templateMinimal">Minimal (beta)</option>
+            <option value="modern" data-i18n="cv.templateModern">Moderna</option>
+            <option value="compact" data-i18n="cv.templateCompact">Compacta</option>
+            <option value="mono" data-i18n="cv.templateMono">Mono</option>
+            <option value="sidebar" data-i18n="cv.templateSidebar">Sidebar</option>
+            <option value="serif" data-i18n="cv.templateSerif">Serif</option>
           </select>
         </label>
       </div>
@@ -35,7 +40,10 @@
       </button>
     </div>
     <div class="flex min-h-0 flex-1 flex-col md:flex-row">
-      <div data-cv-preview-body class="min-h-0 min-w-0 flex-1 overflow-auto p-4 max-h-[calc(90vh-3.25rem)] md:max-h-[calc(90vh-3.25rem)]"></div>
+      <div
+        data-cv-preview-body
+        class="min-h-0 min-w-0 flex-1 overflow-auto overflow-x-hidden p-4 max-h-[calc(90vh-3.25rem)] md:max-h-[calc(90vh-3.25rem)]"
+      ></div>
       <aside
         data-cv-preview-section-rail
         class="shrink-0 border-t border-gray-200/80 dark:border-gray-800 md:border-t-0 md:border-l md:w-52 print:hidden"

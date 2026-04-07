@@ -10,7 +10,39 @@ Documento orientado al **historial** de lo implementado y a **ideas** sin orden 
 
 ## Registro de versiones (historial de producto)
 
-### v0.100.0 (actual)
+### v0.110.0 (actual)
+
+- **Proyectos / Tecnologías — import GitHub (beta):** modal “Importar stack desde GitHub” (API de GitHub Tree/Contents + lectura de manifests típicos) para detectar tecnologías y aplicarlas:
+  - Desde **Proyectos**: botón “Importar desde GitHub” en el bloque de stack, crea tecnologías faltantes y las asocia al proyecto.
+  - Desde **Tecnologías**: botón “Importar desde GitHub” en el formulario, crea tecnologías faltantes en el catálogo.
+- **Proyectos — import GitHub → evidencia lista:** al importar stack desde GitHub en un proyecto, se rellena el input de evidencia con la URL del repo y (si no existía) se crea una evidencia tipo enlace “Repositorio GitHub”.
+- **Proyectos — ponderación GitHub (local):** al importar stack desde GitHub se guarda la ponderación por lenguajes (GitHub Languages API) en `localStorage` por proyecto; `/app` puede agregarlas.
+- **Dashboard (`/app`) — GitHub (scope + decimales):** vista “Por GitHub (lenguajes)” con:
+  - Selector de **alcance**: “Todos los proyectos” o un **proyecto concreto** (por slug) usando los pesos guardados en `localStorage`.
+  - Porcentajes con **1 decimal** (p. ej. `98.7%`), simplificando cuando acaba en `.0`.
+- **Dashboard (`/app`) — pesos GitHub auto‑recalculables:** si existe `pctByLanguage`, el dashboard re‑genera `techWeights` con el mapeo actual y lo persiste, evitando “reimportar” cuando se amplía el mapeo (ej. añadir Astro).
+- **GitHub languages → tecnologías:** mapeo ampliado para incluir `Astro → astro` (además de TypeScript/JavaScript/CSS…).
+- **Tecnologías — multiselect quality:** modo múltiple con chips persistidos temporalmente en `localStorage` (sobrevive refresh) y fix de validación HTML (`required`) para evitar “Completa este campo” cuando hay chips.
+- **Subtecnologías (MVP):** selector de **Tipo** (Tecnología / Framework / Librería / Paquete) en `/technologies` y ampliación del catálogo con entradas extra **sin seed** todavía (aparecen como “Catálogo”); badges visibles en el desplegable.
+- **Dashboard (`/app`) — uso acumulado:** bloque “Tecnologías más usadas (por proyectos)” con ranking (Top 12) por número de proyectos donde aparece cada tecnología.
+- **Dashboard (`/app`) — stack primero:** el bloque de Stack aparece antes que los gráficos/visualizaciones; el resto queda como secundario.
+- **Catálogo (auto):** `EXTRA_CATALOG` se genera automáticamente desde `public/icons/*.svg` (script `gen:tech-catalog` + `prebuild`).
+- **Supabase (schema):** script `docs/sql/saas-019-technologies-kind.sql` añade `technologies.kind` (compatible hacia atrás; el cliente lo usa si la columna existe).
+- **CV (`/cv`) — editor menos ruidoso:** secciones **Proyectos**, **Experiencia** y **Educación** plegadas por defecto para reducir fatiga visual en viewport.
+- **CV (`/cv`) — impresión/PDF (fixes):**
+  - Exportación robusta en Chromium: impresión desde **iframe aislado** (evita hojas en blanco por overlays/transforms).
+  - Preview sin scroll horizontal sobrante.
+  - Plantillas nuevas con nombres i18n (ES/EN): Moderna, Compacta, Mono, Sidebar, Serif.
+  - Impresión: se evita que la pantalla móvil (“Pensado para pantallas grandes”) se cuele en el PDF.
+- **Proyectos — picker tecnologías:** `technologyPickerModal` con **modo múltiple** para asociar varias tecnologías de una pasada.
+- **Navegación /projects (fixes):** mitigaciones para clicks/hover “muertos” al volver desde `/projects/view` bajo View Transitions:
+  - Cleanup global de overlays (cierra `dialog[open]` y resetea `[data-modal-root]`) en `astro:before-swap`.
+  - Navegación forzada en lista/cards CSR y refresh de caché “en background” sin bucles (bypass de caché).
+- **Command palette:** atajo adaptado a plataforma (**`⌘K` en Mac**, **`Ctrl+K` en Windows/Linux**) y overlay/panel con fondo “glass” (blur + gradientes suaves).
+- **Banner global (fixes):** cierre sin dejar hueco (sin drift de `max-h-*`) y sin “flash” al recargar si ya estaba dismiss en `localStorage` (CSS crítico inline).
+- **Landing:** ajuste de espaciado en el subtítulo del hero (“Organiza stack y conceptos…”).
+
+### v0.100.0
 
 - **Footer:** `clip-path` superior en forma de V (`polygon(50% 17%, …)`); capas de gradiente y halos; sin enlace “código abierto” duplicado junto al stack.
 - **Banner global:** misma línea estética que el footer (halos indigo/violeta, fondo en capas, anillo suave, sombra); `config/banner.ts` en **0.100.0**.

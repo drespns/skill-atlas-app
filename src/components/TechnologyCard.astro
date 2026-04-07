@@ -1,9 +1,22 @@
 ---
 import { getTechnologyIconSrc } from "../config/icons";
 import { dataSource } from "../data";
+import { getCatalogEntryForSlug } from "../scripts/technologies/technology-detail/concept-seeds";
 
 const { technology } = Astro.props;
 const iconSrc = getTechnologyIconSrc(technology);
+const entry = getCatalogEntryForSlug(String(technology.id ?? ""));
+const kind = entry?.kind ?? "technology";
+const kindLabel =
+  kind === "framework" ? "Framework" : kind === "library" ? "Librería" : kind === "package" ? "Paquete" : "Tecnología";
+const kindTone =
+  kind === "framework"
+    ? "bg-violet-100/80 dark:bg-violet-950/40 text-violet-800 dark:text-violet-200"
+    : kind === "library"
+      ? "bg-sky-100/80 dark:bg-sky-950/40 text-sky-800 dark:text-sky-200"
+      : kind === "package"
+        ? "bg-amber-100/80 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200"
+        : "bg-gray-100/80 dark:bg-gray-900/60 text-gray-700 dark:text-gray-200";
 
 const detailHref =
   dataSource === "supabase"
@@ -12,14 +25,30 @@ const detailHref =
 ---
 
 <article
-  class="border border-gray-200/80 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 flex flex-col gap-3 shadow-sm"
+  class="relative overflow-hidden border border-gray-200/80 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 flex flex-col gap-3 shadow-sm"
 >
+  {
+    iconSrc ? (
+      <div
+        aria-hidden="true"
+        class="pointer-events-none absolute -right-4 -bottom-4 h-24 w-24 opacity-[0.10] dark:opacity-[0.12]"
+        style={`background: url('${iconSrc}') no-repeat center / contain;`}
+      />
+    ) : null
+  }
   <div class="flex items-baseline justify-between gap-3">
     <div class="flex items-center gap-2 min-w-0">
       {iconSrc ? (
         <img src={iconSrc} alt="" class="h-5 w-5 shrink-0" loading="lazy" />
       ) : null}
-      <h3 class="m-0 text-base font-semibold truncate">{technology.name}</h3>
+      <div class="min-w-0">
+        <h3 class="m-0 text-base font-semibold truncate">{technology.name}</h3>
+        <div class="mt-1 flex flex-wrap gap-1">
+          <span class={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${kindTone}`}>
+            {kindLabel}
+          </span>
+        </div>
+      </div>
     </div>
     <span
       class="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 whitespace-nowrap"

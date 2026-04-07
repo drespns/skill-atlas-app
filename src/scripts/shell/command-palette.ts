@@ -72,6 +72,16 @@ function initCommandPalette() {
   if (!dialog || !input || !list || !closeBtn) return;
   root.dataset.paletteBound = "1";
 
+  // Placeholder con shortcut adaptado a la plataforma.
+  try {
+    const isApple = document.documentElement.dataset.platform === "apple";
+    const shortcut = isApple ? "⌘K" : "Ctrl+K";
+    const base = input.getAttribute("placeholder") || "";
+    input.setAttribute("placeholder", base.includes("K") ? base : `${base} (${shortcut})`);
+  } catch {
+    // ignore
+  }
+
   let open = false;
   let allItems: PaletteItem[] = [];
   let filtered: PaletteItem[] = [];

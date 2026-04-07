@@ -53,7 +53,7 @@ type CvProfile = {
   links?: { label: string; url: string }[];
   cvLinkSlots?: string[];
   socialLinkDisplay?: CvSocialLinkDisplay;
-  cvTemplate?: "classic" | "minimal";
+  cvTemplate?: "classic" | "minimal" | "modern" | "compact" | "mono" | "sidebar" | "serif";
   cvSectionVisibility?: Record<string, boolean>;
   cvDocumentSectionOrder?: string[];
   summary?: string;
@@ -481,8 +481,18 @@ async function boot() {
       inp.value = slots[idx] ?? "";
     });
     if (socialDisplaySelect) socialDisplaySelect.value = cvProfile.socialLinkDisplay ?? "both";
-    if (templateSelect) templateSelect.value = cvProfile.cvTemplate === "minimal" ? "minimal" : "classic";
-    if (previewTemplateSelect) previewTemplateSelect.value = cvProfile.cvTemplate === "minimal" ? "minimal" : "classic";
+    const tpl =
+      cvProfile.cvTemplate === "classic" ||
+      cvProfile.cvTemplate === "minimal" ||
+      cvProfile.cvTemplate === "modern" ||
+      cvProfile.cvTemplate === "compact" ||
+      cvProfile.cvTemplate === "mono" ||
+      cvProfile.cvTemplate === "sidebar" ||
+      cvProfile.cvTemplate === "serif"
+        ? cvProfile.cvTemplate
+        : "classic";
+    if (templateSelect) templateSelect.value = tpl;
+    if (previewTemplateSelect) previewTemplateSelect.value = tpl;
     if (printMaxPagesSelect) printMaxPagesSelect.value = String(clampCvPrintMaxPages(cvProfile.cvPrintMaxPages));
     document.querySelectorAll<HTMLInputElement>("input[data-cv-sec-show]").forEach((cb) => {
       const k = cb.dataset.cvSecShow ?? "";
@@ -771,8 +781,31 @@ async function boot() {
     const showBlock = (key: string) => (vis as Record<string, boolean>)[key] !== false;
 
     if (docEl) {
-      docEl.classList.remove("cv-template-classic", "cv-template-minimal");
-      docEl.classList.add(cvProfile.cvTemplate === "minimal" ? "cv-template-minimal" : "cv-template-classic");
+      docEl.classList.remove(
+        "cv-template-classic",
+        "cv-template-minimal",
+        "cv-template-modern",
+        "cv-template-compact",
+        "cv-template-mono",
+        "cv-template-sidebar",
+        "cv-template-serif",
+      );
+      const tpl = cvProfile.cvTemplate ?? "classic";
+      const cls =
+        tpl === "minimal"
+          ? "cv-template-minimal"
+          : tpl === "modern"
+            ? "cv-template-modern"
+            : tpl === "compact"
+              ? "cv-template-compact"
+              : tpl === "mono"
+                ? "cv-template-mono"
+                : tpl === "sidebar"
+                  ? "cv-template-sidebar"
+                  : tpl === "serif"
+                    ? "cv-template-serif"
+                    : "cv-template-classic";
+      docEl.classList.add(cls);
       const maxP = clampCvPrintMaxPages(cvProfile.cvPrintMaxPages);
       docEl.style.setProperty("--cv-print-scale", String(cvPrintTypographicScale(maxP)));
       docEl.dataset.cvPrintMaxPages = String(maxP);
@@ -1311,8 +1344,13 @@ async function boot() {
     });
 
     templateSelect?.addEventListener("change", () => {
-      cvProfile.cvTemplate = templateSelect.value === "minimal" ? "minimal" : "classic";
-      if (previewTemplateSelect) previewTemplateSelect.value = cvProfile.cvTemplate === "minimal" ? "minimal" : "classic";
+      const v = String(templateSelect.value ?? "").trim();
+      const next =
+        v === "classic" || v === "minimal" || v === "modern" || v === "compact" || v === "mono" || v === "sidebar" || v === "serif"
+          ? v
+          : "classic";
+      cvProfile.cvTemplate = next as any;
+      if (previewTemplateSelect) previewTemplateSelect.value = next;
       schedule();
     });
 
@@ -1390,8 +1428,18 @@ async function boot() {
   bindProfileInput();
 
   previewTemplateSelect?.addEventListener("change", () => {
-    const v = previewTemplateSelect.value === "minimal" ? "minimal" : "classic";
-    cvProfile = { ...cvProfile, cvTemplate: v };
+    const raw = String(previewTemplateSelect.value ?? "").trim();
+    const v =
+      raw === "classic" ||
+      raw === "minimal" ||
+      raw === "modern" ||
+      raw === "compact" ||
+      raw === "mono" ||
+      raw === "sidebar" ||
+      raw === "serif"
+        ? raw
+        : "classic";
+    cvProfile = { ...cvProfile, cvTemplate: v as any };
     if (templateSelect) templateSelect.value = v;
     persistProfile();
     renderDocument();
@@ -1552,7 +1600,148 @@ async function boot() {
     renderDocument();
   });
 
-  printBtn?.addEventListener("click", () => window.print());
+  printBtn?.addEventListener("click", async () => {
+    // Print in an isolated iframe to avoid blank pages caused by:
+    // - `display:none` / overlays / view transitions
+    // - transforms and complex fixed layouts
+    // - timing issues in Chromium print preview
+    try {
+      document.body.classList.add("cv-print-mode");
+      renderDocument();
+      docEl?.classList.remove("hidden");
+    } catch {
+      // ignore
+    }
+
+    const sourceDoc = docEl?.cloneNode(true) as HTMLElement | null;
+    if (!sourceDoc) {
+      window.print();
+      return;
+    }
+    sourceDoc.classList.remove("hidden");
+
+    // Create hidden iframe
+    const frame = document.createElement("iframe");
+    frame.setAttribute("aria-hidden", "true");
+    frame.tabIndex = -1;
+    frame.style.position = "fixed";
+    frame.style.right = "0";
+    frame.style.bottom = "0";
+    frame.style.width = "0";
+    frame.style.height = "0";
+    frame.style.border = "0";
+    frame.style.opacity = "0";
+    frame.style.pointerEvents = "none";
+    document.body.appendChild(frame);
+
+    const headHtml = Array.from(document.head.querySelectorAll('link[rel="stylesheet"], style'))
+      .map((n) => {
+        if (n.tagName.toLowerCase() === "link") {
+          const l = n as HTMLLinkElement;
+          const href = l.href;
+          if (!href) return "";
+          return `<link rel="stylesheet" href="${href}">`;
+        }
+        return `<style>${(n as HTMLStyleElement).textContent ?? ""}</style>`;
+      })
+      .join("\n");
+
+    // For printing: fill width of the printable area.
+    // We intentionally avoid "fit-to-pages" scaling here; the user controls margins in print dialog.
+    const scale = 1;
+
+    const html = `<!doctype html>
+<html lang="${document.documentElement.lang || "es"}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    ${headHtml}
+    <style>
+      /* Force light mode for consistent print */
+      html, body { background:#fff !important; color:#111827 !important; color-scheme: light !important; }
+      body { margin: 0; }
+      /* Ensure the document is printable even if hidden in the app */
+      [data-cv-document]{ display:block !important; }
+      @page { size: A4; margin: 14mm 14mm 16mm; }
+      /* Make sure the document uses the full printable width. */
+      [data-cv-document], [data-public-cv-doc]{
+        transform: none !important;
+        width: 100% !important;
+        max-width: none !important;
+      }
+      /* Avoid accidental horizontal scroll/clipping in the print engine. */
+      html, body { overflow: visible !important; }
+      /* Print in this iframe should look like the preview card (centered, full width). */
+      .cv-print-wrap{
+        box-sizing: border-box;
+        width: 100%;
+      }
+      .cv-print-wrap [data-cv-document]{
+        margin: 0 auto !important;
+      }
+      /* Prevent any global "cv-print-mode" hacks from leaking via imported CSS. */
+      @media print{
+        body *{ visibility: visible !important; }
+        [data-cv-document], [data-public-cv-doc]{ position: static !important; left: auto !important; top: auto !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="cv-print-wrap" style="--cv-print-scale:${String(scale)}">
+      ${sourceDoc.outerHTML}
+    </div>
+  </body>
+</html>`;
+
+    const w = frame.contentWindow;
+    const d = frame.contentDocument;
+    if (!w || !d) {
+      frame.remove();
+      window.print();
+      return;
+    }
+
+    d.open();
+    d.write(html);
+    d.close();
+
+    const cleanup = () => {
+      try {
+        frame.remove();
+      } catch {
+        // ignore
+      }
+    };
+
+    await new Promise<void>((resolve) => {
+      // Wait for iframe resources to load (best-effort)
+      const done = () => resolve();
+      frame.onload = done;
+      // Fallback timeout (avoid getting stuck)
+      window.setTimeout(done, 800);
+    });
+
+    try {
+      // A couple frames for layout
+      await new Promise<void>((r) => w.requestAnimationFrame(() => r()));
+      await new Promise<void>((r) => w.requestAnimationFrame(() => r()));
+    } catch {
+      // ignore
+    }
+
+    try {
+      w.focus();
+      w.print();
+    } finally {
+      // Cleanup after print closes (or immediately if not supported)
+      try {
+        w.addEventListener("afterprint", cleanup, { once: true } as any);
+        window.setTimeout(cleanup, 2000);
+      } catch {
+        cleanup();
+      }
+    }
+  });
 }
 
 const start = () => void boot();

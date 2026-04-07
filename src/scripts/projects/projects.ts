@@ -252,7 +252,7 @@ async function initProjectForm() {
   });
 }
 
-async function bootstrapProjectsList() {
+async function bootstrapProjectsList(opts?: { bypassCache?: boolean }) {
   const mount = document.querySelector<HTMLElement>("[data-projects-csr-mount]");
   if (!mount) return;
 
@@ -306,7 +306,7 @@ async function bootstrapProjectsList() {
   const prefs = loadPrefs();
   const view = prefs.projectsView;
 
-  const cached = readCache(userId);
+  const cached = opts?.bypassCache ? null : readCache(userId);
   if (cached) {
     if (view === "list") {
       mount.className = "w-full space-y-2";
@@ -315,10 +315,18 @@ async function bootstrapProjectsList() {
     }
     mount.innerHTML = cached.html;
     if (countEl) countEl.textContent = cached.countText;
-    // Refresh in background
-    setTimeout(() => {
-      void bootstrapProjectsList();
-    }, 0);
+    // Refresh in background once (avoid recursive cache loop).
+    if (mount.dataset.projectsBgRefresh !== "1") {
+      mount.dataset.projectsBgRefresh = "1";
+      setTimeout(() => {
+        void bootstrapProjectsList({ bypassCache: true });
+        try {
+          delete mount.dataset.projectsBgRefresh;
+        } catch {
+          // ignore
+        }
+      }, 0);
+    }
     return;
   }
 
@@ -463,7 +471,7 @@ async function bootstrapProjectsList() {
             const coverBgStyle = coverUrl
               ? ` style="background-image:url('${cssUrlInStyleAttr(coverUrl)}')"`
               : "";
-            return `<article class="project-list-card border border-gray-200/80 dark:border-gray-800 rounded-xl ${cardCoverMod} shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
+            return `<article class="project-list-card border border-gray-200/80 dark:border-gray-800 rounded-xl ${cardCoverMod} shadow-sm ring-1 ring-black/3 dark:ring-white/4">
               <div class="project-list-card__bg"${coverBgStyle} aria-hidden="true"></div>
               <div class="project-list-card__body p-4 sm:p-5">
               <div class="space-y-2 min-w-0">
@@ -488,6 +496,32 @@ async function bootstrapProjectsList() {
           .join("");
   mount.innerHTML = html;
   writeCache(userId, html, countText);
+}
+
+function forceNavigateFromProjectsList() {
+  const mount = document.querySelector<HTMLElement>("[data-projects-csr-mount]");
+  if (!mount) return;
+  if (mount.dataset.forceNavBound === "1") return;
+  mount.dataset.forceNavBound = "1";
+
+  // View Transitions / router can occasionally "eat" these dynamic links.
+  // Use capture to run before any bubbling preventDefault/stopPropagation.
+  mount.addEventListener(
+    "click",
+    (ev) => {
+      if (ev.defaultPrevented) return;
+      if (ev.button !== 0) return;
+      if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      const t = ev.target as HTMLElement | null;
+      const a = t?.closest?.("a") as HTMLAnchorElement | null;
+      if (!a) return;
+      const href = a.getAttribute("href") ?? "";
+      if (!href.startsWith("/projects/view")) return;
+      ev.preventDefault();
+      window.location.href = href;
+    },
+    { capture: true },
+  );
 }
 
 window.skillatlas = window.skillatlas ?? {};
@@ -518,6 +552,7 @@ window.skillatlas.clearProjectsCache = () => {
 };
 
 function bootProjectsPage() {
+  forceNavigateFromProjectsList();
   void initProjectForm();
   void bootstrapProjectsList();
 }

@@ -32,6 +32,36 @@ declare global {
 
 document.addEventListener("astro:after-swap", () => syncGlobalBannerFromStorage(), { capture: true });
 
+function cleanupZombieOverlays() {
+  // With Astro View Transitions, DOM from the previous page can linger briefly.
+  // If a <dialog> remains open, its backdrop can block clicks/hover on the next page.
+  try {
+    document.querySelectorAll<HTMLDialogElement>("dialog[open]").forEach((d) => {
+      try {
+        d.close();
+      } catch {
+        // ignore
+      }
+    });
+  } catch {
+    // ignore
+  }
+
+  // Also clear our shared modal root (core/ui-feedback.ts).
+  try {
+    const root = document.querySelector<HTMLElement>("[data-modal-root]");
+    if (root) {
+      root.classList.add("hidden");
+      root.classList.remove("flex");
+      root.innerHTML = "";
+    }
+  } catch {
+    // ignore
+  }
+}
+
+document.addEventListener("astro:before-swap", cleanupZombieOverlays as any, { capture: true });
+
 async function bootClient() {
   syncGlobalBannerFromStorage();
   initGlobalBannerCloseDelegationOnce();

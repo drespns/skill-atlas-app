@@ -105,7 +105,7 @@ export type CvSectionVisibilityV1 = {
 
 export type CvSocialLinkDisplayV1 = "url" | "icon" | "both";
 
-export type CvTemplateIdV1 = "classic" | "minimal";
+export type CvTemplateIdV1 = "classic" | "minimal" | "modern" | "compact" | "mono" | "sidebar" | "serif";
 
 export type CvProfileV1 = {
   headline?: string;
@@ -302,7 +302,16 @@ function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
   if (disp === "url" || disp === "icon" || disp === "both") out.socialLinkDisplay = disp;
 
   const tpl = r.cvTemplate;
-  if (tpl === "classic" || tpl === "minimal") out.cvTemplate = tpl;
+  if (
+    tpl === "classic" ||
+    tpl === "minimal" ||
+    tpl === "modern" ||
+    tpl === "compact" ||
+    tpl === "mono" ||
+    tpl === "sidebar" ||
+    tpl === "serif"
+  )
+    out.cvTemplate = tpl;
 
   if (r.cvSectionVisibility && typeof r.cvSectionVisibility === "object") {
     const v = r.cvSectionVisibility as Record<string, unknown>;

@@ -49,6 +49,13 @@ const technologies = mockTechnologies.map((t) => ({
         </div>
       ) : null}
 
+      {dataSource === "supabase" ? (
+        <label class="hidden sm:inline-flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-300 select-none">
+          <input type="checkbox" class="accent-indigo-600" data-tech-filter-stack />
+          Solo en mi stack
+        </label>
+      ) : null}
+
       <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-900" data-technologies-count>
         {dataSource === "supabase" ? "…" : `${technologies.length} total`}
       </span>
@@ -66,8 +73,42 @@ const technologies = mockTechnologies.map((t) => ({
       <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
         Elige una tecnología del catálogo (hay plantilla de conceptos) o escribe un nombre libre. El <strong>slug</strong> se ajusta solo al elegir del catálogo.
       </p>
+      <div class="flex items-center justify-between gap-3">
+        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400">
+          Tip: en modo múltiple, escribe varios nombres separados por coma y pulsa Enter.
+        </p>
+        <div class="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            data-tech-github-import
+            class="inline-flex items-center rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-950/25 px-2.5 py-1.5 text-xs font-semibold text-indigo-800 dark:text-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/35"
+          >
+            Importar desde GitHub
+          </button>
+          <label class="inline-flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300 select-none">
+            <input type="checkbox" class="accent-indigo-600" data-tech-multi-toggle />
+            Modo múltiple
+          </label>
+        </div>
+      </div>
       <div class="flex flex-col md:flex-row gap-2">
         <div class="relative flex-1 min-w-0" data-tech-seed-wrap>
+          <div class="flex flex-wrap items-center gap-2 mb-2">
+            <label class="inline-flex items-center gap-2 text-[11px] font-semibold text-gray-600 dark:text-gray-400">
+              Tipo
+              <select
+                data-tech-kind
+                class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-2 py-1 text-[11px] font-semibold text-gray-800 dark:text-gray-200"
+              >
+                <option value="all">Todo</option>
+                <option value="technology">Tecnología</option>
+                <option value="framework">Framework</option>
+                <option value="library">Librería</option>
+                <option value="package">Paquete</option>
+              </select>
+            </label>
+            <span class="text-[11px] text-gray-500 dark:text-gray-400">“Librerías/paquetes” = subtecnologías.</span>
+          </div>
           <input
             name="name"
             type="text"
@@ -79,6 +120,7 @@ const technologies = mockTechnologies.map((t) => ({
             class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950"
             required
           />
+          <div data-tech-multi-chips class="hidden mt-2 flex-wrap gap-2"></div>
           <ul
             data-tech-seed-suggestions
             class="hidden absolute left-0 right-0 top-full z-30 mt-1 max-h-[min(70vh,28rem)] overflow-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 py-1 shadow-lg text-left"

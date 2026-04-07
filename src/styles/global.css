@@ -48,6 +48,20 @@ html[data-motion="reduced"] [data-app-header] {
   transition-duration: 0.001ms !important;
 }
 
+/* Plataforma: mostrar Ctrl vs ⌘ según OS. */
+html[data-platform="apple"] [data-modkey="cmd"] {
+  display: inline !important;
+}
+html[data-platform="apple"] [data-modkey="ctrl"] {
+  display: none !important;
+}
+html[data-platform="other"] [data-modkey="ctrl"] {
+  display: inline !important;
+}
+html[data-platform="other"] [data-modkey="cmd"] {
+  display: none !important;
+}
+
 /* Nav activo: el cliente actualiza `data-nav-active` en cada ruta (View Transitions). */
 [data-header-nav] .header-nav-link[data-nav-active="true"],
 [data-app-header] .header-admin-link[data-nav-active="true"] {
@@ -388,6 +402,31 @@ dialog[data-project-concepts-dialog].project-concepts-dialog[open] .project-conc
     display: none !important;
   }
 
+  /* Nunca imprimir la pantalla móvil (puede tapar el CV en el print preview). */
+  [data-mobile-landing-screen] {
+    display: none !important;
+  }
+
+  /* Print robusto: algunos navegadores “pierden” el contenido si hay overlays/fixed/transforms.
+     En modo impresión del CV, ocultamos todo y dejamos visible solo el documento. */
+  body.cv-print-mode * {
+    visibility: hidden !important;
+  }
+  body.cv-print-mode [data-cv-document],
+  body.cv-print-mode [data-public-cv-doc],
+  body.cv-print-mode [data-cv-document] *,
+  body.cv-print-mode [data-public-cv-doc] * {
+    visibility: visible !important;
+  }
+  body.cv-print-mode [data-cv-document],
+  body.cv-print-mode [data-public-cv-doc] {
+    /* `hidden` en Tailwind = `display:none`; `visibility` no lo revierte. */
+    display: block !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+  }
+
   @page {
     size: A4;
     margin: 14mm 14mm 16mm;
@@ -409,7 +448,10 @@ dialog[data-project-concepts-dialog].project-concepts-dialog[open] .project-conc
   /* Escala tipográfica del CV según páginas objetivo + jerarquía por sección */
   body.cv-print-mode [data-cv-document],
   body.cv-print-mode [data-public-cv-doc] {
-    font-size: calc(10.5pt * var(--cv-print-scale, 1));
+    /* Print: escalado real del documento para acercarse al objetivo de páginas. */
+    transform: scale(var(--cv-print-scale, 1)) !important;
+    transform-origin: top left !important;
+    /* No compensamos el ancho: evita scroll/espacio lateral raro en preview/print dialogs. */
   }
 
   body.cv-print-mode [data-cv-weight="support"] {
@@ -452,7 +494,11 @@ dialog[data-project-concepts-dialog].project-concepts-dialog[open] .project-conc
 /* CV: escala tipográfica (vista previa alineada con impresión) */
 [data-cv-document],
 [data-public-cv-doc] {
-  font-size: calc(0.9375rem * var(--cv-print-scale, 1));
+  /* Tailwind usa tamaños en `rem` (no heredan de `font-size` del contenedor).
+     Para que el control "Máximo de páginas (objetivo)" tenga efecto real en preview/impresión,
+     escalamos el documento completo. */
+  transform: scale(var(--cv-print-scale, 1));
+  transform-origin: top left;
 }
 
 [data-cv-document] [data-cv-weight="support"],
@@ -470,6 +516,84 @@ dialog[data-project-concepts-dialog].project-concepts-dialog[open] .project-conc
 }
 .dark .cv-template-minimal[data-cv-document] .cv-doc-project {
   border-left-color: rgb(99 102 241 / 0.45);
+}
+
+/* CV: plantillas extra (MVP) — variaciones ligeras sin tocar markup */
+.cv-template-modern[data-cv-document] {
+  border-radius: 1.25rem;
+}
+.cv-template-modern[data-cv-document] [data-cv-weight="hero"] {
+  border-bottom-style: dashed;
+}
+.cv-template-modern[data-cv-document] .cv-doc-project {
+  border: 1px solid rgb(229 231 235 / 0.85);
+  border-radius: 0.9rem;
+  padding: 0.9rem;
+  background: rgb(249 250 251 / 0.55);
+}
+.dark .cv-template-modern[data-cv-document] .cv-doc-project {
+  border-color: rgb(30 41 59 / 0.85);
+  background: rgb(2 6 23 / 0.25);
+}
+
+.cv-template-compact[data-cv-document] {
+  border-radius: 0.75rem;
+}
+.cv-template-compact[data-cv-document] [data-cv-doc-sections] section {
+  padding-top: 1.25rem !important;
+}
+.cv-template-compact[data-cv-document] [data-cv-doc-projects] {
+  margin-top: 0.75rem !important;
+}
+.cv-template-compact[data-cv-document] .cv-doc-project {
+  padding-top: 0.25rem;
+}
+
+.cv-template-mono[data-cv-document] {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+.cv-template-mono[data-cv-document] [data-cv-weight="hero"] h2 {
+  letter-spacing: -0.02em;
+}
+.cv-template-mono[data-cv-document] .cv-doc-project {
+  border-left: 2px solid rgb(148 163 184);
+  padding-left: 0.85rem;
+}
+.dark .cv-template-mono[data-cv-document] .cv-doc-project {
+  border-left-color: rgb(148 163 184 / 0.55);
+}
+
+.cv-template-sidebar[data-cv-document] {
+  border-radius: 1rem;
+}
+.cv-template-sidebar[data-cv-document] [data-cv-weight="hero"] > div {
+  align-items: stretch;
+}
+.cv-template-sidebar[data-cv-document] [data-cv-doc-photo] {
+  border-radius: 1rem;
+}
+.cv-template-sidebar[data-cv-document] [data-cv-doc-contact] {
+  border-left: 3px solid rgb(199 210 254);
+  padding-left: 0.75rem;
+}
+.dark .cv-template-sidebar[data-cv-document] [data-cv-doc-contact] {
+  border-left-color: rgb(99 102 241 / 0.45);
+}
+
+.cv-template-serif[data-cv-document] {
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+}
+.cv-template-serif[data-cv-document] h2,
+.cv-template-serif[data-cv-document] h3,
+.cv-template-serif[data-cv-document] h4 {
+  letter-spacing: 0.01em;
+}
+.cv-template-serif[data-cv-document] .cv-doc-project {
+  border-top: 1px solid rgb(229 231 235 / 0.9);
+  padding-top: 0.75rem;
+}
+.dark .cv-template-serif[data-cv-document] .cv-doc-project {
+  border-top-color: rgb(30 41 59 / 0.85);
 }
 
 /* Preferencias globales (UI) */

@@ -258,6 +258,11 @@ const h2 = "cv-section-heading m-0 text-lg md:text-xl font-bold tracking-tight t
           >
             <option value="classic" data-i18n="cv.templateClassic">Clásica</option>
             <option value="minimal" data-i18n="cv.templateMinimal">Minimal (beta)</option>
+            <option value="modern" data-i18n="cv.templateModern">Moderna</option>
+            <option value="compact" data-i18n="cv.templateCompact">Compacta</option>
+            <option value="mono" data-i18n="cv.templateMono">Mono</option>
+            <option value="sidebar" data-i18n="cv.templateSidebar">Sidebar</option>
+            <option value="serif" data-i18n="cv.templateSerif">Serif</option>
           </select>
         </label>
       </div>
@@ -292,40 +297,60 @@ const h2 = "cv-section-heading m-0 text-lg md:text-xl font-bold tracking-tight t
     </label>
   </div>
 
-  <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-    <h2 class={h2}>
-      <span data-i18n="cv.projectsSectionTitle">Proyectos en el CV</span>
-    </h2>
-    <div class="flex flex-wrap gap-3 text-xs font-semibold">
-      <button type="button" data-cv-select-all class="text-indigo-700 dark:text-indigo-300 hover:underline">
-        <span data-i18n="cv.selectAll">Marcar todos</span>
-      </button>
-      <button type="button" data-cv-select-none class="text-gray-600 dark:text-gray-400 hover:underline">
-        <span data-i18n="cv.selectNone">Quitar todos</span>
-      </button>
+  <details class="group rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/40 dark:bg-gray-950/30 p-4 open:shadow-sm">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
+      <h2 class="m-0 text-base font-bold text-gray-900 dark:text-gray-100">
+        <span data-i18n="cv.projectsSectionTitle">Proyectos en el CV</span>
+      </h2>
+      <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.foldHintExpand">Pulsa para editar</span>
+    </summary>
+    <div class="mt-4 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400">
+          Marca los proyectos que quieres incluir y reordénalos en la vista previa.
+        </p>
+        <div class="flex flex-wrap gap-3 text-xs font-semibold">
+          <button type="button" data-cv-select-all class="text-indigo-700 dark:text-indigo-300 hover:underline">
+            <span data-i18n="cv.selectAll">Marcar todos</span>
+          </button>
+          <button type="button" data-cv-select-none class="text-gray-600 dark:text-gray-400 hover:underline">
+            <span data-i18n="cv.selectNone">Quitar todos</span>
+          </button>
+        </div>
+      </div>
+      <ul data-cv-project-list class="m-0 list-none space-y-2 p-0"></ul>
     </div>
-  </div>
-  <ul data-cv-project-list class="m-0 list-none space-y-2 p-0"></ul>
+  </details>
 
-  <div class="pt-2 space-y-3">
-    <div class="flex items-end justify-between gap-3">
-      <h2 class={h2} data-i18n="cv.experienceTitle">Experiencia</h2>
-      <button type="button" data-cv-exp-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline shrink-0">
-        <span data-i18n="cv.addExperience">Añadir</span>
-      </button>
+  <details class="group rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/40 dark:bg-gray-950/30 p-4 open:shadow-sm">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
+      <h2 class="m-0 text-base font-bold text-gray-900 dark:text-gray-100" data-i18n="cv.experienceTitle">Experiencia</h2>
+      <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.foldHintExpand">Pulsa para editar</span>
+    </summary>
+    <div class="mt-4 space-y-3">
+      <div class="flex justify-end">
+        <button type="button" data-cv-exp-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline shrink-0">
+          <span data-i18n="cv.addExperience">Añadir</span>
+        </button>
+      </div>
+      <div data-cv-exp-list class="space-y-3"></div>
     </div>
-    <div data-cv-exp-list class="space-y-3"></div>
-  </div>
+  </details>
 
-  <div class="pt-2 space-y-3">
-    <div class="flex items-end justify-between gap-3">
-      <h2 class={h2} data-i18n="cv.educationTitle">Educación</h2>
-      <button type="button" data-cv-edu-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline shrink-0">
-        <span data-i18n="cv.addEducation">Añadir</span>
-      </button>
+  <details class="group rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/40 dark:bg-gray-950/30 p-4 open:shadow-sm">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
+      <h2 class="m-0 text-base font-bold text-gray-900 dark:text-gray-100" data-i18n="cv.educationTitle">Educación</h2>
+      <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.foldHintExpand">Pulsa para editar</span>
+    </summary>
+    <div class="mt-4 space-y-3">
+      <div class="flex justify-end">
+        <button type="button" data-cv-edu-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline shrink-0">
+          <span data-i18n="cv.addEducation">Añadir</span>
+        </button>
+      </div>
+      <div data-cv-edu-list class="space-y-3"></div>
     </div>
-    <div data-cv-edu-list class="space-y-3"></div>
-  </div>
+  </details>
 
   <details class="group rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/40 dark:bg-gray-950/30 p-4 open:shadow-sm">
     <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
