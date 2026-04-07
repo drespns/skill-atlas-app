@@ -118,3 +118,15 @@ feat: algo resumido
 
 Para releases, crear **tag anotado** (`git tag -a ...`) usando el mismo estilo de bullets en el mensaje del tag.
 
+### Checklist cuando el usuario pide “commits para release/tag”
+
+Cuando el usuario pida preparar commits para una nueva release/tag:
+
+- Actualizar `package.json` a la versión objetivo.
+- Actualizar `src/config/banner.ts` (`id`, `version` y texto) a esa versión.
+- Actualizar `docs/backlog.md`:
+  - Consolidar lo hecho en la versión actual.
+  - Si hay trabajo que se pospone (p. ej. `/study`), crear la sección de la próxima versión y mover ahí esos bullets.
+- Agrupar commits por áreas (evitar “un commit gigante”), respetando el estilo del repo.
+- Devolver al final el **cuerpo sugerido del tag** (mensaje del tag anotado); el tag lo crea el usuario.
+

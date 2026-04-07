@@ -1,15 +1,17 @@
 {
   "name": "skill-atlas-app",
   "type": "module",
-  "version": "0.100.0",
+  "version": "0.110.0",
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "astro dev",
+    "prebuild": "node scripts/gen-tech-catalog.mjs",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "gen:tech-catalog": "node scripts/gen-tech-catalog.mjs"
   },
   "dependencies": {
     "@astrojs/vercel": "^10.0.3",
