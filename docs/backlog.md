@@ -10,6 +10,12 @@ Documento orientado al **historial** de lo implementado y a **ideas** sin orden 
 
 ## Registro de versiones (historial de producto)
 
+### v0.120.0 (siguiente)
+
+- **Estudio (`/study`) — fase 1 (persistencia):**
+  - Tablas Supabase + RLS: `study_sources` (links/notas) y `study_workspaces` (activeIds + sessionNotes).
+  - La UI hidrata desde Supabase con sesión y mantiene fallback/cache en `localStorage` (migración 1 vez si remoto está vacío).
+
 ### v0.110.0 (actual)
 
 - **Proyectos / Tecnologías — import GitHub (beta):** modal “Importar stack desde GitHub” (API de GitHub Tree/Contents + lectura de manifests típicos) para detectar tecnologías y aplicarlas:

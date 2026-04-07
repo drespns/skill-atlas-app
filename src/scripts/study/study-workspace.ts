@@ -1,5 +1,7 @@
 import i18next from "i18next";
 import { showToast } from "@scripts/core/ui-feedback";
+import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
+import { getSessionUserId } from "@scripts/core/auth-session";
 
 function tt(key: string, fallback: string): string {
   const v = i18next.t(key);
@@ -23,6 +25,8 @@ type State = {
   activeIds: string[];
   sessionNotes: string;
 };
+
+type SupabaseLike = any;
 
 function loadState(): State {
   try {
@@ -50,6 +54,82 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function toDbSource(s: Source, userId: string) {
+  return {
+    id: s.id,
+    user_id: userId,
+    title: s.title,
+    kind: s.kind,
+    url: s.url ?? null,
+    body: s.body ?? null,
+    created_at: s.createdAt,
+  };
+}
+
+function fromDbSource(row: any): Source | null {
+  const id = String(row?.id ?? "").trim();
+  const title = String(row?.title ?? "").trim();
+  const kind = String(row?.kind ?? "").trim() as Source["kind"];
+  if (!id || !title || (kind !== "note" && kind !== "link")) return null;
+  const url = typeof row?.url === "string" ? row.url : undefined;
+  const body = typeof row?.body === "string" ? row.body : undefined;
+  const createdAt = String(row?.created_at ?? row?.createdAt ?? new Date().toISOString());
+  return { id, title, kind, url: url || undefined, body: body || undefined, createdAt };
+}
+
+async function loadFromSupabase(sb: SupabaseLike, userId: string): Promise<State | null> {
+  try {
+    const [wsRes, srcRes] = await Promise.all([
+      sb.from("study_workspaces").select("active_ids, session_notes").eq("user_id", userId).maybeSingle(),
+      sb.from("study_sources").select("id,title,kind,url,body,created_at").eq("user_id", userId).order("created_at", { ascending: false }),
+    ]);
+    if (wsRes.error && String(wsRes.error.code ?? "") !== "PGRST116") return null;
+    if (srcRes.error) return null;
+    const ws = wsRes.data ?? null;
+    const activeIds = Array.isArray(ws?.active_ids) ? ws.active_ids.filter((x: any) => typeof x === "string") : [];
+    const sessionNotes = typeof ws?.session_notes === "string" ? ws.session_notes : "";
+    const sources = (srcRes.data ?? []).map(fromDbSource).filter(Boolean) as Source[];
+    return { sources, activeIds, sessionNotes };
+  } catch {
+    return null;
+  }
+}
+
+async function upsertWorkspace(sb: SupabaseLike, userId: string, state: State) {
+  await sb
+    .from("study_workspaces")
+    .upsert(
+      [{ user_id: userId, active_ids: state.activeIds, session_notes: state.sessionNotes }] as any,
+      { onConflict: "user_id" },
+    );
+}
+
+async function upsertSource(sb: SupabaseLike, userId: string, s: Source) {
+  await sb.from("study_sources").upsert([toDbSource(s, userId)] as any, { onConflict: "id" });
+}
+
+async function deleteSource(sb: SupabaseLike, userId: string, id: string) {
+  await sb.from("study_sources").delete().eq("user_id", userId).eq("id", id);
+}
+
+async function maybeMigrateLocalToSupabase(sb: SupabaseLike, userId: string) {
+  // If remote is empty but local has content, migrate once.
+  try {
+    const existing = await sb.from("study_sources").select("id", { count: "exact", head: true }).eq("user_id", userId);
+    if ((existing.count ?? 0) > 0) return;
+  } catch {
+    return;
+  }
+  const local = loadState();
+  if (local.sources.length === 0 && local.sessionNotes.trim() === "" && local.activeIds.length === 0) return;
+  try {
+    for (const s of local.sources) await upsertSource(sb, userId, s);
+    await upsertWorkspace(sb, userId, local);
+  } catch {
+    // ignore
+  }
+}
+
 function init() {
   const root = document.querySelector("[data-study-root]");
   if (!root) return;
@@ -69,6 +149,8 @@ function init() {
 
   if (!listEl || !addBtn || !panel || !titleIn || !urlIn || !noteIn || !cancelAdd || !saveAdd || !sessionNotes || !badge) return;
 
+  const sb = getSupabaseBrowserClient();
+  let userId: string | null = null;
   let state = loadState();
   sessionNotes.value = state.sessionNotes;
 
@@ -113,6 +195,7 @@ function init() {
         else set.delete(id);
         state.activeIds = Array.from(set);
         saveState(state);
+        if (sb && userId) void upsertWorkspace(sb, userId, state);
         syncBadge();
         render();
       });
@@ -124,6 +207,8 @@ function init() {
         state.sources = state.sources.filter((x) => x.id !== id);
         state.activeIds = state.activeIds.filter((x) => x !== id);
         saveState(state);
+        if (sb && userId) void deleteSource(sb, userId, id);
+        if (sb && userId) void upsertWorkspace(sb, userId, state);
         render();
       });
     });
@@ -134,6 +219,7 @@ function init() {
   sessionNotes.addEventListener("input", () => {
     state.sessionNotes = sessionNotes.value;
     saveState(state);
+    if (sb && userId) void upsertWorkspace(sb, userId, state);
   });
 
   addBtn.addEventListener("click", () => {
@@ -170,6 +256,8 @@ function init() {
     state.sources.unshift(src);
     state.activeIds.push(src.id);
     saveState(state);
+    if (sb && userId) void upsertSource(sb, userId, src);
+    if (sb && userId) void upsertWorkspace(sb, userId, state);
     panel.classList.add("hidden");
     titleIn.value = "";
     urlIn.value = "";
@@ -184,6 +272,22 @@ function init() {
       showToast(tt("study.outSoon", "Generación «{{kind}}»: próxima iteración (necesita modelo).").replace("{{kind}}", kind), "success");
     });
   });
+
+  // Hydrate from Supabase when available.
+  void (async () => {
+    if (!sb) return;
+    const uid = await getSessionUserId(sb);
+    if (!uid) return;
+    userId = uid;
+    await maybeMigrateLocalToSupabase(sb, uid);
+    const remote = await loadFromSupabase(sb, uid);
+    if (remote) {
+      state = remote;
+      saveState(state); // cache locally for offline
+      sessionNotes.value = state.sessionNotes;
+      render();
+    }
+  })();
 
   render();
 }
