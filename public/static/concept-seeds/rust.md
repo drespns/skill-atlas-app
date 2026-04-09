@@ -1,57 +1,39 @@
 <!-- skillatlas-tier: iniciacion -->
-## Fundamentos
+## Fundamentos del lenguaje
 
-- Cargo proyecto
-- let y mut
-- Ownership reglas
-- Borrowing y referencias
-- Lifetimes concepto
-- Pattern matching
-- Option y Result
+- `cargo` para compilar, testear y gestionar dependencias
+- Propiedad (*ownership*), préstamos (*borrowing*) y reglas de alias exclusivo
+- `Option` y `Result` para ausencia de valor y errores explícitos
+- *Pattern matching* exhaustivo con `match` y sintaxis de `if let`
 
 ## Tipos y traits
 
-- Struct y enum
-- impl bloques
-- Traits definición
-- Traits derivados
-- Generics en Rust
+- `struct` y `enum` con datos asociados; implementación con bloques `impl`
+- *Traits* para polimorfismo estático y genéricos con límites (`where`)
 
 <!-- skillatlas-tier: junior -->
-## Colecciones
+## Colecciones y errores
 
-- Vec dinámico
-- String frente str
-- HashMap uso
-- Iterator adaptadores
+- `Vec`, `String` frente a `&str`, `HashMap` y adaptadores de iteradores
+- Propagación de errores con el operador `?`; cajas como `thiserror` / `anyhow` en aplicaciones
 
-## Errores
+## Módulos y visibilidad
 
-- Result propagación
-- operador ?
-- panic vs recover no
-- thiserror crate
-- anyhow aplicaciones
+- Organización en `mod`, `pub` y rutas de uso (`use`)
 
 <!-- skillatlas-tier: mid -->
-## Concurrencia
+## Concurrencia y asíncrono
 
-- std::thread spawn
-- canales std::sync::mpsc
-- Arc conteo referencias
-- Mutex interior mutabilidad
-- Send y Sync traits
-- async await tokio
+- Hilos estándar, canales `mpsc`, `Arc` y mutex para mutabilidad interior
+- *Async/await* con runtimes como Tokio; *traits* `Send` y `Sync`
 
-## Seguridad y rendimiento
+## Rendimiento y FFI
 
-- Unsafe cuándo evitar
-- FFI cautela C
-- zero-cost abstracciones
+- Bloque `unsafe` solo con justificación y revisión; interoperabilidad con C
 
 <!-- skillatlas-tier: senior -->
-## Testing
+## Calidad y despliegue
 
-- cargo test
-- #[cfg(test)] módulos
-- property tests quickcheck
+- `cargo test`, pruebas en módulos `#[cfg(test)]` y pruebas de propiedades
+- Integración continua multiplataforma y auditoría de dependencias (`cargo audit`)
+- Empaquetado de binarios estáticos o mínimos para contenedores

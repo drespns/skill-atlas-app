@@ -1,64 +1,47 @@
 <!-- skillatlas-tier: iniciacion -->
-## Data Catalog
+## Catálogo y metadatos
 
-- Metadatos tablas S3
-- Crawlers inferencia esquema
-- Particiones automáticas
-- Schema registry versiones
+- AWS Glue Data Catalog como registro central de tablas sobre S3 y otros orígenes
+- *Crawlers* que infieren esquema, particiones y actualizan el catálogo periódicamente
+- Versionado de esquemas y compatibilidad con tablas Iceberg / Hudi / Delta según integración
 
-## ETL Jobs
+## Jobs ETL
 
-- Spark ETL script Python Scala
-- Glue Studio visual flow
-- Job bookmarks incrementalidad
-- Flex execution ahorro batch
-
-## Integración Lake
-
-- Iceberg tables servicio
-- Hudi Delta compat rutas
-- Lake Formation gobierno
+- Jobs de Spark (Python, Scala) y Glue Studio para flujos visuales
+- *Bookmarks* para procesamiento incremental sin reprocesar todo el histórico
+- Modo Flex para cargas batch con coste reducido y SLA más flexible
 
 <!-- skillatlas-tier: junior -->
 ## Transformaciones
 
-- DynamicFrame frente DataFrame
-- ApplyMapping casts rename
-- ResolveChoice ambigüedad
+- `DynamicFrame` frente a `DataFrame` Spark para manejar esquemas semiestructurados
+- `ApplyMapping`, resolución de tipos ambiguos y preparación para el warehouse
 
-## Triggers
+## Orquestación
 
-- Schedule cron triggers
-- EventBridge event-driven
-- Job queuing concurrencia
+- Disparadores por cron, eventos (*EventBridge*) y colas con límites de concurrencia
 
-## Calidad y reglas
+## Calidad
 
-- Data Quality rules nativas
-- Expectaciones batch
-- Reports DQ dashboard
+- Reglas de calidad de datos nativas e informes integrados en el servicio
 
 <!-- skillatlas-tier: mid -->
-## Lineage
+## Linaje y lake
 
-- Glue lineage OpenLineage
+- Integración con gobierno (*Lake Formation*) y linaje compatible con OpenLineage
+- Conexiones JDBC para bases relacionales y entornos de desarrollo local asistidos
 
-## Desarrollo local
+## Streaming
 
-- Glue local development endpoints
-
-## Trabajos streaming
-
-- Glue streaming Spark structured
+- Jobs de streaming sobre Spark Structured Streaming para tuberías near-real-time
 
 <!-- skillatlas-tier: senior -->
-## Seguridad
+## Seguridad y red
 
-- IAM roles job runs
-- VPC job execution
-- Glue connections JDBC
+- Roles IAM para ejecución de jobs, acceso a S3 y encriptación con KMS
+- Ejecución en VPC con *security groups* y conectores hacia orígenes privados
 
-## Costes
+## Coste
 
-- DPU precio hora glue
-- Flex vs estándar worker
+- DPUs, modo estándar frente a Flex y dimensionamiento según ventanas de proceso
+- Buenas prácticas: particionar datos en lake, compactar archivos pequeños y comprimir (p. ej. Snappy en Parquet)

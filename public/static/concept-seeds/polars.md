@@ -1,67 +1,39 @@
 <!-- skillatlas-tier: iniciacion -->
-## Fundamentos
+## Modelo de datos
 
-- DataFrame columnar Arrow
-- LazyFrame plan optimizado
-- Expr expresión declarativa
-- Series tipado estricto
-- Nulls explícitos primer clase
+- `DataFrame` y `LazyFrame` con plan de consultas optimizado antes de materializar
+- Expresiones (`Expr`) encadenables y tipado estricto con valores nulos explícitos
+- API alineada con mentalidad SQL/analítica sobre columnas
 
-## Lazy API
+## API perezosa
 
-- scan_csv scan_parquet
-- filter select with_columns
-- group_by agg streaming
-- collect materialize eager
-- explain plan optimized
-
-## Joins
-
-- join inner left outer
-- asof join series tiempo
-- concat vertical horizontal
+- `scan_parquet` / `scan_csv` para proyectar solo columnas y filtros necesarios
+- `group_by`, agregaciones y `collect` para ejecutar el plan
+- `explain` para inspeccionar optimizaciones aplicadas
 
 <!-- skillatlas-tier: junior -->
-## Strings tiempos
+## Manipulación
 
-- str contains extract
-- dt convert_time_zone
-- Duration delta tipos
-
-## Ventanas
-
-- over partition groups
-- rolling_map ventanas expr
+- Joins (inner, left, outer), *asof* para series temporales y concatenación vertical/horizontal
+- Cadenas, fechas y ventanas (`over`) con particiones definidas
 
 ## Interoperabilidad
 
-- to_pandas from_pandas
-- to_arrow from_arrow
-- read_database connector SQL
+- Conversión con Pandas, Arrow y lectura de bases mediante conectores
 
 <!-- skillatlas-tier: mid -->
 ## Rendimiento
 
-- SIMD kernels Rust
-- streaming mode out-of-core
-- process pool paraleliza
+- Núcleo en Rust con SIMD; modo *streaming* para datasets mayores que RAM
+- Paralelización con pool de procesos cuando el problema lo permite
 
-## Pivot y reshape
+## Estructuras avanzadas
 
-- pivot melt unpivot
-- explode arrays listas
-
-## I/O avanzado
-
-- scan_pyarrow dataset
-- sink_parquet write lazy
+- Tipos categóricos, structs anidados y operaciones tipo pivot / melt
 
 <!-- skillatlas-tier: senior -->
-## Cata tipos
+## SQL y producto
 
-- Categorical encodings
-- Struct anidado JSON-like
-
-## SQL
-
-- SQLContext polars subconjunto
+- Contexto SQL limitado para equipos que prefieren SQL sobre expresiones
+- Cuándo elegir Polars frente a Spark o a SQL puro en el warehouse
+- Pruebas de regresión sobre pipelines ETL que comparten transformaciones críticas

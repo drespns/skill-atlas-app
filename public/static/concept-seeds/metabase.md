@@ -1,62 +1,38 @@
 <!-- skillatlas-tier: iniciacion -->
-## Fundamentos
+## Conceptos de producto
 
-- Questions consultas guardadas
-- Models capa semántica
-- Collections organización
-- Dashboards layouts tarjetas
+- *Questions* guardadas y *Models* como capa semántica sobre tablas físicas
+- Colecciones para organizar contenido y *dashboards* con rejillas de tarjetas
+- Conexión a bases mediante drivers JDBC y sincronización periódica del esquema
 
-## Conexiones
+## Exploración
 
-- Database drivers JDBC
-- Sync esquema periodicidad
-- SSH tunnel conexiones
-
-## SQL y builder
-
-- Native queries SQL
-- Notebook editor avanzado
-- GUI query builder filtros
+- Editor SQL nativo, *notebook* para análisis más largos y constructor visual de filtros
+- Filtros enlazados entre gráficos y parámetros en la URL
 
 <!-- skillatlas-tier: junior -->
-## Modelado
+## Métricas y segmentos
 
-- Metrics definición reusable
-- Segments filtros guardados
-- Field filters dashboard linking
+- Métricas reutilizables y segmentos (conjuntos de filtros) compartidos
+- *Pulses*: informes programados por email o Slack con umbrales
 
-## Pulso y alertas
+## Incrustación
 
-- Pulses reportes email Slack
-- Goal lines umbrales
-
-## Embedding
-
-- Signed embedding iframe
-- Locked parameters externos
+- *Signed embedding* para iframes en productos propios con parámetros bloqueados
 
 <!-- skillatlas-tier: mid -->
-## Admin cloud
+## Despliegue y ediciones
 
-- Metabase Cloud alojado
-- Pro Enterprise features SSO
+- Metabase open source (Docker, JAR) frente a Cloud con SSO y SLA
+- Variables de entorno para secretos y URL pública
 
 ## Seguridad
 
-- Row sandbox seguridad por fila
-- LDAP SAML Google auth
-
-## Operación OSS
-
-- Docker Compose despliegue
-- Environment variables config
+- Sandbox por filas cuando el motor lo permite, LDAP/SAML/Google Workspace
 
 <!-- skillatlas-tier: senior -->
-## Rendimiento
+## Rendimiento y gobierno
 
-- Caching preguntas resultados
-- Snippets consultas repetidas
-
-## Acciones
-
-- Actions HTTP webhooks custom
+- Caché de resultados de preguntas frecuentes y snippets SQL reutilizables
+- *Actions* HTTP para disparar webhooks desde interacciones en el dashboard
+- Roles administrativos y auditoría de consultas en entornos regulados

@@ -1,56 +1,38 @@
 <!-- skillatlas-tier: iniciacion -->
-## Fundamentos
+## Consultas serverless
 
-- Serverless consultas S3
-- Presto Trino motor fork
-- Workgroups control coste
-- Data catalog Glue integración
+- Motor de consultas SQL sobre datos en S3 sin gestionar clústeres permanentes
+- Basado en tecnología tipo Presto/Trino para analítica interactiva
+- *Workgroups* para aislar equipos, límites de escaneo y resultados en bucket dedicado
 
-## SQL sobre lake
+## Modelo de tablas
 
-- Crear tabla externa
-- Particionamiento Hive style
-- MSCK repair particiones
-- CTAS resultados S3
-
-## Formatos
-
-- Parquet ORC columnar
-- Iceberg tables managed
-- JSON CSV text
+- Tablas externas con particiones estilo Hive y reparación de particiones (`MSCK`)
+- Formatos columnar (Parquet, ORC) y tablas Iceberg gestionadas cuando aplique
 
 <!-- skillatlas-tier: junior -->
 ## Coste y rendimiento
 
-- Bytes escaneados billing
-- Partition projection menos lista
-- Predicate pushdown filtros
+- Facturación por datos escandos; reducción mediante particionado y proyección de particiones
+- *Predicate pushdown* y columnas necesarias para minimizar bytes leídos
 
 ## Federación
 
-- Lambda connectors externos
-- UDF connectors custom
+- Conectores Lambda para fuentes externas y UDFs para lógica personalizada
 
 <!-- skillatlas-tier: mid -->
-## Seguridad
+## Seguridad e integración
 
-- Lake Formation permissions
-- Encryption SSE-KMS S3
-- Query result location bucket
+- Permisos vía Lake Formation, cifrado SSE-KMS en S3 y rutas de resultados acotadas
+- Encadenamiento con Glue, Step Functions y eventos para pipelines
 
-## Integración AWS
+## Motor avanzado
 
-- Glue crawlers esquema
-- Step Functions orquestación
-- EventBridge Athena events
+- Motor v3 con capacidades batch tipo Spark y notebooks para experimentación
 
 <!-- skillatlas-tier: senior -->
-## Engine v3
+## Buenas prácticas de lake
 
-- Apache Spark batch Athena
-- Notebooks experimentación
-
-## Buenas prácticas
-
-- Compactar archivos pequeños
-- Snappy compresión Parquet
+- Evitar demasiados archivos diminutos; compactar y comprimir Parquet
+- Versionado de datos y contratos de esquema con el equipo de plataforma
+- Observabilidad de consultas lentas y coste por equipo o producto de datos

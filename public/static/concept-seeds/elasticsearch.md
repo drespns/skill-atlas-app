@@ -1,66 +1,36 @@
 <!-- skillatlas-tier: iniciacion -->
-## Fundamentos
+## Índices y documentos
 
-- Cluster nodos roles
-- Index colección lógica
-- Shard primaria réplica
-- Document JSON _id
-- Mapping tipos campos
+- Índice como conjunto lógico de documentos JSON con tipado mediante *mapping*
+- Particionado en *shards* y réplicas para escalado horizontal
+- Analizadores, tokenizadores y filtros para búsqueda de texto completo
 
-## Búsqueda full-text
+## Consultas
 
-- Analyzer tokenizers filters
-- inverted index postings
-- match query relevancia
-- bool must should filter
-- multi_match campos varios
-- highlight snippets
-
-## Agregaciones
-
-- metrics bucket pipeline
-- terms cardinality agg
-- date_histogram serie tiempo
+- Consultas `bool`, `multi_match` y resaltado de fragmentos
+- Agregaciones para métricas, histogramas temporales y *cardinality*
 
 <!-- skillatlas-tier: junior -->
-## Escritura
+## Escritura y consistencia
 
-- Bulk API throughput
-- Refresh intervals near-real
-- Versioning conflictos
+- API *bulk* para alto rendimiento y ajuste de *refresh interval*
+- Versionado de documentos y gestión de conflictos concurrentes
 
-## Rendimiento
+## Rendimiento y almacenamiento
 
-- Force merge cautela
-- Index lifecycle ILM
-- Frozen tier almacén frío
-- Cross-cluster search CCS
+- *Force merge* con precaución, ILM para rotación por edad o tamaño
+- *Data tiers* (caliente, frío, congelado) y búsqueda federada entre clústeres
 
 <!-- skillatlas-tier: mid -->
-## Seguridad
+## Seguridad y observabilidad
 
-- X-Pack Security TLS
-- RBAC roles espacio
-- Document level security
-
-## Observabilidad APM
-
-- Elastic Agent collectors
-- Kibana dashboards
-- Machine learning anomaly
-
-## Arquitectura datos
-
-- Data streams logging
-- LogsDB mode costo
+- Stack Elastic Security, roles RBAC y TLS
+- Elastic Agent, APM y Kibana para operación unificada
+- *Data streams* para logs y métricas a escala
 
 <!-- skillatlas-tier: senior -->
-## Integración ETL
+## Ecosistema
 
-- Elasticsearch Hadoop conector
-- CDC hacia índices
-
-## OpenSearch fork
-
-- API compatible ES 7.x
-- Distribución licencia diferente
+- Integración con pipelines Hadoop/Spark y CDC hacia índices
+- Comparativa con OpenSearch: bifurcación 7.x, licencias y hoja de ruta
+- Coste total: índices calientes, retención y búsquedas frecuentes en observabilidad

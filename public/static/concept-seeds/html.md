@@ -1,48 +1,42 @@
 <!-- skillatlas-tier: iniciacion -->
-## Estructura y semántica
+## Documento y metadatos
 
-- Doctype HTML5
-- html, head y body
-- Charset UTF-8 y viewport
-- Títulos h1–h6 jerárquicos
-- Párrafos p y saltos de línea br
-- Listas ul, ol y dl
-- Enlaces a con href y texto accesible
-- Imágenes img con alt obligatorio
-- Tablas table, thead, tbody, tr, th, td
-- Atributos globales id y class
-- data-* para metadatos en el DOM
+- Doctype HTML5 y estructura mínima: `html`, `head`, `body`
+- Codificación UTF-8 declarada y meta *viewport* para diseño responsive
+- Jerarquía lógica de encabezados `h1`–`h6` (un `h1` principal por página cuando proceda)
 
-## Formularios
+## Contenido textual y listas
 
-- form, action y method
-- input tipos text, email, number, date, checkbox, radio
-- textarea y select / option
-- label asociado a controles
-- required, pattern, min, max
-- fieldset y legend
-- Botones button type submit y reset
+- Párrafos, listas ordenadas y no ordenadas, listas de definición
+- Enlaces con texto descriptivo (`<a href>`); evitar “clic aquí” como única etiqueta
+- Imágenes con `alt` significativo; tablas con cabeceras claras cuando representan datos tabulares
 
 <!-- skillatlas-tier: junior -->
-## Multimedia y contenido incrustado
+## Formularios
 
-- picture y source para responsive
-- video y audio con controles
-- iframe y sandbox
-- figure y figcaption
+- Etiquetas `<label>` asociadas a controles; agrupación con `fieldset` / `legend`
+- Tipos de `input` adecuados (email, number, date) y validación HTML5 básica
+- Botones con `type` explícito para evitar envíos accidentales
+
+## Multimedia e incrustaciones
+
+- `<picture>` y `<source>` para arte responsive; `video` / `audio` con controles accesibles
+- `iframe` con `sandbox` y políticas de origen cuando se incrusta terceros
 
 <!-- skillatlas-tier: mid -->
+## Semántica y landmarks
+
+- Uso de `main`, `nav`, `header`, `footer`, `aside`, `section`, `article` según el rol real
+- Enlaces de salto (*skip links*) para usuarios de teclado y lectores de pantalla
+
 ## Accesibilidad
 
-- Roles implícitos de elementos nativos
-- Navegación por teclado
-- Contraste y jerarquía de encabezados
-- main, nav, header, footer, aside, section, article
-- skip links (patrón)
+- Contraste suficiente y orden de tabulación coherente con el diseño visual
+- No depender solo del color para transmitir estado o error
 
 <!-- skillatlas-tier: senior -->
-## Buenas prácticas
+## Calidad y mantenimiento
 
-- HTML válido y semántico antes de estilos
-- Evitar divitis cuando hay elemento semántico
-- Comentarios HTML solo cuando aportan
+- HTML válido como base antes de capas de estilo y script
+- Evitar `div` genéricos cuando existe un elemento semántico adecuado
+- Comentarios HTML solo cuando documentan decisiones no obvias para el equipo

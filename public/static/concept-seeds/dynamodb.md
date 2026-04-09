@@ -1,60 +1,35 @@
 <!-- skillatlas-tier: iniciacion -->
-## Modelado
+## Modelo de datos
 
-- Tabla partition sort key
-- Item documento atributo
-- GSI sparse access
-- LSI mismo partition key
-- Streams CDC tiempo casi real
+- Tablas con clave de partición y opcionalmente clave de ordenación; ítems como documentos
+- Índices secundarios globales (GSI) y locales (LSI) para patrones de acceso alternativos
+- *Streams* para capturar cambios casi en tiempo real hacia Lambda u otros consumidores
 
-## Capacidad
+## Capacidad y caché
 
-- On-demand provisioned modes
-- RCU WCU unidades
-- Auto scaling provisioned
-- DAX cache lectura micros
-
-## Patrones de acceso
-
-- Single-table design entity
-- Adjacency lists patrón
-- GSIs overload pattern
-- TTL expiración items
+- Modo bajo demanda frente a aprovisionado con autoescalado de RCU/WCU
+- DAX como caché in-memory para lecturas de latencia muy baja
 
 <!-- skillatlas-tier: junior -->
-## Transacciones
+## Diseño de acceso
 
-- TransactWriteItems ACID
-- Idempotencia client tokens
+- Diseño *single-table* para entidades relacionadas y patrones de lista de adyacencia
+- TTL para caducar registros y GSIs “sobrecargados” cuando el modelo lo requiere
 
-## Seguridad
+## Consistencia y seguridad
 
-- IAM policies fine-grained
-- KMS encryption at rest
-- VPC endpoints privados
+- Transacciones en varios ítems con tokens de idempotencia
+- Cifrado con KMS, políticas IAM finas y endpoints de VPC
 
 <!-- skillatlas-tier: mid -->
-## Integración
+## Integración y herramientas
 
-- EventBridge event pipes
-- Lambda triggers streams
-
-## Herramientas
-
-- PartiQL SQL subset API
-- DynamoDB local dev
-
-## Backup
-
-- Point-in-time recovery PITR
-- On-demand backup tablas
+- EventBridge Pipes, disparadores desde streams y PartiQL para consultas SQL parciales
+- DynamoDB Local para desarrollo; backups bajo demanda y PITR
 
 <!-- skillatlas-tier: senior -->
-## Global tables
+## Global y coste
 
-- Replicación multi-región
-- Last writer conflict
-
-## Coste
-
-- Infrequent Access class
+- Tablas globales multi-región y resolución de conflictos *last writer wins*
+- Clases de almacenamiento estándar e IA para datos poco consultados
+- Revisión periódica de patrones de acceso y GSIs para evitar coste innecesario

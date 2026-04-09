@@ -1,51 +1,39 @@
 <!-- skillatlas-tier: iniciacion -->
-## Fundamentos
+## Núcleo del clúster
 
-- Cluster y nodos data master
-- Index shards réplicas
-- Document JSON `_id`
-- Mappings dynamic strict
+- Arquitectura de nodos (*master*, *data*, roles dedicados según despliegue)
+- Índices divididos en *shards* primarios y réplicas para disponibilidad y lectura
+- Documentos JSON con `_id` y *mapping* rígido o dinámico según el caso de uso
 
-## Búsqueda
+## Búsqueda y agregaciones
 
-- Query DSL bool
-- Full-text analyzers estándar
-- Aggregations buckets metrics
-- Sorting script fields
+- DSL de consulta booleana, analizadores de texto y relevancia ajustable
+- Agregaciones de métricas, *buckets* y series temporales para analítica sobre logs
 
 <!-- skillatlas-tier: junior -->
-## Seguridad
+## Seguridad y cumplimiento
 
-- Fine-grained access control
-- Encryption transit at rest
-- SAML SSO integración
+- Control de acceso fino, cifrado en tránsito y en reposo
+- Integración SSO (SAML) en despliegues gestionados
 
 ## Observabilidad
 
-- OpenSearch Dashboards
-- Alerting monitors triggers
-- Anomaly detection plugin
+- OpenSearch Dashboards para explorar datos y crear visualizaciones
+- Alertas, monitorización y detección de anomalías mediante plugins
 
 <!-- skillatlas-tier: mid -->
-## Ingesta
+## Ingesta y ciclo de vida
 
-- Data Prepper pipelines
-- OpenSearch Ingestion managed
+- Pipelines de ingesta (*Data Prepper*, OpenSearch Ingestion) para flujos continuos
+- ISM (*Index State Management*) para rotación, archivado y *UltraWarm* en AWS
 
 ## Rendimiento
 
-- Index State Management ISM
-- UltraWarm cold storage AWS
-- Segment merge tuning
+- Ajuste de *merges* de segmentos y almacenamiento frío para coste
 
 <!-- skillatlas-tier: senior -->
-## Integración
+## Integración y despliegue
 
-- SQL plugin JDBC
-- ML Commons modelos
-
-## Distribución
-
-- AWS OpenSearch Service
-- Oracle OCI OpenSearch
-- Self-managed Docker Helm
+- Plugin SQL y casos de ML con *ML Commons*
+- OpenSearch Service en AWS, OCI u operación *self-managed* (Docker, Helm)
+- Relación con Elasticsearch: compatibilidad de API y diferencias de licencia

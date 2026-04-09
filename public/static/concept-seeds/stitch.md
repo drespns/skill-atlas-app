@@ -1,50 +1,35 @@
 <!-- skillatlas-tier: iniciacion -->
-## Fundamentos
+## Rol en la ingesta
 
-- Integration fuente datos
-- Destination almacén analítico
-- Replication frequency planes
+- Servicio alojado sobre el ecosistema *Singer*: *taps* (extracción) y *targets* (carga)
+- Elección de destino analítico (warehouse, lake) según el caso de uso
+- Planes de replicación y límites de filas según suscripción
 
-## Modos replicación
+## Modos de replicación
 
-- Key-based Incremental
-- Log-based Incremental
-- Full Table refresh
+- Incremental por clave, por log (*log-based*) o tabla completa según capacidades del conector
+- Impacto en coste y frescura de datos en el destino
 
 <!-- skillatlas-tier: junior -->
-## Esquema
+## Esquema y calidad
 
-- Table selection tablas
-- Schema mapping nombres
-- Nested data flatten
-- Loading errors cola
-
-## Destinos comunes
-
-- Snowflake Stitch target
-- BigQuery Redshift destino
-- Destino S3 datos lake
+- Selección explícita de tablas y campos a replicar
+- Mapeo de nombres, aplanado de JSON anidado y cola de errores de carga
+- Destinos habituales: Snowflake, BigQuery, Redshift, S3 como paso intermedio
 
 <!-- skillatlas-tier: mid -->
-## Monitoreo
+## Observabilidad
 
-- Extraction logs
-- Loading reports errores
-- Notifications email Slack
+- Informes de extracción y carga con trazas por tabla
+- Notificaciones ante fallos repetidos o retrasos de ventana
 
 ## Seguridad
 
-- SSH tunnel bases privadas
-- IP allowlist Enterprise
+- Túneles SSH y listas de IP en planes empresariales
 
 <!-- skillatlas-tier: senior -->
-## Singer protocolo
+## Arquitectura Singer
 
-- Tap fuente extraccción
-- Target carga destino
-- Stitch como hosting
-
-## Coste y límites
-
-- Row limits planes
-- Fuente priorización producción
+- Entender tap/target como contrato reutilizable fuera de Stitch
+- Cuándo combinar Stitch con orquestadores (*Airflow*, *dbt*) para capas posteriores
+- Coste total: filas movidas, almacén destino y transformaciones downstream

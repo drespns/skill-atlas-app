@@ -1,53 +1,39 @@
 <!-- skillatlas-tier: iniciacion -->
-## Fundamentos
+## Motor columnar
 
-- Columnar OLAP motor
-- MergeTree familia motores
-- Particiones y orden PRIMARY
-- ReplacingMergeTree dedup
-- Distributed tablas sharded
+- Orientado a OLAP con almacenamiento por columnas y compresión agresiva
+- Familia *MergeTree* como base de tablas particionadas y ordenadas
+- Tablas distribuidas y motores con deduplicación (*ReplacingMergeTree*) según el caso
 
-## SQL y funciones
+## SQL y tipos
 
-- SELECT analítico rápido
-- Funciones fecha fuertes
-- arrayMap arrayJoin
-- Materlized columnas derivadas
+- SQL analítico con funciones de fecha, arrays y mapas
+- Columnas materializadas y funciones lambda para transformaciones en consulta
 
 <!-- skillatlas-tier: junior -->
-## Ingesta
+## Ingesta y almacenamiento
 
-- INSERT batch bloques
-- Kafka engine tabla
-- S3 table function
+- Inserciones por lotes, motor *Kafka* y lectura desde S3 mediante funciones de tabla
+- Índices dispersos, proyecciones y políticas TTL para expirar datos antiguos
 
-## Índices y proyecciones
+## Clúster y réplicas
 
-- Primary key sparse
-- Data skipping indices
-- Projections preagregados
+- Coordinación con ZooKeeper (o alternativas recientes) y tablas replicadas
+- Elección de clave de *sharding* equilibrada para evitar nodos calientes
 
 <!-- skillatlas-tier: mid -->
-## Replicación y cluster
-
-- ZooKeeper coord merge
-- ReplicatedMergeTree
-- Sharding key elección
-
 ## Rendimiento
 
-- max_threads consulta
-- parts merges background
-- TTL expiración filas
-
-<!-- skillatlas-tier: senior -->
-## Integración
-
-- MySQL PostgreSQL engines
-- dbt clickhouse adapter
+- Ajuste de hilos, fusiones de partes en segundo plano y vigilancia de *merges*
+- Integración con *dbt* y motores federados hacia MySQL/PostgreSQL para consultas híbridas
 
 ## Operación
 
-- system tables metadatos
-- BACKUP RESTORE nativo
-- Monitoring Prometheus
+- Tablas `system.*` para diagnóstico, backups nativos y exportación a cold storage
+
+<!-- skillatlas-tier: senior -->
+## Producción
+
+- Monitorización con Prometheus/Grafana y alertas por latencia de consultas
+- Dimensionamiento de hardware y políticas de retención alineadas con coste
+- Buenas prácticas de modelado para evitar joins masivos inesperados en tablas anchas

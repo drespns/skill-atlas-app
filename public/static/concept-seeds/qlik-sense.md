@@ -1,63 +1,40 @@
 <!-- skillatlas-tier: iniciacion -->
 ## Motor asociativo
 
-- QIX motor in-memory
-- Selecciones verdes blancas grises
-- Granularidad datos cargados
-- Synthetic keys problem modelo
+- Modelo en memoria (*QIX*): selecciones que filtran el espacio de datos asociado
+- Estados de selección (verde/blanco/gris) y granularidad de la carga
+- Claves sintéticas como síntoma de modelo mal diseñado
 
 ## Script de carga
 
-- Load script ETL inline
-- Resident tables transform
-- Incremental loads QVD
-- Section access seguridad scripts
+- Script ETL propio: `LOAD`, tablas residentes, transformaciones encadenadas
+- Carga incremental con archivos QVD y *section access* para seguridad a nivel de fila
 
-## Modelo datos
+## Modelo dimensional
 
-- Star schema recomendación
-- Link table bridge granularidad
-- Calendar dimension generada
+- Esquema en estrella recomendado y tablas puente cuando la granularidad lo exige
+- Dimensiones de calendario generadas para análisis temporal
 
 <!-- skillatlas-tier: junior -->
-## Expresiones
+## Expresiones y UI
 
-- Set analysis modificadores
-- Aggregation expresiones medida
-- Variables vConfig reutiliza
-- Alternate states comparaciones
-
-## Visualización
-
-- Master items reutiliza
-- Sheets storytelling apps
-- Extensions mashups web
+- *Set analysis* para comparar conjuntos de datos en una misma visualización
+- Objetos maestros reutilizables y narrativa en *storytelling*
+- Extensiones y *mashups* web para casos avanzados
 
 <!-- skillatlas-tier: mid -->
-## Client Managed
+## Despliegue
 
-- Qlik Sense Enterprise Windows
-- Qlik Cloud SaaS
-- Data integration Qlik Replicate
+- Qlik Sense Enterprise (on-prem) frente a Qlik Cloud SaaS
+- Qlik Replicate / Data Integration para CDC y pipelines hacia el motor
 
-## Catálogo y lineage
+## Gobierno
 
-- Qlik Catalog gobierno cloud
-- Data lineage impacto
-
-## Herramientas datos
-
-- Data Integration pipeline CDC
-- Application automation workflows
+- Catálogo y linaje en el ecosistema Qlik para impacto de cambios
 
 <!-- skillatlas-tier: senior -->
-## Rendimiento
+## Rendimiento y escala
 
-- QVD capas incremental
-- Optimized Associative Engine
-- On-demand app gen escalable
-
-## Seguridad
-
-- Section access dinámico
-- Tenant admin cloud
+- Capas QVD, motor optimizado y generación bajo demanda de aplicaciones grandes
+- *Section access* dinámico y administración multi-inquilino en cloud
+- Integración con flujos de datos empresariales y automatización de aplicaciones

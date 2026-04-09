@@ -1,61 +1,37 @@
 <!-- skillatlas-tier: iniciacion -->
-## Modelado LookML
+## LookML y proyecto
 
-- Project Git versionado
-- explore joins vistas explore
-- view dimensions measures
-- sql_table_name fuente
-- derived_table SQL o native
+- Proyecto versionado en Git con vistas (`view`), *explores* y joins declarativos
+- `sql_table_name` y tablas derivadas en SQL o nativas de la plataforma
+- Reutilización con `include` / `ref` y organización modular del modelo
 
-## Capas semánticas
+## Capa semántica
 
-- Ref reutilización includes
-- Sets campos agrupados
-- Parameters dinámicos SQL
-- Access filters row logic
-
-## Métricas
-
-- measure tipo sum count
-- liquid templates HTML
-- Symmetric aggregates fan-out
+- Dimensiones y medidas con tipos agregación (`sum`, `count`, `average`)
+- Filtros de acceso y parámetros dinámicos en SQL generado
+- Plantillas Liquid en campos HTML o etiquetas
 
 <!-- skillatlas-tier: junior -->
 ## Rendimiento
 
-- PDT persistent derived table
-- Incremental PDT estrategia
-- Datetimes partition keys
-- Aggregate awareness capa
+- PDT (*persistent derived tables*) completas o incrementales según volumen
+- Claves de partición por fecha y agregados precomputados (*aggregate awareness*)
+- Conexiones a warehouses modernos (BigQuery, Snowflake, Redshift, etc.)
 
-## Integraciones
+## Integración
 
-- Connections warehouse SQL
-- BigQuery Snowflake Redshift
-- Looker Studio visualización
-- Embed SSO aplicaciones
+- Incrustación en aplicaciones con SSO y API REST para automatización
 
 <!-- skillatlas-tier: mid -->
-## API y extensión
+## API y gobierno
 
-- Looker API REST
-- Actions outbound webhooks
-- Data Actions
-
-## Gobernanza
-
-- Content validation tests
-- Model development mode
-- Git branches prod flow
+- Acciones salientes, *Data Actions* y webhooks
+- Modo desarrollo del modelo, ramas Git y validación de contenido antes de producción
+- Atributos de usuario para RLS equivalente en la capa Looker
 
 <!-- skillatlas-tier: senior -->
-## Seguridad
+## Seguridad y producto Google
 
-- User attributes RLS
-- Content access permissions
-- OIDC SAML SSO
-
-## Looker Studio
-
-- Reportes Google Sheets BQ
-- Blend data fuentes múltiples
+- SSO OIDC/SAML y permisos por carpeta o modelo
+- Relación con Looker Studio / informes sobre BigQuery y hojas de cálculo
+- Estrategia de equipos: quién posee el modelo LookML frente a consumo en BI

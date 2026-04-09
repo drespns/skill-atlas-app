@@ -1,59 +1,44 @@
 <!-- skillatlas-tier: iniciacion -->
-## Libro y cuadrícula
+## Libro y referencias
 
-- Libro y hojas pestañas
-- Referencias estilo A1
-- Rangos con nombre
-- Tablas de Excel estructuradas
+- Libros, hojas y celdas; referencias estilo A1 y nombres de rango para fórmulas legibles
+- Tablas estructuradas (*Excel Tables*) para rangos que crecen con datos nuevos
 
-## Fórmulas clave
+## Fórmulas habituales
 
-- SUM AVERAGE MEDIAN
-- BUSCARV XLOOKUP búsqueda
-- INDEX coincidir juntos
-- SI SI.ERROR lógica
-- MATRIZ Office365 dinámica
-
-## Datos externos
-
-- Obtener datos ODBC Power Query
-- Transformar consulta M
-- Combinar consultas merge append
-- Parámetros fuentes dinámicas
+- Agregaciones (`SUM`, `AVERAGE`, `MEDIAN` según versión)
+- Búsquedas: `XLOOKUP` / `BUSCARV` con limitaciones conocidas
+- Combinación `INDEX` + `COINCIDIR` para flexibilidad
+- Lógica condicional (`SI`, manejo de errores) y matrices dinámicas en Microsoft 365
 
 <!-- skillatlas-tier: junior -->
-## Modelo de datos
+## Power Query
 
-- Power Pivot Star schema
-- Relaciones uno varios
-- Jerarquías calendario
-- Medidas DAX básicas
-- CALCULATE contexto filtros
+- Conexión a orígenes ODBC, ficheros y servicios; transformaciones en lenguaje M
+- Combinar consultas (*merge*, *append*) y parámetros para rutas o fechas
+- Carga al modelo de datos frente solo a la hoja
 
-## Tablas dinámicas
+## Modelo y DAX (Power Pivot)
 
-- Campos filas columnas valores
-- Segmentaciones slicers
-- Gráficos dinámicos vinculados
+- Esquema en estrella: hechos y dimensiones; relaciones uno a varios
+- Medidas DAX con contexto de filtro y `CALCULATE`
+- Jerarquías de fecha para análisis temporal
 
 <!-- skillatlas-tier: mid -->
-## Colaboración
+## Tablas dinámicas e informes
 
-- Excel Online coedición
-- SharePoint OneDrive fichero
+- Campos en filas, columnas, valores y filtros; segmentaciones (*slicers*)
+- Gráficos dinámicos enlazados al mismo modelo
 
-## Automatización
+## Colaboración y automatización
 
-- Office Scripts web
-- Macros VBA legado
-- Power Automate flujos nube
+- Coautoría en Excel Online / OneDrive / SharePoint
+- Office Scripts (web) y macros VBA solo cuando el legado lo exige
+- Power Automate para flujos en la nube disparados por ficheros o correo
 
 <!-- skillatlas-tier: senior -->
-## Rendimiento
+## Rendimiento y BI
 
-- Cálculo manual automático
-- Volatilidad funciones coste
-
-## Publicación BI
-
-- Power BI desde Excel modelo
+- Modo de cálculo manual vs automático en libros pesados; volatilidad de funciones
+- Publicación hacia Power BI desde un modelo bien diseñado
+- Gobierno: una fuente de verdad por KPI y documentación de supuestos en el modelo

@@ -1,61 +1,40 @@
 <!-- skillatlas-tier: iniciacion -->
-## Fundamentos
+## Cascada y especificidad
 
-- Selectores de elemento, clase e id
-- Combinadores descendiente, hijo, hermano adyacente
-- Especificidad y cascada
-- Herencia de propiedades
-- Unidades px, rem, em, %, vw, vh
-- Variables CSS custom properties
-- @import y orden de capas
+- Selectores de tipo, clase, id y combinadores (descendiente, hijo, hermano)
+- Cálculo de especificidad y orden de aparición; uso de `@layer` para control explícito
+- Variables personalizadas (`--token`) para temas y diseño sistemático
 
-## Layout
+## Caja y flujo
 
-- display block, inline, inline-block
-- box-sizing border-box
-- margin, padding y border
-- width, max-width y min-width
-- position static, relative, absolute, fixed, sticky
-- z-index y contextos de apilamiento
-- float (legado) y clear
+- Modelo de caja: `margin`, `border`, `padding`; `box-sizing: border-box` como base habitual
+- Unidades relativas (`rem`, `em`, `%`, `vw`/`vh`) para layouts fluidos
 
 <!-- skillatlas-tier: junior -->
 ## Flexbox
 
-- display flex y eje principal
-- justify-content y align-items
-- flex-wrap y gap
-- flex-grow, flex-shrink y flex-basis
-- align-self y order
+- Eje principal y cruzado; `justify-content`, `align-items`, `gap`
+- Elementos flexibles: `flex-grow`, `shrink`, `basis` y alineación individual
 
 ## Grid
 
-- display grid y grid-template
-- fr, minmax y repeat
-- grid-area y nombres de línea
-- gap en grid
-- Alineación de ítems en celdas
+- Rejillas explícitas con `grid-template`, `fr`, `minmax` y áreas nombradas
+- Alineación de ítems y superposición controlada con `z-index` en contextos de apilamiento
 
 <!-- skillatlas-tier: mid -->
 ## Tipografía y color
 
-- font-family, font-size, line-height
-- font-weight y font-style
-- text-align, text-decoration, letter-spacing
-- color y opacity
-- text-overflow y line-clamp
+- Jerarquía tipográfica coherente: familia, tamaño, interlineado
+- Contraste de color y legibilidad; truncado con `text-overflow` / `line-clamp` cuando proceda
 
-## Responsive y medios
+## Responsive y accesibilidad
 
-- Media queries min-width / max-width
-- Imágenes fluidas max-width 100%
-- Contenedor responsive típico
-- prefers-color-scheme y prefers-reduced-motion
+- *Media queries* por anchura y preferencias (`prefers-color-scheme`, `prefers-reduced-motion`)
+- Imágenes y contenedores fluidos sin desbordar el viewport
 
 <!-- skillatlas-tier: senior -->
-## Transiciones y animación
+## Animación y rendimiento
 
-- transition propiedades y duración
-- @keyframes y animation
-- transform translate, scale, rotate
-- will-change con moderación
+- `transition` y `@keyframes` con moderación; `transform` y `opacity` suelen ser baratas
+- `will-change` solo como optimización medida, no por defecto
+- Evitar animaciones que afecten al diseño para usuarios que piden menos movimiento

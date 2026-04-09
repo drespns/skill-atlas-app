@@ -1,59 +1,40 @@
 <!-- skillatlas-tier: iniciacion -->
-## Arquitectura
+## Componentes del workspace
 
-- Workspace Synapse
-- SQL pools dedicados serverless
-- Spark pools Apache Spark
-- Integration Runtime pipelines
-- Dedicated SQL pool MPP legado
+- *Dedicated SQL pool* (MPP) para cargas analíticas tradicionales
+- *Serverless SQL pool* para consultas sobre el lago sin aprovisionar cluster
+- *Apache Spark pools* para procesamiento distribuido y notebooks integrados
+- Integration Runtime para conectar orígenes híbridos (nube + on-prem)
 
-## Synapse SQL
+## SQL y lago
 
-- CETAS export storage
-- External tables PolyBase
-- Workload isolation classifier
-- Result set caching
-
-## Spark en Synapse
-
-- Delta Lake integrado
-- Notebook Synapse develop
-- Spark pool autoscale
-- Spark monitoring métricas
+- CETAS para materializar resultados en el almacenamiento
+- Tablas externas con PolyBase / rutas al *Data Lake* Gen2
+- Aislamiento de cargas (*workload groups*) y caché de resultados cuando aplica
 
 <!-- skillatlas-tier: junior -->
-## Pipelines orquestación
+## Orquestación
 
-- Copy activity blobs SQL
-- Data flows mapping GUI
-- Trigger schedule tumbling
+- Pipelines con actividades de copia, flujos de datos y disparadores programados
+- Integración con Azure Data Lake Gen2, Key Vault y redes virtuales gestionadas
 
-## Lake y governance
+## Gobernanza
 
-- Azure Data Lake Gen2
-- Purview catalog lineage
-- Managed VNet integración
+- Linaje y catálogo con Microsoft Purview en ecosistemas empresariales
 
 <!-- skillatlas-tier: mid -->
 ## Seguridad
 
-- Managed private endpoints
-- Key Vault linked services
-- Conditional access Entra ID
+- *Private endpoints*, identidades administradas y acceso condicional con Entra ID
+- *Self-hosted IR* para sistemas dentro de la red corporativa
 
-## Link services
+## Integración analítica
 
-- Linked service KeyVault
-- Self-hosted IR híbrido
-- Managed identity auth
+- Consumo desde Power BI mediante vistas y datasets conectados al servidor SQL
 
 <!-- skillatlas-tier: senior -->
-## Integración Power BI
+## Migración y operación
 
-- Datasets desde Synapse
-- Serverless vistas consumo
-
-## Migración
-
-- DWLoader cargas masivas
-- From SQL pool legacy
+- Estrategias desde almacenes legados (*SQL pool* clásico) hace arquitecturas lake-first
+- Monitorización de concurrencia, colas y coste por pool
+- Buenas prácticas: zonas de staging en el lago, particionado y gobierno de vistas compartidas

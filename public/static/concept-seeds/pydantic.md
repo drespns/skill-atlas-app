@@ -1,59 +1,41 @@
 <!-- skillatlas-tier: iniciacion -->
-## Modelos
+## Modelos y validación
 
-- BaseModel fields typing
-- Field default factory constraints
-- model_validate parse datos
-- model_dump serializa dict
-- model_construct raw
+- `BaseModel` con campos tipados y validación en la entrada/salida
+- `Field()` para valores por defecto, restricciones y metadatos
+- `model_validate` / `model_dump` para integrar con dicts y APIs REST
+- Inmutabilidad opcional (`frozen`) y constructores controlados
 
 ## Validadores
 
-- field_validator classmethod
-- model_validator whole model
-- BeforeValidator AfterValidator wraps
-
-## Tipos especiales
-
-- EmailStr HttpUrl tipos
-- Json tipo anidado
-- SecretStr SecretBytes masking
-- PositiveInt constrained int
-- Annotated metadata stack
+- `field_validator` y `model_validator` para reglas por campo o modelo completo
+- Composición con `BeforeValidator` / `AfterValidator` y tipos reutilizables
 
 <!-- skillatlas-tier: junior -->
-## Configuración
+## Configuración del modelo
 
-- ConfigDict model config
-- extra ignore forbid allow
-- str_strip_whitespace strings
-- validate_assignment mutables
-- frozen inmutable model
+- `ConfigDict`: política ante campos extra, *strip* de cadenas, validación al asignar
+- Tipos restringidos (`PositiveInt`, `EmailStr`, `HttpUrl`) y secretos en logs (`SecretStr`)
 
-## Esquemas JSON
+## Esquemas e interoperabilidad
 
-- model_json_schema OpenAPI
-- TypeAdapter genéricos unions
+- Generación de JSON Schema para OpenAPI y contratos entre equipos
+- `TypeAdapter` para validar listas, uniones y tipos genéricos complejos
 
 <!-- skillatlas-tier: mid -->
-## v1 frente v2
+## Pydantic v2
 
-- v2 unified validators perf
-- migration guide breaking
+- Núcleo en Rust (`pydantic-core`) y guía de migración desde v1
+- Validaciones de fecha/hora con zona y restricciones temporales
 
-## Datetime
+## Integración aplicación
 
-- AwareDatetime zona horaria
-- PastDate future validations
+- Cuerpos de petición en FastAPI y configuración con `BaseSettings` / variables de entorno
+- Modo compatible con ORMs cuando se expone DTOs de lectura/escritura
 
 <!-- skillatlas-tier: senior -->
-## Integración
+## Rendimiento y límites
 
-- FastAPI request body depend
-- ORM mode SQLAlchemy compat
-- Settings BaseSettings dotenv
-
-## Rendimiento
-
-- pydantic-core Rust core
-- validation rust speed
+- Cuándo validar en el borde (API) vs confiar en la base de datos
+- Tests de regresión sobre modelos compartidos entre microservicios
+- Documentación viva del contrato JSON Schema en el portal de API

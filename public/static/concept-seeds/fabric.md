@@ -1,68 +1,39 @@
 <!-- skillatlas-tier: iniciacion -->
-## Visión unificada
+## Plataforma unificada
 
-- Microsoft Fabric SaaS datos
-- OneLake almacén lago
-- Capacidades lakehouse warehouse BI ML
+- Microsoft Fabric como SaaS de analítica sobre *OneLake* (almacenamiento lago único)
+- Experiencias integradas: *lakehouse*, *warehouse*, BI, ciencia de datos y tiempo real
+- Capacidad (*capacity*) como unidad de cómputo y facturación
 
-## OneLake
+## OneLake y formatos
 
-- Delta Parquet estándar
-- Shortcuts datos externos
-- Dominios gobierno área
-
-## Lakehouse
-
-- Spark notebooks fabric
-- Git integración repos
-- Data pipelines orchestration
+- Datos en Delta/Parquet sobre un espacio lógico compartido
+- *Shortcuts* para datos externos sin duplicar físicamente
 
 <!-- skillatlas-tier: junior -->
-## Warehouse
+## Lakehouse y SQL
 
-- SQL analytics T-SQL
-- Semantic model Power BI
-- Auto scale SQL endpoint
+- Notebooks Spark con integración Git y pipelines de datos
+- Endpoint SQL analítico con T-SQL y escalado automático donde aplique
 
-## Power BI en Fabric
+## Power BI
 
-- Direct Lake mode rendimiento
-- Datasets ligados lakehouse
-- Deployment pipelines BI
-
-## Data Factory
-
-- Dataflows Gen2 preparación
-- Pipeline integración ETL
-- Data pipelines orquestación
+- Modo *Direct Lake* sobre tablas del lakehouse para rendimiento interactivo
+- Modelos semánticos y *deployment pipelines* entre entornos
 
 <!-- skillatlas-tier: mid -->
-## Ciencia datos
+## Integración y tiempo real
 
-- Data Science notebooks
-- ML Model endpoint
-- MLflow experimentos
-
-## Eventstreams real-time
-
-- KQL Database añadido
-- Real-Time Analytics
+- Data Factory (*Dataflows* Gen2, pipelines) para ETL/ELT
+- Eventstreams y KQL Database para analítica en streaming cercano al tiempo real
 
 ## Gobernanza
 
-- Microsoft Purview integración
-- Sensitivity labels
-- Endorsement certificación datasets
+- Integración con Microsoft Purview, etiquetas de sensibilidad y certificación de datasets
 
 <!-- skillatlas-tier: senior -->
-## Seguridad y red
+## Seguridad y operación
 
-- Entra ID roles workspace
-- Workspace aislado red
-- Private link SaaS
-
-## Capacidades y coste
-
-- Fabric Capacity SKU
-- Throttling límites líquidos
-- Trial capacity prueba
+- Identidad con Entra ID, aislamiento de *workspaces* y *Private Link*
+- Límites de capacidad, *throttling* y planificación de cargas pesadas
+- Comparativa con montar lakehouse “puro” en Azure: cuándo compensa Fabric integral

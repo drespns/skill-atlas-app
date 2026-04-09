@@ -1,60 +1,31 @@
 <!-- skillatlas-tier: iniciacion -->
-## Fundamentos
+## Motor y SQL
 
-- Motor InnoDB default
-- MyISAM legado
-- Charset collation utf8mb4
-- Primary key clustering
+- Motor InnoDB por defecto con transacciones ACID y bloqueo a nivel de fila
+- Charset `utf8mb4` y intercalación coherente para texto internacional
+- Tipos JSON, columnas generadas y ventanas analíticas en versiones recientes
 
-## Tipos y SQL
+## Índices y consultas
 
-- JSON tipo columnas
-- Generated columns
-- Window functions 8+
-- CTE soportadas
-
-## Índices
-
-- B-tree clustered secundario
-- Full-text índice
-- Covering index PK include
+- Índices B-tree agrupados en la clave primaria e índices secundarios
+- Índices de texto completo y planes con `EXPLAIN` en formato árbol
 
 <!-- skillatlas-tier: junior -->
-## Transacciones
+## Transacciones y HA
 
-- Isolation InnoDB MVCC
-- Deadlock detection
-- autocommit sesión
-
-## Réplica y HA
-
-- Binlog replicación async
-- GTID identificador transacción
-- Group Replication multimaster
-- InnoDB Cluster
-- ProxySQL balanceo lecturas
+- Aislamiento MVCC, detección de interbloqueos y variable `autocommit`
+- *Binary log* para replicación asíncrona, GTID para topologías claras
+- Group Replication, InnoDB Cluster y proxies tipo ProxySQL para lecturas
 
 <!-- skillatlas-tier: mid -->
-## Particionamiento
+## Particionamiento y rendimiento
 
-- RANGE LIST HASH keys
-- Pruning particiones
-
-## Rendimiento
-
-- Explain formato tree
-- slow_query_log análisis
-- buffer_pool tamaño
-- redo log sizing 8.0
+- Particiones por rango, lista o hash con *pruning* efectivo
+- Ajuste de `innodb_buffer_pool`, redo log y análisis de *slow query log*
 
 <!-- skillatlas-tier: senior -->
-## Operación
+## Operación y nube
 
-- mysqldump backup lógico
-- Percona XtraBackup físico
-- user grants privilegios
-
-## Variantes cloud
-
-- Aurora MySQL compat
-- Cloud SQL gestionado
+- Copias lógicas (`mysqldump`) y físicas (Percona XtraBackup) según RTO/RPO
+- Variantes gestionadas: Aurora MySQL-compatible, Cloud SQL, etc.
+- Roles y privilegios mínimos, rotación de credenciales y auditoría de accesos
