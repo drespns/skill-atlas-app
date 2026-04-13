@@ -2,7 +2,7 @@
 
 ## Tablas usadas por el MVP
 
-- `technologies`
+- `technologies` (tras **saas-028**, columna opcional **`parent_technology_id`**: librería/paquete bajo una tecnología madre del mismo usuario)
 - `concepts`
 - `projects`
 - `project_technologies`
@@ -33,6 +33,10 @@ Migracion multi-tenant y portfolio por token (scripts versionados):
 | 15 | `docs/sql/saas-015-embed-public-thumbnail.sql` | `project_embeds.show_in_public`, `thumbnail_url`; RPC portfolio (slug/token) y CV filtran embeds públicos y devuelven `thumbnailUrl` en JSON |
 | 16 | `docs/sql/saas-016-project-cover-storage.sql` | `projects.cover_image_path`; bucket Storage **`project_covers`** (lectura pública; escritura solo carpeta `auth.uid()/…`); RPCs portfolio (slug/token) y **`skillatlas_cv_by_share_token`** incluyen **`coverImagePath`** por proyecto |
 | 17 | `docs/sql/saas-017-embed-thumbnail-storage.sql` | Bucket **`embed_thumbnails`** para miniaturas de evidencia subidas por el usuario (URL pública sigue guardándose en `project_embeds.thumbnail_url`) |
+| 18 | `docs/sql/saas-024-user-client-state.sql` | Tabla `user_client_state` (JSONB por `scope`) para persistir estado de UI/FAB/tools/study por usuario (RLS own-only). |
+| 19 | `docs/sql/saas-025-study-skillatlas-links.sql` | **Estudio Nivel A:** `study_workspaces.linked_project_id` + `study_workspace_technologies` (enlace usuario–tecnología; RLS). |
+| 20 | `docs/sql/saas-027-study-spaces.sql` | **Estudio multi-espacio:** `study_spaces` + `study_space_id` en fuentes/chunks/notas/workspace; `study_space_technologies` (sustituye `study_workspace_technologies`); PK `study_workspaces` pasa a `study_space_id`. |
+| 21 | `docs/sql/saas-028-technologies-parent.sql` | **`technologies.parent_technology_id`:** FK opcional a otra fila `technologies` (misma cuenta vía trigger); índice `(user_id, parent_technology_id)`; `on delete set null`. |
 
 **Nota saas-006:** si ya aplicaste `saas-003`, debes aplicar **saas-006** (o al menos el bloque `CREATE OR REPLACE FUNCTION` del script) para que la RPC y el esquema coincidan con lo que espera el frontend (`select` con `role`/`outcome` y consumidores del JSON del portfolio). En entornos nuevos: orden típico … → `saas-003` → … → `saas-006`.
 
@@ -154,3 +158,13 @@ Con multi-tenant, la unicidad de negocio es **por usuario**: `(user_id, slug)`.
 - indice unico funcional en `concepts`: `(technology_id, lower(trim(title)))`
 - indice unico en `project_embeds`: `(project_id, sort_order)`
 - las relaciones N:N siguen cubiertas con PK compuesta
+
+## Estudio (`/study`)
+
+Scripts en orden: `saas-020-study-phase1.sql` (fuentes + `study_workspaces.session_notes`), `saas-021-study-files.sql` (Storage + kind `file`), `saas-022-study-extract-text.sql` (`study_chunks` FTS), **`saas-023-study-user-notes.sql`** (notas persistentes adicionales en `study_user_notes`: título + cuerpo por usuario, RLS por `user_id`), **`saas-026-study-code-sources.sql`** (kind `code` en `study_sources` + columnas `code_language` en fuentes y en `study_user_notes`).
+
+Tras **`saas-024-user-client-state.sql`**, la app usa `user_client_state` con scopes **`study_dossiers`** (JSON `{ dossiers: [...] }`), **`study_prefs`** (p. ej. `{ goalLabel }`), **`study_curriculum`** (temario bloques/temas en JSON), **`recent_activity`** (JSON `{ entries: [...] }` actividad reciente) además de FAB/tools.
+
+**`saas-025`:** vínculos formales del workspace: un **proyecto** opcional (`linked_project_id`) y N **tecnologías** (`study_workspace_technologies`).
+
+**`saas-027`:** varios estudios por usuario; la app persiste el espacio activo en `user_client_state` (`study_prefs.activeStudySpaceId`) y el nombre en `study_spaces.title`.
