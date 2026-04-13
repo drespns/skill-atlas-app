@@ -10,20 +10,27 @@ const title = "Admin";
   <main class="max-w-5xl mx-auto space-y-6">
     <header class="space-y-2">
       <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase">Admin</p>
-      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">Solicitudes de acceso</h1>
+      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">Panel de administración</h1>
       <p class="m-0 text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-3xl">
-        Panel privado para revisar solicitudes enviadas desde <span class="font-semibold">/request-access</span>.
+        Solicitudes de acceso y, con service role en servidor, vista de usuarios de Auth (email, fechas, proveedor de registro).
       </p>
     </header>
+
+    <section class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm p-5 space-y-4">
+      <h2 class="m-0 text-lg font-semibold text-gray-900 dark:text-gray-100">Usuarios y sesión</h2>
+      <div data-admin-dashboard>
+        <p class="m-0 text-sm text-gray-600 dark:text-gray-400">Cargando…</p>
+      </div>
+    </section>
 
     <section
       class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm p-5 space-y-4"
     >
+      <h2 class="m-0 text-lg font-semibold text-gray-900 dark:text-gray-100">Solicitudes de acceso</h2>
       <div class="hidden" data-admin-denied>
         <p class="m-0 text-sm text-rose-700 dark:text-rose-300 font-semibold">No tienes permisos de admin.</p>
         <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400">
-          Si crees que es un error, añade tu <span class="font-semibold">user_id</span> a <span class="font-semibold">public.admin_users</span>
-          en Supabase (ver <span class="font-semibold">saas-010</span>).
+          Si crees que es un error, pide a quien administra la instancia que habilite tu cuenta como administradora.
         </p>
       </div>
 
@@ -33,6 +40,7 @@ const title = "Admin";
     </section>
   </main>
 
+  <script src="../scripts/admin/admin-dashboard.ts"></script>
   <script src="../scripts/admin/admin-access-requests.ts"></script>
 </AppShell>
 
