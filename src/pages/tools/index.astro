@@ -1,0 +1,154 @@
+---
+import AppShell from "../../layouts/AppShell.astro";
+
+const title = "Herramientas";
+
+const tools = [
+  {
+    id: "habits",
+    title: "Planificador de hábitos",
+    description: "Malla mensual para hacer seguimiento diario de hábitos.",
+    href: "/tools/habits",
+    badge: "Local",
+  },
+  {
+    id: "convert",
+    title: "Convertidor",
+    description: "Conversión de archivos e imágenes en el navegador.",
+    href: "/tools/convert",
+    badge: "Local",
+  },
+  {
+    id: "readme-preview",
+    title: "Vista Markdown / README",
+    description: "Renderiza Markdown con saneado; opción de pegar o cargar desde URL.",
+    href: "/tools/readme-preview",
+    badge: "Local",
+  },
+  {
+    id: "bio-builder",
+    title: "Bio corta (portfolio / LinkedIn)",
+    description: "Plantillas y límites de caracteres para bios y headlines.",
+    href: "/tools/bio-builder",
+    badge: "Local",
+  },
+  {
+    id: "title-normalize",
+    title: "Título y slug de proyecto",
+    description: "Slug URL, quitar emoji y capitalización para nombres de repo o proyecto.",
+    href: "/tools/title-normalize",
+    badge: "Local",
+  },
+  {
+    id: "interview-prep",
+    title: "Checklist pre-entrevista",
+    description: "Lista editable con export/import JSON y respaldo en localStorage.",
+    href: "/tools/interview-prep",
+    badge: "Local",
+  },
+  {
+    id: "pomodoro",
+    title: "Pomodoro",
+    description: "Temporizador con contador diario en el dispositivo.",
+    href: "/tools/pomodoro",
+    badge: "Local",
+  },
+  {
+    id: "talk-timer",
+    title: "Cronómetro de charla",
+    description: "Cuenta atrás para charlas con avisos a 2 min, 1 min y al final.",
+    href: "/tools/talk-timer",
+    badge: "Local",
+  },
+  {
+    id: "text-diff",
+    title: "Diff de texto",
+    description: "Compara dos textos línea a línea en el cliente.",
+    href: "/tools/text-diff",
+    badge: "Local",
+  },
+  {
+    id: "json-format",
+    title: "JSON: formatear y validar",
+    description: "Pretty-print, minificar y validar sin salir del navegador.",
+    href: "/tools/json-format",
+    badge: "Local",
+  },
+  {
+    id: "code-snippet-html",
+    title: "Snippet HTML escapado",
+    description: "Genera un bloque pre/code listo para pegar en HTML o email.",
+    href: "/tools/code-snippet-html",
+    badge: "Local",
+  },
+  {
+    id: "salary-estimate",
+    title: "Estimación bruto → neto",
+    description: "Aproximación orientativa según retención indicada.",
+    href: "/tools/salary-estimate",
+    badge: "Local",
+  },
+  {
+    id: "gitignore-builder",
+    title: "Generador .gitignore",
+    description: "Marca stacks y descarga un .gitignore compuesto.",
+    href: "/tools/gitignore-builder",
+    badge: "Local",
+  },
+  {
+    id: "qr-generator",
+    title: "Código QR",
+    description: "Texto o URL a QR en canvas, descarga PNG.",
+    href: "/tools/qr-generator",
+    badge: "Local",
+  },
+];
+---
+
+<AppShell title={title}>
+  <div data-requires-auth class="hidden"></div>
+  <section class="space-y-6">
+    <header class="space-y-2">
+      <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase">Tools</p>
+      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">{title}</h1>
+      <p class="m-0 text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-2xl">
+        Espacio experimental para probar features “de producto final”. La idea es iterar rápido, medir utilidad y luego decidir qué se queda.
+      </p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      {
+        tools.map((t) => (
+          <a
+            href={t.href}
+            class="group rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 p-5 no-underline hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <h2 class="m-0 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-100 truncate">
+                  {t.title}
+                </h2>
+                <p class="mt-1 mb-0 text-sm text-gray-600 dark:text-gray-400">{t.description}</p>
+              </div>
+              <span class="shrink-0 rounded-full border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200">
+                {t.badge}
+              </span>
+            </div>
+            <div class="mt-4 flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-300">
+              <span>Ir</span>
+              <span class="transition-transform group-hover:translate-x-0.5">→</span>
+            </div>
+          </a>
+        ))
+      }
+    </div>
+
+    <section class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm p-5 space-y-2">
+      <h2 class="m-0 text-base font-semibold">Nota</h2>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
+        En esta iteración, las herramientas usan <strong>localStorage</strong> y no están “productizadas”. La intención es validar UX y valor.
+      </p>
+    </section>
+  </section>
+</AppShell>
+

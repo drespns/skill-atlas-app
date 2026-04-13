@@ -1,0 +1,32 @@
+---
+import AppShell from "../../layouts/AppShell.astro";
+
+const title = "JSON: formatear y validar";
+---
+
+<AppShell title={title}>
+  <div data-requires-auth class="hidden"></div>
+  <section class="space-y-6" data-tools-json-page>
+    <header class="space-y-2">
+      <a href="/tools" class="text-sm font-semibold text-gray-700 dark:text-gray-200 hover:underline">← Herramientas</a>
+      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">{title}</h1>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-2xl">Pretty-print, minificar o comprobar que el JSON es válido (todo en el navegador).</p>
+    </header>
+
+    <div class="space-y-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-4">
+      <div class="flex flex-wrap gap-2">
+        <button type="button" data-json-pretty class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Formatear (2 espacios)</button>
+        <button type="button" data-json-mini class="rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">Minificar</button>
+        <button type="button" data-json-copy class="rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">Copiar</button>
+      </div>
+      <p class="m-0 text-sm text-rose-600 dark:text-rose-400 hidden" data-json-err></p>
+      <textarea
+        data-json-in
+        rows="20"
+        class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/60 px-3 py-2 text-sm font-mono"
+        placeholder='{"hello": "world"}'
+      ></textarea>
+    </div>
+  </section>
+  <script src="../../scripts/tools/json-format.ts"></script>
+</AppShell>

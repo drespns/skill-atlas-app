@@ -1,0 +1,127 @@
+---
+import AppShell from "../../layouts/AppShell.astro";
+
+const title = "Vista Markdown / README";
+---
+
+<AppShell title={title}>
+  <div data-requires-auth class="hidden"></div>
+  <section class="space-y-6" data-tools-readme-page>
+    <header class="space-y-2">
+      <a href="/tools" class="text-sm font-semibold text-gray-700 dark:text-gray-200 hover:underline">← Herramientas</a>
+      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">{title}</h1>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-2xl">
+        Pega Markdown o carga un archivo raw (p. ej. README desde GitHub raw). El HTML se sanitiza en el navegador.
+      </p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="space-y-2 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-4">
+        <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">URL (opcional)</label>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input
+            type="url"
+            data-readme-url
+            placeholder="https://raw.githubusercontent.com/…/README.md"
+            class="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
+          />
+          <button
+            type="button"
+            data-readme-fetch
+            class="shrink-0 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900"
+          >
+            Cargar
+          </button>
+        </div>
+        <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Markdown</label>
+        <textarea
+          data-readme-md
+          rows="18"
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/60 px-3 py-2 text-sm font-mono"
+          placeholder="# Título&#10;&#10;Contenido…"
+        ></textarea>
+        <button
+          type="button"
+          data-readme-render
+          class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+        >
+          Renderizar
+        </button>
+        <p class="m-0 text-xs text-rose-600 dark:text-rose-400" data-readme-err></p>
+      </div>
+      <div
+        class="readme-render-out rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 min-h-[12rem] overflow-auto text-sm text-gray-800 dark:text-gray-200"
+        data-readme-out
+      >
+      </div>
+    </div>
+  </section>
+  <style is:global>
+    [data-readme-out] h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+    }
+    [data-readme-out] h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 1rem 0 0.35rem;
+    }
+    [data-readme-out] h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0.75rem 0 0.25rem;
+    }
+    [data-readme-out] p {
+      margin: 0.35rem 0;
+      line-height: 1.5;
+    }
+    [data-readme-out] ul,
+    [data-readme-out] ol {
+      margin: 0.35rem 0;
+      padding-left: 1.25rem;
+    }
+    [data-readme-out] code {
+      font-size: 0.85em;
+      padding: 0.1em 0.35em;
+      border-radius: 0.25rem;
+      background: rgb(243 244 246 / 0.9);
+    }
+    .dark [data-readme-out] code {
+      background: rgb(31 41 55 / 0.9);
+    }
+    [data-readme-out] pre {
+      margin: 0.5rem 0;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      overflow: auto;
+      background: rgb(243 244 246 / 0.95);
+      font-size: 0.8rem;
+    }
+    .dark [data-readme-out] pre {
+      background: rgb(17 24 39 / 0.95);
+    }
+    [data-readme-out] pre code {
+      padding: 0;
+      background: transparent;
+    }
+    [data-readme-out] a {
+      color: rgb(79 70 229);
+      text-decoration: underline;
+    }
+    .dark [data-readme-out] a {
+      color: rgb(165 180 252);
+    }
+    [data-readme-out] blockquote {
+      margin: 0.5rem 0;
+      padding-left: 0.75rem;
+      border-left: 3px solid rgb(199 210 254);
+      color: rgb(75 85 99);
+    }
+    .dark [data-readme-out] blockquote {
+      border-color: rgb(99 102 241 / 0.5);
+      color: rgb(156 163 175);
+    }
+  </style>
+  <script src="../../scripts/tools/readme-preview.ts"></script>
+</AppShell>

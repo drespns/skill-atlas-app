@@ -1,0 +1,190 @@
+---
+import AppShell from "../../layouts/AppShell.astro";
+
+const title = "Planificador de hábitos";
+---
+
+<AppShell title={title}>
+  <div data-requires-auth class="hidden"></div>
+  <section class="relative space-y-6" data-tools-habits-page>
+    <!-- Filtro SVG (una vez por página): bordes algo orgánicos, tipo creyón -->
+    <svg
+      class="pointer-events-none absolute h-px w-px overflow-hidden opacity-0"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <defs>
+        <filter
+          id="skillatlas-habit-crayon"
+          x="-45%"
+          y="-45%"
+          width="190%"
+          height="190%"
+          color-interpolation-filters="sRGB"
+        >
+          <feTurbulence type="fractalNoise" baseFrequency="0.09" numOctaves="2" seed="7" result="n" />
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="0.9" xChannelSelector="R" yChannelSelector="G" />
+          <feGaussianBlur stdDeviation="0.28" />
+        </filter>
+      </defs>
+    </svg>
+
+    <header class="space-y-2">
+      <a href="/tools" class="text-sm font-semibold text-gray-700 dark:text-gray-200 hover:underline">← Herramientas</a>
+      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">{title}</h1>
+      <p class="m-0 text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-2xl">
+        Añade hábitos y marca cada día. Todo se guarda en este dispositivo.
+      </p>
+    </header>
+
+    <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm p-4 sm:p-5 space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <label class="space-y-1">
+          <span class="text-sm font-semibold">Mes</span>
+          <input
+            type="month"
+            data-habits-month
+            class="w-full sm:w-auto rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-3 py-2 text-sm"
+          />
+        </label>
+
+        <form class="flex flex-col sm:flex-row gap-2 sm:items-end" data-habits-add-form>
+          <label class="space-y-1 flex-1 min-w-0">
+            <span class="text-sm font-semibold">Nuevo hábito</span>
+            <input
+              name="name"
+              type="text"
+              required
+              maxlength="40"
+              placeholder="Ej: Leer 20 min"
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-3 py-2 text-sm"
+            />
+          </label>
+          <button
+            type="submit"
+            class="inline-flex justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200"
+          >
+            Añadir
+          </button>
+        </form>
+      </div>
+
+      <div class="overflow-x-auto rounded-xl border border-gray-200/80 dark:border-gray-800" data-habits-grid-wrap>
+        <table class="w-full border-collapse text-sm" data-habits-grid>
+          <thead class="sticky top-0 bg-gray-50 dark:bg-gray-900">
+            <tr data-habits-grid-head-row>
+              <th class="text-left p-2.5 border-b border-gray-200 dark:border-gray-800 min-w-52">Hábito</th>
+            </tr>
+          </thead>
+          <tbody data-habits-grid-body></tbody>
+        </table>
+      </div>
+
+      <p class="m-0 text-xs text-gray-500 dark:text-gray-400">
+        Tip: pulsa en una celda para marcar/desmarcar. Shift+click marca un rango.
+      </p>
+
+      <div
+        data-habits-debug
+        class="hidden rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/50 dark:bg-gray-950/40 px-3 py-2 text-[11px] text-gray-600 dark:text-gray-300"
+      ></div>
+    </div>
+  </section>
+
+  <style is:global>
+    :root {
+      --habits-accent-fallback: 239 84% 67%;
+    }
+    [data-tools-habits-page] .habit-cell--on {
+      border-color: hsl(var(--app-accent-hsl, var(--habits-accent-fallback)) / 0.55);
+    }
+    [data-tools-habits-page] .habit-cell--fill {
+      background-color: hsl(var(--app-accent-hsl, var(--habits-accent-fallback)) / 0.92) !important;
+      box-shadow: 0 0 0 1px hsl(var(--app-accent-hsl, var(--habits-accent-fallback)) / 0.25) inset !important;
+    }
+    [data-tools-habits-page] .habit-cell--check {
+      background-color: hsl(var(--app-accent-hsl, var(--habits-accent-fallback)) / 0.92) !important;
+      color: white;
+      font-weight: 900;
+      line-height: 1;
+      box-shadow: 0 0 0 1px hsl(var(--app-accent-hsl, var(--habits-accent-fallback)) / 0.25) inset !important;
+    }
+    /* Pintar: capa SVG encima del fondo de la celda (debajo del inset shadow visual del botón). */
+    [data-tools-habits-page] .habit-cell--paint {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      background-color: transparent !important;
+      background-image: none !important;
+      box-shadow: 0 0 0 1px hsl(var(--app-accent-hsl, var(--habits-accent-fallback)) / 0.25) inset !important;
+      color: hsl(var(--app-accent-hsl, var(--habits-accent-fallback)) / 0.94);
+    }
+
+    [data-tools-habits-page] .habit-paint-svg {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 122%;
+      height: 122%;
+      transform: translate(-50%, -50%) rotate(-2.5deg);
+      z-index: 2;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    [data-tools-habits-page] .habit-paint-fill {
+      fill: currentColor;
+      fill-opacity: 0.34;
+    }
+
+    [data-tools-habits-page] .habit-paint-border,
+    [data-tools-habits-page] .habit-paint-scribble {
+      stroke-dasharray: 100;
+      stroke-dashoffset: 0;
+    }
+
+    @keyframes skillatlasPaintStroke {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    @keyframes skillatlasPaintFill {
+      to {
+        fill-opacity: 0.34;
+      }
+    }
+
+    [data-tools-habits-page] .habit-cell--paint.habit-cell--animate .habit-paint-border {
+      stroke-dashoffset: 100;
+      animation: skillatlasPaintStroke 0.44s cubic-bezier(0.33, 0.9, 0.38, 1) forwards;
+    }
+
+    [data-tools-habits-page] .habit-cell--paint.habit-cell--animate .habit-paint-scribble {
+      stroke-dashoffset: 100;
+      animation: skillatlasPaintStroke 0.58s cubic-bezier(0.33, 0.9, 0.38, 1) forwards;
+      animation-delay: 0.12s;
+    }
+
+    [data-tools-habits-page] .habit-cell--paint.habit-cell--animate .habit-paint-fill {
+      fill-opacity: 0;
+      animation: skillatlasPaintFill 0.36s ease-out forwards;
+      animation-delay: 0.5s;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      [data-tools-habits-page] .habit-cell--paint.habit-cell--animate .habit-paint-border,
+      [data-tools-habits-page] .habit-cell--paint.habit-cell--animate .habit-paint-scribble {
+        animation: none;
+        stroke-dashoffset: 0;
+      }
+      [data-tools-habits-page] .habit-cell--paint.habit-cell--animate .habit-paint-fill {
+        animation: none;
+        fill-opacity: 0.34;
+      }
+    }
+  </style>
+
+  <script src="../../scripts/tools/habits.ts"></script>
+</AppShell>
+

@@ -1,0 +1,40 @@
+---
+import AppShell from "../../layouts/AppShell.astro";
+
+const title = "Cronómetro de charla";
+---
+
+<AppShell title={title}>
+  <div data-requires-auth class="hidden"></div>
+  <section class="space-y-6" data-tools-talk-page>
+    <header class="space-y-2">
+      <a href="/tools" class="text-sm font-semibold text-gray-700 dark:text-gray-200 hover:underline">← Herramientas</a>
+      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">{title}</h1>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-2xl">
+        Cuenta atrás para lightning talks o demos. Pitidos a 2 min, 1 min y al llegar a cero.
+      </p>
+    </header>
+
+    <div class="max-w-md mx-auto text-center space-y-4 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-8">
+      <p class="m-0 text-sm text-amber-700 dark:text-amber-300 font-semibold min-h-[1.25rem]" data-talk-status></p>
+      <p class="m-0 text-5xl sm:text-6xl font-mono font-bold tabular-nums text-gray-900 dark:text-gray-100" data-talk-display>5:00</p>
+      <div class="flex flex-wrap justify-center gap-2">
+        <button type="button" data-talk-preset="3" class="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">3 min</button>
+        <button type="button" data-talk-preset="5" class="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">5 min</button>
+        <button type="button" data-talk-preset="7" class="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">7 min</button>
+        <button type="button" data-talk-preset="10" class="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">10 min</button>
+        <button type="button" data-talk-preset="15" class="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">15 min</button>
+      </div>
+      <label class="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+        Personalizado (min)
+        <input type="number" data-talk-custom min="1" max="120" value="5" class="w-16 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1" />
+      </label>
+      <div class="flex flex-wrap justify-center gap-2">
+        <button type="button" data-talk-start class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Iniciar</button>
+        <button type="button" data-talk-pause class="rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">Pausa</button>
+        <button type="button" data-talk-reset class="rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">Reiniciar</button>
+      </div>
+    </div>
+  </section>
+  <script src="../../scripts/tools/talk-timer.ts"></script>
+</AppShell>

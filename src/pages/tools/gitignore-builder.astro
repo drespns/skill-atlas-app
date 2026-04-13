@@ -1,0 +1,36 @@
+---
+import AppShell from "../../layouts/AppShell.astro";
+
+const title = "Generador .gitignore";
+---
+
+<AppShell title={title}>
+  <div data-requires-auth class="hidden"></div>
+  <section class="space-y-6" data-tools-gitignore-page>
+    <header class="space-y-2">
+      <a href="/tools" class="text-sm font-semibold text-gray-700 dark:text-gray-200 hover:underline">← Herramientas</a>
+      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">{title}</h1>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-2xl">
+        Marca los entornos que uses y genera un archivo listo para descargar o copiar.
+      </p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="space-y-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-4">
+        <p class="m-0 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Incluir</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" data-gi-checks></div>
+        <button type="button" data-gi-build class="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">
+          Regenerar
+        </button>
+      </div>
+      <div class="space-y-2 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-4">
+        <div class="flex flex-wrap gap-2">
+          <button type="button" data-gi-copy class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Copiar</button>
+          <button type="button" data-gi-dl class="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">Descargar .gitignore</button>
+        </div>
+        <textarea data-gi-out rows="22" readonly class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/60 px-3 py-2 text-xs font-mono"></textarea>
+      </div>
+    </div>
+  </section>
+  <script src="../../scripts/tools/gitignore-builder.ts"></script>
+</AppShell>

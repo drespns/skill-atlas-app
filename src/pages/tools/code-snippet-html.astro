@@ -1,0 +1,57 @@
+---
+import AppShell from "../../layouts/AppShell.astro";
+
+const title = "Snippet HTML escapado";
+---
+
+<AppShell title={title}>
+  <div data-requires-auth class="hidden"></div>
+  <section class="space-y-6" data-tools-snippet-page>
+    <header class="space-y-2">
+      <a href="/tools" class="text-sm font-semibold text-gray-700 dark:text-gray-200 hover:underline">← Herramientas</a>
+      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">{title}</h1>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-2xl">
+        Genera un bloque <code class="text-xs">&lt;pre&gt;&lt;code&gt;</code> con el código escapado para pegar en HTML (p. ej. embeds). El resaltado depende del CSS/JS de tu página destino.
+      </p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="space-y-2 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-4">
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Código</span>
+          <textarea data-snippet-code rows="12" class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/60 px-3 py-2 text-sm font-mono"></textarea>
+        </label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Lenguaje (clase)</span>
+            <select data-snippet-lang class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-2 text-sm">
+              <option value="text">texto plano</option>
+              <option value="typescript">typescript</option>
+              <option value="javascript">javascript</option>
+              <option value="python">python</option>
+              <option value="rust">rust</option>
+              <option value="html">html</option>
+              <option value="css">css</option>
+              <option value="json">json</option>
+              <option value="bash">bash</option>
+              <option value="sql">sql</option>
+            </select>
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Clase extra en &lt;pre&gt; (opcional)</span>
+            <input type="text" data-snippet-pre-class class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-2 text-sm" placeholder="p. ej. rounded-lg p-4" />
+          </label>
+        </div>
+        <button type="button" data-snippet-gen class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Generar</button>
+      </div>
+      <div class="space-y-2 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-4">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Salida HTML</span>
+          <button type="button" data-snippet-copy class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Copiar</button>
+        </div>
+        <textarea data-snippet-out rows="14" readonly class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/60 px-3 py-2 text-xs font-mono"></textarea>
+      </div>
+    </div>
+  </section>
+  <script src="../../scripts/tools/code-snippet-html.ts"></script>
+</AppShell>

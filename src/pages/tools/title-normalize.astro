@@ -1,0 +1,44 @@
+---
+import AppShell from "../../layouts/AppShell.astro";
+
+const title = "Título y slug de proyecto";
+---
+
+<AppShell title={title}>
+  <div data-requires-auth class="hidden"></div>
+  <section class="space-y-6" data-tools-title-page>
+    <header class="space-y-2">
+      <a href="/tools" class="text-sm font-semibold text-gray-700 dark:text-gray-200 hover:underline">← Herramientas</a>
+      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">{title}</h1>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-2xl">
+        Normaliza títulos para portfolio y obtén un slug URL-friendly (sin acentos, minúsculas, guiones).
+      </p>
+    </header>
+
+    <div class="max-w-xl space-y-4 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-4">
+      <label class="block space-y-1">
+        <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Título original</span>
+        <input type="text" data-title-in class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm" placeholder="Mi súper proyecto 🚀" />
+      </label>
+      <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+        <input type="checkbox" data-title-strip-emoji class="accent-indigo-600" checked />
+        Quitar emojis
+      </label>
+      <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+        <input type="checkbox" data-title-case class="accent-indigo-600" />
+        Title Case (palabras cortas en minúsculas)
+      </label>
+      <label class="block space-y-1">
+        <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Longitud máxima</span>
+        <input type="number" data-title-max min="10" max="120" value="80" class="w-28 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm" />
+      </label>
+      <div class="rounded-xl border border-gray-200/70 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/40 p-3 space-y-2 text-sm">
+        <p class="m-0 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Título normalizado</p>
+        <p class="m-0 font-medium text-gray-900 dark:text-gray-100" data-title-out-norm>—</p>
+        <p class="m-0 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mt-2">Slug sugerido</p>
+        <p class="m-0 font-mono text-indigo-700 dark:text-indigo-300" data-title-out-slug>—</p>
+      </div>
+    </div>
+  </section>
+  <script src="../../scripts/tools/title-normalize.ts"></script>
+</AppShell>
