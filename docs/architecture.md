@@ -61,6 +61,16 @@ Esto implica que scripts cliente que antes dependían de `DOMContentLoaded` debe
 
 **Dashboard (`/app`):** `src/scripts/app/recent-activity.ts` guarda en `localStorage` (clave `skillatlas_recent_activity_v1`) las últimas aperturas de detalle **proyecto** y **tecnología**; la escritura ocurre en `projects/project-view-bootstrap.ts` y `technologies/technology-view-bootstrap.ts` tras cargar el recurso con éxito. `app/app-dashboard.ts` renderiza esas listas con marca de tiempo relativa, hidrata conteos y listas alfabéticas (8 ítems) vía Supabase cuando hay cliente y sesión, y escucha `skillatlas:auth-nav-updated` para refrescar. **Nota de producto:** si hiciera falta continuidad entre dispositivos, habría que persistir el historial en servidor (p. ej. prefs sync o tabla dedicada), no solo en `localStorage`.
 
+**Estudio (`/study`) — chat con citas:** con `STUDY_CHAT_ENABLED` y `PUBLIC_STUDY_CHAT_ENABLED`, el cliente envía el mensaje a `POST /api/study/chat` con `Authorization: Bearer` (sesión Supabase); el modelo devuelve texto con marcadores `[[1]]`… y un JSON de citas con `excerpt` + `body` (chunk) para que `study-chat-ui.ts` muestre el panel con `<mark>` y enlace a la fuente, y `flashSourceRow` resalte la fila en la barra lateral de fuentes.
+
+**Estudio — estado en cuenta (`user_client_state`):** scopes **`study_dossiers`** (artefactos dossier, remote-first con caché `skillatlas_study_dossiers_v1`), **`study_prefs`** (p. ej. etiqueta de objetivo/convocatoria), **`study_curriculum`** (temario bloques/temas) y **`recent_activity`** (lista reciente proyectos/tecnologías, sincronizada con `skillatlas_recent_activity_v1`); el dashboard (`/app`) resume conteos de `study_sources`, `study_chunks`, `study_user_notes`, dossiers, y progreso del temario (`done` / `total` topics) desde `study_curriculum`.
+
+**Tecnologías — import por registro:** ruta API `POST /api/tech-registry-lookup` (sesión Bearer) consulta metadatos en **npm** o **PyPI** (`src/lib/server/registry-lookup.ts`); el formulario en `/technologies` rellena nombre/slug/tipo sugerido.
+
+**Herramientas (`/tools`):** rutas Astro bajo `src/pages/tools/*` con lógica en `src/scripts/tools/*.ts` (habits, convertidor de imágenes en cliente, Markdown/README con `marked` + `DOMPurify`, diff, JSON, QR, etc.). El **hub** lista enlaces; la cabecera expone popover con scroll y la command palette duplica atajos. Todo orientado a utilidades **sin persistencia de servidor** salvo lo ya cubierto por `user_client_state` (p. ej. hábitos sync).
+
+**Estudio — Nivel A (Supabase):** `study_workspaces.linked_project_id` y `study_workspace_technologies` (**`saas-025`**) vinculan el workspace a **proyectos** y **tecnologías** ya existentes; la UI de `/study` persiste esos enlaces y los detalles CSR muestran un aviso cuando el recurso está vinculado.
+
 **Insights / gráficos (plan):** siguiente vertical en `/app` — métricas **solo del usuario** en MVP (p. ej. conceptos por tecnología y `progress` desde tablas ya cubiertas por RLS); agregados **multi-usuario** y cualquier IA sobre datos solo vía **RPC agregadas / vistas fijas** + opt-in, no con SELECTs abiertos en cliente. Contexto e ideas relacionadas: **`docs/backlog.md`** (p. ej. ítem “Insights en `/app`” en ideas y frentes abiertos).
 
 ### Geo / país del usuario (futuro)

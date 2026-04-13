@@ -10,13 +10,125 @@ Documento orientado al **historial** de lo implementado y a **ideas** sin orden 
 
 ## Registro de versiones (historial de producto)
 
-### v0.120.0 (siguiente)
+### v0.130.0 (actual)
 
+**Numeración:** el trabajo acumulado que estaba documentado como salida **0.120.x** se publica como **0.130.0** (salto de versión por alcance: Estudio, `/tools` ampliado, CV, admin, SQL y sync en cuenta).
+
+- **Command palette:** fondo del overlay más suave (`backdrop` ligero, viñetas de color atenuadas, panel un poco más opaco); entradas para **todas** las rutas bajo `/tools` (además de `/backlog`, `/contact`, etc.).
+- **CV (`/cv`):**
+  - Botón **Descargar JSON** en la cabecera (mismo payload que el respaldo del editor).
+  - **Vaciar contenido** con modal in-app (mismo patrón que import/preview), sin `window.confirm`.
+  - Proyectos en CV: copy alineado con portfolio; **proyecto destacado** opcional (`cvFeaturedProjectSlug` en `cvProfile`); el resto en **lista compacta** en vista previa e impresión; CV público por token respeta destacado si viene en el JSON del perfil.
+- **Estudio (`/study`):**
+  - Carpetas **definidas por el usuario** (`customStudyFolders` + asignación en `sourceFolderById`), persistidas en local junto al workspace; fusión al hidratar desde Supabase.
+  - Iconos **VS Code Codicons** (`@vscode/codicons`) para carpeta y asa de arrastre.
+  - Panel central tipo IDE con cabecera y dock más **visibles** (gradiente, anillo, borde).
+- **Admin (`/admin`):**
+  - Bloque **Usuarios y sesión**: `GET /api/admin/stats` (JWT de sesión + fila `admin_users` + opcional `SUPABASE_SERVICE_ROLE_KEY` en servidor) lista usuarios Auth (email, creado, último login, provider). Sin service role, mensaje de configuración.
+- **Importación GitHub:** confirmado estable en uso real (stack / evidencia).
+- **Herramientas (`/tools`) — hub ampliado (cliente, sin servidor salvo lo ya existente):**
+  - Enlace **Herramientas** en cabecera (solo con sesión) con **popover desplazable** y listado de accesos directos; pie y palette alineados.
+  - **Hub** `/tools` con tarjetas (grid responsive) hacia: **hábitos**, **convertidor** (imágenes en cliente; resto marcado Pro), **vista Markdown/README** (`marked` + saneado `DOMPurify`), **bio corta**, **título/slug**, **checklist pre-entrevista** (localStorage + JSON), **Pomodoro**, **cronómetro de charla** (avisos 2′/1′/0), **diff de texto** (`diff`), **JSON** (formatear/minificar), **snippet HTML escapado**, **estimación bruto→neto**, **generador `.gitignore`** (`src/lib/tools-gitignore-parts.ts`), **código QR** (`qrcode`).
+  - Dependencias nuevas en bundle: `marked`, `dompurify`, `diff`, `qrcode` (+ tipos dev `@types/dompurify` donde aplica).
+- **Producto — historial visible:**
+  - Ruta `/backlog` que muestra el historial por versiones (derivado de `docs/backlog.md`).
+- **Bubble (FAB) — utilidades:**
+  - Pestañas nuevas: Calendario (notas por fecha) y Curiosidades (links).
+  - Se quitan “Primeros pasos” y “Contacto” del bubble (onboarding + ruta `/contact`).
+- **Contacto:**
+  - Ruta `/contact` enlazada desde Ajustes (menú de usuario).
+  - `/request-access` renovado con enlace a `/contact`.
 - **Estudio (`/study`) — fase 1 (persistencia):**
   - Tablas Supabase + RLS: `study_sources` (links/notas) y `study_workspaces` (activeIds + sessionNotes).
   - La UI hidrata desde Supabase con sesión y mantiene fallback/cache en `localStorage` (migración 1 vez si remoto está vacío).
+- **Estudio (`/study`) — fase 2 (subida de archivos):**
+  - Bucket Storage `study_files` + policies para subir/leer/borrar solo lo propio.
+  - UI para adjuntar archivos (PDF/TXT/MD) como fuentes y mantenerlos en el contexto.
+- **Estudio (`/study`) — fase 3 (extracción de texto):**
+  - Extracción best-effort de texto al subir fuentes tipo archivo: TXT/MD directo y PDF vía `pdfjs-dist`.
+  - Persistencia del texto extraído en `study_sources.body` (base para chat/RAG en fases posteriores).
+- **Estudio — dossiers y objetivo (cuenta):**
+  - Dossiers: sincronización **remote-first** vía `user_client_state` scope `study_dossiers` (mantiene `localStorage` como caché).
+  - Campo **Objetivo** (etiqueta de convocatoria/temario) en `user_client_state` scope `study_prefs`; visible en `/app`.
+- **Dashboard (`/app`) — bloque Estudio:**
+  - Conteos de fuentes, chunks, notas guardadas y dossiers + CTA a `/study`.
+- **Estudio — Nivel A (SkillAtlas) + temario:**
+  - SQL **`saas-025`**: proyecto opcional vinculado al workspace + tabla `study_workspace_technologies`.
+  - UI en `/study`: selector de **proyecto** y multiselect de **tecnologías** del usuario; avisos en detalle de **proyecto** / **tecnología** cuando hay vínculo.
+  - **Temario** (bloques → temas con estado todo/doing/done) persistido en `user_client_state` scope **`study_curriculum`**.
+- **Catálogo:** plantilla **SciPy** ampliada con `optimize.linprog`; el catálogo curado no intenta listar todo PyPI/npm — **librerías/paquetes** los crea el usuario en **Tecnologías** (import por URL / flujos propios: ver ideas en backlog).
+- **Tecnologías — registro npm/PyPI:** `POST /api/tech-registry-lookup` (sesión) + botón **Buscar npm/PyPI** y slug opcional en el formulario; rellena nombre/slug/tipo sugerido desde metadatos públicos (icono sigue siendo catálogo / clave local).
+- **Proyectos — duplicar:** botón en detalle CSR que copia proyecto (stack, conceptos enlazados, evidencias); sin copiar portada.
+- **Actividad reciente:** scope `user_client_state` **`recent_activity`**; merge con `localStorage` al iniciar sesión y guardado tras cada visita.
+- **Dashboard:** línea de progreso del **temario** (`study_curriculum`: temas hechos / total).
+- **`/prep`:** bloque “qué usar ya” con enlaces a `/app`, `/technologies`, `/study`.
+- **Estudio (`/study`) — fase 3 (chat + citas interactivas):**
+  - Endpoint `POST /api/study/chat` (feature flag servidor `STUDY_CHAT_ENABLED`): RAG sobre chunks Postgres, respuesta con citas numeradas; cada cita incluye **`body`** (texto del chunk, capado) para resaltar en cliente sin otra petición.
+  - UI en `/study`: mensajes del asistente con botones **`[[n]]`**; panel de cita con fragmento resaltado (`<mark>`), enlace “Abrir fuente” y “Resaltar en lista” (scroll + anillo en la fila de fuentes).
+  - La caja de chat solo se habilita si `PUBLIC_STUDY_CHAT_ENABLED=true` (el servidor puede seguir apagado con 404 hasta activar ambos flags + `OPENAI_API_KEY`).
+- **Persistencia (Supabase) — remote-first con caché local:**
+  - Tabla `user_client_state` para estado de cliente por `scope` (RLS own-only). SQL: `docs/sql/saas-024-user-client-state.sql`.
+  - Calendario del bubble y hábitos (`/tools/habits`) pasan a sincronizarse con cuenta; `localStorage` queda como caché/offline.
+- **UI — selects modernizados:**
+  - “Select popover” global: cualquier `<select>` se transforma en popover con `<ul role="listbox">` (estilo Tecnologías); mantiene `<select>` oculto para compatibilidad.
+- **Convertidor:**
+  - Controles no soportados quedan deshabilitados (solo imagen es usable en gratis).
+- **Hábitos:**
+  - Fix: marcado “paint” ya no desaparece tras la animación; respeta `motion: reduced`.
+- **Convertidor (`/tools/convert`) — UI moderna + conversión gratis (imágenes):**
+  - Rediseño tipo “Convertio”: dropzone, previews de entrada/salida, botón swap (⇄) y descarga.
+  - Conversión **client-side** sin coste para imágenes: `PNG/JPG/WEBP` (entrada) → `PNG/JPG/WEBP` (salida) y entrada `SVG` (rasteriza).
+  - Nota: conversiones de audio/vídeo/documentos quedan como **Pro** (server-side o WASM pesado).
+- **Bubble (FAB):**
+  - Calendario: UI más moderna + filtros por mes y por tag.
+  - Curiosidades: ampliadas y agrupadas por temática con color.
+  - Preferencias nuevas: mostrar/ocultar **Atajos** en el bubble.
+  - Preferencias: cambios en Ajustes actualizan el bubble **sin recargar**.
+  - IA: puede mostrarse también con sesión si el usuario la activa (sigue off por defecto).
+- **Navegación / shell:**
+  - “Herramientas” en header y footer pasa a ser **solo con sesión** (fuera de login no debe aparecer navegación interna).
+  - Footer: reorganización del bloque de links (incluye accesos a `/backlog` y `/contact`).
+- **Command palette:**
+  - Entradas para `/tools` y **cada** subruta de herramienta, más `/backlog` y `/contact`.
+- **Fixes:**
+  - Planificador de hábitos: arreglado click y Shift+click (evita doble toggle por múltiples bindings).
+- **Admin — siguiente nivel (idea):** métricas agregadas (DAU, registros por día), tabla de **audit log** si se añade SQL, export CSV, paginación `listUsers` >100, **nunca** exponer service role al cliente.
+- **Estudio (`/study`) — UX / cohesión (pendiente; próximo tramo hacia 0.140.0):**
+  - **Objetivo:** acción explícita de **guardar** (o auto-guardado con feedback inequívoco: guardado / error / pendiente) y **continuar / proceder** — enlace o CTA que encadene el flujo (p. ej. bajar foco a fuentes, dossier o “siguiente paso”), no solo texto de ayuda bajo el input.
+  - **Cohesión:** Objetivo, SkillAtlas (tech + proyecto) y Temario se perciben como bloques inconexos; acercar jerarquía (pasos numerados, pestañas, acordeón o strip colapsable) y menos rejilla densa a la vez en viewport.
+  - **Mini-espec** de pantalla Estudio (flujo feliz + qué va a “Más / avanzado”) antes de rediseños grandes; alinear copy y CTAs con ese orden.
 
-### v0.110.0 (actual)
+#### Estudio — roadmap tipo NotebookLM (siguiente trabajo; priorizar velocidad y UX, evitar sobre-ingeniería)
+
+Orden acordado para RAG / asistente sobre fuentes:
+
+| Fase | Alcance |
+|------|--------|
+| **1** | **Chunking** (TS, solapamiento moderado) + **búsqueda full-text** en Postgres (`tsvector` / GIN); índice por usuario y fuente. |
+| **2** | **Dossier (sin IA)**: “pregunta/tema → pack de evidencias” (retrieval-only) con chunks rankeados + highlights, selección y guardado como artefacto; UX potente sin costes variables. **Persistencia en cuenta:** `user_client_state` `study_dossiers`. *(El endpoint de chat queda apagado por feature flag).* |
+| **3** | **UI** de chat con **citas interactivas** (resaltar fragmento / saltar a fuente). **Hecho** (abr. 2026). |
+| **4** | **Notas persistentes** (tabla dedicada o extensión de workspace; sincronizado con cuenta). |
+| **5** | **Salidas:** resumen, quiz, flashcards (reutilizan el mismo retrieval + prompt; sin nuevos subsistemas). |
+| **6** | **Embeddings** (`pgvector` u opción gestionada) cuando el full-text deje de bastar; mismo pipeline de chunks. |
+
+**Stack:** TypeScript + Supabase + endpoints Astro; **Python no es necesario** para este plan (reservado solo si más adelante hace falta OCR pesado, modelos locales o workers dedicados).
+
+**Estado actual (implementado):**
+
+- **Fase 1**: `study_chunks` (RLS + índice GIN), chunking en cliente, y buscador en `/study` con alcance “en contexto / todas mis fuentes”.
+- **Fase 2 (núcleo UI + persistencia):** dossier retrieval-only en `/study`; lista de dossiers **sync** vía `study_dossiers` (ver arriba).
+- **Fase 3:** chat asistido + citas clicables (`study-chat-ui.ts`, `wireStudyChatUi` desde `study-workspace.ts`).
+- **Fase 4 (parcial / MVP):** tabla `study_user_notes` + UI en `/study` para notas con título/cuerpo (persistencia en cuenta; el textarea “Notas de sesión” sigue en `study_workspaces`). SQL: `docs/sql/saas-023-study-user-notes.sql`.
+
+**Integración con SkillAtlas (diferencial vs NotebookLM):**
+
+- **Nivel A (rápido / bajo riesgo):** enlazar un workspace de estudio a **Proyectos** y a **Tecnologías** — **implementado** con `saas-025` + UI en `/study` + banderolas en detalle CSR. Pendiente de refinar: “fuentes relacionadas” embebidas en proyecto, progreso agregado en `/app`.
+- **Nivel B (producto fuerte, más adelante):** estructurar el temario como **Bloques → temas → subtemas**, con:
+  - Estado por tema (pendiente / en progreso / dominado). **MVP UI:** `/study` + JSON `study_curriculum` (bloques/temas/estado) sync con cuenta; versión tabular SQL opcional más adelante.
+  - Outputs (quiz/flashcards/resumen) vinculados a temas.
+  - Hooks de tracking (p. ej. “horas”, “sesiones”, “temas cubiertos”) agregables en `/app`.
+
+### v0.110.0
 
 - **Proyectos / Tecnologías — import GitHub (beta):** modal “Importar stack desde GitHub” (API de GitHub Tree/Contents + lectura de manifests típicos) para detectar tecnologías y aplicarlas:
   - Desde **Proyectos**: botón “Importar desde GitHub” en el bloque de stack, crea tecnologías faltantes y las asocia al proyecto.
@@ -173,10 +285,10 @@ Lista **explícita** — no implica prioridad; **no eliminar** entradas por ahor
 
 1. **PDF de portfolio** y/o export estático cuando encaje.
 2. **OG enriquecido** para landing, CV público, o **artefacto OG por proyecto** (nueva ruta o imagen dinámica).
-3. **Duplicar proyecto** y **plantillas de proyecto**.
-4. **Actividad reciente multi-dispositivo** (sincronizada con cuenta; hoy solo `localStorage`).
+3. **Plantillas de proyecto** (duplicar proyecto ya disponible en detalle CSR).
+4. ~~Actividad reciente multi-dispositivo~~ → implementado vía `recent_activity` + merge al login.
 5. **Insights en `/app`** (gráficos, heatmap, eventos).
-6. **`/study`** — Storage, extracción de texto, RAG, salidas reales (hoy UI + localStorage).
+6. **`/study`** — Storage y extracción de texto ya en curso; RAG / NotebookLM: ver tabla **“Estudio — roadmap tipo NotebookLM”** bajo **v0.130.0** (chunking + FTS → chat con citas → UI → notas → salidas → embeddings).
 7. **`/prep`** — convocatorias / proyectos de estudio ampliados.
 8. **Monetización** — pasarela, planes, límites (tras validar demanda).
 9. **Tech Note** por tecnología (markdown) + mejoras de import / tiers en DB.
@@ -187,12 +299,41 @@ Lista **explícita** — no implica prioridad; **no eliminar** entradas por ahor
 14. **QA seed** — el botón “Crear datos de prueba” puede chocar con constraints de `concepts` (p. ej. `progress`); alinear seed con DB real.
 15. **Categorías / columnas** en conceptos (`category`, `tier`) si se sale del modelo actual.
 16. **CV — import enriquecido:** subida **PDF/DOCX**, extracción de texto en servidor, opcional **IA** para mapear a `experiences` / `education` con fechas en formatos heterogéneos (mes/año, rangos, etc.); complementa el import por pegado en **v0.100.0**.
+17. **`/tools` — ampliar utilidades y modo Pro:** el hub y la primera tanda de herramientas cliente ya están en **v0.130.0**; pendiente priorizar **PDF→Word**, **PNG→ICO**, edición PDF, conversiones server-side/WASM pesado, etc., inspirado en Convertio pero embebido en SkillAtlas.
+18. **Alta de tecnología/librería por URL o identificador de registro** — *parcial:* npm/PyPI rellena nombre/slug/descripción vía API; **pendiente:** sugerir/asignar **icono** automáticamente y ampliar a otros registros o GitHub package.
+
+---
+
+## Handoff — trabajo explícito para siguiente agente (abr. 2026)
+
+Bloques listos para retomar con **otro agente** sin depender del hilo de chat largo.
+
+### 1) Importación CV desde PDF — **prioridad alta (bug / percepción de “no importa nada”)**
+
+- **Síntoma reportado:** Tras **Elegir PDF**, el texto puede aparecer en el modal, pero **«Importar al formulario»** no deja experiencia/educación como el usuario espera (toast de error tipo “No se detectaron bloques válidos” o sensación de que **no se importó nada**).
+- **Código relevante:**
+  - `src/scripts/cv/cv-page.ts` — `ingestCvPdfFile`, `runCvImportMode`, modal import.
+  - `src/lib/cv-paste-import.ts` — `normalizeCvPasteForHeuristics`, `parseExperienceBlocksFromPaste`, `parseEducationBlocksFromPaste`.
+  - `src/lib/cv-pdf-text.ts` — extracción de texto del PDF en cliente.
+- **Línea de trabajo sugerida:** Reproducir con PDFs reales; log o inspección del **texto normalizado** antes del parse; ampliar heurísticas (bloques, fechas en español, empresas en línea separada, PDF de una columna); tests unitarios con cadenas representativas; mensajes de error más accionables (“prueba pegando desde la vista de texto”, “separar bloques con línea en blanco”, etc.).
+- **Nota:** El import por **pegado** comparte el mismo parser; el fallo puede ser sobre todo **forma del texto tras PDF** + límites del parser heurístico.
+
+### 2) Librerías / paquetes como **subcategoría** de una tecnología “madre”
+
+- **Objetivo de producto:** Al registrar **librerías o paquetes** (npm/PyPI, etc.), asociarlos a una **tecnología base** (p. ej. Python, SQL, React) no como un concepto más del catálogo, sino como **subtecnología** o agrupación jerárquica (UX: bajo la tech madre, carpetas en listado, filtros).
+- **Dirección técnica (a validar en `docs/db.md` + SQL):**
+  - Opción A: `technologies.parent_technology_id` (self-FK, nullable), con `kind` existente (`library` / `package` donde aplique).
+  - Opción B: tabla puente `technology_children` si se quieren relaciones N:1 flexibles o orden.
+  - **RLS:** mismas reglas `user_id` que el resto de `technologies`; comprobar impacto en proyectos, conceptos y Estudio (`linked_technology_ids`, carpetas por tech).
+- **UI:** formulario de alta (y quizá import registro) con selector **“Tecnología madre”** opcional/obligatorio para `kind` librería; detalle/listado que agrupe hijas bajo madre; no romper flujos actuales de conceptos ni de proyectos.
+- **Referencias en repo:** formulario `technologies`, `POST /api/tech-registry-lookup`, `src/data/providers/supabaseProvider.ts`, scripts CSR de tecnologías.
 
 ---
 
 ## Referencias cruzadas
 
 - Ideas de preferencias (futuro): `docs/prefs-candidates.md`
+- Persistencia local (localStorage/sessionStorage): `docs/local-persistence.md`
 - Arquitectura y CSR: `docs/architecture.md`
 - SQL y RPCs: `docs/db.md`
 - Plan SaaS: `docs/plan-saas-multi-tenant-portfolio.md`

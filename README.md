@@ -9,6 +9,8 @@
 
 Aplicación web para **organizar conocimiento técnico** y **mostrar un portfolio** coherente: tecnologías, conceptos por tecnología, proyectos con embeds y perfil público. Pensada como MVP con datos **mock** o **Supabase** (PostgreSQL, RLS multi-tenant), misma interfaz en ambos modos.
 
+**Versión de producto (rama actual):** **v0.130.0** — alinear con `package.json`, `src/config/banner.ts` y el registro en [`docs/backlog.md`](docs/backlog.md).
+
 ---
 
 ## Qué incluye hoy
@@ -55,6 +57,8 @@ Crea un archivo `.env` en la raíz (no commitear secretos):
 | `PUBLIC_SUPABASE_URL` | URL del proyecto Supabase |
 | `PUBLIC_SUPABASE_ANON_KEY` | Clave anónima |
 | `PUBLIC_DATA_SOURCE` | `mock` o `supabase` |
+| `OPENAI_API_KEY` | (Server) API key para chat en `/study` (Fase 2). |
+| `OPENAI_MODEL` | (Server, opcional) Modelo para chat. Ej: `gpt-4.1-mini`. |
 
 Con `supabase`, aplica los scripts SQL en el orden indicado en [`docs/db.md`](docs/db.md) (MVP + migraciones `saas-001` … hasta **`saas-016`** si usas portadas de proyecto y thumbnails públicos en evidencias).
 

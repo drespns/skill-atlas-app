@@ -24,8 +24,11 @@ Rutas públicas o de app según `src/pages/`. Los scripts viven en `src/scripts/
 | `/technologies` | `technologies.astro` | `technologies/technologies.ts`; con Supabase también `core/view-toggle.ts` |
 | `/technologies/view?tech=…` | `technologies/view.astro` | `technologies/technology-view-bootstrap.ts` |
 | `/technologies/[techId]` (mock) | `technologies/[techId].astro` | `technologies/technology-detail.ts` (solo Supabase) |
-| `/study` | `study.astro` | `study/study-workspace.ts` |
-| `/admin` | `admin.astro` | `admin/admin-access-requests.ts` |
+| `/study` | `study.astro` | `study/study-workspace.ts` (importa `study/workspace/init.ts` y módulos en `study/workspace/`) |
+| `/tools`, `/tools/*` | `tools/index.astro`, `tools/*.astro` | `tools/*.ts` por ruta (p. ej. `habits.ts`, `convert.ts`, `readme-preview.ts`) |
+| `/backlog` | `backlog.astro` | Lee `docs/backlog.md` en build (`marked`); sin script cliente dedicado |
+| `/contact` | `contact.astro` | Estático / enlaces de contacto |
+| `/admin` | `admin.astro` | `admin/admin-access-requests.ts`, `admin/admin-dashboard.ts` |
 | `/request-access` | `request-access.astro` | `access/request-access.ts` |
 | `/demo`, `/prep` | `demo.astro`, `prep.astro` | (sin scripts dedicados en tabla; layout global) |
 
@@ -55,12 +58,13 @@ Rutas públicas o de app según `src/pages/`. Los scripts viven en `src/scripts/
 | `portfolio/` | Portfolio sesión, público slug/token, página compartida `public-portfolio-public-page.ts`. |
 | `projects/` | Listas, bootstrap vista CSR, entrada mock `project-detail.ts`, subcarpeta `project-detail/*`. |
 | `technologies/` | Listas, bootstrap vista CSR, entrada mock `technology-detail.ts`, subcarpeta `technology-detail/*`. |
-| `app/` | Dashboard y onboarding del home app; `recent-activity.ts` (historial local + usado por bootstraps). |
+| `app/` | Dashboard y onboarding del home app; `recent-activity.ts` (localStorage + sync `user_client_state` `recent_activity`). |
 | `landing/` | Efectos de la landing. |
 | `pricing/` | Toggle facturación en `/pricing`. |
 | `admin/` | Panel admin (solicitudes). |
 | `access/` | Formulario request access. |
 | `study/` | Workspace estudio. |
+| `tools/` | Utilidades `/tools` (habits, convert, markdown, diff, json, qr, …). |
 
 Imports entre dominios: preferir `../core/…` para Supabase, prefs, toasts y sesión; el detalle de proyecto importa semillas de conceptos desde `technologies/technology-detail/concept-seeds.ts` cuando hace falta.
 
@@ -118,6 +122,7 @@ Imports entre dominios: preferir `../core/…` para Supabase, prefs, toasts y se
 | Tarjeta visitante portfolio | `public-portfolio-project-card.ts` |
 | Presentación / prefs visitante | `portfolio-presentation.ts`, `public-portfolio-guest-prefs.ts` |
 | RPC server-side (OG, etc.) | `server-supabase-rpc.ts` |
+| Fragmentos `.gitignore` (tools) | `tools-gitignore-parts.ts` |
 
 ---
 
