@@ -114,11 +114,31 @@ const ogImage = token ? `${origin}/og/portfolio.svg?token=${encodeURIComponent(t
           <label class="text-xs font-semibold text-gray-700 dark:text-gray-200" data-i18n="portfolio.filterByTechnology">
             Tecnología
           </label>
-          <select
-            data-public-portfolio-tech-select
-            class="min-h-11 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2.5 text-sm font-medium app-accent-ring"
-          >
-          </select>
+          <div data-select-popover data-placeholder="Selecciona…">
+            <select data-public-portfolio-tech-select class="sr-only" data-select-native></select>
+            <div class="relative">
+              <button
+                type="button"
+                class="min-h-11 inline-flex items-center justify-between gap-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-3 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 min-w-[14rem]"
+                data-select-trigger
+                aria-haspopup="listbox"
+                aria-expanded="false"
+              >
+                <span class="min-w-0 truncate" data-select-trigger-label>Selecciona…</span>
+                <span class="shrink-0 opacity-70" aria-hidden="true">▾</span>
+              </button>
+              <div
+                class="hidden absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 shadow-lg"
+                data-select-panel
+              >
+                <ul
+                  class="max-h-72 overflow-auto m-0 p-0 divide-y divide-gray-200/70 dark:divide-gray-800"
+                  data-select-list
+                  role="listbox"
+                ></ul>
+              </div>
+            </div>
+          </div>
         </form>
       </div>
     </header>
@@ -131,21 +151,61 @@ const ogImage = token ? `${origin}/og/portfolio.svg?token=${encodeURIComponent(t
         <label class="text-xs font-semibold text-gray-700 dark:text-gray-200" data-i18n="portfolio.public.viewLabel">
           Vista
         </label>
-        <select
-          data-public-portfolio-layout
-          class="min-h-10 w-full max-w-[14rem] rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-medium app-accent-ring"
-        >
-        </select>
+        <div data-select-popover data-placeholder="Selecciona…">
+          <select data-public-portfolio-layout class="sr-only" data-select-native></select>
+          <div class="relative">
+            <button
+              type="button"
+              class="w-full max-w-[14rem] min-h-10 inline-flex items-center justify-between gap-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900"
+              data-select-trigger
+              aria-haspopup="listbox"
+              aria-expanded="false"
+            >
+              <span class="min-w-0 truncate" data-select-trigger-label>Selecciona…</span>
+              <span class="shrink-0 opacity-70" aria-hidden="true">▾</span>
+            </button>
+            <div
+              class="hidden absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 shadow-lg"
+              data-select-panel
+            >
+              <ul
+                class="max-h-72 overflow-auto m-0 p-0 divide-y divide-gray-200/70 dark:divide-gray-800"
+                data-select-list
+                role="listbox"
+              ></ul>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="space-y-1 min-w-[10rem]">
         <label class="text-xs font-semibold text-gray-700 dark:text-gray-200" data-i18n="portfolio.public.embedCapLabel">
           Evidencias por proyecto
         </label>
-        <select
-          data-public-portfolio-embed-cap
-          class="min-h-10 w-full max-w-[14rem] rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-medium app-accent-ring"
-        >
-        </select>
+        <div data-select-popover data-placeholder="Selecciona…">
+          <select data-public-portfolio-embed-cap class="sr-only" data-select-native></select>
+          <div class="relative">
+            <button
+              type="button"
+              class="w-full max-w-[14rem] min-h-10 inline-flex items-center justify-between gap-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900"
+              data-select-trigger
+              aria-haspopup="listbox"
+              aria-expanded="false"
+            >
+              <span class="min-w-0 truncate" data-select-trigger-label>Selecciona…</span>
+              <span class="shrink-0 opacity-70" aria-hidden="true">▾</span>
+            </button>
+            <div
+              class="hidden absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 shadow-lg"
+              data-select-panel
+            >
+              <ul
+                class="max-h-72 overflow-auto m-0 p-0 divide-y divide-gray-200/70 dark:divide-gray-800"
+                data-select-list
+                role="listbox"
+              ></ul>
+            </div>
+          </div>
+        </div>
       </div>
       <label class="flex cursor-pointer items-center gap-2 pt-5 sm:pt-6">
         <input type="checkbox" data-public-portfolio-reduced-motion class="rounded border-gray-300 dark:border-gray-600" />

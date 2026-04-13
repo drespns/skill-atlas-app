@@ -56,83 +56,178 @@ const technologies = mockTechnologies.map((t) => ({
         </label>
       ) : null}
 
-      <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-900" data-technologies-count>
-        {dataSource === "supabase" ? "…" : `${technologies.length} total`}
-      </span>
+      {dataSource === "supabase" ? (
+        <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-900" data-technologies-count data-i18n="technologies.countLoading">
+          —
+        </span>
+      ) : (
+        <span
+          class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-900"
+          data-technologies-count
+          data-i18n="technologies.countTotalMock"
+          data-i18n-args={JSON.stringify({ count: technologies.length })}
+        >
+          {`${technologies.length} en el catálogo`}
+        </span>
+      )}
     </div>
   </header>
 
   {dataSource === "supabase" ? (
-    <form
-      data-tech-form
-      class="mb-6 border border-gray-200 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 space-y-3"
-    >
-      <p class="m-0 text-sm font-semibold">
-        <span data-i18n="common.newTechnology">Nueva tecnología</span>
-      </p>
-      <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
-        Elige una tecnología del catálogo (hay plantilla de conceptos) o escribe un nombre libre. El <strong>slug</strong> se ajusta solo al elegir del catálogo.
-      </p>
-      <div class="flex items-center justify-between gap-3">
-        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400">
-          Tip: en modo múltiple, escribe varios nombres separados por coma y pulsa Enter.
+    <form data-tech-form class="mb-6 space-y-4">
+      <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 space-y-3">
+        <p class="m-0 text-sm font-semibold">
+          <span data-i18n="technologies.catalogSectionTitle">Nueva tecnología (catálogo o nombre propio)</span>
         </p>
-        <div class="flex flex-wrap items-center gap-3">
+        <p class="m-0 text-xs text-gray-600 dark:text-gray-400" data-i18n="technologies.catalogSectionIntro">
+          Busca en el catálogo SkillAtlas o escribe un nombre libre.
+        </p>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="technologies.multiModeTip">
+            En modo múltiple, varios nombres separados por coma y Enter.
+          </p>
+          <label class="inline-flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300 select-none">
+            <input type="checkbox" class="accent-indigo-600" data-tech-multi-toggle />
+            <span data-i18n="technologies.multiModeLabel">Modo múltiple</span>
+          </label>
+        </div>
+        <div class="flex flex-col lg:flex-row gap-3 lg:items-start">
+          <div class="relative flex-1 min-w-0 space-y-2" data-tech-seed-wrap>
+            <div class="flex flex-wrap items-center gap-2">
+              <label class="inline-flex items-center gap-2 text-[11px] font-semibold text-gray-600 dark:text-gray-400">
+                <span data-i18n="technologies.kindLabel">Tipo</span>
+                <div data-select-popover data-placeholder="Todo">
+                  <select data-tech-kind class="sr-only" data-select-native>
+                  <option value="all">Todo</option>
+                  <option value="technology">Tecnología</option>
+                  <option value="framework">Framework</option>
+                  <option value="library">Librería</option>
+                  <option value="package">Paquete</option>
+                  </select>
+                  <div class="relative">
+                    <button
+                      type="button"
+                      class="inline-flex items-center justify-between gap-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-2.5 py-1.5 text-[11px] font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 min-w-[10rem]"
+                      data-select-trigger
+                      aria-haspopup="listbox"
+                      aria-expanded="false"
+                    >
+                      <span class="min-w-0 truncate" data-select-trigger-label>Todo</span>
+                      <span class="shrink-0 opacity-70" aria-hidden="true">▾</span>
+                    </button>
+                    <div
+                      class="hidden absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 shadow-lg"
+                      data-select-panel
+                    >
+                      <ul
+                        class="max-h-72 overflow-auto m-0 p-0 divide-y divide-gray-200/70 dark:divide-gray-800"
+                        data-select-list
+                        role="listbox"
+                      ></ul>
+                    </div>
+                  </div>
+                </div>
+              </label>
+              <span class="text-[11px] text-gray-500 dark:text-gray-400" data-i18n="technologies.kindHint">“Librerías/paquetes” = subtecnologías.</span>
+            </div>
+            <div data-tech-parent-wrap class="hidden max-w-md space-y-1">
+              <label class="block text-[11px] font-semibold text-gray-600 dark:text-gray-400">
+                <span data-i18n="technologies.parentTechLabel">Tecnología madre (opcional)</span>
+                <select
+                  data-tech-parent-id
+                  class="mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs text-gray-900 dark:text-gray-100"
+                >
+                  <option value="" data-i18n="technologies.parentTechPlaceholder">Sin madre</option>
+                </select>
+              </label>
+              <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="technologies.parentTechHint"></p>
+            </div>
+            <input
+              name="name"
+              type="text"
+              placeholder="Snowflake, dbt, Python…"
+              data-tech-name-input
+              data-i18n="technologies.newPlaceholder"
+              data-i18n-attr="placeholder"
+              autocomplete="off"
+              class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950"
+              required
+            />
+            <div data-tech-multi-chips class="hidden flex-wrap gap-2"></div>
+            <div class="space-y-1">
+              <label class="block text-[11px] font-semibold text-gray-600 dark:text-gray-400">
+                <span data-i18n="technologies.slugUrlIdLabel">Identificador en la URL (slug)</span>
+                <input
+                  type="text"
+                  data-tech-slug-override
+                  data-i18n="technologies.slugUrlIdPlaceholder"
+                  data-i18n-attr="placeholder"
+                  placeholder="se genera del nombre si lo dejas vacío"
+                  autocomplete="off"
+                  class="mt-1 w-full max-w-md rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs font-mono text-gray-900 dark:text-gray-100"
+                />
+              </label>
+              <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="technologies.slugUrlIdHint">
+                Único en tu cuenta; enlaces tipo /technologies/view?tech=…
+              </p>
+            </div>
+            <ul
+              data-tech-seed-suggestions
+              class="hidden absolute left-0 right-0 top-full z-30 mt-1 max-h-[min(70vh,28rem)] overflow-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 py-1 shadow-lg text-left"
+              role="listbox"
+            ></ul>
+          </div>
+          <button
+            type="submit"
+            class="inline-flex items-center justify-center shrink-0 rounded-lg bg-gray-900 dark:bg-gray-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 lg:self-end"
+          >
+            <span data-i18n="common.save">Guardar</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-sky-200/80 dark:border-sky-900/50 bg-sky-50/40 dark:bg-sky-950/20 p-4 space-y-3">
+        <p class="m-0 text-sm font-semibold text-sky-950 dark:text-sky-100" data-i18n="technologies.importSectionTitle">
+          Importar desde npm, PyPI o GitHub
+        </p>
+        <p class="m-0 text-xs text-gray-600 dark:text-gray-400" data-i18n="technologies.importSectionIntro">
+          Busca un paquete público y rellenamos el formulario de arriba; o importa desde un repo de GitHub.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-2 sm:items-end">
+          <label class="block flex-1 min-w-0 space-y-1">
+            <span class="text-[11px] font-semibold text-gray-600 dark:text-gray-400" data-i18n="technologies.registryQueryLabel"
+              >Paquete (npm/PyPI o URL)</span
+            >
+            <input
+              type="text"
+              data-tech-registry-query
+              class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm"
+              placeholder="npm/react · pypi/pandas · https://www.npmjs.com/package/…"
+              data-i18n="technologies.registryQueryPlaceholder"
+              data-i18n-attr="placeholder"
+              autocomplete="off"
+            />
+          </label>
+          <button
+            type="button"
+            data-tech-registry-lookup
+            class="inline-flex items-center justify-center rounded-lg border border-sky-300 dark:border-sky-700 bg-white dark:bg-gray-950 px-3 py-2 text-xs font-semibold text-sky-900 dark:text-sky-100 hover:bg-sky-50 dark:hover:bg-sky-950/40 shrink-0"
+          >
+            <span data-i18n="technologies.registryLookup">Buscar npm / PyPI</span>
+          </button>
+        </div>
+        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="technologies.registryHint">
+          npm/react, pypi/pandas o URL de npmjs.com / pypi.org.
+        </p>
+        <div>
           <button
             type="button"
             data-tech-github-import
             class="inline-flex items-center rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-950/25 px-2.5 py-1.5 text-xs font-semibold text-indigo-800 dark:text-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/35"
           >
-            Importar desde GitHub
+            <span data-i18n="technologies.githubImport">Importar desde GitHub</span>
           </button>
-          <label class="inline-flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300 select-none">
-            <input type="checkbox" class="accent-indigo-600" data-tech-multi-toggle />
-            Modo múltiple
-          </label>
         </div>
-      </div>
-      <div class="flex flex-col md:flex-row gap-2">
-        <div class="relative flex-1 min-w-0" data-tech-seed-wrap>
-          <div class="flex flex-wrap items-center gap-2 mb-2">
-            <label class="inline-flex items-center gap-2 text-[11px] font-semibold text-gray-600 dark:text-gray-400">
-              Tipo
-              <select
-                data-tech-kind
-                class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-2 py-1 text-[11px] font-semibold text-gray-800 dark:text-gray-200"
-              >
-                <option value="all">Todo</option>
-                <option value="technology">Tecnología</option>
-                <option value="framework">Framework</option>
-                <option value="library">Librería</option>
-                <option value="package">Paquete</option>
-              </select>
-            </label>
-            <span class="text-[11px] text-gray-500 dark:text-gray-400">“Librerías/paquetes” = subtecnologías.</span>
-          </div>
-          <input
-            name="name"
-            type="text"
-            placeholder="Buscar: Snowflake, dbt, Power BI… o nombre propio"
-            data-tech-name-input
-            data-i18n="technologies.newPlaceholder"
-            data-i18n-attr="placeholder"
-            autocomplete="off"
-            class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950"
-            required
-          />
-          <div data-tech-multi-chips class="hidden mt-2 flex-wrap gap-2"></div>
-          <ul
-            data-tech-seed-suggestions
-            class="hidden absolute left-0 right-0 top-full z-30 mt-1 max-h-[min(70vh,28rem)] overflow-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 py-1 shadow-lg text-left"
-            role="listbox"
-          ></ul>
-        </div>
-        <button
-          type="submit"
-          class="inline-flex items-center justify-center rounded-lg bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200"
-        >
-          <span data-i18n="common.save">Guardar</span>
-        </button>
       </div>
       <p data-tech-feedback class="text-sm text-gray-600 m-0"></p>
     </form>

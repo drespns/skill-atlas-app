@@ -1,11 +1,16 @@
-import { getTechnologyIconSrc } from "@config/icons";
 import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 import { getSessionUserId } from "@scripts/core/auth-session";
+import { technologyDisplayIconUrl } from "@scripts/core/technology-icon-url";
 import i18next from "i18next";
 import { confirmModal, githubRepoTechImportModal, showToast, userFacingDbError } from "@scripts/core/ui-feedback";
 import { loadPrefs } from "@scripts/core/prefs";
-import { getCatalogEntryForSlug, getTechnologyCatalogEntries } from "@scripts/technologies/technology-detail/concept-seeds";
-import { supportsTechnologiesKindColumn } from "@scripts/core/supabase-schema";
+import {
+  getCatalogEntryForSlug,
+  getCatalogEntryForTech,
+  getTechnologyCatalogEntries,
+} from "@scripts/technologies/technology-detail/concept-seeds";
+import { supportsTechnologiesKindColumn, supportsTechnologiesParentColumn } from "@scripts/core/supabase-schema";
+import { fetchTechRegistryLookup } from "@scripts/technologies/tech-registry-client";
 
 declare global {
   interface Window {
@@ -25,15 +30,9 @@ function escHtml(s: string) {
     .replace(/"/g, "&quot;");
 }
 
-function toSlug(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+/** Clases extra para logos que en dark mode quedan planos (p.ej. negro sobre negro). */
+const TECH_ICON_IMG_CLASS =
+  "h-5 w-5 shrink-0 object-contain [filter:drop-shadow(0_0_0.5px_rgba(0,0,0,0.2))] dark:[filter:drop-shadow(0_0_1px_rgba(255,255,255,0.45))]";
 
 async function initTechnologyForm() {
   const form = document.querySelector<HTMLFormElement>("[data-tech-form]");
@@ -49,6 +48,11 @@ async function initTechnologyForm() {
   const multiToggle = form.querySelector<HTMLInputElement>("[data-tech-multi-toggle]");
   const chipsWrap = form.querySelector<HTMLElement>("[data-tech-multi-chips]");
   const githubBtn = form.querySelector<HTMLButtonElement>("[data-tech-github-import]");
+  const registryBtn = form.querySelector<HTMLButtonElement>("[data-tech-registry-lookup]");
+  const registryQueryInput = form.querySelector<HTMLInputElement>("[data-tech-registry-query]");
+  const slugOverrideInput = form.querySelector<HTMLInputElement>("[data-tech-slug-override]");
+  const parentWrap = form.querySelector<HTMLElement>("[data-tech-parent-wrap]");
+  const parentSelect = form.querySelector<HTMLSelectElement>("[data-tech-parent-id]");
   if (!nameInput || !submitBtn || !feedback) return;
 
   const seedCatalog = getTechnologyCatalogEntries();
@@ -94,6 +98,41 @@ async function initTechnologyForm() {
     }
   };
 
+  const syncParentWrapVisibility = () => {
+    if (!parentWrap) return;
+    const sp = parentWrap.dataset.supportsParent === "1";
+    const k = kindSelect?.value ?? "all";
+    const show = sp && !multiMode && (k === "library" || k === "package");
+    parentWrap.classList.toggle("hidden", !show);
+  };
+
+  const refreshParentOptions = async () => {
+    if (!parentSelect || !parentWrap) return;
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+    const supportsParent = await supportsTechnologiesParentColumn(supabase);
+    parentWrap.dataset.supportsParent = supportsParent ? "1" : "0";
+    if (!supportsParent) {
+      parentWrap.classList.add("hidden");
+      return;
+    }
+    const uid = await getSessionUserId(supabase);
+    if (!uid) return;
+    const supportsKind = await supportsTechnologiesKindColumn(supabase);
+    const sel = supportsKind ? "id, name, slug, kind" : "id, name, slug";
+    const { data, error } = await supabase.from("technologies").select(sel).eq("user_id", uid).order("name");
+    if (error) return;
+    const rows = (data ?? []) as { id: string; name: string; slug: string; kind?: string | null }[];
+    const placeholder = String(i18next.t("technologies.parentTechPlaceholder"));
+    const filtered = supportsKind
+      ? rows.filter((r) => r.kind !== "library" && r.kind !== "package")
+      : rows;
+    parentSelect.innerHTML =
+      `<option value="">${escHtml(placeholder)}</option>` +
+      filtered.map((r) => `<option value="${escHtml(r.id)}">${escHtml(r.name)}</option>`).join("");
+    syncParentWrapVisibility();
+  };
+
   const setMultiMode = (next: boolean) => {
     multiMode = next;
     if (chipsWrap) chipsWrap.classList.toggle("hidden", !multiMode);
@@ -116,6 +155,7 @@ async function initTechnologyForm() {
       catalogLabelLock = null;
       saveDraft();
     }
+    syncParentWrapVisibility();
   };
 
   const normalizeMultiTokens = (raw: string) =>
@@ -153,7 +193,7 @@ async function initTechnologyForm() {
     }
     chipsWrap.innerHTML = multiPicked
       .map((it) => {
-        const iconSrc = getTechnologyIconSrc({ id: it.slug, name: it.name });
+        const iconSrc = technologyDisplayIconUrl(it.slug, it.name);
         const iconHtml = iconSrc
           ? `<img src="${escHtml(iconSrc)}" alt="" class="h-4 w-4 shrink-0 rounded-sm object-contain" loading="lazy" />`
           : `<span class="h-4 w-4 shrink-0 rounded-sm bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>`;
@@ -186,7 +226,7 @@ async function initTechnologyForm() {
     }
     seedSuggestions.innerHTML = hits
       .map((e) => {
-        const iconSrc = getTechnologyIconSrc({ id: e.slug, name: e.label });
+        const iconSrc = technologyDisplayIconUrl(e.slug, e.label);
         const iconHtml = iconSrc
           ? `<img src="${escHtml(iconSrc)}" alt="" class="h-5 w-5 shrink-0 rounded-sm object-contain" loading="lazy" />`
           : `<span class="h-5 w-5 shrink-0 rounded-sm bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>`;
@@ -207,9 +247,8 @@ async function initTechnologyForm() {
               : kind === "package"
                 ? "bg-amber-100/80 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200"
                 : "bg-gray-100/80 dark:bg-gray-900/60 text-gray-700 dark:text-gray-200";
-        const secondLine = e.hasSeed
-          ? `Plantilla importación · slug <code class="text-[10px]">${escHtml(e.slug)}</code>`
-          : `Catálogo · slug <code class="text-[10px]">${escHtml(e.slug)}</code>`;
+        const sourceKicker = e.hasSeed ? i18next.t("technologies.pickerSourceSeed") : i18next.t("technologies.pickerSourceCatalog");
+        const secondLine = `${escHtml(sourceKicker)} · slug <code class="text-[10px]">${escHtml(e.slug)}</code>`;
         return `<li role="option"><button type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-900 border-0 bg-transparent cursor-pointer flex items-start gap-2" data-seed-slug="${escHtml(e.slug)}" data-seed-label="${escHtml(e.label)}">${iconHtml}<span class="min-w-0 flex-1"><span class="flex flex-wrap items-center gap-2"><span class="font-medium text-gray-900 dark:text-gray-100">${escHtml(e.label)}</span><span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${kindTone}">${kindLabel}</span></span><span class="block text-[11px] text-gray-500 dark:text-gray-400">${secondLine}</span></span></button></li>`;
       })
       .join("");
@@ -225,7 +264,10 @@ async function initTechnologyForm() {
     renderSeedSuggestions(nameInput.value);
   });
 
-  kindSelect?.addEventListener("change", () => renderSeedSuggestions(nameInput.value));
+  kindSelect?.addEventListener("change", () => {
+    renderSeedSuggestions(nameInput.value);
+    syncParentWrapVisibility();
+  });
 
   seedSuggestions?.addEventListener("click", (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-seed-slug]");
@@ -242,6 +284,7 @@ async function initTechnologyForm() {
     nameInput.value = label;
     pickedSlug = slug;
     catalogLabelLock = label;
+    if (slugOverrideInput) slugOverrideInput.value = "";
     seedSuggestions.classList.add("hidden");
     nameInput.focus();
   });
@@ -260,6 +303,8 @@ async function initTechnologyForm() {
     multiPicked.push(...draft.items);
     renderChips();
   }
+
+  void refreshParentOptions();
 
   chipsWrap?.addEventListener("click", (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-chip-remove]");
@@ -338,8 +383,71 @@ async function initTechnologyForm() {
     feedback.className = "text-sm text-amber-600";
     submitBtn.disabled = true;
     nameInput.disabled = true;
+    if (registryBtn) registryBtn.disabled = true;
+    if (registryQueryInput) registryQueryInput.disabled = true;
+    if (slugOverrideInput) slugOverrideInput.disabled = true;
     return;
   }
+
+  const effectiveSlugForCreate = (name: string, preferredSlug: string) => {
+    if (!multiMode && slugOverrideInput?.value.trim()) return toSlug(slugOverrideInput.value);
+    return preferredSlug;
+  };
+
+  registryBtn?.addEventListener("click", async () => {
+    if (multiMode) {
+      showToast(String(i18next.t("technologies.registryMultiDisabled")), "info");
+      return;
+    }
+    const q = (registryQueryInput?.value ?? nameInput.value).trim();
+    if (!q) {
+      showToast(String(i18next.t("technologies.registryNeedQuery")), "warning");
+      return;
+    }
+    const { data: sess } = await supabase.auth.getSession();
+    const token = sess.session?.access_token;
+    if (!token) {
+      showToast(String(i18next.t("technologies.registryNeedSession")), "warning");
+      return;
+    }
+    registryBtn.disabled = true;
+    submitBtn.disabled = true;
+    feedback.textContent = String(i18next.t("technologies.registryLoading"));
+    feedback.className = "text-sm text-gray-600";
+    try {
+      const json = await fetchTechRegistryLookup(token, q);
+      if (!json || !("ok" in json) || !json.ok) {
+        const msg = (json as { error?: string })?.error || String(i18next.t("technologies.registryError"));
+        feedback.textContent = msg;
+        feedback.className = "text-sm text-red-600";
+        showToast(msg, "error");
+        return;
+      }
+      const disp = String(json.displayName ?? "").trim() || q;
+      const sug = String(json.suggestedSlug ?? "").trim() || toSlug(disp);
+      nameInput.value = disp;
+      pickedSlug = sug;
+      catalogLabelLock = disp;
+      if (slugOverrideInput) slugOverrideInput.value = sug;
+      const sk = json.suggestedKind;
+      if (kindSelect && (sk === "library" || sk === "package")) {
+        kindSelect.value = sk;
+        kindSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      const desc = typeof json.description === "string" ? json.description.trim().slice(0, 360) : "";
+      feedback.textContent = desc || String(i18next.t("technologies.registryOk"));
+      feedback.className = "text-sm text-gray-600";
+      showToast(String(i18next.t("technologies.registryOkShort")), "success");
+    } catch {
+      const msg = String(i18next.t("technologies.registryError"));
+      feedback.textContent = msg;
+      feedback.className = "text-sm text-red-600";
+      showToast(msg, "error");
+    } finally {
+      registryBtn.disabled = false;
+      submitBtn.disabled = false;
+    }
+  });
 
   // Helpful when coming from Command Palette actions (create=1)
   try {
@@ -391,15 +499,26 @@ async function initTechnologyForm() {
           : null) ?? null;
       const kind = kindFromCatalog ?? kindFromUi;
       const supportsKind = kind ? await supportsTechnologiesKindColumn(supabase) : false;
-      const payload: any = { name, slug, icon_key: slug, user_id: userId };
+      const supportsParent = await supportsTechnologiesParentColumn(supabase);
+      const payload: Record<string, unknown> = { name, slug, icon_key: slug, user_id: userId };
       if (supportsKind && kind) payload.kind = kind;
+      const parentId = !multiMode ? (parentSelect?.value ?? "").trim() : "";
+      if (
+        supportsParent &&
+        parentId &&
+        !multiMode &&
+        kind &&
+        (kind === "library" || kind === "package")
+      ) {
+        payload.parent_technology_id = parentId;
+      }
       const { error } = await supabase.from("technologies").insert(payload);
       if (error) {
         return {
           ok: false as const,
           reason:
             error.code === "23505"
-              ? "Conflicto de slug en la base de datos: suele indicar un índice único global en slug (heredado). En Supabase ejecuta el script docs/sql/saas-004-drop-global-slug-constraints.sql; debe quedar solo la unicidad (user_id, slug) de saas-001."
+              ? i18next.t("technologies.slugConflictUnique")
               : userFacingDbError(error.message, "Error al guardar la tecnología."),
         };
       }
@@ -414,7 +533,8 @@ async function initTechnologyForm() {
     const errors: string[] = [];
     for (const t of targets) {
       feedback.textContent = multiMode ? `Guardando… (${okCount + 1}/${targets.length})` : "Guardando...";
-      const res = await createOne(t.name, t.slug);
+      const slugToUse = effectiveSlugForCreate(t.name, t.slug);
+      const res = await createOne(t.name, slugToUse);
       if (res.ok) okCount += 1;
       else errors.push(`${t.name}: ${res.reason}`);
     }
@@ -428,12 +548,15 @@ async function initTechnologyForm() {
     nameInput.value = "";
     pickedSlug = null;
     catalogLabelLock = null;
+    if (slugOverrideInput) slugOverrideInput.value = "";
+    if (parentSelect) parentSelect.value = "";
     if (multiMode) {
       multiPicked.length = 0;
       renderChips();
       clearDraft();
     }
     submitBtn.disabled = false;
+    void refreshParentOptions();
     if (window.skillatlas?.clearTechnologiesCache) window.skillatlas.clearTechnologiesCache();
     if (window.skillatlas?.bootstrapTechnologiesGrid) {
       await window.skillatlas.bootstrapTechnologiesGrid();
@@ -510,6 +633,38 @@ async function initTechnologyActions() {
       }
     });
   }
+}
+
+type TechGridRow = {
+  id: string;
+  slug: string;
+  name: string;
+  kind?: string | null;
+  parent_technology_id?: string | null;
+};
+
+function buildOrderedTechRows(techRows: TechGridRow[]): TechGridRow[] {
+  const byId = new Map(techRows.map((t) => [t.id, t]));
+  const children = new Map<string, TechGridRow[]>();
+  for (const t of techRows) {
+    const p = t.parent_technology_id;
+    if (!p || !byId.has(p)) continue;
+    if (!children.has(p)) children.set(p, []);
+    children.get(p)!.push(t);
+  }
+  for (const arr of children.values()) arr.sort((a, b) => a.name.localeCompare(b.name, "es"));
+  const roots = techRows.filter((t) => !t.parent_technology_id || !byId.has(t.parent_technology_id!));
+  roots.sort((a, b) => a.name.localeCompare(b.name, "es"));
+  const ordered: TechGridRow[] = [];
+  for (const r of roots) {
+    ordered.push(r);
+    for (const c of children.get(r.id) ?? []) ordered.push(c);
+  }
+  const seen = new Set(ordered.map((t) => t.id));
+  for (const t of techRows) {
+    if (!seen.has(t.id)) ordered.push(t);
+  }
+  return ordered;
 }
 
 async function bootstrapTechnologiesGrid() {
@@ -600,8 +755,14 @@ async function bootstrapTechnologiesGrid() {
     return;
   }
 
+  const supKindCol = await supportsTechnologiesKindColumn(supabase);
+  const supParentCol = await supportsTechnologiesParentColumn(supabase);
+  let techSelectFields = "id, slug, name";
+  if (supKindCol) techSelectFields += ", kind";
+  if (supParentCol) techSelectFields += ", parent_technology_id";
+
   const [techRes, conceptRes, stackRes] = await Promise.all([
-    supabase.from("technologies").select("id, slug, name").order("name"),
+    supabase.from("technologies").select(techSelectFields).order("name"),
     supabase.from("concepts").select("technology_id"),
     filterStackCb?.checked
       ? supabase
@@ -616,7 +777,7 @@ async function bootstrapTechnologiesGrid() {
     return;
   }
 
-  let techRows = (techRes.data ?? []) as { id: string; slug: string; name: string }[];
+  let techRows = (techRes.data ?? []) as TechGridRow[];
   if (filterStackCb?.checked) {
     const used = new Set<string>();
     for (const row of (stackRes.data ?? []) as any[]) {
@@ -630,6 +791,9 @@ async function bootstrapTechnologiesGrid() {
     const tid = (row as { technology_id: string }).technology_id;
     countByTechDbId.set(tid, (countByTechDbId.get(tid) ?? 0) + 1);
   }
+
+  const byTechId = new Map(techRows.map((t) => [t.id, t]));
+  const orderedRows = buildOrderedTechRows(techRows);
 
   const countText = `${techRows.length} total${filterStackCb?.checked ? " (stack)" : ""}`;
   if (countEl) countEl.textContent = countText;
@@ -650,15 +814,15 @@ async function bootstrapTechnologiesGrid() {
   const html =
     view === "list"
       ? `<div class="w-full rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm overflow-hidden">
-          ${techRows
+          ${orderedRows
             .map((tech) => {
               const conceptsCount = countByTechDbId.get(tech.id) ?? 0;
-              const iconSrc = getTechnologyIconSrc({ id: tech.slug, name: tech.name });
+              const iconSrc = technologyDisplayIconUrl(tech.slug, tech.name);
               const iconHtml = iconSrc
-                ? `<img src="${escHtml(iconSrc)}" alt="" class="h-5 w-5 shrink-0" loading="lazy" />`
+                ? `<img src="${escHtml(iconSrc)}" alt="" class="${TECH_ICON_IMG_CLASS}" loading="lazy" />`
                 : "";
-              const entry = getCatalogEntryForSlug(tech.slug);
-              const kind = entry?.kind ?? "technology";
+              const entry = getCatalogEntryForTech(tech.slug, tech.name);
+              const kind = (tech.kind as (typeof entry)["kind"] | undefined) || entry?.kind || "technology";
               const kindLabel =
                 kind === "framework" ? "Framework" : kind === "library" ? "Librería" : kind === "package" ? "Paquete" : "Tecnología";
               const kindTone =
@@ -671,13 +835,27 @@ async function bootstrapTechnologiesGrid() {
                       : "bg-gray-100/80 dark:bg-gray-900/60 text-gray-700 dark:text-gray-200";
               const href = `/technologies/view?tech=${encodeURIComponent(tech.slug)}`;
               const conceptsLabel = i18next.t("technologies.concepts");
-              return `<div class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+              const parentId = tech.parent_technology_id;
+              const parentName =
+                parentId && byTechId.has(parentId) ? (byTechId.get(parentId)!.name ?? "") : "";
+              const childPad =
+                parentId && byTechId.has(parentId) ? "pl-7 border-l-2 border-gray-100 dark:border-gray-800" : "";
+              const underLabel = parentName
+                ? `<span class="block text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">${escHtml(
+                    String(i18next.t("technologies.childOfPrefix")),
+                  )} ${escHtml(parentName)}</span>`
+                : "";
+              return `<div class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 last:border-b-0 ${childPad}">
                 <div class="flex items-center justify-between gap-4">
                   <a href="${href}" class="flex items-center gap-2 min-w-0 flex-1 rounded-lg -mx-2 px-2 py-2 no-underline hover:bg-gray-50 dark:hover:bg-gray-900/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400">
                     ${iconHtml}
+                    <span class="min-w-0 flex flex-col">
+                    <span class="flex flex-wrap items-center gap-2">
                     <span class="font-semibold truncate">${escHtml(tech.name)}</span>
                     <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${kindTone}">${kindLabel}</span>
                     <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap shrink-0">${conceptsCount} ${escHtml(conceptsLabel)}</span>
+                    </span>${underLabel}
+                    </span>
                   </a>
                   <button type="button" data-tech-delete data-tech-id="${escHtml(tech.slug)}" data-tech-name="${escHtml(tech.name)}" class="inline-flex items-center justify-center rounded-lg border border-red-200 text-red-700 px-3 py-2 text-xs font-semibold hover:bg-red-50 shrink-0">Eliminar</button>
                 </div>
@@ -685,15 +863,15 @@ async function bootstrapTechnologiesGrid() {
             })
             .join("")}
         </div>`
-      : techRows
+      : orderedRows
           .map((tech) => {
             const conceptsCount = countByTechDbId.get(tech.id) ?? 0;
-            const iconSrc = getTechnologyIconSrc({ id: tech.slug, name: tech.name });
+            const iconSrc = technologyDisplayIconUrl(tech.slug, tech.name);
             const iconHtml = iconSrc
-              ? `<img src="${escHtml(iconSrc)}" alt="" class="h-5 w-5 shrink-0" loading="lazy" />`
+              ? `<img src="${escHtml(iconSrc)}" alt="" class="${TECH_ICON_IMG_CLASS}" loading="lazy" />`
               : "";
-            const entry = getCatalogEntryForSlug(tech.slug);
-            const kind = entry?.kind ?? "technology";
+            const entry = getCatalogEntryForTech(tech.slug, tech.name);
+            const kind = (tech.kind as (typeof entry)["kind"] | undefined) || entry?.kind || "technology";
             const kindLabel =
               kind === "framework" ? "Framework" : kind === "library" ? "Librería" : kind === "package" ? "Paquete" : "Tecnología";
             const kindTone =
@@ -707,18 +885,28 @@ async function bootstrapTechnologiesGrid() {
             const href = `/technologies/view?tech=${encodeURIComponent(tech.slug)}`;
             const viewLabel = escHtml(i18next.t("technologies.viewDetail"));
             const conceptsLabel = escHtml(i18next.t("technologies.concepts"));
+            const parentId = tech.parent_technology_id;
+            const parentName =
+              parentId && byTechId.has(parentId) ? (byTechId.get(parentId)!.name ?? "") : "";
+            const childMargin =
+              parentId && byTechId.has(parentId) ? "ml-4 border-l-2 border-gray-100 dark:border-gray-800 pl-3" : "";
+            const underLabel = parentName
+              ? `<p class="m-0 mt-0.5 text-[10px] text-gray-500 dark:text-gray-400">${escHtml(
+                  String(i18next.t("technologies.childOfPrefix")),
+                )} ${escHtml(parentName)}</p>`
+              : "";
             const bg = iconSrc ? `style="position: relative; overflow: hidden;"` : `style="position: relative;"`;
             const bgLayer = iconSrc
               ? `<div aria-hidden="true" class="pointer-events-none absolute -right-4 -bottom-4 h-24 w-24 opacity-[0.10] dark:opacity-[0.12]" style="background: url('${escHtml(
                   iconSrc,
                 )}') no-repeat center / contain;"></div>`
               : "";
-            return `<article class="border border-gray-200/80 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 flex flex-col gap-3 shadow-sm" ${bg}>
+            return `<article class="border border-gray-200/80 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-950 flex flex-col gap-3 shadow-sm ${childMargin}" ${bg}>
                 ${bgLayer}
                 <a href="${href}" class="flex items-baseline justify-between gap-3 min-w-0 no-underline rounded-lg -m-1 p-1 hover:bg-gray-50 dark:hover:bg-gray-900/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400">
                   <div class="flex items-center gap-2 min-w-0">${iconHtml}<div class="min-w-0"><h3 class="m-0 text-base font-semibold truncate text-gray-900 dark:text-gray-100">${escHtml(
                     tech.name,
-                  )}</h3><div class="mt-1 flex flex-wrap gap-1"><span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${kindTone}">${kindLabel}</span></div></div></div>
+                  )}</h3>${underLabel}<div class="mt-1 flex flex-wrap gap-1"><span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${kindTone}">${kindLabel}</span></div></div></div>
                   <span class="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 whitespace-nowrap shrink-0">${conceptsCount} ${conceptsLabel}</span>
                 </a>
                 <div class="flex flex-wrap items-center gap-2">

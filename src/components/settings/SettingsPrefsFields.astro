@@ -1,6 +1,7 @@
 ---
 /** Campos de preferencias (compartidos: vista tablero y vista clásica). */
 import { FONT_CATALOG, fontDisplayLabel, fontOptionStyle } from "@config/font-catalog";
+import SelectPopover from "../ui/SelectPopover.astro";
 
 type FontCategory = (typeof FONT_CATALOG)[number]["category"];
 const byCategory: Record<FontCategory, typeof FONT_CATALOG> = {
@@ -39,10 +40,7 @@ const FLAG_FILES = [
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div class="space-y-1 sm:col-span-2">
         <span class="text-sm font-semibold" data-i18n="settings.prefs.font">Fuente</span>
-        <select
-          data-pref-font
-          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-        >
+        <SelectPopover data-pref-font>
           <optgroup
             label="Built-in"
             data-i18n="settings.prefs.fontGroupBuiltin"
@@ -82,7 +80,7 @@ const FLAG_FILES = [
               </option>
             ))}
           </optgroup>
-        </select>
+        </SelectPopover>
         <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.fontGoogleHint">
           Las fuentes de estos grupos se cargan desde Google Fonts al seleccionarlas.
         </p>
@@ -90,14 +88,11 @@ const FLAG_FILES = [
 
       <label class="space-y-1">
         <span class="text-sm font-semibold" data-i18n="settings.prefs.uiFontScale">Tamaño del texto</span>
-        <select
-          data-pref-ui-font-scale
-          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-        >
+        <SelectPopover data-pref-ui-font-scale>
           <option value="sm" data-i18n="settings.prefs.uiFontScaleSm">Pequeño</option>
           <option value="md" data-i18n="settings.prefs.uiFontScaleMd">Mediano</option>
           <option value="lg" data-i18n="settings.prefs.uiFontScaleLg">Grande</option>
-        </select>
+        </SelectPopover>
         <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.uiFontScaleHint">
           Afecta a la interfaz en general; si algo se ve cortado, usa Mediano.
         </p>
@@ -105,17 +100,14 @@ const FLAG_FILES = [
 
       <label class="space-y-1">
         <span class="text-sm font-semibold" data-i18n="settings.prefs.accent">Color de resalte</span>
-        <select
-          data-pref-accent
-          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-        >
+        <SelectPopover data-pref-accent>
           <option value="indigo" data-i18n="settings.prefs.accentIndigo">Índigo</option>
           <option value="emerald" data-i18n="settings.prefs.accentEmerald">Esmeralda</option>
           <option value="rose" data-i18n="settings.prefs.accentRose">Rosa</option>
           <option value="amber" data-i18n="settings.prefs.accentAmber">Ámbar</option>
           <option value="sky" data-i18n="settings.prefs.accentSky">Cielo</option>
           <option value="violet" data-i18n="settings.prefs.accentViolet">Violeta</option>
-        </select>
+        </SelectPopover>
         <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.accentHint">
           Enlaces, foco y acentos de la interfaz.
         </p>
@@ -123,16 +115,67 @@ const FLAG_FILES = [
 
       <label class="space-y-1 sm:col-span-2">
         <span class="text-sm font-semibold" data-i18n="settings.prefs.motion">Animaciones</span>
-        <select
-          data-pref-motion
-          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-        >
+        <SelectPopover data-pref-motion>
           <option value="normal" data-i18n="settings.prefs.motionNormal">Normales</option>
           <option value="reduced" data-i18n="settings.prefs.motionReduced">Reducidas</option>
-        </select>
+        </SelectPopover>
         <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.motionHint">
           “Reducidas” respeta mejor el ahorro de movimiento del sistema.
         </p>
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset class="space-y-4 rounded-xl border border-gray-200/90 dark:border-[#30363d] bg-white/40 dark:bg-[#0d1117]/40 p-4 sm:p-5">
+    <legend class="text-sm font-semibold text-gray-900 dark:text-gray-100 px-1">Herramientas</legend>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <label class="space-y-1">
+        <span class="text-sm font-semibold">Hábitos: marcado</span>
+        <SelectPopover data-pref-habits-mark-style>
+          <option value="paint">Pintar (animación)</option>
+          <option value="fill">Relleno (simple)</option>
+          <option value="check">Check (✓)</option>
+        </SelectPopover>
+        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400">
+          Usa el color de resalte como base. “Pintar” anima solo al marcar.
+        </p>
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset class="space-y-4 rounded-xl border border-gray-200/90 dark:border-[#30363d] bg-white/40 dark:bg-[#0d1117]/40 p-4 sm:p-5">
+    <legend class="text-sm font-semibold text-gray-900 dark:text-gray-100 px-1">Burbujas</legend>
+    <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
+      Decide qué pestañas aparecen en el panel flotante de ayuda. La IA está desactivada por defecto.
+    </p>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <label class="flex items-start gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2.5">
+        <input type="checkbox" class="mt-1" data-pref-fab-shortcuts />
+        <span class="min-w-0">
+          <span class="block text-sm font-semibold">Atajos</span>
+          <span class="block text-xs text-gray-500 dark:text-gray-400">Paleta, navegación</span>
+        </span>
+      </label>
+      <label class="flex items-start gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2.5">
+        <input type="checkbox" class="mt-1" data-pref-fab-calendar />
+        <span class="min-w-0">
+          <span class="block text-sm font-semibold">Calendario</span>
+          <span class="block text-xs text-gray-500 dark:text-gray-400">Notas por fecha</span>
+        </span>
+      </label>
+      <label class="flex items-start gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2.5">
+        <input type="checkbox" class="mt-1" data-pref-fab-curiosities />
+        <span class="min-w-0">
+          <span class="block text-sm font-semibold">Curiosidades</span>
+          <span class="block text-xs text-gray-500 dark:text-gray-400">Links e ideas</span>
+        </span>
+      </label>
+      <label class="flex items-start gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2.5">
+        <input type="checkbox" class="mt-1" data-pref-fab-ai />
+        <span class="min-w-0">
+          <span class="block text-sm font-semibold">IA</span>
+          <span class="block text-xs text-gray-500 dark:text-gray-400">Experimental</span>
+        </span>
       </label>
     </div>
   </fieldset>
@@ -144,24 +187,18 @@ const FLAG_FILES = [
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <label class="space-y-1">
         <span class="text-sm font-semibold" data-i18n="settings.prefs.technologiesView">Tecnologías</span>
-        <select
-          data-pref-technologies-view
-          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-        >
+        <SelectPopover data-pref-technologies-view>
           <option value="cards" data-i18n="settings.prefs.viewCards">Cuadrícula (tarjetas)</option>
           <option value="list" data-i18n="settings.prefs.viewList">Lista</option>
-        </select>
+        </SelectPopover>
       </label>
 
       <label class="space-y-1">
         <span class="text-sm font-semibold" data-i18n="settings.prefs.projectsView">Proyectos</span>
-        <select
-          data-pref-projects-view
-          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-        >
+        <SelectPopover data-pref-projects-view>
           <option value="cards" data-i18n="settings.prefs.viewCards">Cuadrícula (tarjetas)</option>
           <option value="list" data-i18n="settings.prefs.viewList">Lista</option>
-        </select>
+        </SelectPopover>
       </label>
     </div>
   </fieldset>
@@ -173,13 +210,10 @@ const FLAG_FILES = [
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <label class="space-y-1">
         <span class="text-sm font-semibold" data-i18n="settings.prefs.showHeaderIcons">Iconos de accesos rápidos</span>
-        <select
-          data-pref-show-header-icons
-          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-        >
+        <SelectPopover data-pref-show-header-icons>
           <option value="yes" data-i18n="settings.prefs.show">Mostrar</option>
           <option value="no" data-i18n="settings.prefs.hide">Ocultar</option>
-        </select>
+        </SelectPopover>
         <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.showHeaderIconsHint">
           Enlaces a CV, tecnologías, proyectos y portfolio en la barra superior.
         </p>
@@ -187,13 +221,10 @@ const FLAG_FILES = [
 
       <label class="space-y-1">
         <span class="text-sm font-semibold" data-i18n="settings.prefs.showLangSelector">Indicador de idioma en la barra</span>
-        <select
-          data-pref-show-lang-selector
-          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-        >
+        <SelectPopover data-pref-show-lang-selector>
           <option value="yes" data-i18n="settings.prefs.show">Mostrar</option>
           <option value="no" data-i18n="settings.prefs.hide">Ocultar</option>
-        </select>
+        </SelectPopover>
         <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.showLangSelectorHint">
           Muestra la bandera de región (la interfaz sigue en español).
         </p>
@@ -201,13 +232,10 @@ const FLAG_FILES = [
 
       <label class="space-y-1">
         <span class="text-sm font-semibold" data-i18n="settings.prefs.headerLangPopoverOpen">Selector de idioma (barra)</span>
-        <select
-          data-pref-header-lang-popover
-          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-        >
+        <SelectPopover data-pref-header-lang-popover>
           <option value="hover" data-i18n="settings.prefs.popoverHover">Al pasar el cursor</option>
           <option value="click" data-i18n="settings.prefs.popoverClick">Al hacer clic</option>
-        </select>
+        </SelectPopover>
         <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.headerLangPopoverHint">
           Cómo abrir el menú de idiomas.
         </p>
@@ -215,13 +243,10 @@ const FLAG_FILES = [
 
       <label class="space-y-1">
         <span class="text-sm font-semibold" data-i18n="settings.prefs.headerUserMenuPopoverOpen">Menú de cuenta (avatar)</span>
-        <select
-          data-pref-header-user-menu-popover
-          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring settings-classic-input"
-        >
+        <SelectPopover data-pref-header-user-menu-popover>
           <option value="hover" data-i18n="settings.prefs.popoverHover">Al pasar el cursor</option>
           <option value="click" data-i18n="settings.prefs.popoverClick">Al hacer clic</option>
-        </select>
+        </SelectPopover>
         <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.headerUserMenuPopoverHint">
           Cómo abrir el menú de usuario.
         </p>
@@ -236,34 +261,74 @@ const FLAG_FILES = [
       <span data-i18n="settings.prefs.sectionLanguage">Idioma</span>
     </legend>
     <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="settings.prefs.languageEsOnlyNote">
-      La interfaz está en español. Más idiomas y selector ampliado llegarán más adelante.
+      Español e inglés disponibles; más idiomas, próximamente.
     </p>
-    <div
-      class="flex flex-wrap gap-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 p-2"
-      aria-hidden="true"
-    >
-      {
-        FLAG_FILES.map((file) => (
-          <span
-            class:list={[
-              "inline-flex rounded-md p-1.5 ring-1",
-              file === "Spain"
-                ? "ring-indigo-500/80 bg-indigo-50/80 dark:bg-indigo-950/40"
-                : "ring-transparent opacity-45 grayscale",
-            ]}
-          >
-            <img
-              src={`/icons/flags/${file}.svg`}
-              alt=""
-              class="h-6 w-6 rounded-sm"
-              width="24"
-              height="24"
-              loading="lazy"
-              decoding="async"
-            />
-          </span>
-        ))
-      }
+    <div class="space-y-2">
+      <div class="rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/50 p-2">
+        <p class="m-0 px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          Igual que en la cabecera
+        </p>
+        <div class="max-h-[min(50vh,20rem)] overflow-y-auto space-y-1">
+          {
+            FLAG_FILES.map((file) => (
+              <button
+                type="button"
+                data-lang-picker-option={
+                  file === "Spain"
+                    ? "es"
+                    : file === "Mexico"
+                      ? "es_mx"
+                      : file === "Argentina"
+                        ? "es_ar"
+                        : file === "Chile"
+                          ? "es_cl"
+                          : file === "Ecuador"
+                            ? "es_ec"
+                            : file === "United_States"
+                              ? "en_us"
+                              : file === "United_Kingdom"
+                                ? "en"
+                                : ""
+                }
+                class="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors app-accent-ring disabled:pointer-events-none"
+              >
+                <span class="flex min-w-0 items-center gap-2.5">
+                  <img
+                    src={`/icons/flags/${file}.svg`}
+                    alt=""
+                    class="h-6 w-6 shrink-0 rounded-sm"
+                    width="24"
+                    height="24"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span class="truncate">
+                    {file === "Spain"
+                      ? "Español (España)"
+                      : file === "Mexico"
+                        ? "Español (México)"
+                        : file === "Argentina"
+                          ? "Español (Argentina)"
+                          : file === "Chile"
+                            ? "Español (Chile)"
+                            : file === "Ecuador"
+                              ? "Español (Ecuador)"
+                              : file === "United_States"
+                                ? "English (US)"
+                                : file === "United_Kingdom"
+                                  ? "English"
+                                  : file}
+                  </span>
+                </span>
+                <span class="shrink-0 text-xs font-mono text-gray-500 dark:text-gray-400">{file}</span>
+              </button>
+            ))
+          }
+        </div>
+      </div>
+      <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400">
+        Nota: las variantes de español se deshabilitan automáticamente salvo la inferida para tu dispositivo (igual que en el header).
+      </p>
     </div>
   </fieldset>
 </div>

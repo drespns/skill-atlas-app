@@ -18,10 +18,19 @@
       </h1>
       <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
         <span data-i18n="settings.portfolio.publicUrlHint">
-          Publica tu portfolio en una dirección fácil de compartir. Requiere Supabase con la migración saas-011.
+          Configura la visibilidad del portfolio, tu dirección /portfolio/…, el enlace opcional por token y el enlace público del CV. Requiere sesión iniciada.
         </span>
       </p>
     </div>
+    <div class="space-y-3 rounded-xl border border-gray-200/80 dark:border-[#30363d] bg-white/40 dark:bg-[#0d1117]/40 p-4 sm:p-5">
+      <h2 class="m-0 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+        <span data-i18n="settings.portfolio.publicLinksPortfolioSection">Portfolio público</span>
+      </h2>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
+        <span data-i18n="settings.portfolio.publicLinksPortfolioSectionIntro">
+          Visibilidad, slug y enlace por token para tu página de portfolio.
+        </span>
+      </p>
     <label class="flex items-start gap-2 cursor-pointer">
       <input
         type="checkbox"
@@ -115,11 +124,17 @@
         Al regenerar, el enlace anterior deja de funcionar.
       </p>
     </div>
+    </div>
 
     <div class="space-y-4 pt-8 border-t border-gray-200/90 dark:border-[#30363d]" data-settings-cv-public>
-      <h2 class="m-0 text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-        <span data-i18n="cv.publicShareTitle">CV público</span>
+      <h2 class="m-0 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+        <span data-i18n="settings.portfolio.publicLinksCvSection">CV público</span>
       </h2>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
+        <span data-i18n="settings.portfolio.publicLinksCvSectionIntro">
+          Enlace revocable aparte para tu currículum.
+        </span>
+      </p>
       <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
         <span data-i18n="cv.publicShareSettingsHint">
           Este enlace se gestiona desde Ajustes y es revocable (puedes regenerarlo).
@@ -185,7 +200,7 @@
         </span>
       </p>
       <p class="m-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="settings.portfolio.publicDisplayMigrationShort">
-        Layout, evidencias y CTA del hero: migración saas-013 en Supabase.
+        También afectan a quien visita tu página: vista por defecto, cuántas evidencias se muestran por proyecto y el botón opcional del hero.
       </p>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -257,7 +272,7 @@
         </span>
       </p>
       <p class="m-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="settings.portfolio.presentationMigration">
-        Tema, acento y destacados: migración saas-014 en Supabase.
+        Tema, acento, densidad y orden de proyectos destacados se aplican a tu portfolio público al guardar.
       </p>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

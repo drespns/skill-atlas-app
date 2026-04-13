@@ -30,3 +30,30 @@ export async function supportsTechnologiesKindColumn(supabase: SupabaseLike): Pr
   return ok;
 }
 
+const KEY_TECH_PARENT = "skillatlas_db_has_technologies_parent_v1";
+
+export async function supportsTechnologiesParentColumn(supabase: SupabaseLike): Promise<boolean> {
+  try {
+    const cached = sessionStorage.getItem(KEY_TECH_PARENT);
+    if (cached === "1") return true;
+    if (cached === "0") return false;
+  } catch {
+    // ignore
+  }
+
+  let ok = false;
+  try {
+    const res = await supabase.from("technologies").select("parent_technology_id").limit(1);
+    ok = !res?.error;
+  } catch {
+    ok = false;
+  }
+
+  try {
+    sessionStorage.setItem(KEY_TECH_PARENT, ok ? "1" : "0");
+  } catch {
+    // ignore
+  }
+  return ok;
+}
+

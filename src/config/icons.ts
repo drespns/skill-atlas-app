@@ -5,139 +5,160 @@
  * - Keys: lowercase id, slug, or normalized display name.
  * - Values: paths under `public/icons` (file names must match repo assets).
  * - Add new stacks under the closest category block; keep keys alphabetized within each block.
+ * - Several keys may point to the same SVG so `getTechnologyIconSrc` resolves DB slugs and labels
+ *   that differ in spelling (e.g. `powerbi`, `power bi`, `power-bi`).
  */
 
+const tech = (file: string) => `/icons/technologies/${file}`;
+const fw = (file: string) => `/icons/frameworks/${file}`;
+const lib = (file: string) => `/icons/libraries/${file}`;
+const pkg = (file: string) => `/icons/packages/${file}`;
+
 const programmingLanguages: Record<string, string> = {
-  c: "/icons/C.svg",
-  javascript: "/icons/JavaScript.svg",
-  js: "/icons/JavaScript.svg",
-  python: "/icons/Python.svg",
-  r: "/icons/R.svg",
-  scala: "/icons/Scala.svg",
-  typescript: "/icons/TypeScript.svg",
-  ts: "/icons/TypeScript.svg",
-  java: "/icons/Java.svg",
-  go: "/icons/Go.svg",
-  rust: "/icons/Rust.svg",
+  c: tech("C.svg"),
+  csharp: tech("CSharp.svg"),
+  "c#": tech("CSharp.svg"),
+  "c-sharp": tech("CSharp.svg"),
+  "c-csharp": tech("CSharp.svg"),
+  javascript: tech("JavaScript.svg"),
+  js: tech("JavaScript.svg"),
+  python: tech("Python.svg"),
+  r: tech("R.svg"),
+  scala: tech("Scala.svg"),
+  typescript: tech("TypeScript.svg"),
+  ts: tech("TypeScript.svg"),
+  java: tech("Java.svg"),
+  go: tech("Go.svg"),
+  rust: tech("Rust.svg"),
 };
 
 const webAndFrontend: Record<string, string> = {
-  angular: "/icons/Angular.svg",
-  "angularjs": "/icons/AngularJS.svg",
-  astro: "/icons/Astro.svg",
-  bootstrap: "/icons/Bootstrap.svg",
-  css: "/icons/CSS3.svg",
-  html: "/icons/HTML5.svg",
-  node: "/icons/Node.js.svg",
-  "node.js": "/icons/Node.js.svg",
-  nodejs: "/icons/Node.js.svg",
-  react: "/icons/React.svg",
-  tailwind: "/icons/Tailwind CSS.svg",
-  vite: "/icons/Vite.js.svg",
+  angular: fw("Angular.svg"),
+  angularjs: fw("AngularJS.svg"),
+  astro: tech("Astro.svg"),
+  bootstrap: fw("Bootstrap.svg"),
+  css: tech("CSS3.svg"),
+  html: tech("HTML5.svg"),
+  node: tech("Node.js.svg"),
+  "node.js": tech("Node.js.svg"),
+  nodejs: tech("Node.js.svg"),
+  react: fw("React.svg"),
+  tailwind: fw("Tailwind CSS.svg"),
+  tailwindcss: fw("Tailwind CSS.svg"),
+  "tailwind-css": fw("Tailwind CSS.svg"),
+  threejs: lib("Three.js.svg"),
+  "three-js": lib("Three.js.svg"),
+  "three.js": lib("Three.js.svg"),
+  vite: tech("Vite.js.svg"),
 };
 
 const dataScienceAndMl: Record<string, string> = {
-  jupyter: "/icons/Jupyter.svg",
-  kaggle: "/icons/Kaggle.svg",
-  keras: "/icons/Keras.svg",
-  numpy: "/icons/NumPy.svg",
-  pandas: "/icons/Pandas.svg",
-  tensorflow: "/icons/TensorFlow.svg",
-  "scikit-learn": "/icons/scikit-learn.svg",
-  sklearn: "/icons/scikit-learn.svg",
+  jupyter: tech("Jupyter.svg"),
+  kaggle: tech("Kaggle.svg"),
+  keras: lib("Keras.svg"),
+  numpy: lib("NumPy.svg"),
+  pandas: lib("Pandas.svg"),
+  scipy: tech("Python.svg"),
+  matplotlib: lib("Matplotlib.svg"),
+  seaborn: tech("Python.svg"),
+  tensorflow: lib("TensorFlow.svg"),
+  "scikit-learn": lib("scikit-learn.svg"),
+  sklearn: lib("scikit-learn.svg"),
 };
 
 const bigDataAndStreaming: Record<string, string> = {
-  hadoop: "/icons/Apache Hadoop.svg",
-  kafka: "/icons/Apache Kafka.svg",
-  "apache kafka": "/icons/Apache Kafka.svg",
-  airflow: "/icons/Apache Airflow.svg",
-  "apache airflow": "/icons/Apache Airflow.svg",
-  pyspark: "/icons/Apache Spark.svg",
-  spark: "/icons/Apache Spark.svg",
-  "apache spark": "/icons/Apache Spark.svg",
+  hadoop: tech("Apache Hadoop.svg"),
+  kafka: tech("Apache Kafka.svg"),
+  "apache kafka": tech("Apache Kafka.svg"),
+  airflow: tech("Apache Airflow.svg"),
+  "apache airflow": tech("Apache Airflow.svg"),
+  pyspark: tech("Apache Spark.svg"),
+  spark: tech("Apache Spark.svg"),
+  "apache spark": tech("Apache Spark.svg"),
 };
 
 const databasesAndStores: Record<string, string> = {
-  cassandra: "/icons/Apache Cassandra.svg",
-  "apache cassandra": "/icons/Apache Cassandra.svg",
-  clickhouse: "/icons/Clickhouse.svg",
-  dynamodb: "/icons/AWS DynamoDB.svg",
-  "amazon dynamodb": "/icons/AWS DynamoDB.svg",
-  mongodb: "/icons/MongoDB.svg",
-  mongo: "/icons/MongoDB.svg",
-  mysql: "/icons/MySQL.svg",
-  postgres: "/icons/PostgresSQL.svg",
-  postgresql: "/icons/PostgresSQL.svg",
-  sql: "/icons/SQL.svg",
-  sqlite: "/icons/SQLite.svg",
-  "sql server": "/icons/SQL Server.svg",
-  mssql: "/icons/SQL Server.svg",
-  tsql: "/icons/SQL Server.svg",
-  oracle: "/icons/oracle-database.svg",
-  "oracle database": "/icons/oracle-database.svg",
-  redis: "/icons/Redis.svg",
+  cassandra: tech("Apache Cassandra.svg"),
+  "apache cassandra": tech("Apache Cassandra.svg"),
+  clickhouse: tech("Clickhouse.svg"),
+  dynamodb: tech("AWS DynamoDB.svg"),
+  "amazon dynamodb": tech("AWS DynamoDB.svg"),
+  mongodb: tech("MongoDB.svg"),
+  mongo: tech("MongoDB.svg"),
+  mysql: tech("MySQL.svg"),
+  postgres: tech("PostgresSQL.svg"),
+  postgresql: tech("PostgresSQL.svg"),
+  sql: tech("SQL.svg"),
+  sqlite: tech("SQLite.svg"),
+  "sql server": tech("SQL Server.svg"),
+  mssql: tech("SQL Server.svg"),
+  tsql: tech("SQL Server.svg"),
+  oracle: tech("oracle-database.svg"),
+  "oracle database": tech("oracle-database.svg"),
+  redis: tech("Redis.svg"),
 };
 
 /** Warehouses, lakehouse, transformation */
 const dataEngineering: Record<string, string> = {
-  databricks: "/icons/Databricks.svg",
-  dbt: "/icons/Dbt.svg",
-  snowflake: "/icons/Snowflake.svg",
-  bigquery: "/icons/BigQuery.svg",
-  redshift: "/icons/AWS Redshift.svg",
-  athena: "/icons/AWS Athena.svg",
-  glue: "/icons/AWS Glue.svg",
-  synapse: "/icons/Azure Synapse.svg",
+  databricks: tech("Databricks.svg"),
+  dbt: tech("Dbt.svg"),
+  snowflake: tech("Snowflake.svg"),
+  bigquery: tech("BigQuery.svg"),
+  redshift: tech("AWS Redshift.svg"),
+  athena: tech("AWS Athena.svg"),
+  glue: tech("AWS Glue.svg"),
+  synapse: tech("Azure Synapse.svg"),
 };
 
 const biAndAnalytics: Record<string, string> = {
-  excel: "/icons/Microsoft_Office_Excel_2025.svg",
-  "microsoft excel": "/icons/Microsoft_Office_Excel_2025.svg",
-  powerbi: "/icons/PowerBI.svg",
-  "power bi": "/icons/PowerBI.svg",
-  "power-bi": "/icons/PowerBI.svg",
-  qlik: "/icons/Qlik.svg",
-  "qlik sense": "/icons/Qlik.svg",
-  "qlik-sense": "/icons/Qlik.svg",
-  tableau: "/icons/Tableau.svg",
-  superset: "/icons/Apache Superset.svg",
-  "apache superset": "/icons/Apache Superset.svg",
-  "apache-superset": "/icons/Apache Superset.svg",
+  excel: tech("Microsoft_Office_Excel_2025.svg"),
+  "microsoft excel": tech("Microsoft_Office_Excel_2025.svg"),
+  powerbi: tech("PowerBI.svg"),
+  "power bi": tech("PowerBI.svg"),
+  "power-bi": tech("PowerBI.svg"),
+  qlik: tech("Qlik.svg"),
+  "qlik sense": tech("Qlik.svg"),
+  "qlik-sense": tech("Qlik.svg"),
+  tableau: tech("Tableau.svg"),
+  superset: tech("Apache Superset.svg"),
+  "apache superset": tech("Apache Superset.svg"),
+  "apache-superset": tech("Apache Superset.svg"),
 };
 
 const cloudPlatforms: Record<string, string> = {
-  aws: "/icons/AWS.svg",
-  azure: "/icons/Azure.svg",
-  "microsoft azure": "/icons/Azure.svg",
-  gcp: "/icons/Google Cloud.svg",
-  "google cloud": "/icons/Google Cloud.svg",
-  "google cloud (gcp)": "/icons/Google Cloud.svg",
+  supabase: tech("supabase-logo-icon.svg"),
+  aws: tech("AWS.svg"),
+  azure: tech("Azure.svg"),
+  "microsoft azure": tech("Azure.svg"),
+  gcp: tech("Google Cloud.svg"),
+  "google cloud": tech("Google Cloud.svg"),
+  "google cloud (gcp)": tech("Google Cloud.svg"),
 };
 
 const devOpsAndDelivery: Record<string, string> = {
-  ansible: "/icons/Ansible.svg",
-  docker: "/icons/Docker.svg",
-  git: "/icons/Git.svg",
-  github: "/icons/GitHub.svg",
-  "github actions": "/icons/GitHub Actions.svg",
-  jenkins: "/icons/Jenkins.svg",
-  kubernetes: "/icons/Kubernetes.svg",
-  terraform: "/icons/Terraform.svg",
-  vercel: "/icons/Vercel.svg",
+  ansible: tech("Ansible.svg"),
+  docker: tech("Docker.svg"),
+  git: tech("Git.svg"),
+  github: tech("GitHub.svg"),
+  "github actions": tech("GitHub Actions.svg"),
+  jenkins: tech("Jenkins.svg"),
+  kubernetes: tech("Kubernetes.svg"),
+  terraform: tech("Terraform.svg"),
+  vercel: tech("Vercel.svg"),
 };
 
 const toolsAndOther: Record<string, string> = {
-  "after effects": "/icons/After Effects.svg",
-  dbeaver: "/icons/DBeaver.svg",
-  fastapi: "/icons/FastAPI.svg",
-  figma: "/icons/Figma.svg",
-  linux: "/icons/Linux.svg",
-  markdown: "/icons/Markdown.svg",
-  powershell: "/icons/Powershell.svg",
-  selenium: "/icons/Selenium.svg",
-  unity: "/icons/Unity.svg",
-  wordpress: "/icons/WordPress.svg",
+  "after effects": tech("After Effects.svg"),
+  blender: tech("Blender.svg"),
+  dbeaver: tech("DBeaver.svg"),
+  fastapi: fw("FastAPI.svg"),
+  figma: tech("Figma.svg"),
+  linux: tech("Linux.svg"),
+  markdown: tech("Markdown.svg"),
+  powershell: tech("Powershell.svg"),
+  selenium: lib("Selenium.svg"),
+  unity: tech("Unity.svg"),
+  wordpress: tech("WordPress.svg"),
 };
 
 export const iconByKey: Record<string, string> = {
@@ -152,6 +173,21 @@ export const iconByKey: Record<string, string> = {
   ...devOpsAndDelivery,
   ...toolsAndOther,
 };
+
+/** Encode each path segment so spaces/special chars work in `img[src]` and CSS `url()`. */
+export function encodePublicIconPath(p: string): string {
+  const t = String(p ?? "").trim();
+  if (!t) return "";
+  if (!t.startsWith("/")) return encodeURI(t);
+  return (
+    "/" +
+    t
+      .split("/")
+      .filter(Boolean)
+      .map((seg) => encodeURIComponent(seg))
+      .join("/")
+  );
+}
 
 export function getIconSrc(input?: string | null) {
   if (!input) return "";

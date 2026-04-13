@@ -18,6 +18,7 @@ import {
   parseFeaturedSlugsFromText,
 } from "@lib/portfolio-presentation";
 import { showToast } from "@scripts/core/ui-feedback";
+import { oauthPictureFromUser } from "@scripts/core/oauth-avatar";
 
 function tt(key: string, fallback: string): string {
   const v = i18next.t(key);
@@ -242,12 +243,8 @@ async function initSettingsProfile() {
       setAvatarPreview(avatarUrl);
       return;
     }
-    const { data: sessionData } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
-    const meta = (sessionData?.session?.user?.user_metadata ?? {}) as Record<string, unknown>;
-    const fb =
-      (typeof meta.avatar_url === "string" && meta.avatar_url) ||
-      (typeof meta.picture === "string" && meta.picture) ||
-      null;
+    const { data: userData } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
+    const fb = oauthPictureFromUser(userData?.user ?? null);
     setAvatarPreview(fb);
   };
 
@@ -409,12 +406,8 @@ async function initSettingsProfile() {
       const a = (data as { avatar_url?: string | null }).avatar_url;
       avatarUrl = typeof a === "string" && a ? a : null;
       if (!avatarUrl) {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const meta = (sessionData.session?.user?.user_metadata ?? {}) as Record<string, unknown>;
-        avatarUrl =
-          (typeof meta.avatar_url === "string" && meta.avatar_url) ||
-          (typeof meta.picture === "string" && meta.picture) ||
-          null;
+        const { data: userData } = await supabase.auth.getUser();
+        avatarUrl = oauthPictureFromUser(userData?.user ?? null);
       }
       await syncAvatarPreviewFromState();
 
@@ -891,7 +884,7 @@ async function initSettingsProfile() {
               showToast(
                 tt(
                   "settings.portfolio.savedProfileSlugNeedsMigration",
-                  "Perfil guardado. La URL pública no se guardó hasta aplicar saas-011 en Supabase.",
+                  "Profile saved. Your public portfolio address could not be updated—try again later.",
                 ),
                 "info",
               );
@@ -922,7 +915,7 @@ async function initSettingsProfile() {
               showToast(
                 tt(
                   "settings.portfolio.savedProfileDisplayNeedsMigration",
-                  "Perfil guardado. La vista pública no se sincronizó hasta aplicar saas-013.",
+                  "Profile saved. Some public layout settings could not be synced—try again later.",
                 ),
                 "info",
               );
@@ -956,7 +949,7 @@ async function initSettingsProfile() {
               showToast(
                 tt(
                   "settings.portfolio.savedProfile014Migration",
-                  "Perfil guardado. La presentación pública no se guardó hasta aplicar saas-014 en Supabase.",
+                  "Profile saved. Some theme or presentation options could not be saved—try again later.",
                 ),
                 "info",
               );

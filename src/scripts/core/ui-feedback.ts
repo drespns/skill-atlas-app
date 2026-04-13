@@ -1,4 +1,4 @@
-import { getTechnologyIconSrc } from "@config/icons";
+import { technologyDisplayIconUrl } from "@scripts/core/technology-icon-url";
 import { coerceEvidenceDisplayKind, detectEvidenceUrl, evidenceSiteIconUrl } from "@lib/evidence-url";
 import i18next from "i18next";
 import { analyzeGitHubRepoTechnologies, parseGitHubRepoUrl, type DetectedTechnology } from "@scripts/core/github-repo-analyzer";
@@ -90,15 +90,20 @@ export function showToast(message: string, type: ToastType = "info", durationMs:
   }, durationMs);
 }
 
-function getModalRoot() {
-  let root = document.querySelector<HTMLElement>("[data-modal-root]");
+function getModalRoot(): HTMLDialogElement {
+  let root = document.querySelector<HTMLDialogElement>("dialog.skillatlas-app-modal[data-modal-root]");
   if (!root) {
-    root = document.createElement("div");
+    root = document.createElement("dialog");
     root.setAttribute("data-modal-root", "true");
-    root.className = "fixed inset-0 z-[999] hidden items-center justify-center p-4";
+    root.className = "skillatlas-app-modal";
     document.body.appendChild(root);
   }
   return root;
+}
+
+/** `showModal()` puts the overlay in the top layer so it stacks above other open `<dialog>` (e.g. Estudio → Contexto). */
+function openAppModalRoot(root: HTMLDialogElement) {
+  if (!root.open) root.showModal();
 }
 
 function toSlug(value: string) {
@@ -123,16 +128,15 @@ export type GitHubRepoTechImportResult = {
 
 export function githubRepoTechImportModal(options: { title?: string; initialRepoUrl?: string }) {
   const root = getModalRoot();
-  root.classList.remove("hidden");
-  root.classList.add("flex");
 
   return new Promise<GitHubRepoTechImportResult | null>((resolve) => {
+    const ac = new AbortController();
     const cleanup = (value: GitHubRepoTechImportResult | null) => {
+      ac.abort();
       root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
       root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
       setTimeout(() => {
-        root.classList.add("hidden");
-        root.classList.remove("flex");
+        if (root.open) root.close();
         root.innerHTML = "";
         resolve(value);
       }, 180);
@@ -167,6 +171,16 @@ export function githubRepoTechImportModal(options: { title?: string; initialRepo
         </div>
       </div>
     `;
+
+    openAppModalRoot(root);
+    root.addEventListener(
+      "cancel",
+      (e) => {
+        e.preventDefault();
+        cleanup(null);
+      },
+      { signal: ac.signal },
+    );
 
     requestAnimationFrame(() => {
       root.querySelector("[data-modal-overlay]")?.classList.remove("opacity-0");
@@ -278,13 +292,6 @@ export function githubRepoTechImportModal(options: { title?: string; initialRepo
 
     root.querySelector("[data-modal-cancel]")?.addEventListener("click", () => cleanup(null));
     root.querySelector("[data-modal-overlay]")?.addEventListener("click", () => cleanup(null));
-    document.addEventListener(
-      "keydown",
-      (ev) => {
-        if (ev.key === "Escape") cleanup(null);
-      },
-      { once: true },
-    );
   });
 }
 
@@ -294,16 +301,15 @@ export function technologyPickerModal(options: {
   seedCatalog: { slug: string; label: string }[];
 }) {
   const root = getModalRoot();
-  root.classList.remove("hidden");
-  root.classList.add("flex");
 
   return new Promise<TechnologyPickerResult | null>((resolve) => {
+    const ac = new AbortController();
     const cleanup = (value: TechnologyPickerResult | null) => {
+      ac.abort();
       root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
       root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
       setTimeout(() => {
-        root.classList.add("hidden");
-        root.classList.remove("flex");
+        if (root.open) root.close();
         root.innerHTML = "";
         resolve(value);
       }, 180);
@@ -359,6 +365,16 @@ export function technologyPickerModal(options: {
       </div>
     `;
 
+    openAppModalRoot(root);
+    root.addEventListener(
+      "cancel",
+      (e) => {
+        e.preventDefault();
+        cleanup(null);
+      },
+      { signal: ac.signal },
+    );
+
     requestAnimationFrame(() => {
       root.querySelector("[data-modal-overlay]")?.classList.remove("opacity-0");
       root.querySelector("[data-modal-panel]")?.classList.remove("opacity-0", "scale-[0.98]");
@@ -393,7 +409,7 @@ export function technologyPickerModal(options: {
       }
       pickChipsWrap.innerHTML = items
         .map((it) => {
-          const iconSrc = getTechnologyIconSrc({ id: it.slug, name: it.name });
+          const iconSrc = technologyDisplayIconUrl(it.slug, it.name);
           const iconHtml = iconSrc
             ? `<img src="${escapeHtml(iconSrc)}" alt="" class="h-4 w-4 shrink-0 rounded-sm object-contain" loading="lazy" />`
             : `<span class="h-4 w-4 shrink-0 rounded-sm bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>`;
@@ -432,7 +448,7 @@ export function technologyPickerModal(options: {
       }
       listEl.innerHTML = hits
         .map((t) => {
-          const iconSrc = getTechnologyIconSrc({ id: t.slug, name: t.name });
+          const iconSrc = technologyDisplayIconUrl(t.slug, t.name);
           const iconHtml = iconSrc
             ? `<img src="${escapeHtml(iconSrc)}" alt="" class="h-5 w-5 shrink-0 rounded-sm object-contain" loading="lazy" />`
             : `<span class="h-5 w-5 shrink-0 rounded-sm bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>`;
@@ -472,7 +488,7 @@ export function technologyPickerModal(options: {
       }
       seedList.innerHTML = hits
         .map((e) => {
-          const iconSrc = getTechnologyIconSrc({ id: e.slug, name: e.label });
+          const iconSrc = technologyDisplayIconUrl(e.slug, e.label);
           const iconHtml = iconSrc
             ? `<img src="${escapeHtml(iconSrc)}" alt="" class="h-5 w-5 shrink-0 rounded-sm object-contain" loading="lazy" />`
             : `<span class="h-5 w-5 shrink-0 rounded-sm bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>`;
@@ -481,7 +497,7 @@ export function technologyPickerModal(options: {
               ${iconHtml}
               <span class="min-w-0 flex-1">
                 <span class="font-medium text-gray-900 dark:text-gray-100">${escapeHtml(e.label)}</span>
-                <span class="block text-[11px] text-gray-500 dark:text-gray-400">Plantilla importación · slug <code class="text-[10px]">${escapeHtml(e.slug)}</code></span>
+                <span class="block text-[11px] text-gray-500 dark:text-gray-400">${escapeHtml(String(i18next.t("technologies.pickerSourceSeed")))} · slug <code class="text-[10px]">${escapeHtml(e.slug)}</code></span>
               </span>
             </button>
           </li>`;
@@ -571,13 +587,6 @@ export function technologyPickerModal(options: {
 
     root.querySelector("[data-modal-cancel]")?.addEventListener("click", () => cleanup(null));
     root.querySelector("[data-modal-overlay]")?.addEventListener("click", () => cleanup(null));
-    document.addEventListener(
-      "keydown",
-      (ev) => {
-        if (ev.key === "Escape") cleanup(null);
-      },
-      { once: true },
-    );
   });
 }
 
@@ -589,10 +598,20 @@ export function confirmModal(options: {
   danger?: boolean;
 }) {
   const root = getModalRoot();
-  root.classList.remove("hidden");
-  root.classList.add("flex");
 
   return new Promise<boolean>((resolve) => {
+    const ac = new AbortController();
+    const cleanup = (value: boolean) => {
+      ac.abort();
+      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
+      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
+      setTimeout(() => {
+        if (root.open) root.close();
+        root.innerHTML = "";
+        resolve(value);
+      }, 180);
+    };
+
     root.innerHTML = `
       <div data-modal-overlay class="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-200"></div>
       <div data-modal-panel class="relative w-full max-w-md rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 space-y-3 opacity-0 scale-[0.98] transition-all duration-200">
@@ -608,21 +627,19 @@ export function confirmModal(options: {
         </div>
       </div>
     `;
+    openAppModalRoot(root);
+    root.addEventListener(
+      "cancel",
+      (e) => {
+        e.preventDefault();
+        cleanup(false);
+      },
+      { signal: ac.signal },
+    );
     requestAnimationFrame(() => {
       root.querySelector("[data-modal-overlay]")?.classList.remove("opacity-0");
       root.querySelector("[data-modal-panel]")?.classList.remove("opacity-0", "scale-[0.98]");
     });
-
-    const cleanup = (value: boolean) => {
-      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
-      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
-      setTimeout(() => {
-        root.classList.add("hidden");
-        root.classList.remove("flex");
-        root.innerHTML = "";
-        resolve(value);
-      }, 180);
-    };
 
     root.querySelector("[data-modal-cancel]")?.addEventListener("click", () => cleanup(false));
     root.querySelector("[data-modal-confirm]")?.addEventListener("click", () => cleanup(true));
@@ -687,10 +704,20 @@ export function markdownEditorModal(options: {
   confirmLabel?: string;
 }): Promise<string | null> {
   const root = getModalRoot();
-  root.classList.remove("hidden");
-  root.classList.add("flex");
 
   return new Promise((resolve) => {
+    const ac = new AbortController();
+    const cleanup = (value: string | null) => {
+      ac.abort();
+      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
+      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
+      setTimeout(() => {
+        if (root.open) root.close();
+        root.innerHTML = "";
+        resolve(value);
+      }, 180);
+    };
+
     root.innerHTML = `
       <div data-modal-overlay class="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-200"></div>
       <div data-modal-panel class="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 space-y-3 opacity-0 scale-[0.98] transition-all duration-200">
@@ -703,6 +730,15 @@ export function markdownEditorModal(options: {
         </div>
       </div>
     `;
+    openAppModalRoot(root);
+    root.addEventListener(
+      "cancel",
+      (e) => {
+        e.preventDefault();
+        cleanup(null);
+      },
+      { signal: ac.signal },
+    );
     const ta = root.querySelector<HTMLTextAreaElement>("[data-modal-markdown]");
     if (ta) ta.value = options.initialMarkdown;
     if (ta) attachMarkdownLineShortcuts(ta);
@@ -714,17 +750,6 @@ export function markdownEditorModal(options: {
 
     ta?.focus();
     ta?.setSelectionRange(ta.value.length, ta.value.length);
-
-    const cleanup = (value: string | null) => {
-      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
-      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
-      setTimeout(() => {
-        root.classList.add("hidden");
-        root.classList.remove("flex");
-        root.innerHTML = "";
-        resolve(value);
-      }, 180);
-    };
 
     root.querySelector("[data-modal-cancel]")?.addEventListener("click", () => cleanup(null));
     root.querySelector("[data-modal-confirm]")?.addEventListener("click", () => cleanup(ta?.value ?? ""));
@@ -741,10 +766,20 @@ export function promptModal(options: {
   confirmLabel?: string;
 }) {
   const root = getModalRoot();
-  root.classList.remove("hidden");
-  root.classList.add("flex");
 
   return new Promise<string | null>((resolve) => {
+    const ac = new AbortController();
+    const cleanup = (value: string | null) => {
+      ac.abort();
+      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
+      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
+      setTimeout(() => {
+        if (root.open) root.close();
+        root.innerHTML = "";
+        resolve(value);
+      }, 180);
+    };
+
     root.innerHTML = `
       <div data-modal-overlay class="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-200"></div>
       <div data-modal-panel class="relative w-full max-w-md rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 space-y-3 opacity-0 scale-[0.98] transition-all duration-200">
@@ -757,6 +792,15 @@ export function promptModal(options: {
         </div>
       </div>
     `;
+    openAppModalRoot(root);
+    root.addEventListener(
+      "cancel",
+      (e) => {
+        e.preventDefault();
+        cleanup(null);
+      },
+      { signal: ac.signal },
+    );
     requestAnimationFrame(() => {
       root.querySelector("[data-modal-overlay]")?.classList.remove("opacity-0");
       root.querySelector("[data-modal-panel]")?.classList.remove("opacity-0", "scale-[0.98]");
@@ -764,17 +808,6 @@ export function promptModal(options: {
 
     const input = root.querySelector<HTMLInputElement>("[data-modal-input]");
     if (input) input.focus();
-
-    const cleanup = (value: string | null) => {
-      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
-      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
-      setTimeout(() => {
-        root.classList.add("hidden");
-        root.classList.remove("flex");
-        root.innerHTML = "";
-        resolve(value);
-      }, 180);
-    };
 
     root.querySelector("[data-modal-cancel]")?.addEventListener("click", () => cleanup(null));
     root.querySelector("[data-modal-confirm]")?.addEventListener("click", () =>
@@ -785,10 +818,20 @@ export function promptModal(options: {
 
 export function technologyEditModal(options: { title?: string; initialName: string }) {
   const root = getModalRoot();
-  root.classList.remove("hidden");
-  root.classList.add("flex");
 
   return new Promise<string | null>((resolve) => {
+    const ac = new AbortController();
+    const cleanup = (value: string | null) => {
+      ac.abort();
+      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
+      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
+      setTimeout(() => {
+        if (root.open) root.close();
+        root.innerHTML = "";
+        resolve(value);
+      }, 180);
+    };
+
     const safeName = escapeHtml(options.initialName);
     root.innerHTML = `
       <div data-modal-overlay class="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-200"></div>
@@ -807,6 +850,15 @@ export function technologyEditModal(options: { title?: string; initialName: stri
         </div>
       </div>
     `;
+    openAppModalRoot(root);
+    root.addEventListener(
+      "cancel",
+      (e) => {
+        e.preventDefault();
+        cleanup(null);
+      },
+      { signal: ac.signal },
+    );
     requestAnimationFrame(() => {
       root.querySelector("[data-modal-overlay]")?.classList.remove("opacity-0");
       root.querySelector("[data-modal-panel]")?.classList.remove("opacity-0", "scale-[0.98]");
@@ -814,17 +866,6 @@ export function technologyEditModal(options: { title?: string; initialName: stri
 
     const nameInput = root.querySelector<HTMLInputElement>("[data-modal-name]");
     if (nameInput) nameInput.focus();
-
-    const cleanup = (value: string | null) => {
-      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
-      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
-      setTimeout(() => {
-        root.classList.add("hidden");
-        root.classList.remove("flex");
-        root.innerHTML = "";
-        resolve(value);
-      }, 180);
-    };
 
     root.querySelector("[data-modal-cancel]")?.addEventListener("click", () => cleanup(null));
     root.querySelector("[data-modal-confirm]")?.addEventListener("click", () =>
@@ -847,8 +888,6 @@ export function projectEditModal(options: {
   initialDateEnd?: string | null;
 }) {
   const root = getModalRoot();
-  root.classList.remove("hidden");
-  root.classList.add("flex");
 
   return new Promise<{
     title: string;
@@ -860,6 +899,29 @@ export function projectEditModal(options: {
     dateStart: string | null;
     dateEnd: string | null;
   } | null>((resolve) => {
+    const ac = new AbortController();
+    const cleanup = (
+      value: {
+        title: string;
+        description: string;
+        role: string;
+        outcome: string;
+        status: ProjectEditStatus;
+        tags: string[];
+        dateStart: string | null;
+        dateEnd: string | null;
+      } | null,
+    ) => {
+      ac.abort();
+      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
+      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
+      setTimeout(() => {
+        if (root.open) root.close();
+        root.innerHTML = "";
+        resolve(value);
+      }, 180);
+    };
+
     const safeTitle = escapeHtml(options.initialTitle);
     const safeDesc = escapeHtml(options.initialDescription);
     const safeRole = escapeHtml(options.initialRole);
@@ -938,6 +1000,15 @@ export function projectEditModal(options: {
         </div>
       </div>
     `;
+    openAppModalRoot(root);
+    root.addEventListener(
+      "cancel",
+      (e) => {
+        e.preventDefault();
+        cleanup(null);
+      },
+      { signal: ac.signal },
+    );
     requestAnimationFrame(() => {
       root.querySelector("[data-modal-overlay]")?.classList.remove("opacity-0");
       root.querySelector("[data-modal-panel]")?.classList.remove("opacity-0", "scale-[0.98]");
@@ -952,28 +1023,6 @@ export function projectEditModal(options: {
     const dateStartInput = root.querySelector<HTMLInputElement>("[data-modal-date-start]");
     const dateEndInput = root.querySelector<HTMLInputElement>("[data-modal-date-end]");
     if (titleInput) titleInput.focus();
-
-    const cleanup = (
-      value: {
-        title: string;
-        description: string;
-        role: string;
-        outcome: string;
-        status: ProjectEditStatus;
-        tags: string[];
-        dateStart: string | null;
-        dateEnd: string | null;
-      } | null,
-    ) => {
-      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
-      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
-      setTimeout(() => {
-        root.classList.add("hidden");
-        root.classList.remove("flex");
-        root.innerHTML = "";
-        resolve(value);
-      }, 180);
-    };
 
     root.querySelector("[data-modal-cancel]")?.addEventListener("click", () => cleanup(null));
     root.querySelector("[data-modal-confirm]")?.addEventListener("click", () => {
@@ -1018,10 +1067,20 @@ export function projectEditModal(options: {
 /** PR1: quitar tecnología del proyecto vs eliminarla del catálogo global. */
 export function projectTechRemoveModal(options: { technologyName: string }) {
   const root = getModalRoot();
-  root.classList.remove("hidden");
-  root.classList.add("flex");
 
   return new Promise<"unlink" | "delete_global" | null>((resolve) => {
+    const ac = new AbortController();
+    const cleanup = (v: "unlink" | "delete_global" | null) => {
+      ac.abort();
+      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
+      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
+      setTimeout(() => {
+        if (root.open) root.close();
+        root.innerHTML = "";
+        resolve(v);
+      }, 180);
+    };
+
     const name = escapeHtml(options.technologyName);
     root.innerHTML = `
       <div data-modal-overlay class="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-200"></div>
@@ -1043,21 +1102,19 @@ export function projectTechRemoveModal(options: { technologyName: string }) {
         </div>
       </div>
     `;
+    openAppModalRoot(root);
+    root.addEventListener(
+      "cancel",
+      (e) => {
+        e.preventDefault();
+        cleanup(null);
+      },
+      { signal: ac.signal },
+    );
     requestAnimationFrame(() => {
       root.querySelector("[data-modal-overlay]")?.classList.remove("opacity-0");
       root.querySelector("[data-modal-panel]")?.classList.remove("opacity-0", "scale-[0.98]");
     });
-
-    const cleanup = (v: "unlink" | "delete_global" | null) => {
-      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
-      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
-      setTimeout(() => {
-        root.classList.add("hidden");
-        root.classList.remove("flex");
-        root.innerHTML = "";
-        resolve(v);
-      }, 180);
-    };
 
     root.querySelector("[data-modal-cancel]")?.addEventListener("click", () => cleanup(null));
     root.querySelector("[data-modal-overlay]")?.addEventListener("click", () => cleanup(null));
@@ -1075,8 +1132,6 @@ export function embedEditModal(options: {
   initialThumbnailUrl?: string;
 }) {
   const root = getModalRoot();
-  root.classList.remove("hidden");
-  root.classList.add("flex");
 
   return new Promise<
     | {
@@ -1089,6 +1144,18 @@ export function embedEditModal(options: {
       }
     | null
   >((resolve) => {
+    const ac = new AbortController();
+    const cleanup = (value: any) => {
+      ac.abort();
+      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
+      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
+      setTimeout(() => {
+        if (root.open) root.close();
+        root.innerHTML = "";
+        resolve(value);
+      }, 180);
+    };
+
     const phTitle = escapeHtml(tt("projects.evidenceTitlePlaceholder", "Especificar título…"));
     const safeTitle = escapeHtml(options.initialTitle);
     const safeUrl = escapeHtml(options.initialUrl);
@@ -1169,6 +1236,15 @@ export function embedEditModal(options: {
         </div>
       </div>
     `;
+    openAppModalRoot(root);
+    root.addEventListener(
+      "cancel",
+      (e) => {
+        e.preventDefault();
+        cleanup(null);
+      },
+      { signal: ac.signal },
+    );
     requestAnimationFrame(() => {
       root.querySelector("[data-modal-overlay]")?.classList.remove("opacity-0");
       root.querySelector("[data-modal-panel]")?.classList.remove("opacity-0", "scale-[0.98]");
@@ -1203,17 +1279,6 @@ export function embedEditModal(options: {
     urlInput?.addEventListener("input", syncFromUrl);
     syncFromUrl();
     if (urlInput) urlInput.focus();
-
-    const cleanup = (value: any) => {
-      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
-      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
-      setTimeout(() => {
-        root.classList.add("hidden");
-        root.classList.remove("flex");
-        root.innerHTML = "";
-        resolve(value);
-      }, 180);
-    };
 
     root.querySelector("[data-modal-cancel]")?.addEventListener("click", () => cleanup(null));
     root.querySelector("[data-modal-confirm]")?.addEventListener("click", () => {
@@ -1254,8 +1319,6 @@ export function conceptEditModal(options: {
   initialProgress: "aprendido" | "practicado" | "mastered";
 }) {
   const root = getModalRoot();
-  root.classList.remove("hidden");
-  root.classList.add("flex");
 
   return new Promise<
     | {
@@ -1265,6 +1328,18 @@ export function conceptEditModal(options: {
       }
     | null
   >((resolve) => {
+    const ac = new AbortController();
+    const cleanup = (value: any) => {
+      ac.abort();
+      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
+      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
+      setTimeout(() => {
+        if (root.open) root.close();
+        root.innerHTML = "";
+        resolve(value);
+      }, 180);
+    };
+
     root.innerHTML = `
       <div data-modal-overlay class="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-200"></div>
       <div data-modal-panel class="relative w-full max-w-lg rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 space-y-3 opacity-0 scale-[0.98] transition-all duration-200">
@@ -1297,6 +1372,15 @@ export function conceptEditModal(options: {
       </div>
     `;
 
+    openAppModalRoot(root);
+    root.addEventListener(
+      "cancel",
+      (e) => {
+        e.preventDefault();
+        cleanup(null);
+      },
+      { signal: ac.signal },
+    );
     requestAnimationFrame(() => {
       root.querySelector("[data-modal-overlay]")?.classList.remove("opacity-0");
       root.querySelector("[data-modal-panel]")?.classList.remove("opacity-0", "scale-[0.98]");
@@ -1306,17 +1390,6 @@ export function conceptEditModal(options: {
     const notesInput = root.querySelector<HTMLTextAreaElement>("[data-modal-notes]");
     const progressInput = root.querySelector<HTMLSelectElement>("[data-modal-progress]");
     if (titleInput) titleInput.focus();
-
-    const cleanup = (value: any) => {
-      root.querySelector("[data-modal-overlay]")?.classList.add("opacity-0");
-      root.querySelector("[data-modal-panel]")?.classList.add("opacity-0", "scale-[0.98]");
-      setTimeout(() => {
-        root.classList.add("hidden");
-        root.classList.remove("flex");
-        root.innerHTML = "";
-        resolve(value);
-      }, 180);
-    };
 
     root.querySelector("[data-modal-cancel]")?.addEventListener("click", () => cleanup(null));
     root.querySelector("[data-modal-confirm]")?.addEventListener("click", () => {

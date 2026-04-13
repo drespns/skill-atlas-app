@@ -1,11 +1,11 @@
 ---
-import { getTechnologyIconSrc } from "../config/icons";
+import { encodePublicIconPath, getTechnologyIconSrc } from "../config/icons";
 import { dataSource } from "../data";
-import { getCatalogEntryForSlug } from "../scripts/technologies/technology-detail/concept-seeds";
+import { getCatalogEntryForTech } from "../scripts/technologies/technology-detail/concept-seeds";
 
 const { technology } = Astro.props;
-const iconSrc = getTechnologyIconSrc(technology);
-const entry = getCatalogEntryForSlug(String(technology.id ?? ""));
+const entry = getCatalogEntryForTech(String(technology.id ?? ""), String(technology.name ?? ""));
+const iconSrc = entry?.iconPath ?? getTechnologyIconSrc(technology);
 const kind = entry?.kind ?? "technology";
 const kindLabel =
   kind === "framework" ? "Framework" : kind === "library" ? "Librería" : kind === "package" ? "Paquete" : "Tecnología";
@@ -32,7 +32,7 @@ const detailHref =
       <div
         aria-hidden="true"
         class="pointer-events-none absolute -right-4 -bottom-4 h-24 w-24 opacity-[0.10] dark:opacity-[0.12]"
-        style={`background: url('${iconSrc}') no-repeat center / contain;`}
+        style={`background: url('${iconSrc.replace(/'/g, "\\'")}') no-repeat center / contain;`}
       />
     ) : null
   }

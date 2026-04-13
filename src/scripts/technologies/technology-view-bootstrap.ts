@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 import { getSessionUserId } from "@scripts/core/auth-session";
 import { runTechnologyDetailInits } from "@scripts/technologies/technology-detail/runner";
@@ -69,7 +70,7 @@ export async function bootstrapTechnologyDetailPage() {
 
     recordRecentActivity({ kind: "tech", slug: technology.slug, label: technology.name });
 
-  const [conceptsRes, ptForTechRes, allTechRes, allProjectsRes, allPtRes, allPcRes] = await Promise.all([
+  const [conceptsRes, ptForTechRes, allTechRes, allProjectsRes, allPtRes, allPcRes, studyTechLinkRes] = await Promise.all([
     supabase
       .from("concepts")
       .select("id, title, notes, progress")
@@ -80,6 +81,12 @@ export async function bootstrapTechnologyDetailPage() {
     supabase.from("projects").select("id, slug, title, description"),
     supabase.from("project_technologies").select("project_id, technology_id"),
     supabase.from("project_concepts").select("project_id, concept_id"),
+    supabase
+      .from("study_workspace_technologies")
+      .select("technology_id")
+      .eq("user_id", userId)
+      .eq("technology_id", technology.id)
+      .maybeSingle(),
   ]);
 
   const techConcepts = (conceptsRes.data ?? []) as {
@@ -151,6 +158,32 @@ export async function bootstrapTechnologyDetailPage() {
         <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Ve a Proyectos para empezar a relacionar conceptos.</p>
         <a href="/projects" class="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline mt-3">Ir a Proyectos</a>
       </div>`;
+
+  const studyTechBanner = document.querySelector<HTMLElement>("[data-technology-study-banner]");
+  if (studyTechBanner) {
+    const row = studyTechLinkRes.error ? null : studyTechLinkRes.data;
+    const linked = Boolean(row && (row as { technology_id?: string }).technology_id === technology.id);
+    if (linked) {
+      studyTechBanner.classList.remove("hidden");
+      studyTechBanner.className =
+        "rounded-xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/25 px-4 py-3 text-sm text-amber-950 dark:text-amber-100";
+      const body = String(
+        i18next.t("technologyDetail.studyBannerBody", {
+          defaultValue: "Esta tecnología está en tu espacio de estudio (vínculos SkillAtlas).",
+        }),
+      );
+      const cta = String(
+        i18next.t("technologyDetail.studyBannerCta", { defaultValue: "Ir a Estudio" }),
+      );
+      studyTechBanner.innerHTML = `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <p class="m-0">${esc(body)}</p>
+        <a href="/study" class="inline-flex shrink-0 rounded-lg bg-amber-700 px-3 py-2 text-xs font-semibold text-white no-underline hover:bg-amber-800">${esc(cta)}</a>
+      </div>`;
+    } else {
+      studyTechBanner.classList.add("hidden");
+      studyTechBanner.innerHTML = "";
+    }
+  }
 
   mount.innerHTML = `<section class="space-y-6" data-technology-page data-technology-id="${esc(technology.id)}" data-technology-detail-slug="${escAttr(technology.slug)}" data-related-project-count="${relatedProjects.length}">
     <header class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">

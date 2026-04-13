@@ -177,7 +177,7 @@ export async function bootstrapProjectDetailPage() {
       }
     </div>`;
 
-  const [ptRes, pcRes, embRes, allTechRes, allConceptRes] = await Promise.all([
+  const [ptRes, pcRes, embRes, allTechRes, allConceptRes, studyWsRes, studySrcCountRes] = await Promise.all([
     supabase.from("project_technologies").select("technology_id").eq("project_id", project.id),
     supabase.from("project_concepts").select("concept_id").eq("project_id", project.id),
     supabase
@@ -187,6 +187,8 @@ export async function bootstrapProjectDetailPage() {
       .order("sort_order", { ascending: true }),
     supabase.from("technologies").select("id, slug, name").order("name"),
     supabase.from("concepts").select("id, technology_id, title, progress, notes").order("title"),
+    supabase.from("study_workspaces").select("linked_project_id").eq("user_id", userId).maybeSingle(),
+    supabase.from("study_sources").select("id", { count: "exact", head: true }).eq("user_id", userId),
   ]);
 
   const linkedTechIds = new Set((ptRes.data ?? []).map((r: any) => r.technology_id));
@@ -444,6 +446,33 @@ export async function bootstrapProjectDetailPage() {
       </div>
     </section>`;
 
+  const studyBannerEl = document.querySelector<HTMLElement>("[data-project-study-banner]");
+  if (studyBannerEl) {
+    const lpRaw = studyWsRes.error
+      ? null
+      : (studyWsRes.data as { linked_project_id?: string } | null)?.linked_project_id;
+    const showStudy = typeof lpRaw === "string" && lpRaw === project.id;
+    if (showStudy) {
+      const n = studySrcCountRes.error ? 0 : (studySrcCountRes.count ?? 0);
+      studyBannerEl.classList.remove("hidden");
+      studyBannerEl.className =
+        "rounded-xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/25 px-4 py-3 text-sm text-amber-950 dark:text-amber-100";
+      const body = String(
+        i18next.t("projects.studyBannerBody", {
+          count: n,
+          defaultValue: "Tu espacio de estudio está vinculado a este proyecto ({{count}} fuentes).",
+        }),
+      );
+      studyBannerEl.innerHTML = `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <p class="m-0">${body}</p>
+        <a href="/study" class="inline-flex shrink-0 rounded-lg bg-amber-700 px-3 py-2 text-xs font-semibold text-white no-underline hover:bg-amber-800">${esc(tt("projects.studyBannerCta", "Ir a Estudio"))}</a>
+      </div>`;
+    } else {
+      studyBannerEl.classList.add("hidden");
+      studyBannerEl.innerHTML = "";
+    }
+  }
+
   mount.innerHTML = `<section class="space-y-6" data-project-id="${esc(project.slug)}" data-project-db-id="${esc(project.id)}" data-project-detail-slug="${escAttr(project.slug)}" data-project-title="${esc(project.title)}" data-project-description="${esc(project.description ?? "")}" data-project-role="${escAttr(role)}" data-project-outcome="${escAttr(outcome)}" data-project-status="${escAttr(projectStatus)}" data-project-tags-json="${escAttr(JSON.stringify(tagsArr))}" data-project-date-start="${escAttr(ds)}" data-project-date-end="${escAttr(de)}">
     <header class="space-y-3">
       <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
@@ -466,6 +495,7 @@ export async function bootstrapProjectDetailPage() {
         <div class="flex flex-col items-stretch gap-2 lg:w-64">
           <a href="/projects" class="inline-flex justify-center rounded-lg border bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold no-underline">Volver a Proyectos</a>
           <button type="button" data-project-edit-open class="inline-flex justify-center rounded-lg border bg-white dark:bg-gray-950 px-3 py-2 text-sm font-semibold">Editar historia</button>
+          <button type="button" data-project-duplicate class="inline-flex justify-center rounded-lg border border-indigo-200/90 dark:border-indigo-900/40 text-indigo-800 dark:text-indigo-200 px-3 py-2 text-sm font-semibold hover:bg-indigo-50/60 dark:hover:bg-indigo-950/30">${esc(tt("projects.duplicateButton", "Duplicar proyecto"))}</button>
           <button type="button" data-project-delete class="inline-flex justify-center rounded-lg border border-red-200/90 dark:border-red-900/40 text-red-700 dark:text-red-300 px-3 py-2 text-sm font-semibold hover:bg-red-50/60 dark:hover:bg-red-950/30">Eliminar proyecto</button>
           <p data-project-edit-feedback class="text-xs text-gray-600 dark:text-gray-400 m-0 min-h-4"></p>
         </div>

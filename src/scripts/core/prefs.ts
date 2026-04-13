@@ -12,6 +12,7 @@ export type DefaultView = "cards" | "list";
 /** Vista de la lista de evidencias en detalle de proyecto (CSR). */
 export type ProjectEvidenceLayout = "large" | "grid" | "list";
 export type Lang = "es" | "en";
+export type HabitsMarkStyle = "paint" | "fill" | "check";
 
 /** Cómo abrir popovers de la cabecera (idioma / menú usuario). */
 export type HeaderPopoverTrigger = "hover" | "click";
@@ -111,6 +112,10 @@ export type CvProfileV1 = {
   headline?: string;
   location?: string;
   email?: string;
+  /** Móvil u otro teléfono principal (texto libre, p. ej. +34 …). */
+  phoneMobile?: string;
+  /** Teléfono fijo u otro contacto telefónico. */
+  phoneLandline?: string;
   links?: CvLink[];
   /** Resumen del CV (privado). Si falta, se usa `portfolio_profiles.bio` como fallback. */
   summary?: string;
@@ -140,6 +145,23 @@ export type CvProfileV1 = {
   cvDocumentSectionOrder?: string[];
   /** Objetivo de extensión al imprimir (1–6 páginas A4 aprox.); ajusta escala tipográfica. */
   cvPrintMaxPages?: number;
+  /** Proyecto resaltado en el CV (slug); el resto se muestra en lista compacta. */
+  cvFeaturedProjectSlug?: string;
+};
+
+/** Máximo de CV guardados por usuario (prefs + sync remoto). */
+export const CV_DOCUMENTS_MAX = 5;
+
+/** Un CV con nombre, etiquetas y payload aislado (perfil + proyectos del editor). */
+export type CvDocumentSlotV1 = {
+  id: string;
+  name: string;
+  tags: string[];
+  /** CV por defecto (enlace público / RPC usa su `cvProfile` espejado en prefs). */
+  isMain: boolean;
+  cvProfile: CvProfileV1;
+  cvProjectSlugs?: string[];
+  cvProjectDisplayOrder?: string[];
 };
 
 export type AppPrefsV1 = {
@@ -174,10 +196,29 @@ export type AppPrefsV1 = {
    * Ausente o `undefined`: todos los proyectos del usuario.
    */
   cvProjectSlugs?: string[];
+  /**
+   * Orden de la lista de proyectos en el editor del CV (todos visibles; el checkbox marca inclusión).
+   * Ausente: mismo orden que la lista cargada del servidor.
+   */
+  cvProjectDisplayOrder?: string[];
   /** Metadatos del CV (privado) en /cv. */
   cvProfile?: CvProfileV1;
+  /** Varios CV (hasta `CV_DOCUMENTS_MAX`); el activo es `cvActiveDocumentId`. */
+  cvDocuments?: CvDocumentSlotV1[];
+  /** Id del documento CV mostrado en `/cv`. */
+  cvActiveDocumentId?: string;
   /** Modo tester (QA): habilita checklist, seed y debug UI en Ajustes. */
   qaTesterMode?: boolean;
+  /** Mostrar pestaña IA en bubble (solo invitado; por defecto apagado). */
+  showFabAi?: boolean;
+  /** Mostrar pestaña Calendario en bubble. */
+  showFabCalendar?: boolean;
+  /** Mostrar pestaña Curiosidades en bubble. */
+  showFabCuriosities?: boolean;
+  /** Mostrar pestaña Atajos en bubble. */
+  showFabShortcuts?: boolean;
+  /** Estilo de marcado en la herramienta de hábitos. */
+  habitsMarkStyle?: HabitsMarkStyle;
   /** Recorrido guiado (spotlight): progreso y completados. */
   onboardingV2?: { done?: boolean; step?: number; completedIds?: string[]; dismissed?: boolean };
 };
@@ -204,6 +245,11 @@ const DEFAULT_PREFS: AppPrefsV1 = {
   settingsSidebarSide: "left",
   cvProfile: {},
   qaTesterMode: false,
+  showFabAi: false,
+  showFabCalendar: true,
+  showFabCuriosities: true,
+  showFabShortcuts: true,
+  habitsMarkStyle: "paint",
   onboardingV2: { done: false, step: 0, completedIds: [], dismissed: false },
 };
 
@@ -238,6 +284,10 @@ function normalizeUiFontScale(raw: unknown): UiFontScale {
   return "md";
 }
 
+function normalizeHabitsMarkStyle(raw: unknown): HabitsMarkStyle {
+  return raw === "fill" || raw === "check" ? raw : "paint";
+}
+
 function normalizeCvProjectSlugs(raw: unknown): string[] | undefined {
   if (raw === undefined || raw === null) return undefined;
   if (!Array.isArray(raw)) return undefined;
@@ -248,6 +298,16 @@ function normalizeCvProjectSlugs(raw: unknown): string[] | undefined {
   return out.length > 0 ? Array.from(new Set(out)) : [];
 }
 
+function normalizeCvProjectDisplayOrder(raw: unknown): string[] | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (!Array.isArray(raw)) return undefined;
+  const out = raw
+    .filter((x): x is string => typeof x === "string")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return out.length > 0 ? out : undefined;
+}
+
 const CV_LINK_CANON_LABELS = ["LinkedIn", "GitHub", "Portfolio", "X / Twitter", "Web"];
 
 function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
@@ -256,6 +316,8 @@ function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
   const headline = typeof r.headline === "string" ? r.headline.trim() : "";
   const location = typeof r.location === "string" ? r.location.trim() : "";
   const email = typeof r.email === "string" ? r.email.trim() : "";
+  const phoneMobile = typeof r.phoneMobile === "string" ? r.phoneMobile.trim() : "";
+  const phoneLandline = typeof r.phoneLandline === "string" ? r.phoneLandline.trim() : "";
   const summary = typeof r.summary === "string" ? r.summary.trim() : "";
   const highlights = typeof r.highlights === "string" ? r.highlights.trim() : "";
   const showHelpStack = typeof r.showHelpStack === "boolean" ? r.showHelpStack : undefined;
@@ -290,6 +352,8 @@ function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
   if (headline) out.headline = headline;
   if (location) out.location = location;
   if (email) out.email = email;
+  if (phoneMobile) out.phoneMobile = phoneMobile;
+  if (phoneLandline) out.phoneLandline = phoneLandline;
   if (summary) out.summary = summary;
   if (highlights) out.highlights = highlights;
   if (showHelpStack !== undefined) out.showHelpStack = showHelpStack;
@@ -393,7 +457,141 @@ function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
     if (n >= 1 && n <= 6) out.cvPrintMaxPages = n;
   }
 
+  const feat = typeof r.cvFeaturedProjectSlug === "string" ? r.cvFeaturedProjectSlug.trim() : "";
+  if (feat) out.cvFeaturedProjectSlug = feat;
+
   return out;
+}
+
+export function newCvDocumentId(): string {
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  } catch {
+    /* ignore */
+  }
+  return `cv-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function normalizeCvDocumentTags(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const x of raw) {
+    if (typeof x !== "string") continue;
+    const t = x.trim().slice(0, 24);
+    if (t && !out.includes(t)) out.push(t);
+    if (out.length >= 8) break;
+  }
+  return out;
+}
+
+function normalizeCvDocumentSlot(raw: unknown, fallbackProfile: CvProfileV1): CvDocumentSlotV1 | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const id = typeof r.id === "string" && r.id.trim() ? r.id.trim() : "";
+  if (!id) return null;
+  let name = typeof r.name === "string" ? r.name.trim().slice(0, 80) : "";
+  if (!name) name = "CV";
+  const prof = normalizeCvProfile(r.cvProfile) ?? fallbackProfile;
+  return {
+    id,
+    name,
+    tags: normalizeCvDocumentTags(r.tags),
+    isMain: Boolean(r.isMain),
+    cvProfile: prof,
+    cvProjectSlugs: normalizeCvProjectSlugs(r.cvProjectSlugs),
+    cvProjectDisplayOrder: normalizeCvProjectDisplayOrder(r.cvProjectDisplayOrder),
+  };
+}
+
+function mirrorMainDocumentsToTopLevel(documents: CvDocumentSlotV1[]): {
+  cvProfile: CvProfileV1;
+  cvProjectSlugs?: string[];
+  cvProjectDisplayOrder?: string[];
+} {
+  const main = documents.find((d) => d.isMain) ?? documents[0];
+  if (!main) return { cvProfile: {} };
+  return {
+    cvProfile: JSON.parse(JSON.stringify(main.cvProfile)) as CvProfileV1,
+    cvProjectSlugs: main.cvProjectSlugs,
+    cvProjectDisplayOrder: main.cvProjectDisplayOrder,
+  };
+}
+
+/** Garantiza `cvDocuments`, `cvActiveDocumentId` y espejo top-level desde el CV principal (RPC público). */
+export function migrateCvDocumentsIntoPrefs(prefs: AppPrefsV1): AppPrefsV1 {
+  const baseProfile = prefs.cvProfile ?? {};
+  const rawDocs = prefs.cvDocuments;
+  let documents: CvDocumentSlotV1[] = [];
+
+  if (Array.isArray(rawDocs) && rawDocs.length > 0) {
+    for (const row of rawDocs) {
+      const slot = normalizeCvDocumentSlot(row, baseProfile);
+      if (slot) documents.push(slot);
+    }
+  }
+
+  if (documents.length === 0) {
+    documents = [
+      {
+        id: newCvDocumentId(),
+        name: "Principal",
+        tags: [],
+        isMain: true,
+        cvProfile: normalizeCvProfile(baseProfile) ?? {},
+        cvProjectSlugs: normalizeCvProjectSlugs(prefs.cvProjectSlugs),
+        cvProjectDisplayOrder: normalizeCvProjectDisplayOrder(prefs.cvProjectDisplayOrder),
+      },
+    ];
+  }
+
+  documents = documents.slice(0, CV_DOCUMENTS_MAX);
+
+  const mains = documents.filter((d) => d.isMain);
+  if (mains.length === 0) documents[0] = { ...documents[0]!, isMain: true };
+  if (mains.length > 1) {
+    let seen = false;
+    documents = documents.map((d) => {
+      if (!d.isMain) return d;
+      if (!seen) {
+        seen = true;
+        return d;
+      }
+      return { ...d, isMain: false };
+    });
+  }
+
+  let activeId =
+    typeof prefs.cvActiveDocumentId === "string" && prefs.cvActiveDocumentId.trim()
+      ? prefs.cvActiveDocumentId.trim()
+      : "";
+  if (!documents.some((d) => d.id === activeId)) {
+    const main = documents.find((d) => d.isMain) ?? documents[0]!;
+    activeId = main.id;
+  }
+
+  const mirror = mirrorMainDocumentsToTopLevel(documents);
+  return {
+    ...prefs,
+    cvDocuments: documents,
+    cvActiveDocumentId: activeId,
+    cvProfile: mirror.cvProfile,
+    cvProjectSlugs: mirror.cvProjectSlugs,
+    cvProjectDisplayOrder: mirror.cvProjectDisplayOrder,
+  };
+}
+
+export function buildCvDocumentsPrefsPatch(
+  documents: CvDocumentSlotV1[],
+  activeId: string,
+): Pick<AppPrefsV1, "cvDocuments" | "cvActiveDocumentId" | "cvProfile" | "cvProjectSlugs" | "cvProjectDisplayOrder"> {
+  const mirror = mirrorMainDocumentsToTopLevel(documents);
+  return {
+    cvDocuments: documents,
+    cvActiveDocumentId: activeId,
+    cvProfile: mirror.cvProfile,
+    cvProjectSlugs: mirror.cvProjectSlugs,
+    cvProjectDisplayOrder: mirror.cvProjectDisplayOrder,
+  };
 }
 
 export function loadPrefs(): AppPrefsV1 {
@@ -424,8 +622,23 @@ export function loadPrefs(): AppPrefsV1 {
     ),
     settingsActiveSection: normalizeSettingsActiveSection((base as Partial<AppPrefsV1>).settingsActiveSection),
     cvProjectSlugs: normalizeCvProjectSlugs((base as Partial<AppPrefsV1>).cvProjectSlugs),
+    cvProjectDisplayOrder: normalizeCvProjectDisplayOrder((base as Partial<AppPrefsV1>).cvProjectDisplayOrder),
     cvProfile: normalizeCvProfile((base as Partial<AppPrefsV1>).cvProfile) ?? DEFAULT_PREFS.cvProfile,
     qaTesterMode: typeof (base as any).qaTesterMode === "boolean" ? Boolean((base as any).qaTesterMode) : false,
+    showFabAi: typeof (base as any).showFabAi === "boolean" ? Boolean((base as any).showFabAi) : DEFAULT_PREFS.showFabAi,
+    showFabCalendar:
+      typeof (base as any).showFabCalendar === "boolean"
+        ? Boolean((base as any).showFabCalendar)
+        : DEFAULT_PREFS.showFabCalendar,
+    showFabCuriosities:
+      typeof (base as any).showFabCuriosities === "boolean"
+        ? Boolean((base as any).showFabCuriosities)
+        : DEFAULT_PREFS.showFabCuriosities,
+    showFabShortcuts:
+      typeof (base as any).showFabShortcuts === "boolean"
+        ? Boolean((base as any).showFabShortcuts)
+        : DEFAULT_PREFS.showFabShortcuts,
+    habitsMarkStyle: normalizeHabitsMarkStyle((base as any).habitsMarkStyle ?? DEFAULT_PREFS.habitsMarkStyle),
     onboardingV2: (() => {
       const raw = (base as any)?.onboardingV2;
       if (!raw || typeof raw !== "object") return { ...DEFAULT_PREFS.onboardingV2 };
@@ -457,7 +670,7 @@ export function loadPrefs(): AppPrefsV1 {
     ), */
   };
 
-  return finalizeAppPrefs(migrateLegacyPrefs(merged));
+  return finalizeAppPrefs(migrateLegacyPrefs(migrateCvDocumentsIntoPrefs(merged as AppPrefsV1)));
 }
 
 function normalizeUiLang(raw: unknown): Lang {
@@ -525,11 +738,50 @@ export function mergeRemoteUserPrefs(remote: unknown): void {
   const incoming = remote as Record<string, unknown>;
   const local = loadPrefs();
   const merged: Record<string, unknown> = { ...local, ...incoming, v: 1 };
-  if (incoming.cvProfile && typeof incoming.cvProfile === "object") {
-    merged.cvProfile = { ...((local as any).cvProfile ?? {}), ...(incoming.cvProfile as object) };
+
+  if (incoming.cvDocuments !== undefined && Array.isArray(incoming.cvDocuments) && incoming.cvDocuments.length > 0) {
+    const draft: AppPrefsV1 = {
+      ...(local as AppPrefsV1),
+      cvDocuments: incoming.cvDocuments as CvDocumentSlotV1[],
+      cvActiveDocumentId:
+        typeof incoming.cvActiveDocumentId === "string" && incoming.cvActiveDocumentId.trim()
+          ? incoming.cvActiveDocumentId.trim()
+          : local.cvActiveDocumentId,
+    };
+    const norm = migrateCvDocumentsIntoPrefs(draft);
+    merged.cvDocuments = norm.cvDocuments;
+    merged.cvActiveDocumentId = norm.cvActiveDocumentId;
+    merged.cvProfile = norm.cvProfile;
+    merged.cvProjectSlugs = norm.cvProjectSlugs;
+    merged.cvProjectDisplayOrder = norm.cvProjectDisplayOrder;
+  } else if (incoming.cvProfile && typeof incoming.cvProfile === "object") {
+    if (local.cvDocuments && local.cvDocuments.length > 0) {
+      const docs = local.cvDocuments.map((d) => ({
+        ...d,
+        cvProfile: { ...(d.cvProfile ?? {}) },
+      }));
+      const mainIdx = docs.findIndex((d) => d.isMain);
+      const i = mainIdx >= 0 ? mainIdx : 0;
+      const cur = docs[i]!;
+      docs[i] = {
+        ...cur,
+        cvProfile: { ...(cur.cvProfile ?? {}), ...(incoming.cvProfile as object) } as CvProfileV1,
+      };
+      const patch = buildCvDocumentsPrefsPatch(docs, local.cvActiveDocumentId ?? cur.id);
+      merged.cvDocuments = patch.cvDocuments;
+      merged.cvActiveDocumentId = patch.cvActiveDocumentId;
+      merged.cvProfile = patch.cvProfile;
+      merged.cvProjectSlugs = patch.cvProjectSlugs;
+      merged.cvProjectDisplayOrder = patch.cvProjectDisplayOrder;
+    } else {
+      merged.cvProfile = { ...((local as any).cvProfile ?? {}), ...(incoming.cvProfile as object) };
+    }
   }
+
   merged.headerLangPopover = local.headerLangPopover;
   merged.headerUserMenuPopover = local.headerUserMenuPopover;
+  // Prefer local for high-churn UI prefs to avoid race conditions on first hydrate.
+  merged.habitsMarkStyle = local.habitsMarkStyle;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
   const next = loadPrefs();
   applyPrefs(next);
@@ -555,6 +807,7 @@ export function applyPrefs(prefs: AppPrefsV1) {
   root.dataset.headerLangPopover = p.headerLangPopover ?? "hover";
   root.dataset.headerUserMenuPopover = p.headerUserMenuPopover ?? "click";
   // root.dataset.headerHomePopover = p.headerHomePopover ?? "hover";
+  root.dataset.habitsMarkStyle = p.habitsMarkStyle ?? "paint";
 
   // Theme
   const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;

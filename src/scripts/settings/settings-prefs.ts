@@ -9,6 +9,7 @@ import {
   type Accent,
   type DefaultView,
   type FontPreset,
+  type HabitsMarkStyle,
   type Motion,
   type SettingsSidebarSide,
   type ThemeMode,
@@ -37,14 +38,16 @@ function isDefaultView(v: string): v is DefaultView {
 function isHeaderPopoverTrigger(v: string): v is HeaderPopoverTrigger {
   return v === "hover" || v === "click";
 }
+function isHabitsMarkStyle(v: string): v is HabitsMarkStyle {
+  return v === "paint" || v === "fill" || v === "check";
+}
 function initSettingsPrefs() {
-  if (document.body.dataset.settingsPrefsInit === "1") return;
-
   const theme = document.querySelector<HTMLSelectElement>("[data-pref-theme]");
   const fontEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-font]");
   const uiFontScaleEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-ui-font-scale]");
   const accentEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-accent]");
   const motionEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-motion]");
+  const habitsMarkStyleEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-habits-mark-style]");
   const technologiesViewEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-technologies-view]");
   const projectsViewEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-projects-view]");
   const showHeaderIconsEls = document.querySelectorAll<HTMLSelectElement>("[data-pref-show-header-icons]");
@@ -53,6 +56,10 @@ function initSettingsPrefs() {
   const headerUserMenuPopoverEls = document.querySelectorAll<HTMLSelectElement>(
     "[data-pref-header-user-menu-popover]",
   );
+  const fabShortcutsEls = document.querySelectorAll<HTMLInputElement>("[data-pref-fab-shortcuts]");
+  const fabCalendarEls = document.querySelectorAll<HTMLInputElement>("[data-pref-fab-calendar]");
+  const fabCuriositiesEls = document.querySelectorAll<HTMLInputElement>("[data-pref-fab-curiosities]");
+  const fabAiEls = document.querySelectorAll<HTMLInputElement>("[data-pref-fab-ai]");
   if (
     !theme ||
     fontEls.length === 0 ||
@@ -68,7 +75,8 @@ function initSettingsPrefs() {
   )
     return;
 
-  document.body.dataset.settingsPrefsInit = "1";
+  if (theme.dataset.bound === "1") return;
+  theme.dataset.bound = "1";
 
   if (!document.getElementById(FONT_GOOGLE_CATALOG_PREVIEW_LINK_ID)) {
     const href = googleFontsCatalogPreviewHref();
@@ -96,6 +104,9 @@ function initSettingsPrefs() {
     motionEls.forEach((el) => {
       el.value = p.motion;
     });
+    habitsMarkStyleEls.forEach((el) => {
+      el.value = p.habitsMarkStyle ?? "paint";
+    });
     technologiesViewEls.forEach((el) => {
       el.value = p.technologiesView;
     });
@@ -114,9 +125,30 @@ function initSettingsPrefs() {
     headerUserMenuPopoverEls.forEach((el) => {
       el.value = p.headerUserMenuPopover ?? "click";
     });
+    fabShortcutsEls.forEach((el) => {
+      el.checked = Boolean(p.showFabShortcuts ?? true);
+    });
+    fabCalendarEls.forEach((el) => {
+      el.checked = Boolean(p.showFabCalendar ?? true);
+    });
+    fabCuriositiesEls.forEach((el) => {
+      el.checked = Boolean(p.showFabCuriosities ?? true);
+    });
+    fabAiEls.forEach((el) => {
+      el.checked = Boolean(p.showFabAi ?? false);
+    });
+
+    // Ensure custom select-popovers reflect programmatic value updates.
+    window.dispatchEvent(new Event("skillatlas:select-popovers-refresh"));
   };
 
   render();
+
+  // If prefs get hydrated/merged after init (remote-first), re-render.
+  if ((window as any).__skillatlasSettingsPrefsRerender !== true) {
+    (window as any).__skillatlasSettingsPrefsRerender = true;
+    window.addEventListener("skillatlas:prefs-updated", () => render());
+  }
 
   theme.addEventListener("change", () => {
     const v = theme.value;
@@ -153,6 +185,7 @@ function initSettingsPrefs() {
   bindSelectAll(uiFontScaleEls, isUiFontScale, (v) => ({ uiFontScale: v }));
   bindSelectAll(accentEls, isAccent, (v) => ({ accent: v }));
   bindSelectAll(motionEls, isMotion, (v) => ({ motion: v }));
+  bindSelectAll(habitsMarkStyleEls, isHabitsMarkStyle, (v) => ({ habitsMarkStyle: v }));
   bindSelectAll(technologiesViewEls, isDefaultView, (v) => ({ technologiesView: v }));
   bindSelectAll(projectsViewEls, isDefaultView, (v) => ({ projectsView: v }));
   bindSelectAll(headerLangPopoverEls, isHeaderPopoverTrigger, (v) => ({ headerLangPopover: v }));
@@ -169,6 +202,19 @@ function initSettingsPrefs() {
       updatePrefs({ showLangSelector: v });
     });
   });
+
+  const bindChecks = (els: NodeListOf<HTMLInputElement>, patch: (checked: boolean) => any) => {
+    els.forEach((el) => {
+      el.addEventListener("change", () => {
+        updatePrefs(patch(Boolean(el.checked)));
+        render();
+      });
+    });
+  };
+  bindChecks(fabCalendarEls, (checked) => ({ showFabCalendar: checked }));
+  bindChecks(fabCuriositiesEls, (checked) => ({ showFabCuriosities: checked }));
+  bindChecks(fabAiEls, (checked) => ({ showFabAi: checked }));
+  bindChecks(fabShortcutsEls, (checked) => ({ showFabShortcuts: checked }));
 
   document.querySelectorAll<HTMLButtonElement>("[data-pref-reset]").forEach((reset) => {
     if (reset.dataset.bound === "1") return;
@@ -191,6 +237,11 @@ function initSettingsPrefs() {
         settingsSidebarSide: "left" as SettingsSidebarSide,
         settingsActiveSection: "prefs",
         qaTesterMode: false,
+        showFabAi: false,
+        showFabCalendar: true,
+        showFabCuriosities: true,
+        showFabShortcuts: true,
+        habitsMarkStyle: "paint",
       });
       render();
       await window.skillatlas?.setUiLang?.("es");

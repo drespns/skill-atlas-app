@@ -10,6 +10,7 @@ import {
   initProjectEvidenceLayoutToggle,
 } from "@scripts/projects/project-detail/embeds";
 import { initProjectDelete, initProjectEdit } from "@scripts/projects/project-detail/project";
+import { initProjectDuplicate } from "@scripts/projects/project-detail/project-duplicate";
 import { initProjectTechnologyForm, initProjectTechnologyRemove } from "@scripts/projects/project-detail/technologies";
 
 export async function runProjectDetailInits(supabase: any, projectSlug: string) {
@@ -27,6 +28,7 @@ export async function runProjectDetailInits(supabase: any, projectSlug: string) 
   await initProjectEmbedMove(supabase, projectSlug);
   initEmbedInlineTitleEdit(supabase);
   await initProjectDelete(supabase, projectSlug);
+  await initProjectDuplicate(supabase, projectSlug);
 }
 
 export function disableProjectDetailUi(message: string) {
@@ -38,7 +40,7 @@ export function disableProjectDetailUi(message: string) {
   });
   document
     .querySelectorAll<HTMLButtonElement>(
-      "[data-project-edit-open],[data-project-delete],[data-project-tech-picker-open],[data-project-tech-github-import],[data-project-tech-remove],[data-project-concepts-modal-open],[data-project-concepts-dialog-close],[data-project-embed-add],[data-project-evidence-quick-open],[data-project-evidence-template],[data-project-embed-edit],[data-project-embed-remove],[data-project-embed-move],[data-evidence-layout],[data-project-cover-remove]",
+      "[data-project-edit-open],[data-project-delete],[data-project-duplicate],[data-project-tech-picker-open],[data-project-tech-github-import],[data-project-tech-remove],[data-project-concepts-modal-open],[data-project-concepts-dialog-close],[data-project-embed-add],[data-project-evidence-quick-open],[data-project-evidence-template],[data-project-embed-edit],[data-project-embed-remove],[data-project-embed-move],[data-evidence-layout],[data-project-cover-remove]",
     )
     .forEach((btn) => (btn.disabled = true));
   document

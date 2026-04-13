@@ -1,5 +1,5 @@
 /**
- * Mock data source for the MVP.
+ * Mock data source for local/demo use.
  *
  * This file simulates what later will live in Supabase tables.
  * Keep it simple and deterministic to unblock UI development.
@@ -10,6 +10,9 @@ export type ProgressState = "aprendido" | "practicado" | "mastered";
 export type Technology = {
   id: string;
   name: string;
+  /** Solo datos reales en Supabase + CSR; mock puede omitir. */
+  kind?: "technology" | "framework" | "library" | "package" | null;
+  parentTechnologyId?: string | null;
 };
 
 export type Concept = {
@@ -31,7 +34,7 @@ export type ProjectEmbed = {
   thumbnailUrl?: string | null;
 };
 
-/** Alineado con columna `projects.status` (saas-018). */
+/** Alineado con columna `projects.status` en la API real. */
 export type ProjectStatus = "draft" | "in_progress" | "portfolio_visible" | "archived";
 
 export type Project = {
@@ -56,7 +59,7 @@ export type Project = {
 
 // Public profile shown in `/portfolio` and `/settings`
 export const profile = {
-  publicName: "Skill Atlas (MVP)",
+  publicName: "Skill Atlas",
   bio: "Portfolio de ejemplo: tecnologías, conceptos y proyectos conectados.",
 };
 

@@ -382,8 +382,8 @@ async function bootstrapProjectsList(opts?: { bypassCache?: boolean }) {
 
   if (projects.length === 0) {
     const html = `<div class="border border-gray-200 rounded-xl p-5 bg-gray-50 col-span-full">
-      <p class="m-0 font-semibold">Aún no tienes proyectos.</p>
-      <p class="mt-2 text-sm text-gray-600">En el MVP puedes empezar desde aquí.</p>
+      <p class="m-0 font-semibold">${escHtml(tt("projects.emptyTitle", "You don't have any projects yet."))}</p>
+      <p class="mt-2 text-sm text-gray-600">${escHtml(tt("projects.emptyBody", "Create your first project from here."))}</p>
     </div>`;
     mount.innerHTML = html;
     writeCache(userId, html, countText);

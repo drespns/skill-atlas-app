@@ -111,6 +111,80 @@ dialog.concept-import-review-dialog::backdrop {
   background-color: rgb(0 0 0 / 0.45);
 }
 
+/* In-app modals (ui-feedback.ts): native <dialog> stacks above other open dialogs (top layer). */
+dialog.skillatlas-app-modal:not([open]) {
+  display: none !important;
+}
+
+dialog.skillatlas-app-modal[open] {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  padding: 1rem;
+  border: none;
+  background: transparent;
+  width: 100vw;
+  max-width: none;
+  height: 100vh;
+  max-height: none;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+dialog.skillatlas-app-modal::backdrop {
+  background: transparent;
+}
+
+/* Estudio: modales nativos centrados en top layer, sin doble scroll con el documento */
+dialog.study-setup-dialog:not([open]),
+dialog.study-new-space-dialog:not([open]),
+dialog.study-folder-dialog:not([open]),
+dialog.study-concepts-dialog:not([open]) {
+  display: none !important;
+}
+
+dialog.study-setup-dialog[open],
+dialog.study-new-space-dialog[open],
+dialog.study-folder-dialog[open],
+dialog.study-concepts-dialog[open] {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  box-sizing: border-box;
+  max-height: min(88dvh, 56rem);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+dialog.study-new-space-dialog[open] {
+  max-height: min(88dvh, 28rem);
+}
+
+dialog.study-concepts-dialog[open] {
+  max-height: min(90dvh, 32rem);
+}
+
+dialog.study-setup-dialog .study-setup-dialog__inner,
+dialog.study-new-space-dialog .study-new-space-dialog__inner {
+  max-height: 100%;
+  min-height: 0;
+}
+
+dialog.study-setup-dialog::backdrop,
+dialog.study-new-space-dialog::backdrop,
+dialog.study-folder-dialog::backdrop,
+dialog.study-concepts-dialog::backdrop {
+  background-color: rgb(0 0 0 / 0.5);
+  backdrop-filter: blur(4px);
+}
+
 /* Import review modal: chevron en <details> y bloque atenuado si no hay ningún concepto marcado */
 dialog.concept-import-review-dialog .concept-import-review-chevron {
   display: inline-block;
@@ -1238,5 +1312,57 @@ html[data-motion="reduced"].landing-enhanced [data-landing-reveal] {
     0 0 0 1px rgb(255 255 255 / 0.22),
     0 0 28px 4px var(--sa-hole-glow),
     0 0 0 9999px var(--sa-hole-dim);
+}
+
+/* Vista previa Markdown en notas de /study (marked → HTML) */
+.study-note-md-preview {
+  line-height: 1.5;
+}
+.study-note-md-preview :where(h1, h2, h3) {
+  font-weight: 600;
+  margin: 0.75em 0 0.35em;
+  font-size: 0.95em;
+}
+.study-note-md-preview h1 {
+  font-size: 1.05em;
+}
+.study-note-md-preview p {
+  margin: 0.35em 0;
+}
+.study-note-md-preview :where(ul, ol) {
+  margin: 0.35em 0;
+  padding-left: 1.25rem;
+}
+.study-note-md-preview pre {
+  margin: 0.5em 0;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.5rem;
+  font-size: 0.7rem;
+  line-height: 1.45;
+  overflow-x: auto;
+  background: rgb(17 24 39 / 0.08);
+}
+.dark .study-note-md-preview pre {
+  background: rgb(255 255 255 / 0.06);
+}
+.study-note-md-preview code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+}
+.study-note-md-preview pre code {
+  font-size: inherit;
+}
+.study-note-md-preview a {
+  text-decoration: underline;
+  color: rgb(79 70 229);
+}
+.dark .study-note-md-preview a {
+  color: rgb(165 180 252);
+}
+.study-note-md-preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.35rem;
+  margin: 0.35em 0;
 }
 

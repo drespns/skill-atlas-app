@@ -252,6 +252,22 @@ export async function analyzeGitHubRepoTechnologies(repo: GitHubRepoRef): Promis
     }
   }
 
+  // Repos sin manifests en la raíz (p. ej. LaTeX + Lua + Python): el endpoint /languages de GitHub sí suele tener datos.
+  try {
+    const { pctByLanguage } = await fetchGitHubRepoLanguages(repo);
+    const slugWeights = mapGitHubLanguagesToTechSlugs(pctByLanguage);
+    /** Por debajo del ~1% GitHub sigue reportando C/C++/otros; 0.004 ≈ 0.4% */
+    const minPct = 0.004;
+    for (const [slug, pct] of Object.entries(slugWeights)) {
+      if (pct < minPct) continue;
+      const name = displayNameForDetectedSlug(slug);
+      const confidence = Math.min(0.9, 0.32 + pct * 0.85);
+      scoreAdd(out, name, confidence, `GitHub Languages (~${Math.round(pct * 100)}%)`, slug);
+    }
+  } catch {
+    /* rate limit / red */
+  }
+
   return [...out.values()].sort((a, b) => b.confidence - a.confidence || a.name.localeCompare(b.name, "es"));
 }
 
@@ -301,7 +317,44 @@ export function mapGitHubLanguagesToTechSlugs(pctByLanguage: Record<string, numb
     else if (k === "c#") add("csharp", pct);
     else if (k === "c++") add("cpp", pct);
     else if (k === "c") add("c", pct);
+    // GitHub usa "TeX" para repos LaTeX; Lua explícito
+    else if (k === "tex") add("latex", pct);
+    else if (k === "lua") add("lua", pct);
+    else if (k === "jupyter notebook") add("jupyter", pct);
+    else if (k === "kotlin") add("kotlin", pct);
+    else if (k === "swift") add("swift", pct);
+    else if (k === "ruby") add("ruby", pct);
+    else if (k === "php") add("php", pct);
   }
   return out;
+}
+
+/** Etiqueta corta para tecnologías inferidas solo desde GitHub Languages API. */
+function displayNameForDetectedSlug(slug: string): string {
+  const map: Record<string, string> = {
+    latex: "LaTeX",
+    lua: "Lua",
+    python: "Python",
+    typescript: "TypeScript",
+    javascript: "JavaScript",
+    go: "Go",
+    rust: "Rust",
+    java: "Java",
+    html: "HTML",
+    css: "CSS",
+    "r-lang": "R",
+    scala: "Scala",
+    csharp: "C#",
+    cpp: "C++",
+    c: "C",
+    astro: "Astro",
+    jupyter: "Jupyter",
+    kotlin: "Kotlin",
+    swift: "Swift",
+    ruby: "Ruby",
+    php: "PHP",
+    powershell: "PowerShell",
+  };
+  return map[slug] ?? slug.replace(/-/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase());
 }
 

@@ -96,15 +96,40 @@ const projectCards = await Promise.all(
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <label class="flex flex-col gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
               <span data-i18n="projects.editStatusLabel">Estado</span>
-              <select
-                name="status"
-                class="border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 bg-white dark:bg-gray-950 text-sm font-normal"
-              >
+              <div data-select-popover data-placeholder="En proceso">
+                <select name="status" class="sr-only" data-select-native>
                 <option value="draft" data-i18n="projects.statusDraft">Borrador</option>
                 <option value="in_progress" selected data-i18n="projects.statusInProgress">En proceso</option>
                 <option value="portfolio_visible" data-i18n="projects.statusPortfolioVisible">Visible en portfolio</option>
                 <option value="archived" data-i18n="projects.statusArchived">Archivado</option>
-              </select>
+                </select>
+                <div class="relative">
+                  <button
+                    type="button"
+                    class="w-full inline-flex items-center justify-between gap-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-3 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900"
+                    data-select-trigger
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                  >
+                    <span class="min-w-0 truncate" data-select-trigger-label>En proceso</span>
+                    <span class="shrink-0 opacity-70" aria-hidden="true">▾</span>
+                  </button>
+                  <div
+                    class="hidden absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 shadow-lg"
+                    data-select-panel
+                  >
+                    <ul
+                      class="max-h-72 overflow-auto m-0 p-0 divide-y divide-gray-200/70 dark:divide-gray-800"
+                      data-select-list
+                      role="listbox"
+                    ></ul>
+                  </div>
+                </div>
+              </div>
+              <p
+                class="m-0 mt-1 text-[11px] font-normal text-gray-500 dark:text-gray-400 leading-snug max-w-prose"
+                data-i18n="projects.statusWorkflowHint"
+              ></p>
             </label>
             <label class="flex flex-col gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
               <span data-i18n="projects.editTagsLabel">Etiquetas</span>
@@ -193,7 +218,7 @@ const projectCards = await Promise.all(
           <span data-i18n="projects.emptyTitle">Aún no tienes proyectos.</span>
         </p>
         <p class="mt-2 text-sm text-gray-600">
-          <span data-i18n="projects.emptyBody">En el MVP puedes empezar desde aquí.</span>
+          <span data-i18n="projects.emptyBody">Crea tu primer proyecto desde aquí.</span>
         </p>
       </div>
     )}
