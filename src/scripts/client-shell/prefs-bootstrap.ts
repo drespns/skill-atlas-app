@@ -41,6 +41,14 @@ export async function initPrefs() {
         if (remote && typeof remote === "object") {
           mergeRemoteUserPrefs(remote);
           syncThemeToggleAria();
+        } else {
+          // Remote-first: if no row yet, seed with local prefs once.
+          try {
+            const local = loadPrefs();
+            await supabase.from("user_prefs").upsert({ user_id: userId, prefs: local }, { onConflict: "user_id" });
+          } catch {
+            // ignore
+          }
         }
       }
     } catch {

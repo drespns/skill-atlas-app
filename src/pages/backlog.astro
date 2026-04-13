@@ -1,0 +1,51 @@
+---
+import fs from "node:fs";
+import path from "node:path";
+import { marked } from "marked";
+import AppShell from "../layouts/AppShell.astro";
+
+const title = "Historial del producto";
+
+const root = process.cwd();
+const backlogPath = path.join(root, "docs", "backlog.md");
+const raw = fs.existsSync(backlogPath) ? fs.readFileSync(backlogPath, "utf8") : "";
+
+function extractVersionHistory(md: string): string {
+  const start = md.indexOf("## Registro de versiones");
+  if (start < 0) return md;
+  const tail = md.slice(start);
+  const end = tail.indexOf("\n---\n", 1);
+  return end > 0 ? tail.slice(0, end).trim() : tail.trim();
+}
+
+const historyMd = extractVersionHistory(raw);
+const html = marked.parse(historyMd || "_No se pudo cargar el historial._") as string;
+---
+
+<AppShell title={title}>
+  <section class="space-y-6">
+    <header class="space-y-2">
+      <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase">Backlog</p>
+      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">{title}</h1>
+      <p class="m-0 text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed">
+        Esta página resume el <strong>historial por versiones</strong> (no todas las ideas sueltas). Cuando lleguemos a <strong>v1.0.0</strong>,
+        el producto se lanzará al público.
+      </p>
+    </header>
+
+    <section class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm p-5">
+      <div
+        class="[&>h2]:text-xl [&>h2]:mt-0 [&>h2]:mb-3 [&>h2]:font-semibold
+               [&>h3]:text-lg [&>h3]:mt-6 [&>h3]:mb-2 [&>h3]:font-semibold
+               [&>h4]:text-base [&>h4]:mt-5 [&>h4]:mb-2 [&>h4]:font-semibold
+               [&>p]:text-sm [&>p]:text-gray-700 [&>p]:dark:text-gray-300
+               [&>ul]:mt-2 [&>ul]:mb-2 [&>ul]:pl-5 [&>ul]:space-y-1.5 [&>ul]:text-sm [&>ul]:text-gray-700 [&>ul]:dark:text-gray-300 [&>ul]:list-disc
+               [&>ol]:mt-2 [&>ol]:mb-2 [&>ol]:pl-5 [&>ol]:space-y-1.5 [&>ol]:text-sm [&>ol]:text-gray-700 [&>ol]:dark:text-gray-300 [&>ol]:list-decimal
+               [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:bg-gray-100 [&_code]:dark:bg-gray-900 [&_code]:text-[0.9em]
+               [&_a]:font-semibold [&_a]:text-indigo-600 [&_a]:dark:text-indigo-400 [&_a]:underline [&_a]:underline-offset-2"
+        set:html={html}
+      />
+    </section>
+  </section>
+</AppShell>
+

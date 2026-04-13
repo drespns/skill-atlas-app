@@ -1,35 +1,66 @@
 import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
+import { loadPrefs } from "@scripts/core/prefs";
+import { loadClientState, scheduleSaveClientState } from "@scripts/core/user-client-state";
 
-const CHECKLIST_KEY = "skillatlas_fab_checklist_v1";
-
-type CheckKey = "tech" | "project" | "cv" | "portfolio";
-
-type FabPane = "shortcuts" | "checklist" | "ai" | "contact";
+type FabPane = "shortcuts" | "calendar" | "curiosities" | "ai";
 
 function isFabPane(t: string | null | undefined): t is FabPane {
-  return t === "shortcuts" || t === "checklist" || t === "ai" || t === "contact";
+  return t === "shortcuts" || t === "calendar" || t === "curiosities" || t === "ai";
 }
 
-function readChecks(): Record<CheckKey, boolean> {
+type CalendarItem = { id: string; date: string; title: string; tag?: string };
+type CalendarStateV1 = { v: 1; items: CalendarItem[] };
+const CALENDAR_KEY = "skillatlas_fab_calendar_v1";
+
+function pad2(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function ym(date: Date) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`;
+}
+
+function tagStyle(tag: string): { ring: string; bg: string; text: string } {
+  let h = 0;
+  for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) >>> 0;
+  const hue = h % 360;
+  // Tailwind no acepta hsl dinámico en clases; usamos inline style con una base agradable.
+  return {
+    ring: `hsl(${hue} 90% 55% / 0.35)`,
+    bg: `hsl(${hue} 90% 55% / 0.10)`,
+    text: `hsl(${hue} 70% 40% / 1)`,
+  };
+}
+
+function loadCalendar(): CalendarStateV1 {
   try {
-    const raw = JSON.parse(localStorage.getItem(CHECKLIST_KEY) ?? "{}") as Record<string, boolean>;
-    return {
-      tech: Boolean(raw.tech),
-      project: Boolean(raw.project),
-      cv: Boolean(raw.cv),
-      portfolio: Boolean(raw.portfolio),
-    };
+    const raw = JSON.parse(localStorage.getItem(CALENDAR_KEY) ?? "null") as any;
+    const items: CalendarItem[] = Array.isArray(raw?.items)
+      ? raw.items
+          .map((x: any) => ({
+            id: String(x?.id || ""),
+            date: String(x?.date || ""),
+            title: String(x?.title || ""),
+            tag: x?.tag ? String(x.tag) : undefined,
+          }))
+          .filter((x: CalendarItem) => x.id && x.date && x.title)
+      : [];
+    return { v: 1, items };
   } catch {
-    return { tech: false, project: false, cv: false, portfolio: false };
+    return { v: 1, items: [] };
   }
 }
 
-function writeChecks(next: Record<CheckKey, boolean>) {
+function saveCalendar(next: CalendarStateV1) {
   try {
-    localStorage.setItem(CHECKLIST_KEY, JSON.stringify(next));
+    localStorage.setItem(CALENDAR_KEY, JSON.stringify(next));
   } catch {
     // ignore
   }
+}
+
+function makeId() {
+  return `c_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`;
 }
 
 function prefersReducedMotion() {
@@ -109,12 +140,84 @@ function closeFabPanel(root: HTMLElement) {
   setMainButtonExpanded(shortcutsBtn, false);
 }
 
-function syncChecklistInputs(root: HTMLElement) {
-  const c = readChecks();
-  root.querySelectorAll<HTMLInputElement>("input[data-fab-check]").forEach((input) => {
-    const k = input.getAttribute("data-fab-check") as CheckKey | null;
-    if (k && k in c) input.checked = c[k];
+function renderCalendar(root: HTMLElement) {
+  const list = root.querySelector<HTMLElement>("[data-fab-calendar-list]");
+  const monthEl = root.querySelector<HTMLInputElement>("[data-fab-calendar-month]");
+  const tagEl = root.querySelector<HTMLSelectElement>("[data-fab-calendar-tag]");
+  if (!list || !monthEl || !tagEl) return;
+
+  if (!monthEl.value) monthEl.value = ym(new Date());
+  const state = loadCalendar();
+  state.items.sort((a, b) => a.date.localeCompare(b.date));
+
+  const tags = Array.from(
+    new Set(state.items.map((i) => (i.tag || "").trim()).filter(Boolean)),
+  ).sort((a, b) => a.localeCompare(b));
+  const currentTag = tagEl.value;
+  tagEl.innerHTML = `<option value=\"\">Todos</option>`;
+  for (const t of tags) {
+    const o = document.createElement("option");
+    o.value = t;
+    o.textContent = `#${t}`;
+    tagEl.appendChild(o);
+  }
+  tagEl.value = tags.includes(currentTag) ? currentTag : "";
+
+  const month = monthEl.value;
+  const filtered = state.items.filter((it) => {
+    if (!it.date.startsWith(month)) return false;
+    if (tagEl.value && (it.tag || "").trim() !== tagEl.value) return false;
+    return true;
   });
+
+  list.innerHTML = "";
+  if (filtered.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "m-0 text-sm text-gray-600 dark:text-gray-400";
+    empty.textContent = "Sin notas para este mes.";
+    list.appendChild(empty);
+    return;
+  }
+  for (const it of filtered) {
+    const row = document.createElement("div");
+    row.className =
+      "flex items-start justify-between gap-3 rounded-2xl border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-3 shadow-sm";
+    const left = document.createElement("div");
+    left.className = "min-w-0";
+    const meta = document.createElement("div");
+    meta.className = "flex flex-wrap items-center gap-2";
+    const dateP = document.createElement("p");
+    dateP.className = "m-0 text-xs font-semibold text-gray-500 dark:text-gray-400";
+    dateP.textContent = it.date;
+    meta.appendChild(dateP);
+    if (it.tag) {
+      const chip = document.createElement("span");
+      const s = tagStyle(it.tag);
+      chip.className = "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1";
+      chip.textContent = `#${it.tag}`;
+      chip.style.backgroundColor = s.bg;
+      chip.style.color = s.text;
+      chip.style.boxShadow = `0 0 0 1px ${s.ring} inset`;
+      meta.appendChild(chip);
+    }
+    const title = document.createElement("p");
+    title.className = "m-0 mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100";
+    title.textContent = it.title;
+    left.append(meta, title);
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className =
+      "shrink-0 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900";
+    del.textContent = "Borrar";
+    del.addEventListener("click", () => {
+      const next = loadCalendar();
+      next.items = next.items.filter((x) => x.id !== it.id);
+      saveCalendar(next);
+      renderCalendar(root);
+    });
+    row.append(left, del);
+    list.appendChild(row);
+  }
 }
 
 function bindFabRoot(root: HTMLElement) {
@@ -124,6 +227,9 @@ function bindFabRoot(root: HTMLElement) {
   const closeBtn = root.querySelector<HTMLButtonElement>("[data-fab-close]");
   const openPaletteBtn = root.querySelector<HTMLButtonElement>("[data-fab-open-palette]");
   const tabRow = root.querySelector<HTMLElement>("[data-fab-tab-row]");
+  const calendarForm = root.querySelector<HTMLFormElement>("[data-fab-calendar-form]");
+  const calendarMonth = root.querySelector<HTMLInputElement>("[data-fab-calendar-month]");
+  const calendarTag = root.querySelector<HTMLSelectElement>("[data-fab-calendar-tag]");
 
   shortcutsBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -153,16 +259,23 @@ function bindFabRoot(root: HTMLElement) {
     });
   });
 
-  root.querySelectorAll<HTMLInputElement>("input[data-fab-check]").forEach((input) => {
-    input.addEventListener("change", () => {
-      if (root.dataset.fabGuest === "1") return;
-      const k = input.getAttribute("data-fab-check") as CheckKey | null;
-      if (!k) return;
-      const next = readChecks();
-      next[k] = input.checked;
-      writeChecks(next);
-    });
+  calendarForm?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const fd = new FormData(calendarForm);
+    const date = String(fd.get("date") ?? "").trim();
+    const title = String(fd.get("title") ?? "").trim();
+    const tag = String(fd.get("tag") ?? "").trim();
+    if (!date || !title) return;
+    const next = loadCalendar();
+    next.items.push({ id: makeId(), date, title, tag: tag || undefined });
+    saveCalendar(next);
+    scheduleSaveClientState("fab_calendar", next);
+    calendarForm.reset();
+    renderCalendar(root);
   });
+
+  calendarMonth?.addEventListener("change", () => renderCalendar(root));
+  calendarTag?.addEventListener("change", () => renderCalendar(root));
 
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
@@ -175,21 +288,28 @@ function bindFabRoot(root: HTMLElement) {
     if (authed) delete root.dataset.fabGuest;
     else root.dataset.fabGuest = "1";
 
-    const guestBanner = root.querySelector<HTMLElement>("[data-fab-checklist-guest-callout]");
-    const authedIntro = root.querySelector<HTMLElement>("[data-fab-checklist-intro-authed]");
-    guestBanner?.classList.toggle("hidden", authed);
-    authedIntro?.classList.toggle("hidden", !authed);
+    // IA: por defecto solo visible fuera de sesión (y controlable por prefs en el siguiente paso).
+    const prefs = loadPrefs();
+    const aiTab = root.querySelector<HTMLButtonElement>("[data-fab-tab-ai]");
+    const aiPane = root.querySelector<HTMLElement>("[data-fab-pane='ai']");
+    const allowAi = Boolean(prefs.showFabAi);
+    aiTab?.classList.toggle("hidden", !allowAi);
+    aiPane?.classList.toggle("hidden", !allowAi && root.dataset.fabActivePane === "ai");
+    if (!allowAi && root.dataset.fabActivePane === "ai") setFabTab(root, "shortcuts");
 
-    root.querySelectorAll<HTMLInputElement>("input[data-fab-check]").forEach((input) => {
-      input.disabled = !authed;
-      input.setAttribute("aria-disabled", String(!authed));
-    });
+    const calTab = root.querySelector<HTMLButtonElement>("[data-fab-tab='calendar']");
+    const curTab = root.querySelector<HTMLButtonElement>("[data-fab-tab='curiosities']");
+    const allowCal = Boolean(prefs.showFabCalendar ?? true);
+    const allowCur = Boolean(prefs.showFabCuriosities ?? true);
+    calTab?.classList.toggle("hidden", !allowCal);
+    curTab?.classList.toggle("hidden", !allowCur);
+    if (!allowCal && root.dataset.fabActivePane === "calendar") setFabTab(root, "shortcuts");
+    if (!allowCur && root.dataset.fabActivePane === "curiosities") setFabTab(root, "shortcuts");
 
-    root.querySelectorAll<HTMLElement>("[data-fab-check-row]").forEach((row) => {
-      row.classList.toggle("opacity-60", !authed);
-      row.classList.toggle("cursor-not-allowed", !authed);
-      row.classList.toggle("cursor-pointer", authed);
-    });
+    const shTab = root.querySelector<HTMLButtonElement>("[data-fab-tab='shortcuts']");
+    const allowShortcuts = Boolean(prefs.showFabShortcuts ?? true);
+    shTab?.classList.toggle("hidden", !allowShortcuts);
+    if (!allowShortcuts && root.dataset.fabActivePane === "shortcuts") setFabTab(root, "calendar");
 
     if (tabRow) {
       tabRow.classList.remove("hidden");
@@ -207,7 +327,7 @@ async function syncFabBubbles() {
   if (root.dataset.fabBound !== "1") {
     root.dataset.fabBound = "1";
     bindFabRoot(root);
-    syncChecklistInputs(root);
+    renderCalendar(root);
   }
 
   const extended = root as HTMLElement & { __fabApplyLayout?: (a: boolean) => void };
@@ -225,7 +345,29 @@ async function syncFabBubbles() {
   const authed = Boolean(session?.user);
   extended.__fabApplyLayout?.(authed);
 
-  syncChecklistInputs(root);
+  // Remote-first hydrate (once per page lifecycle) for calendar items.
+  if (authed && root.dataset.fabCalendarHydrated !== "1") {
+    root.dataset.fabCalendarHydrated = "1";
+    try {
+      const local = loadCalendar();
+      const remote = await loadClientState<CalendarStateV1>("fab_calendar", { v: 1, items: [] });
+      if (remote?.items?.length) {
+        // Merge by id; keep local additions if any.
+        const byId = new Map<string, CalendarItem>();
+        for (const it of remote.items) byId.set(it.id, it);
+        for (const it of local.items) byId.set(it.id, it);
+        const merged: CalendarStateV1 = { v: 1, items: Array.from(byId.values()) };
+        saveCalendar(merged);
+      } else {
+        // If remote empty but local has items, push once.
+        if (local.items.length) scheduleSaveClientState("fab_calendar", local, 0);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  renderCalendar(root);
 }
 
 function bootFabBubbles() {
@@ -239,3 +381,4 @@ document.addEventListener("astro:page-load", bootFabBubbles);
 document.addEventListener("astro:after-swap", bootFabBubbles);
 
 window.addEventListener("skillatlas:auth-nav-updated", () => void syncFabBubbles());
+window.addEventListener("skillatlas:prefs-updated", () => void syncFabBubbles());

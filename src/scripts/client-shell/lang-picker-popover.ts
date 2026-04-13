@@ -16,6 +16,13 @@ export function syncLangPickerButtons() {
       btn.classList.add("opacity-45", "grayscale");
       return;
     }
+    // For Spanish variants, keep only the inferred one active to avoid confusion.
+    if (mapped === "es" && id !== activeEs) {
+      btn.disabled = true;
+      btn.setAttribute("aria-pressed", "false");
+      btn.classList.add("opacity-45", "grayscale");
+      return;
+    }
     btn.disabled = false;
     btn.classList.remove("opacity-45", "grayscale");
     let pressed = false;
@@ -119,7 +126,27 @@ function attachLangPopover() {
   );
 }
 
+function attachGlobalLangPickerOptionClicks() {
+  if ((window as any).__skillatlasGlobalLangPickerClicksBound === true) return;
+  (window as any).__skillatlasGlobalLangPickerClicksBound = true;
+  document.addEventListener("click", (e) => {
+    const opt = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-lang-picker-option]");
+    if (!opt) return;
+    // If click comes from the header popover, that handler already manages it.
+    const inHeaderPopover = Boolean(opt.closest("[data-lang-popover]"));
+    if (inHeaderPopover) return;
+    if (opt.disabled) return;
+    e.preventDefault();
+    const id = opt.dataset.langPickerOption ?? "";
+    const lng = mapPickerOptionIdToUiLang(id);
+    if (lng === null) return;
+    if (lng === "es") setSpanishPickerSessionId(id);
+    void window.skillatlas?.setUiLang?.(lng);
+  });
+}
+
 export function initLangPickerPopover() {
+  attachGlobalLangPickerOptionClicks();
   if (!(window as unknown as { __skillatlasLangPickerDoc?: boolean }).__skillatlasLangPickerDoc) {
     (window as unknown as { __skillatlasLangPickerDoc?: boolean }).__skillatlasLangPickerDoc = true;
 

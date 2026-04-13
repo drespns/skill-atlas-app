@@ -131,6 +131,143 @@ const APP_LOGO_SRC = "/favicon.svg";
       >
         <span data-i18n="nav.study">Estudio</span>
       </a>
+
+      <div class="relative shrink-0 hidden" data-tools-wrap data-auth-nav>
+        <a
+          href="/tools"
+          data-tools-link
+          data-header-nav-link
+          data-nav-active={isActive("/tools") ? "true" : "false"}
+          class="header-nav-link relative inline-flex items-center gap-2 px-2 lg:px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 no-underline"
+          aria-haspopup="dialog"
+          aria-expanded="false"
+        >
+          <span data-i18n="nav.tools">Herramientas</span>
+          <svg class="h-4 w-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"></path>
+          </svg>
+        </a>
+
+        <div
+          data-tools-popover
+          class="hidden absolute left-0 top-full mt-2 w-80 max-w-[min(100vw-1.5rem,20rem)] rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur shadow-lg p-2 z-40"
+          role="dialog"
+          aria-label="Tools"
+        >
+          <p class="m-0 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            <span data-i18n="tools.popoverKicker">Explorar herramientas</span>
+          </p>
+          <div class="mt-1 max-h-[min(70vh,22rem)] overflow-y-auto overscroll-contain -mx-0.5 px-0.5 space-y-0.5">
+            <a
+              href="/tools/habits"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.habitsTitle">Planificador de hábitos</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/habits</span>
+            </a>
+            <a
+              href="/tools/convert"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.convertTitle">Convertidor</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/convert</span>
+            </a>
+            <a
+              href="/tools/readme-preview"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.readmePreviewTitle">Vista Markdown / README</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/readme</span>
+            </a>
+            <a
+              href="/tools/bio-builder"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.bioBuilderTitle">Bio corta</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/bio</span>
+            </a>
+            <a
+              href="/tools/title-normalize"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.titleNormalizeTitle">Título y slug</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/slug</span>
+            </a>
+            <a
+              href="/tools/interview-prep"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.interviewPrepTitle">Pre-entrevista</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/interview</span>
+            </a>
+            <a
+              href="/tools/pomodoro"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.pomodoroTitle">Pomodoro</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/pomodoro</span>
+            </a>
+            <a
+              href="/tools/talk-timer"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.talkTimerTitle">Cronómetro charla</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/talk</span>
+            </a>
+            <a
+              href="/tools/text-diff"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.textDiffTitle">Diff texto</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/diff</span>
+            </a>
+            <a
+              href="/tools/json-format"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.jsonFormatTitle">JSON</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/json</span>
+            </a>
+            <a
+              href="/tools/code-snippet-html"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.codeSnippetHtmlTitle">Snippet HTML</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/snippet</span>
+            </a>
+            <a
+              href="/tools/salary-estimate"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.salaryEstimateTitle">Bruto → neto</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/salary</span>
+            </a>
+            <a
+              href="/tools/gitignore-builder"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.gitignoreBuilderTitle">.gitignore</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/gitignore</span>
+            </a>
+            <a
+              href="/tools/qr-generator"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.qrGeneratorTitle">Código QR</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/qr</span>
+            </a>
+          </div>
+          <div class="mt-2 border-t border-gray-100 dark:border-gray-800 pt-2">
+            <a
+              href="/tools"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.allTools">Ver todas</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">/tools</span>
+            </a>
+          </div>
+        </div>
+      </div>
     </nav>
 
     <div class="flex min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3 md:min-w-0">
@@ -277,6 +414,14 @@ const APP_LOGO_SRC = "/favicon.svg";
               data-i18n="nav.settings"
             >
               Ajustes
+            </a>
+            <a
+              href="/contact"
+              role="menuitem"
+              class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+              data-i18n="nav.contact"
+            >
+              Contacto
             </a>
             <div class="my-1 border-t border-gray-200/80 dark:border-gray-800" aria-hidden="true"></div>
             <button

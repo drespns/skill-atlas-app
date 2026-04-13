@@ -1,0 +1,55 @@
+---
+import AppShell from "../layouts/AppShell.astro";
+
+const title = "Contacto";
+---
+
+<AppShell title={title}>
+  <section class="space-y-6">
+    <header class="space-y-2">
+      <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase">Contact</p>
+      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">{title}</h1>
+      <p class="m-0 text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed">
+        Si tienes ideas, detectas un bug raro o quieres comentar un caso de uso, aquí tienes formas directas de escribirme.
+      </p>
+    </header>
+
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <a
+        href="https://www.linkedin.com/in/drespns/"
+        target="_blank"
+        rel="noreferrer noopener"
+        class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 p-5 no-underline hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors"
+      >
+        <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">LinkedIn</p>
+        <p class="m-0 mt-1 text-sm text-gray-600 dark:text-gray-400">linkedin.com/in/drespns</p>
+      </a>
+      <a
+        href="https://github.com/drespns/"
+        target="_blank"
+        rel="noreferrer noopener"
+        class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 p-5 no-underline hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors"
+      >
+        <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">GitHub</p>
+        <p class="m-0 mt-1 text-sm text-gray-600 dark:text-gray-400">github.com/drespns</p>
+      </a>
+      <a
+        href="mailto:drespns@gmail.com"
+        class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 p-5 no-underline hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors md:col-span-2"
+      >
+        <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Email</p>
+        <p class="m-0 mt-1 text-sm text-gray-600 dark:text-gray-400">drespns@gmail.com</p>
+      </a>
+    </section>
+
+    <section class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm p-5 space-y-2">
+      <h2 class="m-0 text-base font-semibold">Qué me sirve si reportas un problema</h2>
+      <ul class="m-0 pl-5 list-disc space-y-1.5 text-sm text-gray-700 dark:text-gray-300">
+        <li>URL exacta y qué estabas haciendo</li>
+        <li>Captura o vídeo corto si se entiende mejor</li>
+        <li>Consola del navegador (si hay errores)</li>
+      </ul>
+    </section>
+  </section>
+</AppShell>
+

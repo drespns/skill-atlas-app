@@ -3,7 +3,7 @@ const fabKbd =
   "inline-flex items-center rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 px-1.5 py-0.5 text-[11px] font-mono font-semibold text-gray-800 dark:text-gray-200 shadow-sm";
 ---
 
-<!-- Burbujas flotantes: atajos, checklist (sesión), IA (roadmap). Script: fab-bubbles.ts -->
+<!-- Burbujas flotantes: atajos, calendario, curiosidades e IA (opcional). Script: fab-bubbles.ts -->
 <div
   data-fab-root
   class="hidden print:hidden fixed inset-x-0 bottom-0 z-[1900] pointer-events-none flex flex-col items-end gap-0 px-4 pb-4 pt-20 md:px-6 md:pb-6"
@@ -43,25 +43,26 @@ const fabKbd =
           </button>
           <button
             type="button"
-            data-fab-tab="checklist"
+            data-fab-tab="calendar"
             class="fab-tab shrink-0 rounded-md px-2 py-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-400 data-[active=true]:bg-white data-[active=true]:dark:bg-gray-800 data-[active=true]:text-gray-900 data-[active=true]:dark:text-gray-100 sm:px-2.5 sm:text-xs"
             data-active="false"
           >
-            <span class="block whitespace-nowrap text-center" data-i18n="fab.tabChecklist">Primeros pasos</span>
+            <span class="block whitespace-nowrap text-center" data-i18n="fab.tabCalendar">Calendario</span>
           </button>
           <button
             type="button"
-            data-fab-tab="contact"
+            data-fab-tab="curiosities"
             class="fab-tab shrink-0 rounded-md px-2 py-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-400 data-[active=true]:bg-white data-[active=true]:dark:bg-gray-800 data-[active=true]:text-gray-900 data-[active=true]:dark:text-gray-100 sm:px-2.5 sm:text-xs"
             data-active="false"
           >
-            <span class="block whitespace-nowrap text-center" data-i18n="fab.tabContact">Contacto</span>
+            <span class="block whitespace-nowrap text-center" data-i18n="fab.tabCuriosities">Curiosidades</span>
           </button>
           <button
             type="button"
             data-fab-tab="ai"
             class="fab-tab shrink-0 rounded-md px-2 py-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-400 data-[active=true]:bg-white data-[active=true]:dark:bg-gray-800 data-[active=true]:text-gray-900 data-[active=true]:dark:text-gray-100 sm:px-2.5 sm:text-xs"
             data-active="false"
+            data-fab-tab-ai
           >
             <span class="block whitespace-nowrap text-center" data-i18n="fab.tabAi">IA</span>
           </button>
@@ -149,144 +150,159 @@ const fabKbd =
         </div>
       </div>
 
-      <div data-fab-pane="checklist" class="hidden max-h-[min(28rem,62vh)] overflow-y-auto p-4 space-y-3">
-        <div
-          data-fab-checklist-guest-callout
-          class="hidden rounded-xl border border-amber-200/90 dark:border-amber-900/50 bg-amber-50/95 dark:bg-amber-950/30 px-3 py-2.5 text-sm text-amber-950 dark:text-amber-100"
-        >
-          <p class="m-0 flex items-start gap-2.5">
-            <svg
-              class="h-5 w-5 shrink-0 text-amber-700 dark:text-amber-300 mt-0.5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              aria-hidden="true"
-            >
-              <rect x="5" y="11" width="14" height="10" rx="2"></rect>
-              <path d="M7 11V7a5 5 0 0110 0v4"></path>
-            </svg>
-            <span class="min-w-0 leading-snug">
-              <span data-i18n="fab.checklistGuestIntro"
-                >Inicia sesión para poder marcar el progreso; sin cuenta solo puedes ver la lista.</span>
-              <a
-                href="/login"
-                class="ml-1 font-semibold text-amber-900 underline decoration-amber-700/40 underline-offset-2 hover:decoration-amber-800 dark:text-amber-200 dark:decoration-amber-400/50"
-                data-i18n="fab.checklistGuestLogin">Iniciar sesión</a>
-            </span>
-          </p>
-        </div>
-        <p data-fab-checklist-intro-authed class="m-0 text-xs text-gray-600 dark:text-gray-400">
-          <span data-i18n="fab.checklistIntro">Marca lo que ya hayas hecho; se guarda en este dispositivo.</span>
-        </p>
-        <ul class="m-0 list-none space-y-2 p-0">
-          <li>
-            <label
-              data-fab-check-row
-              class="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-2.5"
-            >
-              <input type="checkbox" data-fab-check="tech" class="mt-1 rounded border-gray-300 dark:border-gray-600" />
-              <span class="text-sm text-gray-900 dark:text-gray-100">
-                <span data-i18n="fab.checkTech">Crear al menos una tecnología</span>
-                <a
-                  href="/technologies?create=1"
-                  class="ml-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-                  data-i18n="fab.checkTechLink">Ir</a>
-              </span>
-            </label>
-          </li>
-          <li>
-            <label
-              data-fab-check-row
-              class="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-2.5"
-            >
-              <input type="checkbox" data-fab-check="project" class="mt-1 rounded border-gray-300 dark:border-gray-600" />
-              <span class="text-sm text-gray-900 dark:text-gray-100">
-                <span data-i18n="fab.checkProject">Crear un proyecto y enlazar tecnologías</span>
-                <a
-                  href="/projects?create=1"
-                  class="ml-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-                  data-i18n="fab.checkProjectLink">Ir</a>
-              </span>
-            </label>
-          </li>
-          <li>
-            <label
-              data-fab-check-row
-              class="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-2.5"
-            >
-              <input type="checkbox" data-fab-check="cv" class="mt-1 rounded border-gray-300 dark:border-gray-600" />
-              <span class="text-sm text-gray-900 dark:text-gray-100">
-                <span data-i18n="fab.checkCv">Completar o revisar tu CV</span>
-                <a href="/cv" class="ml-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline" data-i18n="fab.checkCvLink">Ir</a>
-              </span>
-            </label>
-          </li>
-          <li>
-            <label
-              data-fab-check-row
-              class="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-2.5"
-            >
+      <div data-fab-pane="calendar" class="hidden max-h-[min(28rem,62vh)] overflow-y-auto p-4 space-y-4">
+        <div class="rounded-2xl border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 p-4 shadow-sm">
+          <div class="flex flex-wrap items-end justify-between gap-3">
+            <div class="space-y-1">
+              <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="fab.tabCalendar">
+                Calendario
+              </p>
+              <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
+                <span data-i18n="fab.calendarIntro">Notas rápidas por fecha con etiquetas (se guarda en este dispositivo).</span>
+              </p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <label class="space-y-1">
+                <span class="sr-only">Mes</span>
+                <input
+                  type="month"
+                  data-fab-calendar-month
+                  class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-2.5 py-2 text-sm"
+                />
+              </label>
+              <label class="space-y-1">
+                <span class="sr-only">Tag</span>
+                <div data-select-popover data-placeholder="Todos">
+                  <select data-fab-calendar-tag class="sr-only" data-select-native>
+                    <option value="">Todos</option>
+                  </select>
+                  <div class="relative">
+                    <button
+                      type="button"
+                      class="w-full inline-flex items-center justify-between gap-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900"
+                      data-select-trigger
+                      aria-haspopup="listbox"
+                      aria-expanded="false"
+                    >
+                      <span class="min-w-0 truncate" data-select-trigger-label>Todos</span>
+                      <span class="shrink-0 opacity-70" aria-hidden="true">▾</span>
+                    </button>
+                    <div
+                      class="hidden absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 shadow-lg"
+                      data-select-panel
+                    >
+                      <ul
+                        class="max-h-72 overflow-auto m-0 p-0 divide-y divide-gray-200/70 dark:divide-gray-800"
+                        data-select-list
+                        role="listbox"
+                      ></ul>
+                    </div>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <form class="mt-4 grid grid-cols-1 sm:grid-cols-6 gap-2" data-fab-calendar-form>
+            <label class="sm:col-span-2 space-y-1">
+              <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Fecha</span>
               <input
-                type="checkbox"
-                data-fab-check="portfolio"
-                class="mt-1 rounded border-gray-300 dark:border-gray-600"
+                type="date"
+                required
+                name="date"
+                class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-2.5 py-2 text-sm"
               />
-              <span class="text-sm text-gray-900 dark:text-gray-100">
-                <span data-i18n="fab.checkPortfolio">Configurar portfolio público (slug o visibilidad)</span>
-                <a
-                  href="/settings#portfolio-links"
-                  class="ml-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-                  data-i18n="fab.checkPortfolioLink">Ajustes</a>
-              </span>
             </label>
-          </li>
-        </ul>
+            <label class="sm:col-span-3 space-y-1">
+              <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Nota</span>
+              <input
+                type="text"
+                required
+                name="title"
+                maxlength="80"
+                placeholder="Ej: Terminar Fase 1"
+                class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-2.5 py-2 text-sm"
+              />
+            </label>
+            <label class="space-y-1">
+              <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Tag</span>
+              <input
+                type="text"
+                name="tag"
+                maxlength="24"
+                placeholder="study"
+                class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-2.5 py-2 text-sm"
+              />
+            </label>
+            <button
+              type="submit"
+              class="sm:col-span-6 inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 dark:bg-gray-100 px-3 py-2 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200"
+              data-fab-calendar-add
+            >
+              <span>Añadir</span>
+              <span aria-hidden="true">↵</span>
+            </button>
+          </form>
+        </div>
+
+        <div class="space-y-2" data-fab-calendar-list></div>
       </div>
 
-      <div data-fab-pane="contact" class="hidden max-h-[min(28rem,62vh)] overflow-y-auto p-4 space-y-4">
+      <div data-fab-pane="curiosities" class="hidden max-h-[min(28rem,62vh)] overflow-y-auto p-4 space-y-4">
         <p class="m-0 text-xs text-gray-600 dark:text-gray-400">
-          <span data-i18n="fab.contactIntro">SkillAtlas — contacto del equipo.</span>
+          <span data-i18n="fab.curiositiesIntro">Ideas y herramientas interesantes para explorar (lista viva).</span>
         </p>
-        <div class="space-y-3">
-          <a
-            href="https://www.linkedin.com/in/drespns/"
-            target="_blank"
-            rel="noreferrer noopener"
-            class="flex items-center gap-3 rounded-xl border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-2.5 no-underline hover:bg-gray-50 dark:hover:bg-gray-900"
-          >
-            <img
-              src="/icons/login/linkedin-icon.svg"
-              alt=""
-              width="40"
-              height="40"
-              class="h-10 w-10 shrink-0 rounded-full border border-gray-200 dark:border-gray-700 bg-white object-contain p-1.5"
-              loading="eager"
-              decoding="async"
-            />
-            <div class="min-w-0 flex-1">
-              <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">LinkedIn</p>
-              <p class="m-0 truncate text-xs text-gray-500 dark:text-gray-400">linkedin.com/in/drespns</p>
+
+        <div class="grid grid-cols-1 gap-3">
+          <div class="rounded-2xl border border-sky-200/70 dark:border-sky-900/50 bg-sky-50/70 dark:bg-sky-950/25 p-4">
+            <p class="m-0 text-xs font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-300">Data viz</p>
+            <div class="mt-2 space-y-2">
+              <a href="https://flourish.studio/" target="_blank" rel="noreferrer noopener" class="block rounded-xl border border-sky-200/70 dark:border-sky-900/50 bg-white/70 dark:bg-gray-950/30 px-3 py-2.5 no-underline hover:bg-white/90 dark:hover:bg-gray-900/40">
+                <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Flourish</p>
+                <p class="m-0 text-xs text-gray-600 dark:text-gray-400">Storytelling y visualizaciones listas para publicar.</p>
+              </a>
+              <a href="https://www.datawrapper.de/" target="_blank" rel="noreferrer noopener" class="block rounded-xl border border-sky-200/70 dark:border-sky-900/50 bg-white/70 dark:bg-gray-950/30 px-3 py-2.5 no-underline hover:bg-white/90 dark:hover:bg-gray-900/40">
+                <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Datawrapper</p>
+                <p class="m-0 text-xs text-gray-600 dark:text-gray-400">Gráficos y mapas embebibles con buen diseño.</p>
+              </a>
+              <a href="https://observablehq.com/" target="_blank" rel="noreferrer noopener" class="block rounded-xl border border-sky-200/70 dark:border-sky-900/50 bg-white/70 dark:bg-gray-950/30 px-3 py-2.5 no-underline hover:bg-white/90 dark:hover:bg-gray-900/40">
+                <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Observable</p>
+                <p class="m-0 text-xs text-gray-600 dark:text-gray-400">Notebooks JS para prototipar visualizaciones.</p>
+              </a>
             </div>
-          </a>
-          <a
-            href="mailto:drespns@gmail.com"
-            class="flex items-center gap-3 rounded-xl border border-gray-200/70 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-3 py-2.5 no-underline hover:bg-gray-50 dark:hover:bg-gray-900"
-          >
-            <img
-              src="https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_48dp.png"
-              alt=""
-              width="40"
-              height="40"
-              class="h-10 w-10 shrink-0 rounded-full border border-gray-200 dark:border-gray-700 bg-white object-contain p-1"
-              loading="eager"
-              decoding="async"
-            />
-            <div class="min-w-0 flex-1">
-              <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Gmail</p>
-              <p class="m-0 truncate text-xs text-gray-500 dark:text-gray-400">drespns@gmail.com</p>
+          </div>
+
+          <div class="rounded-2xl border border-emerald-200/70 dark:border-emerald-900/50 bg-emerald-50/70 dark:bg-emerald-950/20 p-4">
+            <p class="m-0 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Productividad</p>
+            <div class="mt-2 space-y-2">
+              <a href="https://todoist.com/" target="_blank" rel="noreferrer noopener" class="block rounded-xl border border-emerald-200/70 dark:border-emerald-900/50 bg-white/70 dark:bg-gray-950/30 px-3 py-2.5 no-underline hover:bg-white/90 dark:hover:bg-gray-900/40">
+                <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Todoist</p>
+                <p class="m-0 text-xs text-gray-600 dark:text-gray-400">Tasks, filtros y hábitos “por disciplina”.</p>
+              </a>
+              <a href="https://www.notion.so/" target="_blank" rel="noreferrer noopener" class="block rounded-xl border border-emerald-200/70 dark:border-emerald-900/50 bg-white/70 dark:bg-gray-950/30 px-3 py-2.5 no-underline hover:bg-white/90 dark:hover:bg-gray-900/40">
+                <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Notion</p>
+                <p class="m-0 text-xs text-gray-600 dark:text-gray-400">Docs + bases de datos para organizar conocimiento.</p>
+              </a>
+              <a href="https://excalidraw.com/" target="_blank" rel="noreferrer noopener" class="block rounded-xl border border-emerald-200/70 dark:border-emerald-900/50 bg-white/70 dark:bg-gray-950/30 px-3 py-2.5 no-underline hover:bg-white/90 dark:hover:bg-gray-900/40">
+                <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Excalidraw</p>
+                <p class="m-0 text-xs text-gray-600 dark:text-gray-400">Diagramas rápidos y compartibles.</p>
+              </a>
             </div>
-          </a>
+          </div>
+
+          <div class="rounded-2xl border border-amber-200/70 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-950/20 p-4">
+            <p class="m-0 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">Conversión</p>
+            <div class="mt-2 space-y-2">
+              <a href="https://convertio.co/" target="_blank" rel="noreferrer noopener" class="block rounded-xl border border-amber-200/70 dark:border-amber-900/50 bg-white/70 dark:bg-gray-950/30 px-3 py-2.5 no-underline hover:bg-white/90 dark:hover:bg-gray-900/40">
+                <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Convertio</p>
+                <p class="m-0 text-xs text-gray-600 dark:text-gray-400">Inspiración para el Convertidor integrado en SkillAtlas.</p>
+              </a>
+              <a href="https://squoosh.app/" target="_blank" rel="noreferrer noopener" class="block rounded-xl border border-amber-200/70 dark:border-amber-900/50 bg-white/70 dark:bg-gray-950/30 px-3 py-2.5 no-underline hover:bg-white/90 dark:hover:bg-gray-900/40">
+                <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">Squoosh</p>
+                <p class="m-0 text-xs text-gray-600 dark:text-gray-400">Compresión y conversión de imágenes en el navegador.</p>
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -341,7 +357,7 @@ const fabKbd =
       aria-haspopup="dialog"
       aria-controls="fab-help-panel"
     >
-      <span class="sr-only" data-i18n="fab.openShortcuts">Atajos, primeros pasos y contacto</span>
+      <span class="sr-only" data-i18n="fab.openShortcuts">Atajos y utilidades</span>
       <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <rect x="2" y="6" width="20" height="12" rx="2"></rect>
         <path d="M6 10h0M10 10h0M14 10h0"></path>

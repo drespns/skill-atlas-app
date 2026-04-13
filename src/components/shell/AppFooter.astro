@@ -7,10 +7,10 @@ const FOOTER_CLIP =
   "polygon(50% 17%, 100% 0, 100% 100%, 0 100%, 0 0)";
 
 const FOOTER_BUILD_ICONS = [
-  { src: "/icons/Astro.svg", label: "Astro" },
-  { src: "/icons/Tailwind CSS.svg", label: "Tailwind CSS" },
-  { src: "/icons/TypeScript.svg", label: "TypeScript" },
-  { src: "/icons/Vite.js.svg", label: "Vite" },
+  { src: "/icons/technologies/Astro.svg", label: "Astro" },
+  { src: "/icons/frameworks/Tailwind CSS.svg", label: "Tailwind CSS" },
+  { src: "/icons/technologies/TypeScript.svg", label: "TypeScript" },
+  { src: "/icons/technologies/Vite.js.svg", label: "Vite" },
 ] as const;
 ---
 
@@ -57,59 +57,97 @@ const FOOTER_BUILD_ICONS = [
             </div>
             <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="footer.tagline"></p>
           </div>
-          <nav
-            class="flex flex-wrap gap-x-2 gap-y-2 text-sm font-medium lg:justify-end"
-            aria-label="Footer"
-          >
-            <a
-              href="/pricing"
-              data-public-footer-pricing
-              class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 hover:text-indigo-700 dark:hover:text-indigo-200 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
-            >
-              <span data-i18n="nav.pricing"></span>
-            </a>
-            <a
-              href="/cv"
-              data-auth-footer-nav
-              class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
-            >
-              <span data-i18n="nav.cv"></span>
-            </a>
-            <a
-              href="/technologies"
-              data-auth-footer-nav
-              class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
-            >
-              <span data-i18n="nav.technologies"></span>
-            </a>
-            <a
-              href="/projects"
-              data-auth-footer-nav
-              class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
-            >
-              <span data-i18n="nav.projects"></span>
-            </a>
-            <a
-              href="/portfolio"
-              data-auth-footer-nav
-              class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
-            >
-              <span data-i18n="nav.portfolio"></span>
-            </a>
-            <a
-              href="/study"
-              data-auth-footer-nav
-              class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
-            >
-              <span data-i18n="nav.study"></span>
-            </a>
-            <a
-              href="/settings#prefs"
-              data-auth-footer-nav
-              class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
-            >
-              <span data-i18n="nav.settings"></span>
-            </a>
+          <nav class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm" aria-label="Footer">
+            <div class="space-y-2">
+              <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Público
+              </p>
+              <div class="grid grid-cols-2 gap-2 font-medium">
+                <a
+                  href="/pricing"
+                  data-public-footer-pricing
+                  class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 hover:text-indigo-700 dark:hover:text-indigo-200 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
+                >
+                  <span data-i18n="nav.pricing"></span>
+                </a>
+                <a
+                  href="/backlog"
+                  class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50"
+                >
+                  Historial
+                </a>
+                <a
+                  href="/contact"
+                  class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50"
+                >
+                  Contacto
+                </a>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                App
+              </p>
+              <div class="grid grid-cols-2 gap-2 font-medium">
+                <a
+                  href="/app"
+                  data-auth-footer-nav
+                  class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
+                >
+                  App
+                </a>
+                <a
+                  href="/cv"
+                  data-auth-footer-nav
+                  class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
+                >
+                  <span data-i18n="nav.cv"></span>
+                </a>
+                <a
+                  href="/technologies"
+                  data-auth-footer-nav
+                  class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
+                >
+                  <span data-i18n="nav.technologies"></span>
+                </a>
+                <a
+                  href="/projects"
+                  data-auth-footer-nav
+                  class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
+                >
+                  <span data-i18n="nav.projects"></span>
+                </a>
+                <a
+                  href="/portfolio"
+                  data-auth-footer-nav
+                  class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
+                >
+                  <span data-i18n="nav.portfolio"></span>
+                </a>
+                <a
+                  href="/study"
+                  data-auth-footer-nav
+                  class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
+                >
+                  <span data-i18n="nav.study"></span>
+                </a>
+                <a
+                  href="/tools"
+                  data-auth-footer-nav
+                  class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
+                >
+                  <span data-i18n="nav.tools"></span>
+                </a>
+                <a
+                  href="/settings#prefs"
+                  data-auth-footer-nav
+                  class="rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-900/80 no-underline transition-colors border border-transparent hover:border-indigo-200/70 dark:hover:border-indigo-800/50 hidden"
+                >
+                  <span data-i18n="nav.settings"></span>
+                </a>
+              </div>
+            </div>
           </nav>
         </div>
 
@@ -138,7 +176,7 @@ const FOOTER_BUILD_ICONS = [
                 ))
               }
               <img
-                src="/icons/supabase-logo-icon.svg"
+                src="/icons/technologies/supabase-logo-icon.svg"
                 alt=""
                 title="Supabase"
                 class="h-4 w-auto max-h-4 object-contain opacity-90"

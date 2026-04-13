@@ -4,6 +4,7 @@ import { isSkillAtlasAdmin } from "@scripts/core/admin-role";
 import { showToast } from "@scripts/core/ui-feedback";
 import { loadPrefs, type HeaderPopoverTrigger } from "@scripts/core/prefs";
 import { updateLandingCtas } from "@scripts/client-shell/landing-ctas";
+import { oauthPictureFromUser } from "@scripts/core/oauth-avatar";
 
 export async function initAuthHeader() {
   const userMenuWrap = document.querySelector<HTMLElement>("[data-header-user-menu]");
@@ -178,6 +179,43 @@ export async function initAuthHeader() {
     });
   }
 
+  /* Menú Herramientas (/tools): hover + clic fuera. */
+  const toolsWrap = document.querySelector<HTMLElement>("[data-tools-wrap]");
+  const toolsLink = document.querySelector<HTMLAnchorElement>("[data-tools-link]");
+  const toolsPopover = document.querySelector<HTMLElement>("[data-tools-popover]");
+  if (toolsWrap && toolsLink && toolsPopover && toolsWrap.dataset.toolsHoverBound !== "1") {
+    toolsWrap.dataset.toolsHoverBound = "1";
+    let hover = false;
+    let timer: number | null = null;
+
+    const show = () => {
+      toolsPopover.classList.remove("hidden");
+      toolsPopover.classList.add("block");
+      toolsLink.setAttribute("aria-expanded", "true");
+    };
+    const hide = () => {
+      toolsPopover.classList.add("hidden");
+      toolsPopover.classList.remove("block");
+      toolsLink.setAttribute("aria-expanded", "false");
+    };
+    const scheduleHide = () => {
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        if (!hover) hide();
+      }, 120);
+    };
+
+    toolsWrap.addEventListener("mouseenter", () => {
+      hover = true;
+      if (timer) window.clearTimeout(timer);
+      show();
+    });
+    toolsWrap.addEventListener("mouseleave", () => {
+      hover = false;
+      scheduleHide();
+    });
+  }
+
   if (!(window as unknown as { __skillatlasHomeOutsideDoc?: boolean }).__skillatlasHomeOutsideDoc) {
     (window as unknown as { __skillatlasHomeOutsideDoc?: boolean }).__skillatlasHomeOutsideDoc = true;
     document.addEventListener("click", (e) => {
@@ -188,6 +226,30 @@ export async function initAuthHeader() {
         hp.classList.add("hidden");
         hp.classList.remove("block");
       }
+    });
+  }
+
+  if (!(window as unknown as { __skillatlasToolsOutsideDoc?: boolean }).__skillatlasToolsOutsideDoc) {
+    (window as unknown as { __skillatlasToolsOutsideDoc?: boolean }).__skillatlasToolsOutsideDoc = true;
+    document.addEventListener("click", (e) => {
+      const tw = document.querySelector<HTMLElement>("[data-tools-wrap]");
+      const tp = document.querySelector<HTMLElement>("[data-tools-popover]");
+      const tl = document.querySelector<HTMLAnchorElement>("[data-tools-link]");
+      if (!tw || !tp || !tl) return;
+      if (!tw.contains(e.target as Node)) {
+        tp.classList.add("hidden");
+        tp.classList.remove("block");
+        tl.setAttribute("aria-expanded", "false");
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      const tp = document.querySelector<HTMLElement>("[data-tools-popover]");
+      const tl = document.querySelector<HTMLAnchorElement>("[data-tools-link]");
+      if (!tp || !tl) return;
+      tp.classList.add("hidden");
+      tp.classList.remove("block");
+      tl.setAttribute("aria-expanded", "false");
     });
   }
 
@@ -286,24 +348,7 @@ export async function initAuthHeader() {
       adminHeaderLink.classList.add("hidden");
       adminHeaderLink.classList.remove("inline-flex");
     }
-    const meta = (user?.user_metadata ?? {}) as Record<string, any>;
-    const lastProvider = (() => {
-      try {
-        return localStorage.getItem("skillatlas_last_auth_provider");
-      } catch {
-        return null;
-      }
-    })();
-
-    const githubAvatar = typeof meta.avatar_url === "string" && meta.avatar_url ? meta.avatar_url : null;
-    const linkedinAvatar = typeof meta.picture === "string" && meta.picture ? meta.picture : null;
-
-    const oauthAvatar =
-      lastProvider === "linkedin_oidc"
-        ? linkedinAvatar ?? githubAvatar
-        : lastProvider === "github"
-          ? githubAvatar ?? linkedinAvatar
-          : githubAvatar ?? linkedinAvatar;
+    const oauthAvatar = oauthPictureFromUser(user);
 
     let portfolioAvatar: string | null = null;
     if (user) {

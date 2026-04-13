@@ -1,0 +1,28 @@
+---
+type Props = {
+  label?: string;
+  /** Additional classes for the <select>. */
+  class?: string;
+  /** data-* attributes or any other attrs via spread. */
+  [k: string]: any;
+};
+
+const { label, class: extraClass, ...attrs } = Astro.props as Props;
+
+const baseClass =
+  "w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-3 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 dark:focus:ring-indigo-400/30";
+---
+
+{label ? (
+  <label class="space-y-1 block">
+    <span class="text-sm font-semibold">{label}</span>
+    <select class={`${baseClass} ${extraClass ?? ""}`} {...attrs}>
+      <slot />
+    </select>
+  </label>
+) : (
+  <select class={`${baseClass} ${extraClass ?? ""}`} {...attrs}>
+    <slot />
+  </select>
+)}
+
