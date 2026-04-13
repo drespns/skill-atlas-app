@@ -2,7 +2,16 @@ import i18next from "i18next";
 import { getHelpStackItem, HELP_STACK_ITEMS } from "@config/help-stack";
 import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 import { getSessionUserId } from "@scripts/core/auth-session";
-import { loadPrefs, updatePrefs } from "@scripts/core/prefs";
+import {
+  buildCvDocumentsPrefsPatch,
+  CV_DOCUMENTS_MAX,
+  loadPrefs,
+  migrateCvDocumentsIntoPrefs,
+  newCvDocumentId,
+  updatePrefs,
+  type AppPrefsV1,
+  type CvDocumentSlotV1,
+} from "@scripts/core/prefs";
 import { showToast } from "@scripts/core/ui-feedback";
 import {
   CV_LINK_SLOT_COUNT,
@@ -11,9 +20,42 @@ import {
   slotsToPersistedLinks,
   type CvSocialLinkDisplay,
 } from "@lib/cv-contact-html";
+import { analyzeCvForAts } from "@lib/cv-ats-check";
 import { clampCvPrintMaxPages, cvPrintTypographicScale } from "@lib/cv-print-scale";
 import { applyCvDocumentSectionOrder, normalizeCvDocumentSectionOrder } from "@lib/cv-document-section-order";
-import { parseEducationBlocksFromPaste, parseExperienceBlocksFromPaste } from "@lib/cv-paste-import";
+import {
+  extractLooseCvHeaderFields,
+  extractUrlsForCvSlots,
+  filterFalsePositiveExperienceRows,
+  mergeLanguagesSplitFromCertificationsSection,
+  normalizeCvPasteForHeuristics,
+  parseCertificationsFromPaste,
+  parseEducationBlocksFromPaste,
+  parseExperienceBlocksFromPaste,
+  parseLanguagesFromPaste,
+  preprocessCvPasteForImport,
+  splitCvPasteBySections,
+} from "@lib/cv-paste-import";
+import {
+  applyCvManualImport,
+  bumpManualImportTargetIfOccupied,
+  escHtml,
+  MANUAL_IMPORT_SIDEBAR_SECTION_ORDER,
+  manualAssignmentTargetIsMultiline,
+  manualImportEducationRowIndexKey,
+  manualImportExperienceRowIndexKey,
+  manualImportSidebarSection,
+  manualTargetMarkClass,
+  type CvManualAssignment,
+  type ManualImportSidebarSectionId,
+} from "@lib/cv-manual-import-map";
+import { mergeSuggestedAssignments, suggestManualAssignmentsFromPaste } from "@lib/cv-manual-import-suggest";
+import {
+  getSurfaceSelectionClientRect,
+  getSurfaceSelectionEndCaretRect,
+  getSurfaceSelectionSourceOffsets,
+  renderManualImportSurface,
+} from "@lib/cv-manual-import-surface";
 
 function tt(key: string, fallback: string): string {
   const v = i18next.t(key);
@@ -50,6 +92,8 @@ type CvProfile = {
   headline?: string;
   location?: string;
   email?: string;
+  phoneMobile?: string;
+  phoneLandline?: string;
   links?: { label: string; url: string }[];
   cvLinkSlots?: string[];
   socialLinkDisplay?: CvSocialLinkDisplay;
@@ -60,12 +104,15 @@ type CvProfile = {
   showHelpStack?: boolean;
   highlights?: string;
   showPhoto?: boolean;
+  photoSource?: "uploaded" | "linkedin" | "provider";
   experiences?: CvExperience[];
   education?: CvEducation[];
   certifications?: { name?: string; issuer?: string; year?: string; url?: string }[];
   languages?: { name?: string; level?: string }[];
   /** Objetivo de extensión al imprimir (1–6); ajusta escala tipográfica. */
   cvPrintMaxPages?: number;
+  /** Slug del proyecto mostrado con detalle; el resto en lista compacta. */
+  cvFeaturedProjectSlug?: string;
 };
 
 type CvExperience = {
@@ -86,6 +133,56 @@ type CvEducation = {
   details?: string;
 };
 
+function normImpKey(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function experienceDedupeKey(r: CvExperience): string {
+  const a = normImpKey((r.role ?? "").toString());
+  const b = normImpKey((r.company ?? "").toString());
+  if (!a && !b) return "";
+  return `${a}|${b}`;
+}
+
+function educationDedupeKey(r: CvEducation): string {
+  const a = normImpKey((r.degree ?? "").toString());
+  const b = normImpKey((r.school ?? "").toString());
+  if (!a && !b) return "";
+  return `${a}|${b}`;
+}
+
+function isDuplicateExperience(existing: CvExperience[], row: CvExperience): boolean {
+  const k = experienceDedupeKey(row);
+  if (!k) return false;
+  return existing.some((e) => experienceDedupeKey(e) === k);
+}
+
+function isDuplicateEducation(existing: CvEducation[], row: CvEducation): boolean {
+  const k = educationDedupeKey(row);
+  if (!k) return false;
+  return existing.some((e) => educationDedupeKey(e) === k);
+}
+
+function certDedupeKey(c: { name?: string }): string {
+  return normImpKey((c.name ?? "").toString());
+}
+
+function isDuplicateCert(existing: { name?: string }[], c: { name?: string }): boolean {
+  const k = certDedupeKey(c);
+  if (k.length < 3) return false;
+  return existing.some((x) => certDedupeKey(x) === k);
+}
+
+function langDedupeKey(l: { name?: string }): string {
+  return normImpKey((l.name ?? "").toString());
+}
+
+function isDuplicateLang(existing: { name?: string }[], l: { name?: string }): boolean {
+  const k = langDedupeKey(l);
+  if (k.length < 2) return false;
+  return existing.some((x) => langDedupeKey(x) === k);
+}
+
 function normalizeUrl(raw: string): string {
   const s = raw.trim();
   if (!s) return "";
@@ -99,6 +196,14 @@ function normalizeEmail(raw: string): string {
 
 function isProbablyEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+}
+
+function cvTelHref(raw: string): string {
+  const d = raw.replace(/[^\d+]/g, "");
+  if (!d) return "#";
+  if (d.startsWith("00")) return `tel:+${d.slice(2)}`;
+  if (d.startsWith("+")) return `tel:${d}`;
+  return `tel:${d}`;
 }
 
 function initPrintThemeLock() {
@@ -166,6 +271,7 @@ async function boot() {
   const printBtn = document.querySelector<HTMLButtonElement>("[data-cv-print]");
   const selAll = document.querySelector<HTMLButtonElement>("[data-cv-select-all]");
   const selNone = document.querySelector<HTMLButtonElement>("[data-cv-select-none]");
+  const selFeaturedOnly = document.querySelector<HTMLButtonElement>("[data-cv-select-featured-only]");
   const expAddBtn = document.querySelector<HTMLButtonElement>("[data-cv-exp-add]");
   const eduAddBtn = document.querySelector<HTMLButtonElement>("[data-cv-edu-add]");
   const expList = document.querySelector<HTMLElement>("[data-cv-exp-list]");
@@ -180,6 +286,8 @@ async function boot() {
   const headlineInput = document.querySelector<HTMLInputElement>("[data-cv-headline]");
   const locationInput = document.querySelector<HTMLInputElement>("[data-cv-location]");
   const emailInput = document.querySelector<HTMLInputElement>("[data-cv-email]");
+  const phoneMobileInput = document.querySelector<HTMLInputElement>("[data-cv-phone-mobile]");
+  const phoneLandlineInput = document.querySelector<HTMLInputElement>("[data-cv-phone-landline]");
   const linkInputs = document.querySelectorAll<HTMLInputElement>("input[data-cv-link-url]");
   const summaryInput = document.querySelector<HTMLTextAreaElement>("[data-cv-summary]");
   const showHelpStackCb = document.querySelector<HTMLInputElement>("[data-cv-show-helpstack]");
@@ -203,14 +311,70 @@ async function boot() {
   const previewBody = document.querySelector<HTMLElement>("[data-cv-preview-body]");
   const previewSectionList = document.querySelector<HTMLElement>("[data-cv-preview-section-list]");
   const previewTemplateSelect = document.querySelector<HTMLSelectElement>("[data-cv-preview-template]");
+  const previewAtsBtn = document.querySelector<HTMLButtonElement>("[data-cv-preview-ats]");
+  const previewAtsPanel = document.querySelector<HTMLElement>("[data-cv-preview-ats-panel]");
+  const previewAtsHide = document.querySelector<HTMLButtonElement>("[data-cv-preview-ats-hide]");
+  const atsOkList = document.querySelector<HTMLElement>("[data-cv-ats-ok]");
+  const atsWarnList = document.querySelector<HTMLElement>("[data-cv-ats-warn]");
+  const atsInfoList = document.querySelector<HTMLElement>("[data-cv-ats-info]");
+  const importModal = document.querySelector<HTMLElement>("[data-cv-import-modal]");
+  const importModalPanel = document.querySelector<HTMLElement>("[data-cv-import-modal-panel]");
+  const importModalClose = document.querySelector<HTMLButtonElement>("[data-cv-import-modal-close]");
+  const importOpenBtn = document.querySelector<HTMLButtonElement>("[data-cv-import-open]");
   const importPaste = document.querySelector<HTMLTextAreaElement>("[data-cv-import-paste]");
+  const importApplyFormBtn = document.querySelector<HTMLButtonElement>("[data-cv-import-apply-form]");
+  const importBothBtn = document.querySelector<HTMLButtonElement>("[data-cv-import-both]");
   const importExpBtn = document.querySelector<HTMLButtonElement>("[data-cv-import-experience]");
   const importEduBtn = document.querySelector<HTMLButtonElement>("[data-cv-import-education]");
-  const importDetails = document.querySelector<HTMLDetailsElement>("[data-cv-import-details]");
+  const importModalPdfInput = document.querySelector<HTMLInputElement>("[data-cv-import-modal-pdf-input]");
+  const importModalPdfOpen = document.querySelector<HTMLButtonElement>("[data-cv-import-modal-pdf-open]");
+  const importManualSurface = document.querySelector<HTMLElement>("[data-cv-import-manual-surface]");
+  const importManualTarget = document.querySelector<HTMLSelectElement>("[data-cv-import-manual-target]");
+  const importManualClear = document.querySelector<HTMLButtonElement>("[data-cv-import-manual-clear]");
+  const importManualList = document.querySelector<HTMLElement>("[data-cv-import-manual-list]");
+  const importManualApply = document.querySelector<HTMLButtonElement>("[data-cv-import-manual-apply]");
+  const importManualSuggestBtn = document.querySelector<HTMLButtonElement>("[data-cv-import-manual-suggest]");
+  const importManualPopover = document.querySelector<HTMLElement>("[data-cv-import-manual-popover]");
+  const importManualPopoverBody = document.querySelector<HTMLTextAreaElement>("[data-cv-import-manual-popover-body]");
+  const importManualPopoverFilter = document.querySelector<HTMLInputElement>("[data-cv-import-manual-popover-filter]");
+  const importManualPopoverOptions = document.querySelector<HTMLElement>("[data-cv-import-manual-popover-options]");
+  const importManualPopoverShortcuts = document.querySelector<HTMLElement>("[data-cv-import-manual-popover-shortcuts]");
+  const importManualPopoverFollowDragCb = document.querySelector<HTMLInputElement>(
+    "[data-cv-import-manual-popover-follow-drag]",
+  );
+  const CV_IMPORT_POPOVER_FOLLOW_DRAG_LS = "skillatlas.cvImportPopoverFollowDrag";
+  const importConfirmModal = document.querySelector<HTMLElement>("[data-cv-import-confirm-modal]");
+  const importConfirmPanel = document.querySelector<HTMLElement>("[data-cv-import-confirm-panel]");
+  const importConfirmBackup = document.querySelector<HTMLButtonElement>("[data-cv-import-confirm-backup]");
+  const importConfirmCancel = document.querySelector<HTMLButtonElement>("[data-cv-import-confirm-cancel]");
+  const importConfirmProceed = document.querySelector<HTMLButtonElement>("[data-cv-import-confirm-proceed]");
+  const backupRestoreTrigger = document.querySelector<HTMLButtonElement>("[data-cv-backup-restore-trigger]");
+  const backupRestoreInput = document.querySelector<HTMLInputElement>("[data-cv-backup-restore-input]");
+  const clearContentBtn = document.querySelector<HTMLButtonElement>("[data-cv-clear-content]");
+  const clearModal = document.querySelector<HTMLElement>("[data-cv-clear-modal]");
+  const clearModalPanel = document.querySelector<HTMLElement>("[data-cv-clear-modal-panel]");
+  const clearModalCancel = document.querySelector<HTMLButtonElement>("[data-cv-clear-modal-cancel]");
+  const clearModalConfirm = document.querySelector<HTMLButtonElement>("[data-cv-clear-modal-confirm]");
+  const headerJsonExportBtn = document.querySelector<HTMLButtonElement>("[data-cv-header-json-export]");
+  const docSelect = document.querySelector<HTMLSelectElement>("[data-cv-doc-select]");
+  const docNewBtn = document.querySelector<HTMLButtonElement>("[data-cv-doc-new]");
+  const docDupBtn = document.querySelector<HTMLButtonElement>("[data-cv-doc-dup]");
+  const docManageBtn = document.querySelector<HTMLButtonElement>("[data-cv-doc-manage]");
+  const docNameDialog = document.querySelector<HTMLDialogElement>("[data-cv-doc-name-dialog]");
+  const docNameInput = document.querySelector<HTMLInputElement>("[data-cv-doc-name-input]");
+  const docNameMode = document.querySelector<HTMLInputElement>("[data-cv-doc-name-mode]");
+  const docNameCancel = document.querySelector<HTMLButtonElement>("[data-cv-doc-name-cancel]");
+  const docNameSave = document.querySelector<HTMLButtonElement>("[data-cv-doc-name-save]");
+  const docManageDialog = document.querySelector<HTMLDialogElement>("[data-cv-doc-manage-dialog]");
+  const docManageName = document.querySelector<HTMLInputElement>("[data-cv-doc-manage-name]");
+  const docManageTags = document.querySelector<HTMLInputElement>("[data-cv-doc-manage-tags]");
+  const docManageMain = document.querySelector<HTMLInputElement>("[data-cv-doc-manage-main]");
+  const docManageDelete = document.querySelector<HTMLButtonElement>("[data-cv-doc-manage-delete]");
+  const docManageCancel = document.querySelector<HTMLButtonElement>("[data-cv-doc-manage-cancel]");
+  const docManageSave = document.querySelector<HTMLButtonElement>("[data-cv-doc-manage-save]");
+  const featuredNoneBtn = document.querySelector<HTMLButtonElement>("[data-cv-featured-none]");
   const kickerBadge = document.querySelector<HTMLElement>("[data-cv-kicker-badge]");
   const kickerPulse = document.querySelector<HTMLElement>("[data-cv-kicker-pulse]");
-  const importPdfInput = document.querySelector<HTMLInputElement>("[data-cv-import-pdf-input]");
-  const importPdfOpen = document.querySelector<HTMLButtonElement>("[data-cv-import-pdf-open]");
   const docHost = document.querySelector<HTMLElement>("[data-cv-doc-host]");
 
   if (!loadingEl || !listEl || !docEl || !docName || !docBio || !docProjects) return;
@@ -428,29 +592,114 @@ async function boot() {
   const defaultOrder = projects.map((p) => p.slug);
   let selectedSlugs = new Set<string>();
   let selectedOrder: string[] = [];
-  let cvProfile: CvProfile = (prefs as any).cvProfile ?? {};
-  cvProfile = {
-    showHelpStack: true,
-    showPhoto: true,
-    experiences: [],
-    education: [],
-    certifications: [],
-    languages: [],
-    socialLinkDisplay: "both",
-    cvTemplate: "classic",
-    cvSectionVisibility: {},
-    cvPrintMaxPages: 3,
-    ...cvProfile,
+
+  let cvDocuments: CvDocumentSlotV1[] = (prefs.cvDocuments ?? []).map((d) => ({
+    ...d,
+    cvProfile: JSON.parse(JSON.stringify(d.cvProfile)) as CvProfile,
+  }));
+  let cvActiveDocumentId = prefs.cvActiveDocumentId ?? cvDocuments[0]?.id ?? "";
+  const activeCvSlot = () => cvDocuments.find((d) => d.id === cvActiveDocumentId) ?? cvDocuments[0]!;
+
+  let cvProfile: CvProfile = {};
+  const hydrateCvProfileFromActiveSlot = () => {
+    const a = activeCvSlot();
+    cvProfile = {
+      showHelpStack: true,
+      showPhoto: true,
+      experiences: [],
+      education: [],
+      certifications: [],
+      languages: [],
+      socialLinkDisplay: "both",
+      cvTemplate: "classic",
+      cvSectionVisibility: {},
+      cvPrintMaxPages: 3,
+      ...(a?.cvProfile ?? {}),
+    };
+    if (!cvProfile.photoSource) {
+      cvProfile.photoSource = avatarSignedUrl ? "uploaded" : linkedinAvatar ? "linkedin" : "provider";
+    }
   };
-  if (!cvProfile.photoSource) {
-    cvProfile.photoSource = avatarSignedUrl ? "uploaded" : linkedinAvatar ? "linkedin" : "provider";
-  }
+  hydrateCvProfileFromActiveSlot();
 
   const getCvLinkSlots = (): string[] => {
     if (Array.isArray(cvProfile.cvLinkSlots) && cvProfile.cvLinkSlots.length === CV_LINK_SLOT_COUNT) {
       return cvProfile.cvLinkSlots.map((x) => (typeof x === "string" ? x : ""));
     }
     return migrateCvLinksToSlots(cvProfile.links);
+  };
+
+  const buildCvDisplayOrder = (saved: string[] | undefined, slugs: string[]): string[] => {
+    const allowed = new Set(slugs);
+    const seen = new Set<string>();
+    const out: string[] = [];
+    if (saved) {
+      for (const s of saved) {
+        if (allowed.has(s) && !seen.has(s)) {
+          out.push(s);
+          seen.add(s);
+        }
+      }
+    }
+    for (const s of slugs) {
+      if (!seen.has(s)) {
+        out.push(s);
+        seen.add(s);
+      }
+    }
+    return out;
+  };
+
+  let displayOrder = buildCvDisplayOrder(activeCvSlot().cvProjectDisplayOrder, defaultOrder);
+
+  const applySelectionFromPrefs = () => {
+    const act = activeCvSlot();
+    const raw = act.cvProjectSlugs;
+    displayOrder = buildCvDisplayOrder(act.cvProjectDisplayOrder, defaultOrder);
+    selectedSlugs.clear();
+    if (raw === undefined) {
+      for (const s of defaultOrder) selectedSlugs.add(s);
+      selectedOrder = displayOrder.filter((s) => selectedSlugs.has(s));
+      return;
+    }
+    const allowed = new Set(defaultOrder);
+    for (const s of raw) {
+      if (allowed.has(s)) selectedSlugs.add(s);
+    }
+    selectedOrder = displayOrder.filter((s) => selectedSlugs.has(s));
+  };
+
+  applySelectionFromPrefs();
+
+  function persistCvState() {
+    const idx = cvDocuments.findIndex((d) => d.id === cvActiveDocumentId);
+    if (idx < 0) return;
+    selectedOrder = displayOrder.filter((s) => selectedSlugs.has(s));
+    const allSelected = selectedSlugs.size === defaultOrder.length && defaultOrder.every((s) => selectedSlugs.has(s));
+    const isDefaultSubsetOrder =
+      allSelected && selectedOrder.length === defaultOrder.length && selectedOrder.every((s, i) => s === defaultOrder[i]);
+    const slugsToSave = isDefaultSubsetOrder ? undefined : [...selectedOrder];
+    const sameAsDefaultOrd =
+      displayOrder.length === defaultOrder.length && displayOrder.every((s, i) => s === defaultOrder[i]);
+    const displayOrderToSave = sameAsDefaultOrd ? undefined : [...displayOrder];
+    const next = [...cvDocuments];
+    next[idx] = {
+      ...next[idx]!,
+      cvProfile: JSON.parse(JSON.stringify(cvProfile)) as CvProfile,
+      cvProjectSlugs: slugsToSave,
+      cvProjectDisplayOrder: displayOrderToSave,
+    };
+    cvDocuments = next;
+    prefs = updatePrefs(buildCvDocumentsPrefsPatch(cvDocuments, cvActiveDocumentId) as any);
+  }
+
+  const persistDisplayOrder = () => {
+    persistCvState();
+  };
+
+  const persistSelection = () => {
+    selectedOrder = displayOrder.filter((s) => selectedSlugs.has(s));
+    persistCvState();
   };
 
   const slotLabels = () => [
@@ -461,12 +710,495 @@ async function boot() {
     tt("cv.linkLabel5", "Web / otro"),
   ];
 
+  const escManualOptAttr = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+
+  let manualImportAssignments: CvManualAssignment[] = [];
+  let importManualTextSnapshot = "";
+  /** Evita cerrar el modal al soltar el clic del backdrop tras arrastrar una selección desde el panel. */
+  let suppressCvImportModalBackdropClose = false;
+
+  const rebuildManualImportTargetSelect = () => {
+    if (!importManualTarget) return;
+    const linkLabs = slotLabels();
+    const expLen = Array.isArray(cvProfile.experiences) ? cvProfile.experiences.length : 0;
+    const eduLen = Array.isArray(cvProfile.education) ? cvProfile.education.length : 0;
+    const certLen = Array.isArray(cvProfile.certifications) ? cvProfile.certifications.length : 0;
+    const langLen = Array.isArray(cvProfile.languages) ? cvProfile.languages.length : 0;
+    const newSlots = 4;
+    const o = (v: string, t: string) => `<option value="${escManualOptAttr(v)}">${escManualOptAttr(t)}</option>`;
+    const grp = (label: string, inner: string) => `<optgroup label="${escManualOptAttr(label)}">${inner}</optgroup>`;
+    const parts: string[] = [];
+    let b = o("", tt("cv.importManualTargetPlaceholder", "— Elige destino —"));
+    b += o("headline", tt("cv.importManualOptHeadline", "Titular (debajo del nombre)"));
+    b += o("summary", tt("cv.importManualOptSummary", "Resumen / bio del CV"));
+    b += o("email", tt("cv.importManualOptEmail", "Email"));
+    b += o("phoneMobile", tt("cv.importManualOptPhoneMobile", "Teléfono (móvil / principal)"));
+    b += o("phoneLandline", tt("cv.importManualOptPhoneLandline", "Teléfono fijo / otro"));
+    parts.push(grp(tt("cv.importManualGroupProfile", "Perfil"), b));
+    b = "";
+    for (let i = 0; i < CV_LINK_SLOT_COUNT; i++) {
+      b += o(`link:${i}`, `${tt("cv.importManualOptLink", "Enlace")}: ${linkLabs[i]}`);
+    }
+    parts.push(grp(tt("cv.importManualGroupLinks", "Enlaces"), b));
+    b = "";
+    const expRow = tt("cv.importManualRowExp", "Experiencia");
+    for (let i = 0; i < expLen; i++) {
+      const p = `${expRow} ${i + 1}`;
+      b += o(`exp:exist:${i}:role`, `${p} — ${tt("cv.expRole", "Rol")}`);
+      b += o(`exp:exist:${i}:company`, `${p} — ${tt("cv.expCompany", "Empresa")}`);
+      b += o(`exp:exist:${i}:location`, `${p} — ${tt("cv.expLocation", "Ubicación")}`);
+      b += o(`exp:exist:${i}:start`, `${p} — ${tt("cv.expStart", "Inicio")}`);
+      b += o(`exp:exist:${i}:end`, `${p} — ${tt("cv.expEnd", "Fin")}`);
+      b += o(`exp:exist:${i}:bullets`, `${p} — ${tt("cv.expBullets", "Bullets")}`);
+    }
+    if (b) parts.push(grp(tt("cv.importManualGroupExpCur", "Experiencia (formulario)"), b));
+    b = "";
+    const expNew = tt("cv.importManualRowExpNew", "Nueva experiencia");
+    for (let i = 0; i < newSlots; i++) {
+      const p = `${expNew} ${i + 1}`;
+      b += o(`exp:new:${i}:role`, `${p} — ${tt("cv.expRole", "Rol")}`);
+      b += o(`exp:new:${i}:company`, `${p} — ${tt("cv.expCompany", "Empresa")}`);
+      b += o(`exp:new:${i}:location`, `${p} — ${tt("cv.expLocation", "Ubicación")}`);
+      b += o(`exp:new:${i}:start`, `${p} — ${tt("cv.expStart", "Inicio")}`);
+      b += o(`exp:new:${i}:end`, `${p} — ${tt("cv.expEnd", "Fin")}`);
+      b += o(`exp:new:${i}:bullets`, `${p} — ${tt("cv.expBullets", "Bullets")}`);
+    }
+    parts.push(grp(tt("cv.importManualGroupExpNew", "Experiencia (nueva fila)"), b));
+    b = "";
+    const eduRow = tt("cv.importManualRowEdu", "Educación");
+    for (let i = 0; i < eduLen; i++) {
+      const p = `${eduRow} ${i + 1}`;
+      b += o(`edu:exist:${i}:degree`, `${p} — ${tt("cv.eduDegree", "Título")}`);
+      b += o(`edu:exist:${i}:school`, `${p} — ${tt("cv.eduSchool", "Centro")}`);
+      b += o(`edu:exist:${i}:location`, `${p} — ${tt("cv.eduLocation", "Ubicación")}`);
+      b += o(`edu:exist:${i}:start`, `${p} — ${tt("cv.eduStart", "Inicio")}`);
+      b += o(`edu:exist:${i}:end`, `${p} — ${tt("cv.eduEnd", "Fin")}`);
+      b += o(`edu:exist:${i}:details`, `${p} — ${tt("cv.eduDetails", "Detalles")}`);
+    }
+    if (b) parts.push(grp(tt("cv.importManualGroupEduCur", "Educación (formulario)"), b));
+    b = "";
+    const eduNew = tt("cv.importManualRowEduNew", "Nueva educación");
+    for (let i = 0; i < newSlots; i++) {
+      const p = `${eduNew} ${i + 1}`;
+      b += o(`edu:new:${i}:degree`, `${p} — ${tt("cv.eduDegree", "Título")}`);
+      b += o(`edu:new:${i}:school`, `${p} — ${tt("cv.eduSchool", "Centro")}`);
+      b += o(`edu:new:${i}:location`, `${p} — ${tt("cv.eduLocation", "Ubicación")}`);
+      b += o(`edu:new:${i}:start`, `${p} — ${tt("cv.eduStart", "Inicio")}`);
+      b += o(`edu:new:${i}:end`, `${p} — ${tt("cv.eduEnd", "Fin")}`);
+      b += o(`edu:new:${i}:details`, `${p} — ${tt("cv.eduDetails", "Detalles")}`);
+    }
+    parts.push(grp(tt("cv.importManualGroupEduNew", "Educación (nueva fila)"), b));
+    b = "";
+    const certRow = tt("cv.importManualRowCert", "Certificación");
+    for (let i = 0; i < certLen; i++) {
+      b += o(`cert:exist:${i}:name`, `${certRow} ${i + 1} — ${tt("cv.certName", "Nombre")}`);
+    }
+    for (let i = 0; i < newSlots; i++) {
+      b += o(`cert:new:${i}:name`, `${tt("cv.importManualRowCertNew", "Nueva certificación")} ${i + 1}`);
+    }
+    parts.push(grp(tt("cv.importManualGroupCert", "Certificaciones"), b));
+    b = "";
+    const langRow = tt("cv.importManualRowLang", "Idioma");
+    for (let i = 0; i < langLen; i++) {
+      b += o(`lang:exist:${i}:line`, `${langRow} ${i + 1} — ${tt("cv.importManualLangLine", "Línea completa")}`);
+      b += o(`lang:exist:${i}:name`, `${langRow} ${i + 1} — ${tt("cv.langName", "Idioma")}`);
+      b += o(`lang:exist:${i}:level`, `${langRow} ${i + 1} — ${tt("cv.langLevel", "Nivel")}`);
+    }
+    for (let i = 0; i < newSlots; i++) {
+      b += o(`lang:new:${i}:line`, `${tt("cv.importManualRowLangNew", "Nuevo idioma")} ${i + 1} — ${tt("cv.importManualLangLine", "Línea (p. ej. Inglés — B2)")}`);
+      b += o(`lang:new:${i}:name`, `${tt("cv.importManualRowLangNew", "Nuevo idioma")} ${i + 1} — ${tt("cv.langName", "Nombre")}`);
+      b += o(`lang:new:${i}:level`, `${tt("cv.importManualRowLangNew", "Nuevo idioma")} ${i + 1} — ${tt("cv.langLevel", "Nivel")}`);
+    }
+    parts.push(grp(tt("cv.importManualGroupLang", "Idiomas"), b));
+    importManualTarget.innerHTML = parts.join("");
+    importManualTarget.value = "";
+  };
+
+  const getImportPopoverFollowDrag = () => importManualPopoverFollowDragCb?.checked === true;
+
+  const compareManualRowIndexOrOther = (a: string, b: string): number => {
+    if (a === "other" && b !== "other") return 1;
+    if (b === "other" && a !== "other") return -1;
+    return (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0);
+  };
+
+  const manualSidebarSectionHeading = (id: ManualImportSidebarSectionId) => {
+    const labels: Record<ManualImportSidebarSectionId, string> = {
+      profile: tt("cv.importManualSidebarProfile", "Perfil"),
+      links: tt("cv.importManualSidebarLinks", "Enlaces"),
+      experience: tt("cv.importManualSidebarExperience", "Experiencia"),
+      education: tt("cv.importManualSidebarEducation", "Educación"),
+      certifications: tt("cv.importManualSidebarCertifications", "Certificaciones"),
+      languages: tt("cv.importManualSidebarLanguages", "Idiomas"),
+      other: tt("cv.importManualSidebarOther", "Otros"),
+    };
+    return labels[id];
+  };
+
+  const manualExpEduUnifiedBlockTitle = (section: "experience" | "education", indexStr: string) => {
+    const n = (parseInt(indexStr, 10) || 0) + 1;
+    if (section === "experience") {
+      return tt("cv.importManualSidebarExpBlock", "Experiencia — bloque {{n}}").replace("{{n}}", String(n));
+    }
+    return tt("cv.importManualSidebarEduBlock", "Educación — bloque {{n}}").replace("{{n}}", String(n));
+  };
+
+  const manualExpEduUnifiedBlockHintHtml = (section: "experience" | "education") =>
+    escHtml(
+      section === "experience"
+        ? tt(
+            "cv.importManualSidebarExpBlockHint",
+            "Las etiquetas exp:exist / exp:new indican si al aplicar se rellena la fila que ya tienes o se añade una nueva; un solo valor por campo (al cambiar de exist a new, o al revés, se sustituye).",
+          )
+        : tt(
+            "cv.importManualSidebarEduBlockHint",
+            "Las etiquetas edu:exist / edu:new indican si al aplicar se rellena la fila que ya tienes o se añade una nueva; un solo valor por campo (al cambiar de exist a new, o al revés, se sustituye).",
+          ),
+    );
+
+  const buildManualImportAssignmentRowHtml = (a: CvManualAssignment, i: number, raw: string) => {
+    const slice = raw.slice(a.start, a.end);
+    const display =
+      a.valueOverride !== undefined && String(a.valueOverride).trim().length > 0
+        ? String(a.valueOverride).trim()
+        : slice;
+    const short = display.length > 56 ? `${display.slice(0, 54)}…` : display;
+    const hue = manualTargetMarkClass(a.target);
+    return `<div class="flex items-start gap-2 rounded-md border border-gray-200/75 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 px-2 py-1">
+      <span class="min-w-0 flex-1 whitespace-pre-wrap wrap-break-word text-gray-800 dark:text-gray-200">${escHtml(short)}</span>
+      <span class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-mono text-gray-900 dark:text-gray-100 ${hue}">${escHtml(a.target)}</span>
+      <button type="button" class="shrink-0 text-rose-600 dark:text-rose-400 hover:underline" data-cv-import-manual-remove="${i}" aria-label="Quitar">×</button>
+    </div>`;
+  };
+
+  const buildManualImportListHtml = (): string => {
+    const raw = importPaste?.value ?? "";
+    if (manualImportAssignments.length === 0) {
+      return `<p class="m-0 rounded-lg border border-dashed border-gray-300/80 dark:border-gray-700 px-2 py-6 text-center text-[11px] text-gray-500 dark:text-gray-500">${escHtml(
+        tt("cv.importManualSidebarEmpty", "Nada mapeado aún. Asigna fragmentos desde el texto."),
+      )}</p>`;
+    }
+    const indexed = manualImportAssignments.map((a, i) => ({ a, i }));
+    const buckets = new Map<ManualImportSidebarSectionId, typeof indexed>();
+    for (const sid of MANUAL_IMPORT_SIDEBAR_SECTION_ORDER) buckets.set(sid, []);
+    for (const row of indexed) {
+      buckets.get(manualImportSidebarSection(row.a.target))!.push(row);
+    }
+    let html = "";
+    for (const sid of MANUAL_IMPORT_SIDEBAR_SECTION_ORDER) {
+      const items = buckets.get(sid)!;
+      if (items.length === 0) continue;
+      const title = manualSidebarSectionHeading(sid);
+      html += `<section class="mb-4 last:mb-0">`;
+      html += `<h4 class="m-0 mb-2 border-b border-gray-200/60 pb-1 text-[10px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">${escHtml(title)}</h4>`;
+      if (sid === "experience") {
+        html += `<p class="m-0 mb-2 text-[9px] leading-snug text-gray-500 dark:text-gray-500">${manualExpEduUnifiedBlockHintHtml(
+          "experience",
+        )}</p>`;
+      } else if (sid === "education") {
+        html += `<p class="m-0 mb-2 text-[9px] leading-snug text-gray-500 dark:text-gray-500">${manualExpEduUnifiedBlockHintHtml(
+          "education",
+        )}</p>`;
+      }
+      if (sid === "experience" || sid === "education") {
+        const rowKeyOf = (target: string) =>
+          sid === "experience"
+            ? (manualImportExperienceRowIndexKey(target) ?? "other")
+            : (manualImportEducationRowIndexKey(target) ?? "other");
+        const keys = [...new Set(items.map(({ a }) => rowKeyOf(a.target)))].sort(compareManualRowIndexOrOther);
+        for (const key of keys) {
+          const subItems = items.filter(({ a }) => rowKeyOf(a.target) === key);
+          subItems.sort((x, y) => x.a.start - y.a.start);
+          html += `<div class="mb-2 space-y-1 rounded-lg border border-gray-200/60 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/25 p-2 last:mb-0">`;
+          if (key !== "other") {
+            html += `<p class="m-0 mb-1 text-[10px] font-semibold text-gray-600 dark:text-gray-400">${escHtml(
+              manualExpEduUnifiedBlockTitle(sid, key),
+            )}</p>`;
+          }
+          for (const { a, i } of subItems) html += buildManualImportAssignmentRowHtml(a, i, raw);
+          html += `</div>`;
+        }
+      } else {
+        items.sort((x, y) => x.a.start - y.a.start);
+        html += `<div class="space-y-1">`;
+        for (const { a, i } of items) html += buildManualImportAssignmentRowHtml(a, i, raw);
+        html += `</div>`;
+      }
+      html += `</section>`;
+    }
+    return html;
+  };
+
+  const refreshManualImportUi = () => {
+    const raw = importPaste?.value ?? "";
+    if (importManualSurface) {
+      renderManualImportSurface(
+        importManualSurface,
+        raw,
+        manualImportAssignments,
+        tt("cv.importSurfaceEmptyHint", "Pega el CV con Ctrl+V o usa «Elegir PDF»."),
+      );
+    }
+    if (importManualList) {
+      importManualList.innerHTML = buildManualImportListHtml();
+    }
+  };
+
+  let manualImportPopoverRaf = 0;
+  /** Mientras el usuario arrastra la selección en la superficie, no mostramos el popover (evita interceptar el gesto). */
+  let manualImportPointerSelecting = false;
+
+  const hideManualImportPopover = () => {
+    importManualPopover?.classList.add("hidden");
+    importManualPopover?.classList.remove("pointer-events-none");
+  };
+
+  const filterNorm = (s: string) => {
+    try {
+      return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    } catch {
+      return s.toLowerCase();
+    }
+  };
+
+  const rebuildManualImportPopoverOptions = () => {
+    if (!importManualPopoverOptions || !importManualTarget) return;
+    importManualPopoverOptions.replaceChildren();
+    const qRaw = (importManualPopoverFilter?.value ?? "").trim();
+    const nq = filterNorm(qRaw);
+    for (const og of importManualTarget.querySelectorAll("optgroup")) {
+      const glabel = og.getAttribute("label") ?? "";
+      const opts: { v: string; t: string }[] = [];
+      for (const op of og.querySelectorAll("option")) {
+        const v = op.getAttribute("value") ?? "";
+        const t = (op.textContent ?? "").trim();
+        if (!v) continue;
+        if (nq && !filterNorm(t).includes(nq) && !filterNorm(v).includes(nq)) continue;
+        opts.push({ v, t });
+      }
+      if (opts.length === 0) continue;
+      const details = document.createElement("details");
+      details.className =
+        "group mb-2 last:mb-0 rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white/50 dark:bg-gray-950/40 open:pb-1";
+      if (nq) details.open = true;
+      const summary = document.createElement("summary");
+      summary.className =
+        "cursor-pointer select-none list-none px-2 py-1.5 text-[10px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 marker:content-none [&::-webkit-details-marker]:hidden";
+      summary.textContent = glabel;
+      details.appendChild(summary);
+      const wrap = document.createElement("div");
+      wrap.className = "flex flex-col gap-0.5 px-2 pb-1";
+      for (const { v, t } of opts) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.setAttribute("data-cv-manual-assign-to", v);
+        b.className =
+          "w-full rounded-md border border-gray-200/90 text-left dark:border-gray-700 bg-white/90 dark:bg-gray-950/80 px-2 py-1.5 text-[11px] font-medium text-gray-800 dark:text-gray-100 hover:border-teal-400/60 hover:bg-teal-50/80 dark:hover:bg-teal-950/30";
+        b.textContent = t;
+        wrap.appendChild(b);
+      }
+      details.appendChild(wrap);
+      importManualPopoverOptions.appendChild(details);
+    }
+    if (!importManualPopoverOptions.firstChild) {
+      const empty = document.createElement("p");
+      empty.className = "m-0 py-3 text-center text-[11px] text-gray-500 dark:text-gray-500";
+      empty.textContent = tt("cv.importManualPopoverNoMatch", "Ningún destino coincide con la búsqueda.");
+      importManualPopoverOptions.appendChild(empty);
+    }
+  };
+
+  const renderManualImportPopoverShortcuts = () => {
+    if (!importManualPopoverShortcuts) return;
+    const chips: { target: string; label: string }[] = [
+      { target: "summary", label: tt("cv.importManualChipBio", "Bio") },
+      { target: "headline", label: tt("cv.importManualChipHeadline", "Titular") },
+      { target: "email", label: tt("cv.importManualChipEmail", "Email") },
+      { target: "phoneMobile", label: tt("cv.importManualChipPhone", "Teléfono") },
+      { target: "link:0", label: tt("cv.importManualChipLinkedIn", "LinkedIn") },
+      { target: "link:1", label: tt("cv.importManualChipGitHub", "GitHub") },
+      { target: "exp:new:0:role", label: tt("cv.importManualChipExp1Role", "Exp.1 rol") },
+      { target: "exp:new:0:company", label: tt("cv.importManualChipExp1Company", "Exp.1 empresa") },
+      { target: "exp:new:0:start", label: tt("cv.importManualChipExp1Dates", "Exp.1 fechas") },
+      { target: "exp:new:0:bullets", label: tt("cv.importManualChipExp1Bullets", "Exp.1 bullets") },
+    ];
+    const escAttr = (s: string) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+    importManualPopoverShortcuts.innerHTML = chips
+      .map(
+        (c) =>
+          `<button type="button" data-cv-manual-assign-to="${escAttr(c.target)}" class="rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/60 px-2 py-1 text-[11px] font-semibold text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800">${escHtml(c.label)}</button>`,
+      )
+      .join("");
+  };
+
+  const syncManualImportPopoverFromTarget = () => {
+    renderManualImportPopoverShortcuts();
+    if (importManualPopoverFilter) importManualPopoverFilter.value = "";
+    rebuildManualImportPopoverOptions();
+  };
+
+  const updateManualImportPopoverPosition = () => {
+    const pop = importManualPopover;
+    if (!pop || pop.classList.contains("hidden")) return;
+    const block = getSurfaceSelectionClientRect(importManualSurface);
+    const caret = getSurfaceSelectionEndCaretRect(importManualSurface);
+    const fb = importManualSurface?.getBoundingClientRect();
+    const margin = 8;
+    const popW = Math.min(720, window.innerWidth - margin * 2);
+    pop.style.width = `${popW}px`;
+    void pop.offsetHeight;
+    const ph = pop.getBoundingClientRect().height || 120;
+    const fallback = fb
+      ? new DOMRect(fb.left + 12, fb.top + 12, 8, 22)
+      : new DOMRect(16, 16, 8, 22);
+    const focus = caret ?? block ?? fallback;
+    const fullBlock = block ?? focus;
+    let left = focus.right + margin;
+    let top = focus.top + focus.height * 0.5 - ph * 0.5;
+    if (left + popW > window.innerWidth - margin) {
+      left = focus.left - popW - margin;
+    }
+    if (left < margin) {
+      left = fullBlock.left;
+      top = fullBlock.bottom + 6;
+      if (left + popW > window.innerWidth - margin) left = Math.max(margin, window.innerWidth - margin - popW);
+    }
+    if (left < margin) left = margin;
+    if (top + ph > window.innerHeight - margin) top = Math.max(margin, focus.top - ph - margin);
+    if (top < margin) top = margin;
+    pop.style.left = `${left}px`;
+    pop.style.top = `${top}px`;
+  };
+
+  const scheduleManualImportPopover = () => {
+    if (manualImportPopoverRaf) cancelAnimationFrame(manualImportPopoverRaf);
+    manualImportPopoverRaf = requestAnimationFrame(() => {
+      manualImportPopoverRaf = 0;
+      if (manualImportPointerSelecting && !getImportPopoverFollowDrag()) {
+        hideManualImportPopover();
+        return;
+      }
+      if (!importManualSurface || !importModal || importModal.classList.contains("hidden")) {
+        hideManualImportPopover();
+        return;
+      }
+      const raw = importPaste?.value ?? "";
+      const off = getSurfaceSelectionSourceOffsets(importManualSurface);
+      let bodyText = "";
+      if (off && off.end > off.start) bodyText = raw.slice(off.start, off.end);
+      else bodyText = (typeof window.getSelection === "function" ? window.getSelection()?.toString() : "") ?? "";
+      if (!bodyText.trim()) {
+        hideManualImportPopover();
+        return;
+      }
+      if (importManualPopoverBody) {
+        importManualPopoverBody.value =
+          bodyText.length > 12000 ? `${bodyText.slice(0, 12000)}\n…` : bodyText;
+      }
+      if (importManualPopoverFilter) {
+        importManualPopoverFilter.placeholder = tt("cv.importManualPopoverSearchPh", "Filtrar por nombre de campo…");
+      }
+      syncManualImportPopoverFromTarget();
+      importManualPopover?.classList.remove("hidden");
+      if (manualImportPointerSelecting && getImportPopoverFollowDrag()) {
+        importManualPopover?.classList.add("pointer-events-none");
+      } else {
+        importManualPopover?.classList.remove("pointer-events-none");
+      }
+      updateManualImportPopoverPosition();
+    });
+  };
+
+  const assignManualSelectionToTarget = (target: string) => {
+    if (!target.trim()) return;
+    const off = getSurfaceSelectionSourceOffsets(importManualSurface);
+    if (!off || off.start === off.end) {
+      showToast(tt("cv.importManualNoSelectToast", "Selecciona texto en la vista con colores antes de asignar."), "info");
+      return;
+    }
+    const rawFull = importPaste?.value ?? "";
+    const sourceSlice = rawFull.slice(off.start, off.end).replace(/\r\n/g, "\n");
+    const bodyRaw = (importManualPopoverBody?.value ?? "").replace(/\r\n/g, "\n");
+    const trimmed = bodyRaw.trim();
+    if (!trimmed) {
+      showToast(tt("cv.importManualEmptyBodyToast", "El texto a asignar no puede estar vacío."), "info");
+      return;
+    }
+    const expLen = Array.isArray(cvProfile.experiences) ? cvProfile.experiences.length : 0;
+    const eduLen = Array.isArray(cvProfile.education) ? cvProfile.education.length : 0;
+    const certLen = Array.isArray(cvProfile.certifications) ? cvProfile.certifications.length : 0;
+    const langLen = Array.isArray(cvProfile.languages) ? cvProfile.languages.length : 0;
+    let t = target.trim();
+    t = bumpManualImportTargetIfOccupied(t, manualImportAssignments, { expLen, eduLen, certLen, langLen });
+    if (!manualAssignmentTargetIsMultiline(t)) {
+      manualImportAssignments = manualImportAssignments.filter((x) => x.target !== t);
+    }
+    const valueOverride = trimmed !== sourceSlice.trim() ? trimmed : undefined;
+    manualImportAssignments.push({
+      start: off.start,
+      end: off.end,
+      target: t,
+      ...(valueOverride !== undefined ? { valueOverride } : {}),
+    });
+    importManualTextSnapshot = importPaste?.value ?? "";
+    refreshManualImportUi();
+    hideManualImportPopover();
+  };
+
+  const runManualImportAutosuggest = (showInfoToast: boolean) => {
+    const ta = importPaste;
+    if (!ta) return;
+    const v = ta.value;
+    if (!v.trim()) {
+      if (showInfoToast) showToast(tt("cv.importEmptyToast", "Pega texto antes de importar."), "info");
+      return;
+    }
+    const sug = suggestManualAssignmentsFromPaste(v);
+    manualImportAssignments = mergeSuggestedAssignments(v, manualImportAssignments, sug);
+    importManualTextSnapshot = v;
+    refreshManualImportUi();
+    if (showInfoToast) {
+      showToast(
+        tt("cv.importManualSuggestMergedToast", "Sugerencias añadidas sin pisar lo que ya mapeaste."),
+        "success",
+      );
+    }
+  };
+
+  const resetManualImportState = () => {
+    manualImportAssignments = [];
+    importManualTextSnapshot = importPaste?.value ?? "";
+    hideManualImportPopover();
+    refreshManualImportUi();
+  };
+
+  const prepareCvImportModalManual = () => {
+    rebuildManualImportTargetSelect();
+    renderManualImportPopoverShortcuts();
+    const raw = (importPaste?.value ?? "").trim();
+    if (raw && manualImportAssignments.length === 0) {
+      const sug = suggestManualAssignmentsFromPaste(importPaste!.value);
+      if (sug.length > 0) {
+        manualImportAssignments = mergeSuggestedAssignments(importPaste!.value, [], sug);
+        importManualTextSnapshot = importPaste!.value;
+        showToast(
+          tt("cv.importManualSuggestAutoToast", "Autodetección aplicada; revisa los colores y ajusta."),
+          "info",
+        );
+      }
+    }
+    refreshManualImportUi();
+  };
+
   const applyProfileToInputs = () => {
     if (fullNameInput) fullNameInput.value = displayName;
     if (publicBioInput) publicBioInput.value = bio;
     if (headlineInput) headlineInput.value = (cvProfile.headline ?? "").toString();
     if (locationInput) locationInput.value = (cvProfile.location ?? "").toString();
     if (emailInput) emailInput.value = (cvProfile.email ?? "").toString();
+    if (phoneMobileInput) phoneMobileInput.value = (cvProfile.phoneMobile ?? "").toString();
+    if (phoneLandlineInput) phoneLandlineInput.value = (cvProfile.phoneLandline ?? "").toString();
     if (summaryInput) summaryInput.value = (cvProfile.summary ?? "").toString();
     if (showHelpStackCb) showHelpStackCb.checked = Boolean(cvProfile.showHelpStack ?? true);
     if (highlightsInput) highlightsInput.value = (cvProfile.highlights ?? "").toString();
@@ -502,8 +1234,378 @@ async function boot() {
     });
   };
 
-  const persistProfile = () => {
-    prefs = updatePrefs({ cvProfile } as any);
+  const downloadCvJsonFile = () => {
+    const payload = {
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      cvDocuments: JSON.parse(JSON.stringify(cvDocuments)) as CvDocumentSlotV1[],
+      cvActiveDocumentId,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `skillatlas-cv-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast(tt("cv.backupDownloadedToast", "Respaldo descargado."), "success");
+  };
+
+  let pendingImportMode: "apply" | "both" | "exp" | "edu" | "manual" | null = null;
+
+  const hideImportConfirmModal = () => {
+    if (!importConfirmModal) return;
+    importConfirmModal.classList.add("hidden");
+    importConfirmModal.classList.remove("flex");
+    const previewOpen = previewModal && !previewModal.classList.contains("hidden");
+    const importOpen = importModal && !importModal.classList.contains("hidden");
+    if (!previewOpen && !importOpen) document.body.style.overflow = "";
+  };
+
+  const openImportConfirmModal = (mode: "apply" | "both" | "exp" | "edu" | "manual") => {
+    pendingImportMode = mode;
+    importConfirmModal?.classList.remove("hidden");
+    importConfirmModal?.classList.add("flex");
+    document.body.style.overflow = "hidden";
+  };
+
+  const openCvImportModal = () => {
+    if (!importModal) return;
+    manualImportPointerSelecting = false;
+    suppressCvImportModalBackdropClose = false;
+    importModal.classList.remove("hidden");
+    importModal.classList.add("flex");
+    if (previewModal?.classList.contains("hidden")) document.body.style.overflow = "hidden";
+    if (importManualPopoverFollowDragCb) {
+      importManualPopoverFollowDragCb.checked =
+        typeof localStorage !== "undefined" && localStorage.getItem(CV_IMPORT_POPOVER_FOLLOW_DRAG_LS) === "1";
+    }
+    resetManualImportState();
+    prepareCvImportModalManual();
+    queueMicrotask(() => importManualSurface?.focus());
+  };
+
+  const closeCvImportModal = () => {
+    if (!importModal) return;
+    manualImportPointerSelecting = false;
+    suppressCvImportModalBackdropClose = false;
+    hideManualImportPopover();
+    importModal.classList.add("hidden");
+    importModal.classList.remove("flex");
+    pendingImportMode = null;
+    hideImportConfirmModal();
+    const previewOpen = previewModal && !previewModal.classList.contains("hidden");
+    if (!previewOpen) document.body.style.overflow = "";
+  };
+
+  const importParseFailedMessage = () =>
+    `${tt("cv.importParseFailedToast", "No se detectaron bloques válidos.")} ${tt(
+      "cv.importParseFailedHints",
+      "Separa cada puesto o titulación con una línea en blanco; incluye cabeceras «Experiencia» / «Educación» si puedes. Si el PDF viene de escaneo, copia el texto desde el visor o prueba «Solo experiencia» / «Solo educación».",
+    )}`;
+
+  const resolveCvImportSources = (normalized: string, split: ReturnType<typeof splitCvPasteBySections>) => {
+    const expText = split.sawExperienceHeader ? (split.experience.trim() || normalized) : normalized;
+    const eduText = split.sawEducationHeader ? (split.education.trim() || normalized) : normalized;
+    const filterExpNoise = !split.sawExperienceHeader || !split.experience.trim();
+    return { expText, eduText, filterExpNoise };
+  };
+
+  const executeCvManualImportAfterConfirm = () => {
+    const raw = importPaste?.value?.trim() ?? "";
+    if (!raw) {
+      showToast(tt("cv.importEmptyToast", "Pega texto antes de importar."), "info");
+      return;
+    }
+    if (manualImportAssignments.length === 0) {
+      showToast(
+        tt("cv.importManualNoAssignmentsToast", "Marca al menos un fragmento y asígnalo a un campo."),
+        "info",
+      );
+      return;
+    }
+    const r = applyCvManualImport(raw, manualImportAssignments, cvProfile, {
+      displayNameLower: displayName.trim().toLowerCase(),
+    });
+    let nextProf = r.profile;
+    if (r.summaryPendingReplace) {
+      if (
+        window.confirm(
+          tt(
+            "cv.importReplaceSummaryConfirm",
+            "¿Sustituir el resumen del CV por el texto detectado en el documento importado?",
+          ),
+        )
+      ) {
+        nextProf = { ...nextProf, summary: r.summaryPendingReplace };
+      }
+    }
+    cvProfile = nextProf;
+    if (r.errors.length > 0) {
+      showToast(
+        tt("cv.importManualPartialErrorsToast", "Algunas asignaciones tenían un índice inválido y se omitieron."),
+        "warning",
+      );
+    }
+    persistCvState();
+    applyProfileToInputs();
+    renderExperienceEditor();
+    renderEducationEditor();
+    renderCertificationEditor();
+    renderLanguageEditor();
+    renderDocument();
+    const filled = r.filled.length > 0 ? ` (${r.filled.join(", ")})` : "";
+    showToast(tt("cv.importManualToast", "Mapeo manual aplicado.") + filled, "success");
+    closeCvImportModal();
+    resetManualImportState();
+  };
+
+  const runCvImportMode = (mode: "apply" | "both" | "exp" | "edu") => {
+    const raw = importPaste?.value?.trim() ?? "";
+    if (!raw) {
+      showToast(tt("cv.importEmptyToast", "Pega texto antes de importar."), "info");
+      return;
+    }
+    const norm = normalizeCvPasteForHeuristics(preprocessCvPasteForImport(raw));
+    const sectionSplit = mergeLanguagesSplitFromCertificationsSection(splitCvPasteBySections(norm));
+    let expAdded = 0;
+    let eduAdded = 0;
+    let dupSkipped = 0;
+    const hintLabels: string[] = [];
+
+    if (mode === "exp") {
+      const { expText, filterExpNoise } = resolveCvImportSources(norm, sectionSplit);
+      let rows = parseExperienceBlocksFromPaste(expText);
+      if (filterExpNoise) rows = filterFalsePositiveExperienceRows(rows);
+      if (rows.length === 0) {
+        showToast(importParseFailedMessage(), "error");
+        return;
+      }
+      const exp = [...(Array.isArray(cvProfile.experiences) ? cvProfile.experiences : [])];
+      let added = 0;
+      for (const r of rows) {
+        if (isDuplicateExperience(exp, r)) {
+          dupSkipped++;
+          continue;
+        }
+        exp.push({ ...r });
+        added++;
+      }
+      if (added === 0) {
+        showToast(tt("cv.importAllDuplicatesToast", "Nada nuevo: esas entradas ya estaban en experiencia."), "info");
+        return;
+      }
+      cvProfile = { ...cvProfile, experiences: exp };
+      expAdded = added;
+    } else if (mode === "edu") {
+      const { eduText } = resolveCvImportSources(norm, sectionSplit);
+      const rows = parseEducationBlocksFromPaste(eduText);
+      if (rows.length === 0) {
+        showToast(importParseFailedMessage(), "error");
+        return;
+      }
+      const edu = [...(Array.isArray(cvProfile.education) ? cvProfile.education : [])];
+      let added = 0;
+      for (const r of rows) {
+        if (isDuplicateEducation(edu, r)) {
+          dupSkipped++;
+          continue;
+        }
+        edu.push({ ...r });
+        added++;
+      }
+      if (added === 0) {
+        showToast(tt("cv.importAllDuplicatesToast", "Nada nuevo: esas entradas ya estaban en educación."), "info");
+        return;
+      }
+      cvProfile = { ...cvProfile, education: edu };
+      eduAdded = added;
+    } else {
+      const { expText, eduText, filterExpNoise } = resolveCvImportSources(norm, sectionSplit);
+      let expRows = parseExperienceBlocksFromPaste(expText);
+      if (filterExpNoise) expRows = filterFalsePositiveExperienceRows(expRows);
+      const eduRows = parseEducationBlocksFromPaste(eduText);
+      const exp = [...(Array.isArray(cvProfile.experiences) ? cvProfile.experiences : [])];
+      const edu = [...(Array.isArray(cvProfile.education) ? cvProfile.education : [])];
+      for (const r of expRows) {
+        if (isDuplicateExperience(exp, r)) {
+          dupSkipped++;
+          continue;
+        }
+        exp.push({ ...r });
+        expAdded++;
+      }
+      for (const r of eduRows) {
+        if (isDuplicateEducation(edu, r)) {
+          dupSkipped++;
+          continue;
+        }
+        edu.push({ ...r });
+        eduAdded++;
+      }
+      cvProfile = { ...cvProfile, experiences: exp, education: edu };
+
+      if (mode === "apply" || mode === "both") {
+        const urlSlots = extractUrlsForCvSlots(raw);
+        const curSlots = getCvLinkSlots();
+        const nextSlots = [...curSlots];
+        let linksFilled = 0;
+        for (let i = 0; i < CV_LINK_SLOT_COUNT; i++) {
+          if (!nextSlots[i]?.trim() && urlSlots[i]?.trim()) {
+            nextSlots[i] = urlSlots[i]!.trim();
+            linksFilled++;
+          }
+        }
+        if (linksFilled > 0) {
+          cvProfile = { ...cvProfile, cvLinkSlots: nextSlots };
+          hintLabels.push(tt("cv.importHintLinks", "Enlaces"));
+        }
+
+        if (sectionSplit.sawCertificationsHeader && sectionSplit.certifications.trim()) {
+          const certs = parseCertificationsFromPaste(sectionSplit.certifications.trim());
+          if (certs.length > 0) {
+            const arr = [...(Array.isArray(cvProfile.certifications) ? cvProfile.certifications : [])];
+            const n0 = arr.length;
+            for (const c of certs) {
+              if (isDuplicateCert(arr, c)) {
+                dupSkipped++;
+                continue;
+              }
+              arr.push({ ...c });
+            }
+            if (arr.length > n0) {
+              cvProfile = { ...cvProfile, certifications: arr };
+              hintLabels.push(tt("cv.importHintCerts", "Certificaciones"));
+            }
+          }
+        }
+
+        if (sectionSplit.sawLanguagesHeader && sectionSplit.languages.trim()) {
+          const langs = parseLanguagesFromPaste(sectionSplit.languages.trim());
+          if (langs.length > 0) {
+            const arr = [...(Array.isArray(cvProfile.languages) ? cvProfile.languages : [])];
+            const n0 = arr.length;
+            for (const l of langs) {
+              if (isDuplicateLang(arr, l)) {
+                dupSkipped++;
+                continue;
+              }
+              arr.push({ ...l });
+            }
+            if (arr.length > n0) {
+              cvProfile = { ...cvProfile, languages: arr };
+              hintLabels.push(tt("cv.importHintLanguages", "Idiomas"));
+            }
+          }
+        }
+      }
+
+      if (mode === "apply") {
+        const hints = extractLooseCvHeaderFields(norm);
+        if (hints.email && !(cvProfile.email ?? "").trim()) {
+          cvProfile = { ...cvProfile, email: hints.email };
+          hintLabels.push(tt("cv.importHintEmail", "Email"));
+        }
+        if (hints.headline && !(cvProfile.headline ?? "").trim()) {
+          const hn = hints.headline.trim().toLowerCase();
+          const dn = displayName.trim().toLowerCase();
+          if (hn !== dn) {
+            cvProfile = { ...cvProfile, headline: hints.headline };
+            hintLabels.push(tt("cv.importHintHeadline", "Titular"));
+          }
+        }
+        if (hints.summary) {
+          const curSum = (cvProfile.summary ?? "").trim();
+          const nextSum = hints.summary.trim();
+          const dn = displayName.trim().toLowerCase();
+          if (nextSum.toLowerCase() !== dn) {
+            if (!curSum) {
+              cvProfile = { ...cvProfile, summary: hints.summary };
+              hintLabels.push(tt("cv.importHintSummary", "Resumen"));
+            } else if (
+              window.confirm(
+                tt(
+                  "cv.importReplaceSummaryConfirm",
+                  "¿Sustituir el resumen del CV por el texto detectado en el documento importado?",
+                ),
+              )
+            ) {
+              cvProfile = { ...cvProfile, summary: hints.summary };
+              hintLabels.push(tt("cv.importHintSummary", "Resumen"));
+            }
+          }
+        }
+        if (hints.phoneMobile && !(cvProfile.phoneMobile ?? "").trim()) {
+          cvProfile = { ...cvProfile, phoneMobile: hints.phoneMobile };
+          hintLabels.push(tt("cv.importHintPhone", "Teléfono"));
+        }
+      }
+
+      if (mode === "both") {
+        if (expRows.length === 0 && eduRows.length === 0) {
+          showToast(importParseFailedMessage(), "error");
+          return;
+        }
+        if (expAdded === 0 && eduAdded === 0) {
+          showToast(
+            dupSkipped > 0
+              ? tt("cv.importAllDuplicatesToast", "Nada nuevo: esas entradas ya estaban en el formulario.")
+              : importParseFailedMessage(),
+            dupSkipped > 0 ? "info" : "error",
+          );
+          return;
+        }
+      }
+
+      if (mode === "apply") {
+        if (expAdded === 0 && eduAdded === 0 && hintLabels.length === 0) {
+          if (dupSkipped > 0) {
+            showToast(tt("cv.importAllDuplicatesToast", "Nada nuevo que fusionar con lo detectado en el texto."), "info");
+            return;
+          }
+          showToast(importParseFailedMessage(), "error");
+          return;
+        }
+      }
+    }
+
+    const dupSuffixFinal =
+      dupSkipped > 0
+        ? " " + tt("cv.importDedupeSuffix", "({{n}} entradas ya existían y no se duplicaron).").replace("{{n}}", String(dupSkipped))
+        : "";
+
+    persistCvState();
+    applyProfileToInputs();
+    renderExperienceEditor();
+    renderEducationEditor();
+    renderCertificationEditor();
+    renderLanguageEditor();
+    renderDocument();
+
+    if (mode === "exp") {
+      showToast(tt("cv.importToastExperience", "Bloques añadidos a experiencia.") + dupSuffixFinal, "success");
+    } else if (mode === "edu") {
+      showToast(tt("cv.importToastEducation", "Bloques añadidos a educación.") + dupSuffixFinal, "success");
+    } else if (mode === "both") {
+      showToast(
+        tt("cv.importBothToast", "Añadidos {{exp}} bloque(s) de experiencia y {{edu}} de educación.")
+          .replace("{{exp}}", String(expAdded))
+          .replace("{{edu}}", String(eduAdded)) + dupSuffixFinal,
+        "success",
+      );
+    } else {
+      const base = tt("cv.importApplyToast", "Importación aplicada: {{exp}} experiencia, {{edu}} educación.")
+        .replace("{{exp}}", String(expAdded))
+        .replace("{{edu}}", String(eduAdded));
+      const extra =
+        hintLabels.length > 0
+          ? " " + tt("cv.importApplyHintsExtra", "Campos vacíos rellenados: {{list}}.").replace("{{list}}", hintLabels.join(", "))
+          : "";
+      showToast(base + extra + dupSuffixFinal, "success");
+    }
+    closeCvImportModal();
   };
 
   const saveBaseProfile = async (patch: { display_name?: string; bio?: string; avatar_url?: string | null }) => {
@@ -743,38 +1845,13 @@ async function boot() {
     title.textContent = d || s || tt("cv.newEducation", "Nueva educación");
   };
 
-  const applySelectionFromPrefs = () => {
-    const raw = prefs.cvProjectSlugs;
-    selectedSlugs.clear();
-    if (raw === undefined) {
-      selectedOrder = [...defaultOrder];
-      for (const s of selectedOrder) selectedSlugs.add(s);
-      return;
-    }
-    const allowed = new Set(defaultOrder);
-    selectedOrder = raw.filter((s) => allowed.has(s));
-    for (const s of selectedOrder) selectedSlugs.add(s);
-  };
-
-  applySelectionFromPrefs();
-
-  const persistSelection = () => {
-    // Keep order consistent with selection
-    selectedOrder = selectedOrder.filter((s) => selectedSlugs.has(s));
-    for (const s of selectedSlugs) if (!selectedOrder.includes(s)) selectedOrder.push(s);
-
-    const allSelected = selectedOrder.length === defaultOrder.length;
-    const isDefaultOrder =
-      allSelected && selectedOrder.every((s, i) => s === defaultOrder[i]);
-
-    prefs = updatePrefs({ cvProjectSlugs: isDefaultOrder ? undefined : selectedOrder });
-  };
-
   const renderDocument = () => {
     docName.textContent = displayName;
     const headline = (cvProfile.headline ?? "").trim();
     const location = (cvProfile.location ?? "").trim();
     const email = normalizeEmail((cvProfile.email ?? "").trim());
+    const phoneMobile = (cvProfile.phoneMobile ?? "").trim();
+    const phoneLandline = (cvProfile.phoneLandline ?? "").trim();
     const summary = (cvProfile.summary ?? "").trim();
     const showHelp = cvProfile.showHelpStack ?? true;
     const vis = cvProfile.cvSectionVisibility ?? {};
@@ -821,6 +1898,12 @@ async function boot() {
       if (email && isProbablyEmail(email)) {
         chips.push(`<a class="no-underline hover:underline" href="mailto:${esc(email)}">${esc(email)}</a>`);
       }
+      if (phoneMobile) {
+        chips.push(`<a class="no-underline hover:underline" href="${esc(cvTelHref(phoneMobile))}">${esc(phoneMobile)}</a>`);
+      }
+      if (phoneLandline) {
+        chips.push(`<a class="no-underline hover:underline" href="${esc(cvTelHref(phoneLandline))}">${esc(phoneLandline)}</a>`);
+      }
       const slots = getCvLinkSlots();
       const mode = (cvProfile.socialLinkDisplay ?? "both") as CvSocialLinkDisplay;
       chips.push(...buildCvSocialChipsHtml({ slots, slotLabels: slotLabels(), display: mode, esc }));
@@ -856,39 +1939,57 @@ async function boot() {
 
     const bySlug = new Map(projects.map((p) => [p.slug, p]));
     const chosen = selectedOrder.map((s) => bySlug.get(s)).filter(Boolean) as ProjectRow[];
-    if (docProjectsSection) {
-      docProjectsSection.classList.toggle("hidden", chosen.length === 0 || !showBlock("projects"));
-    }
-    if (chosen.length === 0) {
-      docProjects.innerHTML = `<p class="m-0 text-sm text-gray-500 dark:text-gray-400">${esc(tt("cv.noProjectsSelected", "No hay proyectos seleccionados."))}</p>`;
-    } else {
-      docProjects.innerHTML = chosen
-        .map((p) => {
-          const pid = projectIdBySlug.get(p.slug);
-          const techLabels = pid ? (techsByProject.get(pid) ?? []).sort((a, b) => a.localeCompare(b, "es")) : [];
-          const techHtml =
-            techLabels.length > 0
-              ? `<p class="m-0 mt-2 flex flex-wrap gap-1.5">${techLabels
-                  .map(
-                    (n) =>
-                      `<span class="text-[11px] px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">${esc(n)}</span>`,
-                  )
-                  .join("")}</p>`
-              : "";
-          const role = (p.role ?? "").trim();
-          const outcome = (p.outcome ?? "").trim();
-          const meta =
-            role || outcome
-              ? `<p class="m-0 mt-2 text-sm text-gray-600 dark:text-gray-400"><span class="font-semibold text-gray-800 dark:text-gray-200">${esc(role || "—")}</span>${role && outcome ? " · " : ""}${esc(outcome)}</p>`
-              : "";
-          return `<section class="cv-doc-project">
+    const featSlug = (cvProfile.cvFeaturedProjectSlug ?? "").trim();
+    const featured = featSlug ? chosen.find((p) => p.slug === featSlug) : undefined;
+    const others = featured ? chosen.filter((p) => p.slug !== featSlug) : chosen;
+
+    const projectFullHtml = (p: ProjectRow) => {
+      const pid = projectIdBySlug.get(p.slug);
+      const techLabels = pid ? (techsByProject.get(pid) ?? []).sort((a, b) => a.localeCompare(b, "es")) : [];
+      const techHtml =
+        techLabels.length > 0
+          ? `<p class="m-0 mt-2 flex flex-wrap gap-1.5">${techLabels
+              .map(
+                (n) =>
+                  `<span class="text-[11px] px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">${esc(n)}</span>`,
+              )
+              .join("")}</p>`
+          : "";
+      const role = (p.role ?? "").trim();
+      const outcome = (p.outcome ?? "").trim();
+      const meta =
+        role || outcome
+          ? `<p class="m-0 mt-2 text-sm text-gray-600 dark:text-gray-400"><span class="font-semibold text-gray-800 dark:text-gray-200">${esc(role || "—")}</span>${role && outcome ? " · " : ""}${esc(outcome)}</p>`
+          : "";
+      return `<section class="cv-doc-project">
             <h4 class="m-0 text-lg font-semibold text-gray-900 dark:text-gray-100">${esc(p.title)}</h4>
             ${meta}
             ${(p.description ?? "").trim() ? `<p class="m-0 mt-2 text-sm leading-relaxed text-gray-700 dark:text-gray-300">${esc((p.description ?? "").trim())}</p>` : ""}
             ${techHtml}
           </section>`;
-        })
-        .join("");
+    };
+
+    const projectCompactLi = (p: ProjectRow) => {
+      const role = (p.role ?? "").trim();
+      const one = role ? ` — ${esc(role)}` : "";
+      return `<li class="text-sm text-gray-800 dark:text-gray-200"><span class="font-semibold">${esc(p.title)}</span>${one}</li>`;
+    };
+
+    if (docProjectsSection) {
+      docProjectsSection.classList.toggle("hidden", chosen.length === 0 || !showBlock("projects"));
+    }
+    if (chosen.length === 0) {
+      docProjects.innerHTML = `<p class="m-0 text-sm text-gray-500 dark:text-gray-400">${esc(tt("cv.noProjectsSelected", "No hay proyectos seleccionados."))}</p>`;
+    } else if (featured) {
+      const restUl =
+        others.length > 0
+          ? `<p class="m-0 mt-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">${esc(
+              tt("cv.projectsMoreLabel", "También"),
+            )}</p><ul class="m-0 mt-1 space-y-0.5 pl-5 list-disc text-gray-700 dark:text-gray-300">${others.map(projectCompactLi).join("")}</ul>`
+          : "";
+      docProjects.innerHTML = `${projectFullHtml(featured)}${restUl}`;
+    } else {
+      docProjects.innerHTML = `<ul class="m-0 space-y-0.5 pl-5 list-disc text-gray-700 dark:text-gray-300">${chosen.map(projectCompactLi).join("")}</ul>`;
     }
 
     // Highlights (experience / achievements)
@@ -1098,7 +2199,7 @@ async function boot() {
       cur.splice(fromIdx, 1);
       cur.splice(toIdx, 0, from);
       cvProfile = { ...cvProfile, cvDocumentSectionOrder: cur };
-      persistProfile();
+      persistCvState();
       renderDocument();
       refreshPreviewSectionRail();
     });
@@ -1106,24 +2207,38 @@ async function boot() {
 
   const renderList = () => {
     const bySlug = new Map(projects.map((p) => [p.slug, p]));
-    const visibleOrder =
-      selectedOrder.length > 0 ? selectedOrder : defaultOrder.filter((s) => selectedSlugs.has(s));
+    displayOrder = buildCvDisplayOrder(displayOrder, defaultOrder);
+    const visibleOrder = displayOrder.filter((slug) => bySlug.has(slug));
+    let feat = (cvProfile.cvFeaturedProjectSlug ?? "").trim();
+    if (feat && !selectedSlugs.has(feat)) {
+      cvProfile = { ...cvProfile, cvFeaturedProjectSlug: undefined };
+      feat = "";
+      persistCvState();
+    }
 
+    const featLabel = tt("cv.featuredShort", "Destacado");
     listEl.innerHTML = visibleOrder
       .map((slug) => {
         const p = bySlug.get(slug);
         if (!p) return "";
         const on = selectedSlugs.has(p.slug);
+        const isFeat = feat === p.slug;
+        const radDis = on ? "" : "disabled";
+        const radCheck = isFeat && on ? "checked" : "";
         return `<li data-cv-row="${esc(p.slug)}" draggable="true"
-          class="flex items-start gap-3 rounded-lg border border-gray-200/70 dark:border-gray-800/80 bg-white/50 dark:bg-gray-950/40 px-3 py-2">
+          class="flex items-center gap-2 rounded-md border border-gray-200/70 dark:border-gray-800/80 bg-white/50 dark:bg-gray-950/40 px-2 py-1.5">
           <button type="button" aria-label="Arrastrar" title="Arrastrar"
-            class="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-grab active:cursor-grabbing select-none"
+            class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 cursor-grab active:cursor-grabbing select-none text-xs"
             data-cv-drag="${esc(p.slug)}">⋮⋮</button>
-          <input type="checkbox" class="mt-1 rounded border-gray-300 dark:border-gray-600" data-cv-pick="${esc(p.slug)}" ${on ? "checked" : ""} />
+          <input type="checkbox" class="rounded border-gray-300 dark:border-gray-600 shrink-0" data-cv-pick="${esc(p.slug)}" ${on ? "checked" : ""} />
           <div class="min-w-0 flex-1">
-            <p class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">${esc(p.title)}</p>
-            <p class="m-0 text-xs text-gray-500 dark:text-gray-400">/${esc(p.slug)}</p>
+            <p class="m-0 text-xs font-semibold text-gray-900 dark:text-gray-100 leading-snug">${esc(p.title)}</p>
+            <p class="m-0 text-[10px] text-gray-500 dark:text-gray-400 truncate">/${esc(p.slug)}</p>
           </div>
+          <label class="shrink-0 flex items-center gap-1 text-[10px] font-medium text-amber-800 dark:text-amber-200 ${on ? "" : "opacity-40 pointer-events-none"}">
+            <input type="radio" name="cv-proj-featured" class="accent-amber-600" data-cv-featured-pick="${esc(p.slug)}" ${radCheck} ${radDis} />
+            <span>${esc(featLabel)}</span>
+          </label>
         </li>`;
       })
       .join("");
@@ -1133,14 +2248,32 @@ async function boot() {
         const slug = inp.dataset.cvPick ?? "";
         if (!slug) return;
         if (inp.checked) selectedSlugs.add(slug);
-        else selectedSlugs.delete(slug);
+        else {
+          selectedSlugs.delete(slug);
+          if ((cvProfile.cvFeaturedProjectSlug ?? "").trim() === slug) {
+            cvProfile = { ...cvProfile, cvFeaturedProjectSlug: undefined };
+            persistCvState();
+          }
+        }
         persistSelection();
         renderList();
         renderDocument();
       });
     });
 
-    // Drag & drop reorder (selected list)
+    listEl.querySelectorAll<HTMLInputElement>("input[data-cv-featured-pick]").forEach((rad) => {
+      rad.addEventListener("change", () => {
+        if (!rad.checked) return;
+        const slug = rad.dataset.cvFeaturedPick ?? "";
+        if (!slug || !selectedSlugs.has(slug)) return;
+        cvProfile = { ...cvProfile, cvFeaturedProjectSlug: slug };
+        persistCvState();
+        renderList();
+        renderDocument();
+      });
+    });
+
+    // Drag & drop reorder (lista completa del editor)
     listEl.querySelectorAll<HTMLElement>("li[data-cv-row]").forEach((row) => {
       row.addEventListener("dragstart", (e) => {
         const slug = row.getAttribute("data-cv-row") ?? "";
@@ -1163,20 +2296,234 @@ async function boot() {
         const from = e.dataTransfer?.getData("text/plain") ?? "";
         const to = row.getAttribute("data-cv-row") ?? "";
         if (!from || !to || from === to) return;
-        const cur = [...selectedOrder];
+        const cur = [...displayOrder];
         const fromIdx = cur.indexOf(from);
         const toIdx = cur.indexOf(to);
         if (fromIdx < 0 || toIdx < 0) return;
         cur.splice(fromIdx, 1);
         cur.splice(toIdx, 0, from);
-        selectedOrder = cur;
-        persistSelection();
+        displayOrder = cur;
+        persistCvState();
         renderList();
         renderDocument();
       });
     });
     editorEl?.classList.remove("hidden");
   };
+
+  const parseCvDocTags = (raw: string): string[] =>
+    raw
+      .split(/[,;]+/)
+      .map((s) => s.trim().slice(0, 24))
+      .filter(Boolean)
+      .filter((t, i, arr) => arr.indexOf(t) === i)
+      .slice(0, 8);
+
+  function emptyCvProfileForNewDocument(): CvProfile {
+    return {
+      headline: "",
+      location: "",
+      email: "",
+      phoneMobile: "",
+      phoneLandline: "",
+      summary: "",
+      highlights: "",
+      experiences: [],
+      education: [],
+      certifications: [],
+      languages: [],
+      cvDocumentSectionOrder: undefined,
+      cvFeaturedProjectSlug: undefined,
+      cvLinkSlots: Array.from({ length: CV_LINK_SLOT_COUNT }, () => ""),
+      links: [],
+      showHelpStack: true,
+      showPhoto: true,
+      socialLinkDisplay: "both",
+      cvTemplate: "classic",
+      cvSectionVisibility: {},
+      cvPrintMaxPages: 3,
+      photoSource: avatarSignedUrl ? "uploaded" : linkedinAvatar ? "linkedin" : "provider",
+    };
+  }
+
+  function renderCvDocumentSelect() {
+    if (!docSelect) return;
+    docSelect.replaceChildren();
+    for (const d of cvDocuments) {
+      const opt = document.createElement("option");
+      opt.value = d.id;
+      const tagPart = d.tags.length ? ` · ${d.tags.slice(0, 3).join(", ")}` : "";
+      const mainPart = d.isMain ? ` ${tt("cv.docMainMark", "★")}` : "";
+      opt.textContent = `${d.name}${mainPart}${tagPart}`;
+      if (d.id === cvActiveDocumentId) opt.selected = true;
+      docSelect.appendChild(opt);
+    }
+    const atCap = cvDocuments.length >= CV_DOCUMENTS_MAX;
+    if (docNewBtn) docNewBtn.disabled = atCap;
+    if (docDupBtn) docDupBtn.disabled = atCap;
+  }
+
+  function fullCvRefreshAfterSwitch() {
+    rebuildManualImportTargetSelect();
+    applyProfileToInputs();
+    renderExperienceEditor();
+    renderEducationEditor();
+    renderCertificationEditor();
+    renderLanguageEditor();
+    renderList();
+    renderDocument();
+  }
+
+  function switchCvDocument(nextId: string) {
+    if (!nextId || nextId === cvActiveDocumentId) return;
+    persistCvState();
+    cvActiveDocumentId = nextId;
+    prefs = updatePrefs({ cvActiveDocumentId: nextId } as any);
+    hydrateCvProfileFromActiveSlot();
+    applySelectionFromPrefs();
+    fullCvRefreshAfterSwitch();
+    renderCvDocumentSelect();
+  }
+
+  function openCvDocNameDialog(mode: "new" | "dup") {
+    if (cvDocuments.length >= CV_DOCUMENTS_MAX) {
+      showToast(tt("cv.docLimitToast", "Máximo 5 CV."), "info");
+      return;
+    }
+    if (!docNameDialog || !docNameInput || !docNameMode) return;
+    docNameMode.value = mode;
+    const active = activeCvSlot();
+    docNameInput.value =
+      mode === "dup"
+        ? tt("cv.docDupNamePlaceholder", "Copia de {{name}}").replace("{{name}}", active.name)
+        : tt("cv.docNewNamePlaceholder", "CV {{n}}").replace("{{n}}", String(cvDocuments.length + 1));
+    docNameDialog.showModal();
+    window.setTimeout(() => docNameInput.focus(), 50);
+  }
+
+  function closeCvDocNameDialog() {
+    docNameDialog?.close();
+  }
+
+  function confirmCreateCvFromNameDialog() {
+    const mode = docNameMode?.value === "dup" ? "dup" : "new";
+    const name = (docNameInput?.value ?? "").trim().slice(0, 80);
+    if (!name) {
+      showToast(tt("cv.docNameRequired", "Escribe un nombre."), "info");
+      return;
+    }
+    persistCvState();
+    const base = activeCvSlot();
+    let slot: CvDocumentSlotV1;
+    if (mode === "dup") {
+      slot = {
+        id: newCvDocumentId(),
+        name,
+        tags: [...base.tags],
+        isMain: false,
+        cvProfile: JSON.parse(JSON.stringify(base.cvProfile)) as CvProfile,
+        cvProjectSlugs: base.cvProjectSlugs ? [...base.cvProjectSlugs] : undefined,
+        cvProjectDisplayOrder: base.cvProjectDisplayOrder ? [...base.cvProjectDisplayOrder] : undefined,
+      };
+    } else {
+      slot = {
+        id: newCvDocumentId(),
+        name,
+        tags: [],
+        isMain: false,
+        cvProfile: emptyCvProfileForNewDocument(),
+        cvProjectSlugs: undefined,
+        cvProjectDisplayOrder: undefined,
+      };
+    }
+    cvDocuments = [...cvDocuments, slot];
+    cvActiveDocumentId = slot.id;
+    prefs = updatePrefs(buildCvDocumentsPrefsPatch(cvDocuments, cvActiveDocumentId) as any);
+    hydrateCvProfileFromActiveSlot();
+    applySelectionFromPrefs();
+    closeCvDocNameDialog();
+    fullCvRefreshAfterSwitch();
+    renderCvDocumentSelect();
+    showToast(tt("cv.docCreatedToast", "CV creado."), "success");
+  }
+
+  function openCvDocManageDialog() {
+    const a = activeCvSlot();
+    if (!docManageDialog || !docManageName || !docManageTags || !docManageMain) return;
+    docManageName.value = a.name;
+    docManageTags.value = a.tags.join(", ");
+    docManageMain.checked = a.isMain;
+    if (docManageDelete) docManageDelete.classList.toggle("hidden", cvDocuments.length <= 1);
+    docManageDialog.showModal();
+  }
+
+  function closeCvDocManageDialog() {
+    docManageDialog?.close();
+  }
+
+  function saveCvDocManageDialog() {
+    const idx = cvDocuments.findIndex((d) => d.id === cvActiveDocumentId);
+    if (idx < 0) return;
+    const name = (docManageName?.value ?? "").trim().slice(0, 80);
+    if (!name) {
+      showToast(tt("cv.docNameRequired", "Escribe un nombre."), "info");
+      return;
+    }
+    const tags = parseCvDocTags(docManageTags?.value ?? "");
+    const wantMain = Boolean(docManageMain?.checked);
+    let next = cvDocuments.map((d) => ({ ...d }));
+    next[idx] = { ...next[idx]!, name, tags };
+    if (wantMain) {
+      next = next.map((d) => ({ ...d, isMain: d.id === cvActiveDocumentId }));
+    } else {
+      next[idx] = { ...next[idx]!, isMain: false };
+      if (!next.some((d) => d.isMain)) {
+        const j = next.findIndex((d) => d.id !== cvActiveDocumentId);
+        const k = j >= 0 ? j : 0;
+        next[k] = { ...next[k]!, isMain: true };
+      }
+    }
+    cvDocuments = next;
+    prefs = updatePrefs(buildCvDocumentsPrefsPatch(cvDocuments, cvActiveDocumentId) as any);
+    closeCvDocManageDialog();
+    renderCvDocumentSelect();
+    showToast(tt("cv.docUpdatedToast", "Cambios guardados."), "success");
+  }
+
+  function deleteActiveCvDocument() {
+    if (cvDocuments.length <= 1) {
+      showToast(tt("cv.docDeleteOnly", "No puedes eliminar el único CV."), "info");
+      return;
+    }
+    if (!window.confirm(tt("cv.docDeleteConfirm", "¿Eliminar este CV? No se puede deshacer."))) return;
+    const id = cvActiveDocumentId;
+    let next = cvDocuments.filter((d) => d.id !== id);
+    if (!next.some((d) => d.isMain)) next[0] = { ...next[0]!, isMain: true };
+    cvDocuments = next;
+    cvActiveDocumentId = next[0]!.id;
+    prefs = updatePrefs(buildCvDocumentsPrefsPatch(cvDocuments, cvActiveDocumentId) as any);
+    hydrateCvProfileFromActiveSlot();
+    applySelectionFromPrefs();
+    closeCvDocManageDialog();
+    fullCvRefreshAfterSwitch();
+    renderCvDocumentSelect();
+    showToast(tt("cv.docDeletedToast", "CV eliminado."), "success");
+  }
+
+  docSelect?.addEventListener("change", () => {
+    const id = docSelect.value;
+    if (id) switchCvDocument(id);
+  });
+  docNewBtn?.addEventListener("click", () => openCvDocNameDialog("new"));
+  docDupBtn?.addEventListener("click", () => openCvDocNameDialog("dup"));
+  docManageBtn?.addEventListener("click", () => openCvDocManageDialog());
+  docNameCancel?.addEventListener("click", () => closeCvDocNameDialog());
+  docNameSave?.addEventListener("click", () => confirmCreateCvFromNameDialog());
+  docNameDialog?.addEventListener("cancel", () => closeCvDocNameDialog());
+  docManageCancel?.addEventListener("click", () => closeCvDocManageDialog());
+  docManageSave?.addEventListener("click", () => saveCvDocManageDialog());
+  docManageDelete?.addEventListener("click", () => deleteActiveCvDocument());
+  docManageDialog?.addEventListener("cancel", () => closeCvDocManageDialog());
 
   bindPreviewSectionRail();
   renderList();
@@ -1186,13 +2533,14 @@ async function boot() {
   renderCertificationEditor();
   renderLanguageEditor();
   renderDocument();
+  renderCvDocumentSelect();
 
   const bindProfileInput = () => {
     let t: number | null = null;
     const schedule = () => {
       if (t) window.clearTimeout(t);
       t = window.setTimeout(() => {
-        persistProfile();
+        persistCvState();
         renderDocument();
       }, 200);
     };
@@ -1207,6 +2555,14 @@ async function boot() {
     });
     emailInput?.addEventListener("input", () => {
       cvProfile = { ...cvProfile, email: emailInput.value.trim() };
+      schedule();
+    });
+    phoneMobileInput?.addEventListener("input", () => {
+      cvProfile = { ...cvProfile, phoneMobile: phoneMobileInput.value.trim() };
+      schedule();
+    });
+    phoneLandlineInput?.addEventListener("input", () => {
+      cvProfile = { ...cvProfile, phoneLandline: phoneLandlineInput.value.trim() };
       schedule();
     });
     summaryInput?.addEventListener("input", () => {
@@ -1441,58 +2797,195 @@ async function boot() {
         : "classic";
     cvProfile = { ...cvProfile, cvTemplate: v as any };
     if (templateSelect) templateSelect.value = v;
-    persistProfile();
+    persistCvState();
     renderDocument();
+    if (previewAtsPanel && !previewAtsPanel.classList.contains("hidden")) renderAtsCheckPanel();
   });
 
-  importExpBtn?.addEventListener("click", () => {
-    const raw = importPaste?.value?.trim() ?? "";
-    if (!raw) {
-      showToast(tt("cv.importEmptyToast", "Pega texto antes de importar."), "info");
-      return;
-    }
-    const rows = parseExperienceBlocksFromPaste(raw);
-    if (rows.length === 0) {
-      showToast(tt("cv.importParseFailedToast", "No se detectaron bloques válidos."), "error");
-      return;
-    }
-    const exp = [...(Array.isArray(cvProfile.experiences) ? cvProfile.experiences : [])];
-    for (const r of rows) exp.push({ ...r });
-    cvProfile = { ...cvProfile, experiences: exp };
-    persistProfile();
-    renderExperienceEditor();
-    renderDocument();
-    showToast(tt("cv.importToastExperience", "Bloques añadidos a experiencia."), "success");
+  importOpenBtn?.addEventListener("click", () => openCvImportModal());
+  importModalClose?.addEventListener("click", () => closeCvImportModal());
+  importModalPanel?.addEventListener(
+    "pointerdown",
+    () => {
+      suppressCvImportModalBackdropClose = true;
+    },
+    true,
+  );
+  importManualPopover?.addEventListener(
+    "pointerdown",
+    () => {
+      suppressCvImportModalBackdropClose = true;
+    },
+    true,
+  );
+  importModal?.addEventListener("pointerdown", (e) => {
+    if (e.target === importModal) suppressCvImportModalBackdropClose = false;
   });
-
-  importEduBtn?.addEventListener("click", () => {
-    const raw = importPaste?.value?.trim() ?? "";
-    if (!raw) {
-      showToast(tt("cv.importEmptyToast", "Pega texto antes de importar."), "info");
+  importModal?.addEventListener("click", (e) => {
+    if (e.target !== importModal) return;
+    if (suppressCvImportModalBackdropClose) {
+      suppressCvImportModalBackdropClose = false;
       return;
     }
-    const rows = parseEducationBlocksFromPaste(raw);
-    if (rows.length === 0) {
-      showToast(tt("cv.importParseFailedToast", "No se detectaron bloques válidos."), "error");
-      return;
-    }
-    const edu = [...(Array.isArray(cvProfile.education) ? cvProfile.education : [])];
-    for (const r of rows) edu.push({ ...r });
-    cvProfile = { ...cvProfile, education: edu };
-    persistProfile();
-    renderEducationEditor();
-    renderDocument();
-    showToast(tt("cv.importToastEducation", "Bloques añadidos a educación."), "success");
+    closeCvImportModal();
   });
+  importModalPanel?.addEventListener("click", (e) => e.stopPropagation());
 
-  importPdfOpen?.addEventListener("click", () => importPdfInput?.click());
-  importPdfInput?.addEventListener("change", async () => {
-    const file = importPdfInput.files?.[0];
-    importPdfInput.value = "";
-    if (!file) return;
+  const onImportPasteValueMaybeChanged = () => {
+    if (manualImportAssignments.length === 0) {
+      importManualTextSnapshot = importPaste?.value ?? "";
+      return;
+    }
+    if ((importPaste?.value ?? "") !== importManualTextSnapshot) {
+      manualImportAssignments = [];
+      refreshManualImportUi();
+      importManualTextSnapshot = importPaste?.value ?? "";
+      showToast(
+        tt("cv.importManualTextChangedToast", "El texto cambió; se borraron las asignaciones manuales."),
+        "info",
+      );
+    }
+  };
+  importPaste?.addEventListener("input", onImportPasteValueMaybeChanged);
+  importManualSurface?.addEventListener("paste", (e) => {
+    e.preventDefault();
+    const text = e.clipboardData?.getData("text/plain") ?? "";
+    if (!importPaste || !text) return;
+    importPaste.value = (importPaste.value ? `${importPaste.value}\n\n` : "") + text;
+    importPaste.dispatchEvent(new Event("input", { bubbles: true }));
+    refreshManualImportUi();
+    queueMicrotask(() => scheduleManualImportPopover());
+  });
+  importManualClear?.addEventListener("click", () => {
+    manualImportAssignments = [];
+    importManualTextSnapshot = importPaste?.value ?? "";
+    hideManualImportPopover();
+    refreshManualImportUi();
+  });
+  importManualSuggestBtn?.addEventListener("click", () => runManualImportAutosuggest(true));
+  importManualPopoverFollowDragCb?.addEventListener("change", () => {
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(
+        CV_IMPORT_POPOVER_FOLLOW_DRAG_LS,
+        importManualPopoverFollowDragCb.checked ? "1" : "0",
+      );
+    }
+  });
+  importManualPopoverFilter?.addEventListener("input", () => rebuildManualImportPopoverOptions());
+  importManualPopoverShortcuts?.addEventListener("click", (ev) => {
+    const btn = (ev.target as HTMLElement).closest<HTMLButtonElement>("[data-cv-manual-assign-to]");
+    const v = btn?.getAttribute("data-cv-manual-assign-to");
+    if (!v) return;
+    assignManualSelectionToTarget(v);
+  });
+  importManualPopoverOptions?.addEventListener("click", (ev) => {
+    const btn = (ev.target as HTMLElement).closest<HTMLButtonElement>("[data-cv-manual-assign-to]");
+    const v = btn?.getAttribute("data-cv-manual-assign-to");
+    if (!v) return;
+    assignManualSelectionToTarget(v);
+  });
+  const finishManualImportSurfacePointerIfAny = () => {
+    if (!manualImportPointerSelecting) return;
+    manualImportPointerSelecting = false;
+    importManualPopover?.classList.remove("pointer-events-none");
+    if (importModal && !importModal.classList.contains("hidden")) {
+      queueMicrotask(() => scheduleManualImportPopover());
+    }
+  };
+  importManualSurface?.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    if (importModal?.classList.contains("hidden")) return;
+    manualImportPointerSelecting = true;
+    if (getImportPopoverFollowDrag()) {
+      importManualPopover?.classList.add("pointer-events-none");
+      queueMicrotask(() => scheduleManualImportPopover());
+    } else {
+      hideManualImportPopover();
+    }
+  });
+  document.addEventListener("pointerup", (e) => {
+    if (e.button !== 0) return;
+    finishManualImportSurfacePointerIfAny();
+  });
+  document.addEventListener("pointercancel", () => {
+    finishManualImportSurfacePointerIfAny();
+  });
+  importManualSurface?.addEventListener("keyup", () => scheduleManualImportPopover());
+  importManualSurface?.addEventListener("scroll", () => updateManualImportPopoverPosition(), { passive: true });
+  document.addEventListener("selectionchange", () => {
+    if (manualImportPointerSelecting && !getImportPopoverFollowDrag()) return;
+    if (!importModal || importModal.classList.contains("hidden")) return;
+    if (!importManualSurface) return;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    const r = sel.getRangeAt(0);
+    if (!importManualSurface.contains(r.commonAncestorContainer)) return;
+    scheduleManualImportPopover();
+  });
+  importManualSurface?.addEventListener("blur", () => {
+    window.setTimeout(() => {
+      const ae = document.activeElement as Node | null;
+      if (ae && importManualPopover?.contains(ae)) return;
+      if (ae && importManualSurface?.contains(ae)) return;
+      hideManualImportPopover();
+    }, 220);
+  });
+  importModalPanel?.addEventListener("scroll", () => updateManualImportPopoverPosition(), { passive: true });
+  window.addEventListener("resize", () => updateManualImportPopoverPosition());
+  importModalPanel?.addEventListener(
+    "mousedown",
+    (ev) => {
+      const t = ev.target as Node;
+      if (importManualPopover?.contains(t) || importManualSurface?.contains(t)) return;
+      hideManualImportPopover();
+    },
+    true,
+  );
+  importManualList?.addEventListener("click", (ev) => {
+    const t = ev.target as HTMLElement | null;
+    const btn = t?.closest<HTMLButtonElement>("[data-cv-import-manual-remove]");
+    if (!btn) return;
+    const idx = Number(btn.getAttribute("data-cv-import-manual-remove"));
+    if (Number.isFinite(idx) && idx >= 0 && idx < manualImportAssignments.length) {
+      manualImportAssignments.splice(idx, 1);
+      refreshManualImportUi();
+    }
+  });
+  importManualApply?.addEventListener("click", () => openImportConfirmModal("manual"));
+
+  importApplyFormBtn?.addEventListener("click", () => openImportConfirmModal("apply"));
+  importBothBtn?.addEventListener("click", () => openImportConfirmModal("both"));
+  importExpBtn?.addEventListener("click", () => openImportConfirmModal("exp"));
+  importEduBtn?.addEventListener("click", () => openImportConfirmModal("edu"));
+
+  importConfirmBackup?.addEventListener("click", () => downloadCvJsonFile());
+  importConfirmCancel?.addEventListener("click", () => {
+    pendingImportMode = null;
+    hideImportConfirmModal();
+  });
+  importConfirmProceed?.addEventListener("click", () => {
+    const m = pendingImportMode;
+    pendingImportMode = null;
+    hideImportConfirmModal();
+    if (m === "manual") {
+      executeCvManualImportAfterConfirm();
+      return;
+    }
+    if (m) runCvImportMode(m);
+  });
+  importConfirmModal?.addEventListener("click", (e) => {
+    if (e.target === importConfirmModal) {
+      pendingImportMode = null;
+      hideImportConfirmModal();
+    }
+  });
+  importConfirmPanel?.addEventListener("click", (e) => e.stopPropagation());
+
+  const ingestCvPdfFile = async (file: File) => {
     try {
       const { extractTextFromPdfFile } = await import("@lib/cv-pdf-text");
-      const text = await extractTextFromPdfFile(file);
+      const extracted = await extractTextFromPdfFile(file);
+      const text = normalizeCvPasteForHeuristics(preprocessCvPasteForImport(extracted));
       if (!text.trim()) {
         showToast(tt("cv.importPdfEmptyText", "No se extrajo texto del PDF."), "warning");
         return;
@@ -1500,36 +2993,221 @@ async function boot() {
       if (importPaste) {
         importPaste.value = (importPaste.value ? `${importPaste.value}\n\n` : "") + text;
       }
-      if (importDetails) importDetails.open = true;
-      showToast(tt("cv.importPdfToast", "Texto extraído del PDF. Revísalo y usa los botones de importación."), "success");
+      openCvImportModal();
+      showToast(tt("cv.importPdfToast", "Texto extraído del PDF. Revisa el modal y pulsa «Importar al formulario»."), "success");
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "";
       showToast(msg || tt("cv.importPdfError", "No se pudo leer el PDF."), "error");
     }
+  };
+
+  importModalPdfOpen?.addEventListener("click", () => importModalPdfInput?.click());
+  importModalPdfInput?.addEventListener("change", async () => {
+    const file = importModalPdfInput.files?.[0];
+    importModalPdfInput.value = "";
+    if (!file) return;
+    await ingestCvPdfFile(file);
+  });
+
+  headerJsonExportBtn?.addEventListener("click", () => downloadCvJsonFile());
+
+  backupRestoreTrigger?.addEventListener("click", () => backupRestoreInput?.click());
+  backupRestoreInput?.addEventListener("change", async () => {
+    const file = backupRestoreInput.files?.[0];
+    backupRestoreInput.value = "";
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text) as {
+        version?: number;
+        cvProfile?: CvProfile;
+        cvDocuments?: CvDocumentSlotV1[];
+        cvActiveDocumentId?: string;
+      };
+      if (!parsed || typeof parsed !== "object") {
+        showToast(tt("cv.backupRestoreInvalid", "El archivo no es un respaldo válido."), "error");
+        return;
+      }
+      if (parsed.version === 2 && Array.isArray(parsed.cvDocuments) && parsed.cvDocuments.length > 0) {
+        const migrated = migrateCvDocumentsIntoPrefs({
+          ...loadPrefs(),
+          cvDocuments: parsed.cvDocuments as CvDocumentSlotV1[],
+          cvActiveDocumentId:
+            typeof parsed.cvActiveDocumentId === "string" ? parsed.cvActiveDocumentId : undefined,
+        } as AppPrefsV1);
+        cvDocuments = (migrated.cvDocuments ?? []).map((d) => ({
+          ...d,
+          cvProfile: JSON.parse(JSON.stringify(d.cvProfile)) as CvProfile,
+        }));
+        cvActiveDocumentId = migrated.cvActiveDocumentId ?? cvDocuments[0]!.id;
+        prefs = updatePrefs(buildCvDocumentsPrefsPatch(cvDocuments, cvActiveDocumentId) as any);
+        hydrateCvProfileFromActiveSlot();
+        applySelectionFromPrefs();
+      } else if (parsed.cvProfile && typeof parsed.cvProfile === "object") {
+        cvProfile = {
+          showHelpStack: true,
+          showPhoto: true,
+          experiences: [],
+          education: [],
+          certifications: [],
+          languages: [],
+          socialLinkDisplay: "both",
+          cvTemplate: "classic",
+          cvSectionVisibility: {},
+          cvPrintMaxPages: 3,
+          ...parsed.cvProfile,
+        };
+        if (!cvProfile.photoSource) {
+          cvProfile.photoSource = avatarSignedUrl ? "uploaded" : linkedinAvatar ? "linkedin" : "provider";
+        }
+        const idx = cvDocuments.findIndex((d) => d.id === cvActiveDocumentId);
+        if (idx >= 0) {
+          const next = [...cvDocuments];
+          next[idx] = { ...next[idx]!, cvProfile: JSON.parse(JSON.stringify(cvProfile)) as CvProfile };
+          cvDocuments = next;
+          prefs = updatePrefs(buildCvDocumentsPrefsPatch(cvDocuments, cvActiveDocumentId) as any);
+        }
+      } else {
+        showToast(tt("cv.backupRestoreInvalid", "El archivo no es un respaldo válido."), "error");
+        return;
+      }
+      applyProfileToInputs();
+      renderExperienceEditor();
+      renderEducationEditor();
+      renderCertificationEditor();
+      renderLanguageEditor();
+      renderList();
+      renderCvDocumentSelect();
+      renderDocument();
+      showToast(tt("cv.backupRestoredToast", "CV restaurado desde el archivo."), "success");
+    } catch {
+      showToast(tt("cv.backupRestoreError", "No se pudo leer el archivo."), "error");
+    }
+  });
+
+  const closeCvClearModal = () => {
+    if (!clearModal) return;
+    clearModal.classList.add("hidden");
+    clearModal.classList.remove("flex");
+    const previewOpen = previewModal && !previewModal.classList.contains("hidden");
+    const importOpen = importModal && !importModal.classList.contains("hidden");
+    if (!previewOpen && !importOpen) document.body.style.overflow = "";
+  };
+
+  const openCvClearModal = () => {
+    if (!clearModal) return;
+    clearModal.classList.remove("hidden");
+    clearModal.classList.add("flex");
+    document.body.style.overflow = "hidden";
+  };
+
+  clearContentBtn?.addEventListener("click", () => openCvClearModal());
+
+  clearModalCancel?.addEventListener("click", () => closeCvClearModal());
+  clearModal?.addEventListener("click", (e) => {
+    if (e.target === clearModal) closeCvClearModal();
+  });
+  clearModalPanel?.addEventListener("click", (e) => e.stopPropagation());
+
+  clearModalConfirm?.addEventListener("click", () => {
+    closeCvClearModal();
+    cvProfile = {
+      ...cvProfile,
+      headline: "",
+      location: "",
+      email: "",
+      phoneMobile: "",
+      phoneLandline: "",
+      summary: "",
+      highlights: "",
+      experiences: [],
+      education: [],
+      certifications: [],
+      languages: [],
+      cvDocumentSectionOrder: undefined,
+      cvFeaturedProjectSlug: undefined,
+      cvLinkSlots: Array.from({ length: CV_LINK_SLOT_COUNT }, () => ""),
+      links: [],
+      showHelpStack: true,
+      showPhoto: true,
+      socialLinkDisplay: "both",
+      cvTemplate: "classic",
+      cvSectionVisibility: {},
+      cvPrintMaxPages: 3,
+      photoSource: cvProfile.photoSource ?? (avatarSignedUrl ? "uploaded" : linkedinAvatar ? "linkedin" : "provider"),
+    };
+    persistCvState();
+    applyProfileToInputs();
+    renderExperienceEditor();
+    renderEducationEditor();
+    renderCertificationEditor();
+    renderLanguageEditor();
+    renderList();
+    renderDocument();
+    showToast(tt("cv.clearContentDoneToast", "Contenido del CV vaciado."), "success");
   });
 
   // Photo source toggles (CV-only; does not overwrite uploaded avatar)
   photoUseLinkedinBtn?.addEventListener("click", () => {
     if (!linkedinAvatar) return;
     cvProfile = { ...cvProfile, photoSource: "linkedin", showPhoto: true };
-    persistProfile();
+    persistCvState();
     applyProfileToInputs();
     renderDocument();
   });
   photoUseUploadedBtn?.addEventListener("click", () => {
     if (!avatarSignedUrl) return;
     cvProfile = { ...cvProfile, photoSource: "uploaded", showPhoto: true };
-    persistProfile();
+    persistCvState();
     applyProfileToInputs();
     renderDocument();
   });
+
+  const renderAtsCheckPanel = () => {
+    if (!previewTemplateSelect || !atsOkList || !atsWarnList || !atsInfoList) return;
+    const tpl = String(previewTemplateSelect.value || "classic").trim();
+    const result = analyzeCvForAts(cvProfile, tpl);
+    const fill = (ul: HTMLElement, keys: string[]) => {
+      ul.innerHTML = "";
+      if (keys.length === 0) {
+        const li = document.createElement("li");
+        li.className = "text-gray-500 dark:text-gray-400";
+        li.textContent = tt("cv.ats.emptyColumn", "—");
+        ul.appendChild(li);
+        return;
+      }
+      for (const k of keys) {
+        const li = document.createElement("li");
+        li.className = "border-l-2 border-gray-200/90 pl-2 dark:border-gray-700";
+        li.textContent = tt(k, k);
+        ul.appendChild(li);
+      }
+    };
+    fill(atsOkList, result.ok);
+    fill(atsWarnList, result.warn);
+    fill(atsInfoList, result.info);
+  };
 
   // Preview modal (moves the document into a full-screen dialog)
   const openPreview = () => {
     if (!previewModal || !previewBody || !docEl) return;
     previewBody.innerHTML = "";
     previewBody.appendChild(docEl);
-    if (previewTemplateSelect) previewTemplateSelect.value = cvProfile.cvTemplate === "minimal" ? "minimal" : "classic";
+    const tpl =
+      cvProfile.cvTemplate === "classic" ||
+      cvProfile.cvTemplate === "minimal" ||
+      cvProfile.cvTemplate === "modern" ||
+      cvProfile.cvTemplate === "compact" ||
+      cvProfile.cvTemplate === "mono" ||
+      cvProfile.cvTemplate === "sidebar" ||
+      cvProfile.cvTemplate === "serif"
+        ? cvProfile.cvTemplate
+        : "classic";
+    if (previewTemplateSelect) {
+      previewTemplateSelect.value = tpl;
+      previewTemplateSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    previewAtsPanel?.classList.add("hidden");
     refreshPreviewSectionRail();
     previewModal.classList.remove("hidden");
     previewModal.classList.add("flex");
@@ -1544,11 +3222,24 @@ async function boot() {
   };
   previewOpenBtn?.addEventListener("click", openPreview);
   previewCloseBtn?.addEventListener("click", closePreview);
+  previewAtsBtn?.addEventListener("click", () => {
+    renderAtsCheckPanel();
+    previewAtsPanel?.classList.remove("hidden");
+  });
+  previewAtsHide?.addEventListener("click", () => previewAtsPanel?.classList.add("hidden"));
   previewModal?.addEventListener("click", (e) => {
     if (e.target === previewModal) closePreview();
   });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
+    if (clearModal && !clearModal.classList.contains("hidden")) {
+      closeCvClearModal();
+      return;
+    }
+    if (importModal && !importModal.classList.contains("hidden")) {
+      closeCvImportModal();
+      return;
+    }
     if (!previewModal || previewModal.classList.contains("hidden")) return;
     closePreview();
   });
@@ -1557,7 +3248,7 @@ async function boot() {
     const exp = Array.isArray(cvProfile.experiences) ? [...cvProfile.experiences] : [];
     exp.push({ role: "", company: "", location: "", start: "", end: "", bullets: "" });
     cvProfile = { ...cvProfile, experiences: exp };
-    persistProfile();
+    persistCvState();
     renderExperienceEditor();
     renderDocument();
   });
@@ -1565,7 +3256,7 @@ async function boot() {
     const edu = Array.isArray(cvProfile.education) ? [...cvProfile.education] : [];
     edu.push({ degree: "", school: "", location: "", start: "", end: "", details: "" });
     cvProfile = { ...cvProfile, education: edu };
-    persistProfile();
+    persistCvState();
     renderEducationEditor();
     renderDocument();
   });
@@ -1574,7 +3265,7 @@ async function boot() {
     const certs = Array.isArray(cvProfile.certifications) ? [...cvProfile.certifications] : [];
     certs.push({ name: "", issuer: "", year: "", url: "" });
     cvProfile = { ...cvProfile, certifications: certs };
-    persistProfile();
+    persistCvState();
     renderCertificationEditor();
     renderDocument();
   });
@@ -1582,7 +3273,7 @@ async function boot() {
     const langs = Array.isArray(cvProfile.languages) ? [...cvProfile.languages] : [];
     langs.push({ name: "", level: "" });
     cvProfile = { ...cvProfile, languages: langs };
-    persistProfile();
+    persistCvState();
     renderLanguageEditor();
     renderDocument();
   });
@@ -1595,7 +3286,33 @@ async function boot() {
   });
   selNone?.addEventListener("click", () => {
     selectedSlugs.clear();
+    cvProfile = { ...cvProfile, cvFeaturedProjectSlug: undefined };
+    persistCvState();
     persistSelection();
+    renderList();
+    renderDocument();
+  });
+
+  selFeaturedOnly?.addEventListener("click", () => {
+    const feat = (cvProfile.cvFeaturedProjectSlug ?? "").trim();
+    if (!feat || !selectedSlugs.has(feat)) {
+      showToast(
+        tt("cv.featuredOnlyNeedFeatured", "Marca primero un proyecto como destacado."),
+        "warning",
+      );
+      return;
+    }
+    selectedSlugs.clear();
+    selectedSlugs.add(feat);
+    persistSelection();
+    renderList();
+    renderDocument();
+    showToast(tt("cv.featuredOnlyDoneToast", "Solo el proyecto destacado queda en el CV."), "success");
+  });
+
+  featuredNoneBtn?.addEventListener("click", () => {
+    cvProfile = { ...cvProfile, cvFeaturedProjectSlug: undefined };
+    persistCvState();
     renderList();
     renderDocument();
   });

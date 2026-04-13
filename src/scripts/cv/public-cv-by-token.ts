@@ -39,6 +39,14 @@ function isProbablyEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 }
 
+function cvTelHref(raw: string): string {
+  const d = raw.replace(/[^\d+]/g, "");
+  if (!d) return "#";
+  if (d.startsWith("00")) return `tel:+${d.slice(2)}`;
+  if (d.startsWith("+")) return `tel:${d}`;
+  return `tel:${d}`;
+}
+
 function linesToBullets(raw: string): string[] {
   return (raw ?? "")
     .split(/\r?\n/)
@@ -84,6 +92,8 @@ type RpcCvProfile = {
   headline?: string;
   location?: string;
   email?: string;
+  phoneMobile?: string;
+  phoneLandline?: string;
   links?: { label: string; url: string }[];
   cvLinkSlots?: string[];
   socialLinkDisplay?: CvSocialLinkDisplay;
@@ -112,6 +122,7 @@ type RpcCvProfile = {
   languages?: { name?: string; level?: string }[];
   cvDocumentSectionOrder?: string[];
   cvPrintMaxPages?: number;
+  cvFeaturedProjectSlug?: string;
 };
 
 type RpcPayload = {
@@ -223,9 +234,17 @@ async function run() {
     const chips: string[] = [];
     const location = (cvProfile.location ?? "").trim();
     const email = normalizeEmail((cvProfile.email ?? "").trim());
+    const phoneMobile = (cvProfile.phoneMobile ?? "").trim();
+    const phoneLandline = (cvProfile.phoneLandline ?? "").trim();
     if (location) chips.push(`<span class="inline-flex items-center gap-1"><span class="text-gray-400">📍</span> ${esc(location)}</span>`);
     if (email && isProbablyEmail(email)) {
       chips.push(`<a class="no-underline hover:underline" href="mailto:${esc(email)}">${esc(email)}</a>`);
+    }
+    if (phoneMobile) {
+      chips.push(`<a class="no-underline hover:underline" href="${esc(cvTelHref(phoneMobile))}">${esc(phoneMobile)}</a>`);
+    }
+    if (phoneLandline) {
+      chips.push(`<a class="no-underline hover:underline" href="${esc(cvTelHref(phoneLandline))}">${esc(phoneLandline)}</a>`);
     }
     const mode = (cvProfile.socialLinkDisplay ?? "both") as CvSocialLinkDisplay;
     chips.push(
@@ -276,56 +295,59 @@ async function run() {
   if (projects.length === 0) {
     docProjects.innerHTML = `<p class="m-0 text-sm text-gray-500 dark:text-gray-400">${esc(tt("cv.publicNoProjects", "No hay proyectos."))}</p>`;
   } else {
-    docProjects.innerHTML = projects
-      .map((p) => {
-        const techLabels = [...(p.technologyNames ?? [])].sort((a, b) => a.localeCompare(b, "es"));
-        const techHtml =
-          techLabels.length > 0
-            ? `<p class="m-0 mt-2 flex flex-wrap gap-1.5">${techLabels
-                .map(
-                  (n) =>
-                    `<span class="text-[11px] px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">${esc(n)}</span>`,
-                )
-                .join("")}</p>`
-            : "";
-        const role = (p.role ?? "").trim();
-        const outcome = (p.outcome ?? "").trim();
-        const meta =
-          role || outcome
-            ? `<p class="m-0 mt-2 text-sm text-gray-600 dark:text-gray-400"><span class="font-semibold text-gray-800 dark:text-gray-200">${esc(role || "—")}</span>${role && outcome ? " · " : ""}${esc(outcome)}</p>`
-            : "";
-        const desc = (p.description ?? "").trim();
-        const coverPath = (p.coverImagePath ?? "").trim();
-        const coverUrl = coverPath ? publicStorageObjectUrl("project_covers", coverPath) : "";
-        const pe = p.primaryEmbed;
-        const embedUrl = (pe?.url ?? "").trim();
-        const thumb =
-          embedUrl && pe ? resolveEvidenceThumbnailForDisplay(pe.thumbnailUrl ?? null, embedUrl) : null;
-        const embedTitle = (pe?.title ?? "").trim();
-        const evidenceFallback = tt("cv.publicEvidence", "Evidence");
-        const evidenceBlock =
-          embedUrl && pe
-            ? `<div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-start">
-                ${
-                  thumb
-                    ? `<a href="${esc(embedUrl)}" target="_blank" rel="noreferrer" class="shrink-0"><img src="${esc(
-                        thumb,
-                      )}" alt="" class="max-h-28 rounded object-cover border border-gray-200 dark:border-gray-700" loading="lazy" decoding="async" /></a>`
-                    : ""
-                }
-                <div class="min-w-0">
-                  <a class="text-sm font-semibold text-blue-700 dark:text-blue-400 hover:underline wrap-break-word" href="${esc(
-                    embedUrl,
-                  )}" target="_blank" rel="noreferrer">${esc(embedTitle || evidenceFallback)}</a>
-                </div>
-              </div>`
-            : "";
-        const coverBlock = coverUrl
-          ? `<div class="mb-3 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"><img src="${esc(
-              coverUrl,
-            )}" alt="" class="max-h-40 w-full object-cover" loading="lazy" decoding="async" /></div>`
+    const featSlug = (cvProfile.cvFeaturedProjectSlug ?? "").trim();
+    const featured = featSlug ? projects.find((p) => (p.slug ?? "").trim() === featSlug) : undefined;
+    const others = featured ? projects.filter((p) => p !== featured) : projects;
+
+    const fullBlock = (p: RpcProject) => {
+      const techLabels = [...(p.technologyNames ?? [])].sort((a, b) => a.localeCompare(b, "es"));
+      const techHtml =
+        techLabels.length > 0
+          ? `<p class="m-0 mt-2 flex flex-wrap gap-1.5">${techLabels
+              .map(
+                (n) =>
+                  `<span class="text-[11px] px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">${esc(n)}</span>`,
+              )
+              .join("")}</p>`
           : "";
-        return `<section class="cv-doc-project">
+      const role = (p.role ?? "").trim();
+      const outcome = (p.outcome ?? "").trim();
+      const meta =
+        role || outcome
+          ? `<p class="m-0 mt-2 text-sm text-gray-600 dark:text-gray-400"><span class="font-semibold text-gray-800 dark:text-gray-200">${esc(role || "—")}</span>${role && outcome ? " · " : ""}${esc(outcome)}</p>`
+          : "";
+      const desc = (p.description ?? "").trim();
+      const coverPath = (p.coverImagePath ?? "").trim();
+      const coverUrl = coverPath ? publicStorageObjectUrl("project_covers", coverPath) : "";
+      const pe = p.primaryEmbed;
+      const embedUrl = (pe?.url ?? "").trim();
+      const thumb =
+        embedUrl && pe ? resolveEvidenceThumbnailForDisplay(pe.thumbnailUrl ?? null, embedUrl) : null;
+      const embedTitle = (pe?.title ?? "").trim();
+      const evidenceFallback = tt("cv.publicEvidence", "Evidence");
+      const evidenceBlock =
+        embedUrl && pe
+          ? `<div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-start">
+              ${
+                thumb
+                  ? `<a href="${esc(embedUrl)}" target="_blank" rel="noreferrer" class="shrink-0"><img src="${esc(
+                      thumb,
+                    )}" alt="" class="max-h-28 rounded object-cover border border-gray-200 dark:border-gray-700" loading="lazy" decoding="async" /></a>`
+                  : ""
+              }
+              <div class="min-w-0">
+                <a class="text-sm font-semibold text-blue-700 dark:text-blue-400 hover:underline wrap-break-word" href="${esc(
+                  embedUrl,
+                )}" target="_blank" rel="noreferrer">${esc(embedTitle || evidenceFallback)}</a>
+              </div>
+            </div>`
+          : "";
+      const coverBlock = coverUrl
+        ? `<div class="mb-3 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"><img src="${esc(
+            coverUrl,
+          )}" alt="" class="max-h-40 w-full object-cover" loading="lazy" decoding="async" /></div>`
+        : "";
+      return `<section class="cv-doc-project">
           ${coverBlock}
           <h4 class="m-0 text-lg font-semibold text-gray-900 dark:text-gray-100">${esc(p.title)}</h4>
           ${meta}
@@ -333,8 +355,25 @@ async function run() {
           ${techHtml}
           ${evidenceBlock}
         </section>`;
-      })
-      .join("");
+    };
+
+    const compactLi = (p: RpcProject) => {
+      const role = (p.role ?? "").trim();
+      const one = role ? ` — ${esc(role)}` : "";
+      return `<li class="text-sm text-gray-800 dark:text-gray-200"><span class="font-semibold">${esc(p.title)}</span>${one}</li>`;
+    };
+
+    if (featured) {
+      const restUl =
+        others.length > 0
+          ? `<p class="m-0 mt-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">${esc(
+              tt("cv.projectsMoreLabel", "También"),
+            )}</p><ul class="m-0 mt-1 space-y-0.5 pl-5 list-disc text-gray-700 dark:text-gray-300">${others.map(compactLi).join("")}</ul>`
+          : "";
+      docProjects.innerHTML = `${fullBlock(featured)}${restUl}`;
+    } else {
+      docProjects.innerHTML = projects.map((p) => fullBlock(p)).join("");
+    }
   }
 
   // Highlights

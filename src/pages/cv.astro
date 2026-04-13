@@ -5,6 +5,10 @@ import CvStatusLines from "../components/cv/CvStatusLines.astro";
 import CvEditorPanel from "../components/cv/CvEditorPanel.astro";
 import CvDocumentHost from "../components/cv/CvDocumentHost.astro";
 import CvPreviewModal from "../components/cv/CvPreviewModal.astro";
+import CvImportModal from "../components/cv/CvImportModal.astro";
+import CvImportConfirmModal from "../components/cv/CvImportConfirmModal.astro";
+import CvClearConfirmModal from "../components/cv/CvClearConfirmModal.astro";
+import CvDocumentDialogs from "../components/cv/CvDocumentDialogs.astro";
 
 const title = "CV";
 ---
@@ -19,6 +23,10 @@ const title = "CV";
   </div>
 
   <CvPreviewModal />
+  <CvImportModal />
+  <CvImportConfirmModal />
+  <CvClearConfirmModal />
+  <CvDocumentDialogs />
 
   <script src="../scripts/cv/cv-page.ts"></script>
 </AppShell>

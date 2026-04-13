@@ -65,45 +65,6 @@ const h2 = "cv-section-heading m-0 text-lg md:text-xl font-bold tracking-tight t
     </label>
   </div>
 
-  <details data-cv-import-details class="group rounded-xl border border-dashed border-gray-300/90 dark:border-gray-600/80 bg-white/40 dark:bg-gray-950/30 p-4 open:border-indigo-300/50 dark:open:border-indigo-800/50">
-    <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
-      <h2 class="m-0 text-base font-bold text-gray-900 dark:text-gray-100">
-        <span data-i18n="cv.importSectionTitle">Importar desde texto</span>
-      </h2>
-      <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.importFoldHint">Pegar CV previo (beta)</span>
-    </summary>
-    <p class="m-0 mt-2 text-xs text-gray-600 dark:text-gray-400" data-i18n="cv.importPasteHint">
-      Separa cada puesto o titulación con una línea en blanco. Primera línea: rol en empresa o título en centro (usa « en », « @ », « | » o « — »). Opcional: línea de fechas (años o mes+año). El resto como viñetas (- o •).
-    </p>
-    <p class="m-0 mt-2 text-xs text-amber-900/90 dark:text-amber-100/90 rounded-lg border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/90 dark:bg-amber-950/35 px-3 py-2" data-i18n="cv.importReviewNote">
-      Revisa siempre los datos importados. Más adelante integraremos IA para ayudar con importaciones desde PDF y otros formatos.
-    </p>
-    <textarea
-      rows={6}
-      data-cv-import-paste
-      class="mt-3 w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 font-mono/90"
-      placeholder=""
-      data-i18n-attr="placeholder"
-      data-i18n="cv.importPlaceholder"
-    ></textarea>
-    <div class="mt-3 flex flex-wrap gap-2">
-      <button
-        type="button"
-        data-cv-import-experience
-        class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-      >
-        <span data-i18n="cv.importExperienceBtn">Añadir a experiencia</span>
-      </button>
-      <button
-        type="button"
-        data-cv-import-education
-        class="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-xs font-semibold text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900"
-      >
-        <span data-i18n="cv.importEducationBtn">Añadir a educación</span>
-      </button>
-    </div>
-  </details>
-
   <div class="space-y-3">
     <h2 class={h2}>
       <span data-i18n="cv.profileSectionTitle">Datos del CV</span>
@@ -185,6 +146,24 @@ const h2 = "cv-section-heading m-0 text-lg md:text-xl font-bold tracking-tight t
           type="email"
           data-cv-email
           placeholder="tu@email.com"
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+        />
+      </label>
+      <label class="space-y-1">
+        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.phoneMobileLabel">Móvil</span>
+        <input
+          type="tel"
+          data-cv-phone-mobile
+          placeholder="+34 …"
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+        />
+      </label>
+      <label class="space-y-1">
+        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.phoneLandlineLabel">Teléfono fijo / otro</span>
+        <input
+          type="tel"
+          data-cv-phone-landline
+          placeholder=""
           class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
         />
       </label>
@@ -306,10 +285,26 @@ const h2 = "cv-section-heading m-0 text-lg md:text-xl font-bold tracking-tight t
     </summary>
     <div class="mt-4 space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400">
-          Marca los proyectos que quieres incluir y reordénalos en la vista previa.
+        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400 max-w-xl" data-i18n="cv.projectsSectionHintCompact">
+          Opcional: el portfolio ya muestra tu trabajo. Aquí elige pocos proyectos para el PDF; uno puede ir destacado, el resto en lista compacta.
         </p>
-        <div class="flex flex-wrap gap-3 text-xs font-semibold">
+        <div class="flex flex-wrap items-center gap-3 text-xs font-semibold">
+          <button
+            type="button"
+            data-cv-featured-none
+            class="text-amber-700 dark:text-amber-300 hover:underline"
+            data-i18n="cv.featuredClearBtn"
+          >
+            Sin destacado
+          </button>
+          <button
+            type="button"
+            data-cv-select-featured-only
+            class="text-amber-800 dark:text-amber-200 hover:underline font-bold"
+            data-i18n="cv.selectFeaturedOnly"
+          >
+            Solo el destacado
+          </button>
           <button type="button" data-cv-select-all class="text-indigo-700 dark:text-indigo-300 hover:underline">
             <span data-i18n="cv.selectAll">Marcar todos</span>
           </button>
@@ -318,7 +313,7 @@ const h2 = "cv-section-heading m-0 text-lg md:text-xl font-bold tracking-tight t
           </button>
         </div>
       </div>
-      <ul data-cv-project-list class="m-0 list-none space-y-2 p-0"></ul>
+      <ul data-cv-project-list class="m-0 list-none space-y-1.5 p-0"></ul>
     </div>
   </details>
 

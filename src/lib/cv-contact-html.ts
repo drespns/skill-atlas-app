@@ -3,7 +3,7 @@ export const CV_LINK_SLOT_COUNT = 5;
 
 export const CV_LINK_SLOT_ICON_PATHS = [
   "/icons/login/linkedin-icon.svg",
-  "/icons/GitHub.svg",
+  "/icons/technologies/GitHub.svg",
   "/favicon.svg",
   "/icons/link-external.svg",
   "/icons/link-external.svg",

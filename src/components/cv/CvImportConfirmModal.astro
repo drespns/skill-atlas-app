@@ -1,0 +1,56 @@
+---
+/** Confirmación antes de aplicar importación (respaldo + aviso). Hidrata `cv-page.ts`. */
+---
+
+<div
+  data-cv-import-confirm-modal
+  class="fixed inset-0 z-[1002] hidden items-center justify-center p-4 bg-black/50 backdrop-blur-sm print:hidden"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="cv-import-confirm-title"
+>
+  <div
+    data-cv-import-confirm-panel
+    class="w-full max-w-md rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-xl p-5 space-y-4"
+  >
+    <div class="space-y-1">
+      <p class="m-0 text-xs font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-300" data-i18n="cv.importConfirmKicker">
+        Importación
+      </p>
+      <h2 id="cv-import-confirm-title" class="m-0 text-lg font-bold text-gray-900 dark:text-gray-100" data-i18n="cv.importConfirmTitle">
+        Antes de volcar al formulario
+      </h2>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="cv.importConfirmBody">
+        Se fusionará el texto con tu CV actual: las entradas que ya coincidan no se duplicarán. Te recomendamos descargar un respaldo JSON por si quieres revertir.
+      </p>
+    </div>
+    <div class="flex flex-col gap-2">
+      <button
+        type="button"
+        data-cv-import-confirm-backup
+        class="w-full rounded-lg border border-emerald-300/90 dark:border-emerald-700/80 bg-emerald-50/90 dark:bg-emerald-950/40 px-3 py-2.5 text-sm font-semibold text-emerald-950 dark:text-emerald-100 hover:bg-emerald-100 dark:hover:bg-emerald-950/70"
+        data-i18n="cv.importConfirmBackupBtn"
+      >
+        Descargar respaldo JSON ahora
+      </button>
+    </div>
+    <div class="flex flex-wrap justify-end gap-2 pt-1 border-t border-gray-200/80 dark:border-gray-800">
+      <button
+        type="button"
+        data-cv-import-confirm-cancel
+        class="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900"
+        data-i18n="cv.importConfirmCancel"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        data-cv-import-confirm-proceed
+        class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+        data-i18n="cv.importConfirmProceed"
+      >
+        Continuar importación
+      </button>
+    </div>
+  </div>
+</div>
