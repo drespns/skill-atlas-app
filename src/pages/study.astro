@@ -1,35 +1,125 @@
 ---
-import AppShell from "../layouts/AppShell.astro";
+import "@vscode/codicons/dist/codicon.css";
+import AppShell from "@layouts/AppShell.astro";
+import StudySetupDialog from "@components/study/StudySetupDialog.astro";
+import StudyNewSpaceDialog from "@components/study/StudyNewSpaceDialog.astro";
+import StudyFolderDialog from "@components/study/StudyFolderDialog.astro";
+import StudyConceptsDialog from "@components/study/StudyConceptsDialog.astro";
+import StudyAiSurfaces from "@components/study/StudyAiSurfaces.astro";
 
 const title = "Estudio";
+const studyChatEnabled = import.meta.env.PUBLIC_STUDY_CHAT_ENABLED === "true";
 ---
 
 <AppShell title={title}>
   <div data-requires-auth class="hidden"></div>
-  <div data-study-root class="space-y-6">
-    <header class="space-y-1">
-      <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase" data-i18n="study.kicker">
-        Preparación
-      </p>
-      <h1 class="m-0 text-2xl font-semibold tracking-tight" data-i18n="study.title">Espacio de estudio</h1>
-      <p class="m-0 max-w-3xl text-sm text-gray-600 dark:text-gray-400" data-i18n="study.intro">
-        Primera iteración: fuentes y notas en tu navegador. El chat con IA sobre tus documentos vendrá cuando definamos modelo y límites.
-      </p>
-    </header>
+  <div class="w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
+  <div data-study-root class="space-y-6 w-full min-w-0" data-study-chat-enabled={studyChatEnabled ? "1" : "0"}>
+    <StudySetupDialog />
+    <StudyNewSpaceDialog />
+    <StudyFolderDialog />
+    <StudyConceptsDialog />
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[min(70vh,36rem)]">
-      <aside class="lg:col-span-3 flex flex-col rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 shadow-sm overflow-hidden">
-        <div class="px-4 py-3 border-b border-gray-200/80 dark:border-gray-800 flex items-center justify-between gap-2">
-          <h2 class="m-0 text-sm font-semibold" data-i18n="study.sourcesTitle">Fuentes</h2>
+    <div class="max-w-7xl mx-auto w-full">
+    <header class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 px-4 py-4 sm:px-5 sm:py-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div class="min-w-0 space-y-2">
+          <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase" data-i18n="study.kicker">
+            Preparación
+          </p>
+          <h1 class="m-0 text-2xl font-semibold tracking-tight" data-i18n="study.title">Espacio de estudio</h1>
+          <p class="m-0 max-w-3xl text-sm text-gray-600 dark:text-gray-400" data-i18n="study.introWorkSurface">
+            Fuentes, búsqueda, dossier y notas. El nombre del estudio, tecnologías y temario están en «Contexto del estudio».
+          </p>
+          <p class="m-0 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-base font-semibold text-gray-900 dark:text-gray-100">
+            <span class="text-sm font-medium text-gray-500 dark:text-gray-400" data-i18n="study.activeStudyLabel">Estudio activo</span>
+            <span data-study-active-title class="text-indigo-700 dark:text-indigo-300 truncate max-w-[min(100%,28rem)]">—</span>
+          </p>
+          <div class="flex flex-wrap items-center gap-2 pt-1">
+            <label class="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+              <span data-i18n="study.spaceSelectLabel">Estudio</span>
+              <select
+                data-study-space-select
+                class="min-w-[10rem] max-w-[20rem] rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs font-medium text-gray-900 dark:text-gray-100"
+              ></select>
+            </label>
+            <button
+              type="button"
+              data-study-space-new
+              class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 px-2.5 py-1.5 text-xs font-semibold text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900"
+              data-i18n="study.newSpaceButton"
+            >
+              Nuevo estudio
+            </button>
+          </div>
+          <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="study.multiStudyHint">
+            Puedes tener varios estudios; cada uno tiene sus fuentes, notas y temario. Requiere el script saas-027 en Supabase.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
           <button
             type="button"
-            data-study-add-source
-            class="text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-900"
+            data-study-open-setup
+            class="inline-flex items-center justify-center rounded-xl bg-indigo-600 text-white px-4 py-2.5 text-sm font-semibold shadow-sm hover:bg-indigo-500"
+            data-i18n="study.openSetupButton"
           >
-            <span data-i18n="study.addSource">+ Añadir</span>
+            Contexto del estudio
           </button>
         </div>
+      </div>
+    </header>
+    </div>
+
+    <div class="w-full min-w-0">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[min(70vh,36rem)]">
+      <aside
+        id="study-step-sources"
+        class="scroll-mt-24 lg:col-span-2 flex flex-col rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 shadow-sm overflow-hidden min-w-0"
+      >
+        <div class="px-4 py-3 border-b border-gray-200/80 dark:border-gray-800">
+          <div class="flex items-center justify-between gap-2">
+          <h2 class="m-0 text-sm font-semibold" data-i18n="study.sourcesTitle">Fuentes</h2>
+          <div class="flex items-center gap-2 flex-wrap justify-end">
+            <input
+              type="file"
+              class="sr-only"
+              data-study-file-input
+              accept=".pdf,.txt,.md,text/plain,text/markdown,application/pdf"
+              tabindex="-1"
+            />
+            <button
+              type="button"
+              data-study-upload-open
+              class="text-xs font-semibold rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-950/25 px-2 py-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/35 text-indigo-900 dark:text-indigo-100"
+            >
+              <span data-i18n="study.uploadFile">Subir</span>
+            </button>
+            <button
+              type="button"
+              data-study-add-source
+              class="text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-900"
+            >
+              <span data-i18n="study.addSource">+ Añadir</span>
+            </button>
+          </div>
+          </div>
+          <p class="m-0 mt-2 text-[11px] text-gray-500 dark:text-gray-400 leading-snug" data-i18n="study.sourcesToolbarHint"></p>
+        </div>
         <div data-study-add-panel class="hidden border-b border-gray-200/80 dark:border-gray-800 p-3 space-y-2 bg-gray-50/80 dark:bg-gray-900/40">
+          <div class="flex flex-wrap gap-3 text-xs font-semibold" role="group" aria-label="Tipo de fuente">
+            <label class="inline-flex items-center gap-1.5 cursor-pointer">
+              <input type="radio" name="study-source-kind" value="note" checked class="accent-indigo-600" data-study-source-kind />
+              <span data-i18n="study.sourceKindNote">Nota / texto</span>
+            </label>
+            <label class="inline-flex items-center gap-1.5 cursor-pointer">
+              <input type="radio" name="study-source-kind" value="link" class="accent-indigo-600" data-study-source-kind />
+              <span data-i18n="study.sourceKindLink">Enlace</span>
+            </label>
+            <label class="inline-flex items-center gap-1.5 cursor-pointer">
+              <input type="radio" name="study-source-kind" value="code" class="accent-indigo-600" data-study-source-kind />
+              <span data-i18n="study.sourceKindCode">Código</span>
+            </label>
+          </div>
           <input
             data-study-input-title
             type="text"
@@ -38,14 +128,55 @@ const title = "Estudio";
             data-i18n="study.placeholderTitle"
             data-i18n-attr="placeholder"
           />
-          <input
-            data-study-input-url
-            type="url"
-            class="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5"
-            placeholder=""
-            data-i18n="study.placeholderUrl"
-            data-i18n-attr="placeholder"
-          />
+          <div data-study-add-url-row class="space-y-1">
+            <input
+              data-study-input-url
+              type="url"
+              class="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5"
+              placeholder=""
+              data-i18n="study.placeholderUrl"
+              data-i18n-attr="placeholder"
+            />
+            <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="study.uploadAssociationHint">
+              Tip: si subes un PDF después de rellenar título/URL, se asociará a esta convocatoria.
+            </p>
+          </div>
+          <div data-study-add-code-row class="hidden space-y-1">
+            <label class="block text-[11px] font-semibold text-gray-600 dark:text-gray-400">
+              <span data-i18n="study.sourceCodeLanguage">Lenguaje</span>
+              <select
+                data-study-input-code-lang
+                data-select-skip="1"
+                class="mt-1 w-full text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5"
+              >
+                <option value="typescript">TypeScript</option>
+                <option value="javascript">JavaScript</option>
+                <option value="python">Python</option>
+                <option value="sql">SQL</option>
+                <option value="bash">Bash / shell</option>
+                <option value="json">JSON</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
+                <option value="go">Go</option>
+                <option value="rust">Rust</option>
+                <option value="java">Java</option>
+                <option value="csharp">C#</option>
+                <option value="cpp">C / C++</option>
+                <option value="plaintext" data-i18n="study.codeLangPlain">Texto plano</option>
+              </select>
+            </label>
+            <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="study.sourceCodeHint">
+              Se indexa para búsqueda y chat (chunks por líneas).
+            </p>
+            <p class="m-0 text-[11px] text-indigo-700/90 dark:text-indigo-300/90" data-i18n="study.sourceCodeComposeHint">
+              Editor con resaltado, números de línea y búsqueda (Ctrl+F o Cmd+F).
+            </p>
+          </div>
+          <div
+            data-study-code-compose
+            class="hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 overflow-hidden min-h-[12.5rem]"
+            aria-hidden="true"
+          ></div>
           <textarea
             data-study-input-note
             rows="3"
@@ -69,18 +200,223 @@ const title = "Estudio";
         </p>
       </aside>
 
-      <section class="lg:col-span-6 flex flex-col rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 shadow-sm overflow-hidden">
-        <div class="px-4 py-3 border-b border-gray-200/80 dark:border-gray-800 flex items-center justify-between gap-2">
-          <h2 class="m-0 text-sm font-semibold" data-i18n="study.centerTitle">Estudio</h2>
-          <span data-study-context-badge class="text-[11px] text-gray-500 dark:text-gray-400">0 fuentes</span>
-        </div>
-        <div class="flex-1 flex flex-col p-4 min-h-48">
-          <div
-            class="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30 p-4 mb-3 text-sm text-gray-600 dark:text-gray-400"
-            data-i18n="study.chatPlaceholder"
-          >
-            Aquí irá el chat con contexto sobre tus fuentes (RAG + modelo). De momento usa el bloque de abajo para tus notas libres.
+      <section
+        id="study-step-work"
+        class="scroll-mt-24 lg:col-span-8 flex flex-col rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 shadow-sm overflow-hidden min-w-0 min-h-[min(78vh,44rem)] ring-1 ring-indigo-500/15 dark:ring-indigo-400/20"
+      >
+        <div class="px-4 py-3 border-b border-gray-200/80 dark:border-gray-800 flex flex-wrap items-center justify-between gap-2 shrink-0 bg-gradient-to-r from-indigo-50/90 via-white/80 to-violet-50/70 dark:from-indigo-950/40 dark:via-gray-950/80 dark:to-violet-950/30">
+          <div class="min-w-0">
+            <h2 class="m-0 text-sm font-semibold tracking-tight text-indigo-950 dark:text-indigo-100" data-i18n="study.centerTitle">Estudio</h2>
+            <p class="m-0 mt-0.5 text-[10px] text-indigo-900/70 dark:text-indigo-200/80" data-i18n="study.workbenchHint">
+              Panel tipo IDE: abre un archivo de código desde Fuentes.
+            </p>
           </div>
+          <span data-study-context-badge class="text-[11px] font-medium text-indigo-800/80 dark:text-indigo-200/90">0 fuentes</span>
+        </div>
+
+        <div
+          data-study-work-dock
+          class="shrink-0 border-b-2 border-indigo-300/50 dark:border-indigo-600/40 bg-gradient-to-b from-indigo-100/90 via-slate-100/95 to-slate-50/85 dark:from-indigo-950/80 dark:via-slate-950/95 dark:to-gray-950/90 shadow-[inset_0_1px_0_0_rgba(99,102,241,0.12)]"
+        >
+          <div data-study-work-dock-empty class="px-4 py-4 text-center">
+            <p class="m-0 text-xs text-gray-600 dark:text-gray-400 max-w-md mx-auto leading-relaxed" data-i18n="study.workDockEmpty">
+              Ningún archivo de código abierto. En Fuentes, pulsa el título de una fuente «Código» para abrirla aquí.
+            </p>
+          </div>
+          <div data-study-work-dock-active class="hidden flex flex-col min-h-0">
+            <div
+              class="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-gray-200/70 dark:border-gray-800/90 bg-white/70 dark:bg-gray-950/75"
+            >
+              <span
+                class="text-[10px] font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-400 shrink-0"
+                data-i18n="study.workDockKicker"
+              >
+                Archivo
+              </span>
+              <input
+                type="text"
+                data-study-dock-title
+                class="flex-1 min-w-[10rem] text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2.5 py-1.5"
+              />
+              <select
+                data-study-dock-lang
+                data-select-skip="1"
+                class="w-full sm:w-44 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 shrink-0"
+              >
+                <option value="typescript">TypeScript</option>
+                <option value="javascript">JavaScript</option>
+                <option value="python">Python</option>
+                <option value="sql">SQL</option>
+                <option value="bash">Bash / shell</option>
+                <option value="json">JSON</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
+                <option value="go">Go</option>
+                <option value="rust">Rust</option>
+                <option value="java">Java</option>
+                <option value="csharp">C#</option>
+                <option value="cpp">C / C++</option>
+                <option value="plaintext" data-i18n="study.codeLangPlain">Texto plano</option>
+              </select>
+              <div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto sm:ml-auto justify-end">
+                <button
+                  type="button"
+                  data-study-dock-copy
+                  class="text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 px-2.5 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-900"
+                  data-i18n="study.codeWorkbenchCopy"
+                >
+                  Copiar
+                </button>
+                <button
+                  type="button"
+                  data-study-dock-save
+                  class="text-xs font-semibold rounded-lg bg-indigo-600 text-white px-3 py-1.5 shadow-sm hover:bg-indigo-500"
+                  data-i18n="study.codeWorkbenchSave"
+                >
+                  Guardar
+                </button>
+                <button
+                  type="button"
+                  data-study-dock-close
+                  class="text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 px-2.5 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-900"
+                  data-i18n="study.workDockCloseTab"
+                >
+                  Cerrar pestaña
+                </button>
+              </div>
+            </div>
+            <div
+              data-study-dock-editor
+              class="min-h-[min(30vh,260px)] max-h-[min(52vh,560px)] overflow-hidden bg-white dark:bg-gray-950 border-b border-gray-200/60 dark:border-gray-800/80"
+            ></div>
+          </div>
+        </div>
+
+        <div class="flex-1 flex flex-col p-4 min-h-0 overflow-y-auto gap-4">
+          <div
+            data-study-user-notes-panel
+            class="rounded-xl border border-indigo-200/50 dark:border-indigo-900/50 bg-indigo-50/40 dark:bg-indigo-950/20 p-3 space-y-2 order-first"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <p
+                class="m-0 text-[11px] font-semibold tracking-wide text-indigo-800 dark:text-indigo-200 uppercase"
+                data-i18n="study.userNotesKicker"
+              >
+                Notas guardadas
+              </p>
+              <button
+                type="button"
+                data-study-user-note-add
+                class="text-[11px] font-semibold rounded-lg bg-indigo-600 text-white px-2 py-1 hover:bg-indigo-500"
+                data-i18n="study.userNotesAdd"
+              >
+                + Nota
+              </button>
+            </div>
+            <p class="m-0 text-[11px] text-indigo-900/80 dark:text-indigo-200/80" data-i18n="study.userNotesHintDoc">
+              Markdown, bloques de código (```sql … ```) e imágenes por URL. Estilo documentación / Notion.
+            </p>
+            <div data-study-user-notes-list class="space-y-2 max-h-64 overflow-auto"></div>
+          </div>
+
+          <div class="mb-0">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <p class="m-0 text-[11px] font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase" data-i18n="study.searchKicker">
+                Buscar
+              </p>
+              <label class="flex items-center gap-2 text-[11px] text-gray-600 dark:text-gray-300">
+                <span data-i18n="study.searchScopeLabel">Alcance</span>
+                <div data-select-popover data-placeholder="En contexto">
+                  <select data-study-search-scope class="sr-only" data-select-native>
+                  <option value="context" data-i18n="study.searchScopeContext">En contexto</option>
+                  <option value="all" data-i18n="study.searchScopeAll">Todas mis fuentes</option>
+                  </select>
+                  <div class="relative">
+                    <button
+                      type="button"
+                      class="inline-flex items-center justify-between gap-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-2.5 py-1.5 text-[11px] font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 min-w-[10rem]"
+                      data-select-trigger
+                      aria-haspopup="listbox"
+                      aria-expanded="false"
+                    >
+                      <span class="min-w-0 truncate" data-select-trigger-label>En contexto</span>
+                      <span class="shrink-0 opacity-70" aria-hidden="true">▾</span>
+                    </button>
+                    <div
+                      class="hidden absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 shadow-lg"
+                      data-select-panel
+                    >
+                      <ul
+                        class="max-h-72 overflow-auto m-0 p-0 divide-y divide-gray-200/70 dark:divide-gray-800"
+                        data-select-list
+                        role="listbox"
+                      ></ul>
+                    </div>
+                  </div>
+                </div>
+              </label>
+            </div>
+            <label class="block">
+              <span class="sr-only" data-i18n="study.searchLabel">Buscar</span>
+              <input
+                data-study-search
+                type="search"
+                class="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2"
+                placeholder=""
+                data-i18n="study.searchPlaceholder"
+                data-i18n-attr="placeholder"
+              />
+            </label>
+            <div data-study-search-status class="mt-2 text-[11px] text-gray-500 dark:text-gray-400"></div>
+            <div data-study-search-results class="mt-2 space-y-2"></div>
+          </div>
+          <div class="rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4 mb-3">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <p class="m-0 text-[11px] font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase" data-i18n="study.dossierKicker">
+                Dossier
+              </p>
+              <span data-study-dossier-status class="text-[11px] text-gray-500 dark:text-gray-400"></span>
+            </div>
+            <form data-study-dossier-form class="flex items-end gap-2">
+              <label class="block flex-1">
+                <span class="sr-only" data-i18n="study.dossierInputLabel">Pregunta</span>
+                <textarea
+                  data-study-dossier-input
+                  rows="2"
+                  class="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 leading-relaxed resize-none"
+                  placeholder=""
+                  data-i18n="study.dossierInputPlaceholder"
+                  data-i18n-attr="placeholder"
+                ></textarea>
+              </label>
+              <button
+                type="submit"
+                data-study-dossier-generate
+                class="shrink-0 text-xs font-semibold rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-3 py-2"
+              >
+                <span data-i18n="study.dossierGenerate">Generar</span>
+              </button>
+            </form>
+
+            <div data-study-dossier-results class="mt-3 space-y-2"></div>
+
+            <div class="mt-3 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                data-study-dossier-save
+                class="text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-60"
+                disabled
+              >
+                <span data-i18n="study.dossierSave">Guardar selección</span>
+              </button>
+              <span data-study-dossier-selection class="text-[11px] text-gray-500 dark:text-gray-400" data-i18n="study.dossierSelectionHint">
+                Selecciona fragmentos para guardarlos.
+              </span>
+            </div>
+          </div>
+
+          <StudyAiSurfaces part="chat" />
+
           <label class="block flex-1 min-h-0">
             <span class="sr-only" data-i18n="study.sessionNotesLabel">Notas de sesión</span>
             <textarea
@@ -94,36 +430,72 @@ const title = "Estudio";
         </div>
       </section>
 
-      <aside class="lg:col-span-3 flex flex-col rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 shadow-sm overflow-hidden">
+      <aside class="lg:col-span-2 flex flex-col rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 shadow-sm overflow-hidden min-w-0">
         <div class="px-4 py-3 border-b border-gray-200/80 dark:border-gray-800">
-          <h2 class="m-0 text-sm font-semibold" data-i18n="study.studioTitle">Salidas</h2>
-          <p class="m-0 mt-1 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="study.studioHint">
-            Generación asistida: próximas iteraciones.
+          <h2 class="m-0 text-sm font-semibold" data-i18n="study.dossiersTitle">Dossiers</h2>
+          <p class="m-0 mt-1 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="study.dossiersHint">
+            Tu selección guardada (local).
           </p>
         </div>
-        <div class="p-3 grid grid-cols-2 gap-2">
-          <button type="button" data-study-out="summary" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 text-left">
-            <span data-i18n="study.outSummary">Resumen</span>
-          </button>
-          <button type="button" data-study-out="flashcards" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 text-left">
-            <span data-i18n="study.outFlashcards">Tarjetas</span>
-          </button>
-          <button type="button" data-study-out="quiz" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 text-left">
-            <span data-i18n="study.outQuiz">Cuestionario</span>
-          </button>
-          <button type="button" data-study-out="mindmap" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 text-left">
-            <span data-i18n="study.outMindmap">Mapa mental</span>
-          </button>
-          <button type="button" data-study-out="report" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 text-left">
-            <span data-i18n="study.outReport">Informe</span>
-          </button>
-          <button type="button" data-study-out="infographic" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-900 text-left">
-            <span data-i18n="study.outInfographic">Infografía</span>
-          </button>
-        </div>
+        <div data-study-dossiers class="p-3 space-y-2 overflow-auto min-h-24"></div>
+
+        <StudyAiSurfaces part="aside" />
       </aside>
     </div>
+    </div>
+  </div>
   </div>
 
-  <script src="../scripts/study/study-workspace.ts"></script>
+  <dialog data-study-dossier-title-modal class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 backdrop:bg-black/50 backdrop:backdrop-blur-sm rounded-2xl p-0 border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 w-[min(92vw,28rem)]">
+    <form method="dialog" class="p-4">
+      <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase" data-i18n="study.dossierAskTitleKicker">
+        Guardar dossier
+      </p>
+      <h3 class="m-0 mt-1 text-base font-semibold" data-i18n="study.dossierAskTitleTitle">Nombre del dossier</h3>
+      <input data-study-dossier-title-input type="text" class="mt-3 w-full text-sm rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2" />
+      <div class="mt-4 flex justify-end gap-2">
+        <button value="cancel" class="text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900" data-i18n="study.cancel">
+          Cancelar
+        </button>
+        <button value="ok" class="text-xs font-semibold rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-3 py-2" data-i18n="study.dossierSave">
+          Guardar selección
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog data-study-dossier-view-modal class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 backdrop:bg-black/50 backdrop:backdrop-blur-sm rounded-2xl p-0 border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 w-[min(94vw,56rem)] max-h-[85vh] overflow-hidden">
+    <form method="dialog" class="p-4">
+      <div class="flex items-start justify-between gap-4">
+        <div class="min-w-0">
+          <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase" data-i18n="study.dossierViewKicker">
+            Dossier
+          </p>
+          <h3 class="m-0 mt-1 text-base font-semibold truncate" data-study-dossier-view-title></h3>
+          <p class="m-0 mt-1 text-[11px] text-gray-500 dark:text-gray-400 truncate" data-study-dossier-view-sub></p>
+        </div>
+        <button value="close" class="text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900" data-i18n="common.close">
+          Cerrar
+        </button>
+      </div>
+
+      <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <button type="button" data-study-dossier-copy class="text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900" data-i18n="study.dossierCopy">
+            Copiar
+          </button>
+          <button type="button" data-study-dossier-export class="text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900" data-i18n="study.dossierExport">
+            Exportar .md
+          </button>
+        </div>
+        <button type="button" data-study-dossier-reapply class="text-xs font-semibold rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-3 py-2" data-i18n="study.dossierReapply">
+          Reaplicar en búsqueda
+        </button>
+      </div>
+
+      <div data-study-dossier-view-body class="mt-4 space-y-2 max-h-[70vh] overflow-auto pr-1"></div>
+    </form>
+  </dialog>
+
+  <script src="@scripts/study/study-workspace.ts"></script>
 </AppShell>

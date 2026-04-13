@@ -1,0 +1,264 @@
+---
+/** Modal: nombre del estudio + SkillAtlas + temario. La vista principal solo muestra material y trabajo. */
+---
+
+<dialog
+  data-study-setup-dialog
+  class="study-setup-dialog w-[min(100vw-1.5rem,56rem)] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-0 text-gray-900 dark:text-gray-100 shadow-2xl"
+>
+  <div class="study-setup-dialog__inner flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div
+      class="shrink-0 border-b border-gray-200/90 dark:border-gray-800 bg-gradient-to-r from-indigo-50/90 via-white to-violet-50/80 dark:from-indigo-950/50 dark:via-gray-950 dark:to-violet-950/40 px-4 py-3 sm:px-5"
+    >
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0 space-y-1">
+          <p class="m-0 text-[10px] font-bold tracking-wide text-indigo-700 dark:text-indigo-300 uppercase" data-i18n="study.setupDialogKicker">
+            Contexto del estudio
+          </p>
+          <h2 class="m-0 text-lg font-semibold tracking-tight" data-i18n="study.setupDialogTitle">
+            Configura tu espacio
+          </h2>
+          <p class="m-0 text-xs text-gray-600 dark:text-gray-400 max-w-md" data-i18n="study.setupDialogIntro">
+            Nombre, tecnologías y temario opcional. Luego trabajarás con fuentes y notas en la vista principal.
+          </p>
+        </div>
+        <button
+          type="button"
+          data-study-setup-close
+          class="shrink-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 px-2.5 py-1.5 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-800"
+          data-i18n="study.setupDialogClose"
+        >
+          Cerrar
+        </button>
+      </div>
+    </div>
+
+    <div data-study-setup-scroll class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <div
+        class="sticky top-0 z-10 flex flex-wrap gap-2 border-b border-gray-200/80 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 px-4 py-2.5 backdrop-blur-sm sm:px-5"
+      >
+        <button
+          type="button"
+          data-study-setup-jump="goal"
+          class="rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2.5 py-1 text-[11px] font-semibold hover:border-indigo-400 dark:hover:border-indigo-600"
+          data-i18n="study.setupJumpGoal"
+        >
+          1 · Nombre
+        </button>
+        <button
+          type="button"
+          data-study-setup-jump="skillatlas"
+          class="rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2.5 py-1 text-[11px] font-semibold hover:border-indigo-400 dark:hover:border-indigo-600"
+          data-i18n="study.setupJumpSkillAtlas"
+        >
+          2 · SkillAtlas
+        </button>
+        <button
+          type="button"
+          data-study-setup-jump="curriculum"
+          class="rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2.5 py-1 text-[11px] font-semibold hover:border-indigo-400 dark:hover:border-indigo-600"
+          data-i18n="study.setupJumpCurriculum"
+        >
+          3 · Temario
+        </button>
+      </div>
+
+      <div class="space-y-8 px-4 pb-6 pt-4 sm:px-5">
+        <section id="study-setup-step-goal" class="scroll-mt-2 space-y-2 rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-gray-50/40 dark:bg-gray-900/30 px-3 py-3 sm:px-4">
+          <p class="m-0 text-[10px] font-bold tracking-wide text-indigo-700 dark:text-indigo-300 uppercase" data-i18n="study.setupStep1Kicker">
+            Paso 1
+          </p>
+          <label class="block space-y-1">
+            <span class="text-[11px] font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase" data-i18n="study.studyNameLabel">
+              Nombre del estudio
+            </span>
+            <input
+              type="text"
+              data-study-goal
+              class="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2"
+              placeholder=""
+              data-i18n="study.goalPlaceholder"
+              data-i18n-attr="placeholder"
+              autocomplete="off"
+            />
+          </label>
+          <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="study.studyNameHint">
+            Convocatoria, certificación o tema. Se muestra arriba como «Estudio activo» y en el dashboard.
+          </p>
+          <div class="flex flex-wrap items-center gap-2 pt-1">
+            <button
+              type="button"
+              data-study-goal-save
+              class="text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:pointer-events-none"
+              data-i18n="study.goalSaveButton"
+            >
+              Guardar nombre
+            </button>
+          </div>
+        </section>
+
+        <section
+          id="study-setup-step-skillatlas"
+          class="scroll-mt-2 space-y-4 rounded-2xl border border-indigo-200/60 dark:border-indigo-900/45 bg-indigo-50/30 dark:bg-indigo-950/25 p-4 sm:p-5"
+          data-study-skillatlas-panel
+        >
+          <p class="m-0 text-[10px] font-bold tracking-wide text-indigo-800 dark:text-indigo-200 uppercase" data-i18n="study.setupStep2Kicker">
+            Paso 2
+          </p>
+          <p class="m-0 text-[11px] font-semibold tracking-wide text-indigo-800 dark:text-indigo-200 uppercase" data-i18n="study.linkSkillAtlasKicker">
+            SkillAtlas
+          </p>
+          <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-3xl" data-i18n="study.linkSkillAtlasIntro">
+            Enlaza tecnologías de tu catálogo a este estudio (no hace falta proyecto). El proyecto es opcional si quieres anclar contexto.
+          </p>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="space-y-2 rounded-xl border border-indigo-200/50 dark:border-indigo-900/40 bg-white/50 dark:bg-gray-950/40 p-3">
+              <span class="block text-xs font-semibold text-indigo-950 dark:text-indigo-100" data-i18n="study.linkTechSectionTitle"
+                >Tecnologías del estudio</span
+              >
+              <select
+                data-study-link-tech
+                data-select-skip="1"
+                multiple
+                size="6"
+                class="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5 min-h-[9.5rem]"
+                disabled
+                aria-describedby="study-link-tech-hint"
+              ></select>
+              <p id="study-link-tech-hint" class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="study.linkTechHint">
+                Ctrl/Cmd + clic para varias.
+              </p>
+              <p
+                data-study-link-tech-empty
+                class="hidden m-0 text-[11px] text-amber-800/95 dark:text-amber-200/90"
+                data-i18n="study.linkTechCatalogEmpty"
+              >
+                Aún no tienes tecnologías en el catálogo. Usa «Añadir tecnología», npm/PyPI o GitHub, o créalas en Tecnologías.
+              </p>
+              <div class="flex flex-wrap gap-2 pt-1">
+                <button
+                  type="button"
+                  data-study-tech-picker-open
+                  class="text-xs font-semibold rounded-lg border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-gray-950 px-2.5 py-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+                  data-i18n="study.studyTechPicker"
+                >
+                  + Añadir tecnología
+                </button>
+                <button
+                  type="button"
+                  data-study-tech-github-import
+                  class="text-xs font-semibold rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-950/30 px-2.5 py-1.5 text-indigo-900 dark:text-indigo-100"
+                  data-i18n="study.studyGithubImport"
+                >
+                  Importar desde GitHub
+                </button>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-2 sm:items-end pt-1">
+                <label class="flex-1 min-w-0 space-y-1">
+                  <span class="text-[11px] font-semibold text-gray-600 dark:text-gray-400" data-i18n="technologies.registryQueryLabel"
+                    >npm / PyPI</span
+                  >
+                  <input
+                    type="text"
+                    data-study-registry-query
+                    class="w-full text-xs rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-1.5"
+                    placeholder=""
+                    data-i18n="technologies.registryQueryPlaceholder"
+                    data-i18n-attr="placeholder"
+                    autocomplete="off"
+                  />
+                </label>
+                <button
+                  type="button"
+                  data-study-registry-add
+                  class="shrink-0 text-xs font-semibold rounded-lg bg-sky-700 text-white px-3 py-1.5 hover:bg-sky-800"
+                  data-i18n="study.studyRegistryAdd"
+                >
+                  Buscar y enlazar
+                </button>
+              </div>
+            </div>
+            <div class="space-y-2 rounded-xl border border-gray-200/70 dark:border-gray-800 bg-white/40 dark:bg-gray-950/30 p-3">
+              <span class="block text-xs font-semibold text-gray-800 dark:text-gray-100" data-i18n="study.linkProjectSectionTitle"
+                >Proyecto (opcional)</span
+              >
+              <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="study.linkProjectOptionalHint">
+                Solo si quieres asociar este espacio a un proyecto concreto.
+              </p>
+              <label class="block space-y-1">
+                <span class="text-[11px] font-semibold text-gray-600 dark:text-gray-400" data-i18n="study.linkProjectLabel">Proyecto</span>
+                <select
+                  data-study-link-project
+                  data-select-skip="1"
+                  class="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-2 min-h-10"
+                  disabled
+                ></select>
+              </label>
+            </div>
+          </div>
+
+          <div
+            data-study-linked-concepts
+            class="rounded-xl border border-indigo-200/45 dark:border-indigo-900/50 bg-white/40 dark:bg-gray-950/35 p-3 space-y-2 hidden"
+          >
+            <p class="m-0 text-[11px] font-semibold text-indigo-950 dark:text-indigo-100" data-i18n="study.linkedConceptsKicker">
+              Conceptos de tus tecnologías
+            </p>
+            <p class="m-0 text-[11px] text-gray-600 dark:text-gray-400" data-i18n="study.linkedConceptsIntro">
+              Enlaza SQL (u otras) arriba; aquí verás conceptos del catálogo con enlace al detalle en SkillAtlas.
+            </p>
+            <div data-study-linked-concepts-body class="text-[11px] text-gray-700 dark:text-gray-300 space-y-2"></div>
+          </div>
+        </section>
+
+        <section id="study-setup-step-curriculum" class="scroll-mt-2 space-y-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-4 sm:p-5">
+          <div class="space-y-1">
+            <p class="m-0 text-[10px] font-bold tracking-wide text-gray-500 dark:text-gray-400 uppercase" data-i18n="study.setupStep3Kicker">
+              Paso 3 · Opcional
+            </p>
+            <p class="m-0 text-[11px] font-semibold tracking-wide text-gray-600 dark:text-gray-300 uppercase" data-i18n="study.curriculumKicker">
+              Temario
+            </p>
+            <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100" data-i18n="study.curriculumTitle">
+              Bloques y temas
+            </h3>
+            <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="study.curriculumIntro">
+              Organiza el sílabo en bloques (p. ej. SQL, Python) y marca el estado de cada tema. Se sincroniza con tu cuenta.
+            </p>
+          </div>
+          <div data-study-curriculum class="space-y-3">
+            <div data-study-curriculum-blocks class="space-y-3"></div>
+            <button
+              type="button"
+              data-study-curriculum-add-block
+              class="text-xs font-semibold rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-950/30 px-3 py-2 text-indigo-900 dark:text-indigo-100 hover:bg-indigo-50 dark:hover:bg-indigo-950/45"
+            >
+              <span data-i18n="study.curriculumAddBlock">+ Bloque</span>
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div
+      class="shrink-0 flex flex-wrap items-center justify-end gap-2 border-t border-gray-200/90 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-3 sm:px-5"
+    >
+      <button
+        type="button"
+        data-study-setup-close-footer
+        class="text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-900"
+        data-i18n="study.setupDialogClose"
+      >
+        Cerrar
+      </button>
+      <button
+        type="button"
+        data-study-setup-done
+        class="text-xs font-semibold rounded-xl bg-indigo-600 text-white px-4 py-2 hover:bg-indigo-500 shadow-sm"
+        data-i18n="study.setupDialogDone"
+      >
+        Listo — ir al material
+      </button>
+    </div>
+  </div>
+</dialog>

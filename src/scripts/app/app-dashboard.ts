@@ -1,7 +1,8 @@
 import i18next from "i18next";
 import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 import { getRecentActivity, type RecentActivityEntry } from "@scripts/app/recent-activity";
-import { getTechnologyIconSrc } from "@config/icons";
+import { curriculumBlocksFromRemote, summarizeCurriculumProgress } from "@scripts/study/study-curriculum";
+import { encodePublicIconPath, getTechnologyIconSrc } from "@config/icons";
 import { getCatalogEntryForSlug } from "@scripts/technologies/technology-detail/concept-seeds";
 import { mapGitHubLanguagesToTechSlugs } from "@scripts/core/github-repo-analyzer";
 
@@ -198,13 +199,24 @@ async function hydrateTechUsage(supabase: any, userId: string) {
         hasGithubWeights
           ? `<label class="inline-flex items-center gap-2 text-[11px] font-semibold text-gray-600 dark:text-gray-400">
               GitHub
-              <select data-github-scope class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/70 px-2 py-1 text-[11px] font-semibold text-gray-800 dark:text-gray-200">
+              <div data-select-popover data-placeholder="Todos los proyectos">
+                <select data-github-scope class="sr-only" data-select-native>
                 <option value="all"${githubScope === "all" ? " selected" : ""}>Todos los proyectos</option>
                 ${[...new Map(githubEntries.map((e) => [e.projectSlug, e])).values()]
                   .sort((a, b) => a.projectSlug.localeCompare(b.projectSlug, "es"))
                   .map((e) => `<option value="${escHtml(e.projectSlug)}"${githubScope === e.projectSlug ? " selected" : ""}>${escHtml(e.projectSlug)}</option>`)
                   .join("")}
-              </select>
+                </select>
+                <div class="relative">
+                  <button type="button" class="inline-flex items-center justify-between gap-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-2.5 py-1.5 text-[11px] font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 min-w-[12rem]" data-select-trigger aria-haspopup="listbox" aria-expanded="false">
+                    <span class="min-w-0 truncate" data-select-trigger-label>Todos los proyectos</span>
+                    <span class="shrink-0 opacity-70" aria-hidden="true">▾</span>
+                  </button>
+                  <div class="hidden absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 shadow-lg" data-select-panel>
+                    <ul class="max-h-72 overflow-auto m-0 p-0 divide-y divide-gray-200/70 dark:divide-gray-800" data-select-list role="listbox"></ul>
+                  </div>
+                </div>
+              </div>
             </label>`
           : ""
       }
@@ -237,7 +249,8 @@ async function hydrateTechUsage(supabase: any, userId: string) {
             : kind === "package"
               ? "bg-amber-100/80 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200"
               : "bg-gray-100/80 dark:bg-gray-900/60 text-gray-700 dark:text-gray-200";
-      const iconSrc = getTechnologyIconSrc({ id: t.slug, name: t.name });
+      const iconSrcRaw = entry?.iconPath ?? getTechnologyIconSrc({ id: t.slug, name: t.name });
+      const iconSrc = iconSrcRaw ? encodePublicIconPath(iconSrcRaw) : "";
       const val = mode === "github" && hasGithubWeights ? t.weight : t.count;
       const pct = max > 0 ? Math.round((val / max) * 100) : 0;
       const right = mode === "github" && hasGithubWeights ? fmtPct(val) : String(t.count);
@@ -327,6 +340,7 @@ async function hydrateDashboard() {
   }
 
   await hydrateTechUsage(supabase, user.id);
+  await hydrateStudySnapshot(supabase, user.id);
 
   const [conceptsCountRes, projectsCountRes, techCountRes] = await Promise.all([
     supabase.from("concepts").select("slug", { count: "exact", head: true }),
@@ -360,6 +374,137 @@ async function hydrateDashboard() {
   setList("[data-dashboard-technologies-list]", technologies);
 
   renderRecentSections();
+}
+
+function studyHeadCount(res: { count?: number | null; error?: any }): number {
+  if (res?.error) return 0;
+  return res?.count ?? 0;
+}
+
+async function hydrateStudySnapshot(supabase: any, userId: string) {
+  const root = document.querySelector<HTMLElement>("[data-dashboard-study-root]");
+  if (!root) return;
+
+  const prefsRow = await supabase
+    .from("user_client_state")
+    .select("data")
+    .eq("user_id", userId)
+    .eq("scope", "study_prefs")
+    .maybeSingle();
+
+  const prefsJson = prefsRow?.data?.data as { activeStudySpaceId?: string; goalLabel?: string } | undefined;
+  let spaceId = typeof prefsJson?.activeStudySpaceId === "string" ? prefsJson.activeStudySpaceId.trim() : "";
+
+  if (!spaceId) {
+    const first = await supabase
+      .from("study_spaces")
+      .select("id")
+      .eq("user_id", userId)
+      .order("sort_order", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    spaceId = String(first.data?.id ?? "").trim();
+  }
+
+  const emptyHead = Promise.resolve({ count: 0, error: null as any });
+
+  const [srcRes, chunksRes, notesRes, dossierRow, curriculumRow, spaceTitleRes] = await Promise.all([
+    spaceId
+      ? supabase
+          .from("study_sources")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .eq("study_space_id", spaceId)
+      : emptyHead,
+    spaceId
+      ? supabase
+          .from("study_chunks")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .eq("study_space_id", spaceId)
+      : emptyHead,
+    spaceId
+      ? supabase
+          .from("study_user_notes")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .eq("study_space_id", spaceId)
+      : emptyHead,
+    supabase.from("user_client_state").select("data").eq("user_id", userId).eq("scope", "study_dossiers").maybeSingle(),
+    supabase.from("user_client_state").select("data").eq("user_id", userId).eq("scope", "study_curriculum").maybeSingle(),
+    spaceId
+      ? supabase.from("study_spaces").select("title").eq("id", spaceId).eq("user_id", userId).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+
+  const setTxt = (sel: string, v: string) => {
+    document.querySelectorAll<HTMLElement>(sel).forEach((el) => {
+      el.textContent = v;
+    });
+  };
+
+  setTxt("[data-dashboard-study-sources]", String(studyHeadCount(srcRes)));
+  setTxt("[data-dashboard-study-chunks]", String(studyHeadCount(chunksRes)));
+  setTxt("[data-dashboard-study-notes]", String(studyHeadCount(notesRes)));
+
+  const dossierJson = dossierRow?.data?.data as
+    | { v?: number; dossiers?: unknown[]; bySpaceId?: Record<string, unknown[]> }
+    | undefined;
+  let dCount = 0;
+  if (dossierJson?.v === 2 && dossierJson.bySpaceId && spaceId) {
+    const arr = dossierJson.bySpaceId[spaceId];
+    dCount = Array.isArray(arr) ? arr.length : 0;
+  } else if (Array.isArray(dossierJson?.dossiers)) {
+    dCount = dossierJson!.dossiers!.length;
+  }
+  setTxt("[data-dashboard-study-dossiers]", String(dCount));
+
+  const fromSpace = String((spaceTitleRes as { data?: { title?: string } })?.data?.title ?? "").trim();
+  const fromPrefs = typeof prefsJson?.goalLabel === "string" ? prefsJson.goalLabel.trim() : "";
+  const g = fromSpace || fromPrefs;
+  const goalEl = root.querySelector<HTMLElement>("[data-dashboard-study-goal]");
+  if (goalEl) {
+    if (g) {
+      goalEl.textContent = g;
+      goalEl.classList.remove("hidden");
+    } else {
+      goalEl.textContent = "";
+      goalEl.classList.add("hidden");
+    }
+  }
+
+  const hint = root.querySelector<HTMLElement>("[data-dashboard-study-hint]");
+  if (hint) {
+    const hasErr = Boolean(
+      srcRes.error ||
+        chunksRes.error ||
+        notesRes.error ||
+        dossierRow.error ||
+        prefsRow.error ||
+        curriculumRow.error ||
+        (spaceTitleRes as { error?: unknown }).error,
+    );
+    if (hasErr) {
+      hint.textContent = t("dashboard.study.partialHint");
+      hint.classList.remove("hidden");
+    } else {
+      hint.textContent = "";
+      hint.classList.add("hidden");
+    }
+  }
+
+  const curRow = root.querySelector<HTMLElement>("[data-dashboard-study-curriculum-row]");
+  const curEl = root.querySelector<HTMLElement>("[data-dashboard-study-curriculum]");
+  if (curRow && curEl) {
+    const blocks = curriculumBlocksFromRemote(curriculumRow?.data?.data, spaceId || null);
+    const { total, done } = summarizeCurriculumProgress(blocks);
+    if (total === 0) {
+      curRow.classList.add("hidden");
+    } else {
+      curRow.classList.remove("hidden");
+      curEl.textContent = t("dashboard.study.curriculumProgress", { done, total });
+    }
+  }
 }
 
 function scheduleAppDashboard() {
