@@ -30,8 +30,6 @@ Rutas públicas o de app según `src/pages/`. Los scripts viven en `src/scripts/
 | `/contact` | `contact.astro` | Estático / enlaces de contacto |
 | `/admin` | `admin.astro` | `admin/admin-access-requests.ts`, `admin/admin-dashboard.ts` |
 | `/request-access` | `request-access.astro` | `access/request-access.ts` |
-| `/demo`, `/prep` | `demo.astro`, `prep.astro` | (sin scripts dedicados en tabla; layout global) |
-
 **Layout global:** `src/layouts/AppShell.astro` carga `client.ts`, `shell/fab-bubbles.ts`, `shell/onboarding-spotlight.ts`. El modal de command palette se inicializa desde `client.ts` → `shell/command-palette.ts`.
 
 ## Componentes Astro por área (extractos)

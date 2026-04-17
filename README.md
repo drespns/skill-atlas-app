@@ -102,7 +102,9 @@ según `PUBLIC_DATA_SOURCE`. Así se mantiene un contrato estable al cambiar de 
 | `/projects` | Lista de proyectos |
 | `/projects/[projectId]` | Detalle (modo **mock**) |
 | `/projects/view?project=<slug>` | Detalle (modo **Supabase**, CSR) |
-| `/demo` | Demo pública (estática; no depende de sesión) |
+| `/backlog` | Historial de producto (público; Markdown en build) |
+| `/contact` | Contacto (público) |
+| `/study` | Espacio de estudio (sesión) |
 | `/portfolio` | Portfolio (preview autenticado; en Supabase carga por CSR) |
 | `/portfolio/<slug>` | Portfolio público por slug (on-demand; **saas-011**) |
 | `/p/<token>` | Portfolio público por token revocable (**saas-003**) |
@@ -158,7 +160,7 @@ Las tarjetas de listado enlazan automáticamente a las rutas CSR cuando el data 
 | Versión | Eje principal |
 |---------|----------------|
 | **0.45** | Vercel, portfolio por slug (**saas-011**), CV privado, header/landing |
-| **0.50** | CV público (**saas-012**), OG portfolio + `/og/portfolio.svg`, QA Ajustes, onboarding, `/prep` + `/study` |
+| **0.50** | CV público (**saas-012**), OG portfolio + `/og/portfolio.svg`, QA Ajustes, onboarding, `/study` |
 | **0.60** | Ajustes estilo GitHub, retirada tablero GridStack, prefs laterales |
 | **0.70** | **saas-015** / **saas-016**, portadas de proyecto, thumbnails evidencias, CV público enriquecido, APIs auxiliares, gráficos landing/dashboard |
 

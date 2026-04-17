@@ -38,6 +38,12 @@ Claves legacy (compatibilidad):
   - **dónde**: `src/scripts/tools/habits.ts`
   - **alcance**: dispositivo/navegador (**cache**; la cuenta persiste en `user_client_state` scope `tools_habits`)
 
+- **`skillatlas_tools_expense_tracker_v1`**
+  - **qué**: cuaderno v2 en JSON (gastos con etiquetas y enlaces HTTPS, suscripciones con etiquetas, recordatorios, `tagBank`, preferencias de gráficos, flags `syncToAccount` / `cloudE2E`)
+  - **dónde**: `src/lib/tools-expense-tracker.ts` + `src/scripts/tools/expense-tracker.ts` (+ `expense-tracker-xlsx.ts` para XLSX bajo demanda); cifrado de nube en `src/lib/tools-expense-tracker-crypto.ts` (AES-GCM + PBKDF2 en el navegador)
+  - **alcance**: dispositivo/navegador; si el usuario activa «Guardar también en mi cuenta», también `user_client_state` scope **`tools_expense_tracker`**. El payload remoto es el **mismo JSON** o, si activa «Proteger la copia con frase», un **sobre cifrado** (no se guarda la frase en servidor ni en `localStorage`; solo en memoria de la pestaña hasta recargar). **No** exige migración SQL nueva respecto a `saas-024`.
+  - **UX**: opciones de cuenta y frase van en un popover («Copia en tu cuenta») en la página del cuaderno, con un bloque desplegable **«Qué es esto»** (tutorial en lenguaje sencillo) y cierre automático del popover tras guardar la frase o desbloquear la copia cifrada.
+
 - Otras rutas bajo `/tools` (p. ej. checklist pre-entrevista, Pomodoro) pueden usar **solo memoria de sesión** o claves propias en `localStorage`; no hay sync remota unificada salvo la indicada en cada script.
 
 ### Estudio (`/study`)

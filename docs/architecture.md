@@ -67,7 +67,7 @@ Esto implica que scripts cliente que antes dependían de `DOMContentLoaded` debe
 
 **Tecnologías — import por registro:** ruta API `POST /api/tech-registry-lookup` (sesión Bearer) consulta metadatos en **npm** o **PyPI** (`src/lib/server/registry-lookup.ts`); el formulario en `/technologies` rellena nombre/slug/tipo sugerido.
 
-**Herramientas (`/tools`):** rutas Astro bajo `src/pages/tools/*` con lógica en `src/scripts/tools/*.ts` (habits, convertidor de imágenes en cliente, Markdown/README con `marked` + `DOMPurify`, diff, JSON, QR, etc.). El **hub** lista enlaces; la cabecera expone popover con scroll y la command palette duplica atajos. Todo orientado a utilidades **sin persistencia de servidor** salvo lo ya cubierto por `user_client_state` (p. ej. hábitos sync).
+**Herramientas (`/tools`):** rutas Astro bajo `src/pages/tools/*` con lógica en `src/scripts/tools/*.ts` (habits, gastos/suscripciones con ECharts y CSV, convertidor de imágenes en cliente, Markdown/README con `marked` + `DOMPurify`, diff, JSON, QR, etc.). El **hub** lista enlaces; la cabecera expone popover con scroll y la command palette duplica atajos. Utilidades mayormente locales; sync opcional vía `user_client_state` (p. ej. `tools_habits`, `tools_expense_tracker` con esquema JSON v2: CSV/JSON/XLSX, etiquetas, enlaces, recordatorios). En **`/tools/expense-tracker`**, la copia en cuenta y el cifrado opcional (E2E con frase solo en cliente, vía `src/lib/tools-expense-tracker-crypto.ts`) se exponen en un **popover** bajo «Copia en tu cuenta», con bloque desplegable **«Qué es esto»** (qué hace cada casilla y qué es la frase del cuaderno), copy en lenguaje no técnico y cierre del popover tras guardar frase o desbloquear; la persistencia sigue siendo `user_client_state` / `tools_expense_tracker`. Adjuntos binarios en Storage serían opcionales (`docs/sql/saas-029-tool-expense-tracker-optional-storage.sql`).
 
 **Estudio — Nivel A (Supabase):** `study_workspaces.linked_project_id` y `study_workspace_technologies` (**`saas-025`**) vinculan el workspace a **proyectos** y **tecnologías** ya existentes; la UI de `/study` persiste esos enlaces y los detalles CSR muestran un aviso cuando el recurso está vinculado.
 
@@ -256,7 +256,7 @@ Implicaciones técnicas:
 - Control de acceso: “invites only” (Supabase Auth + checks en UI).
   - Guard de rutas en cliente con `data-requires-auth` (redirección a `/` si no hay sesión).
   - `/login`: se deshabilita signup en UI (solo login + OAuth).
-  - `/demo`: página pública estática para enseñar el look & feel sin depender de sesión ni de datos.
+  - Demos visuales en la **landing** (`/`, bloques estáticos + `landing-charts-preview.ts` / `landing-tools-showcase.ts`) sin depender de sesión; no hay ruta `/demo` dedicada.
 
 ## Roadmap (producto prioritario)
 
