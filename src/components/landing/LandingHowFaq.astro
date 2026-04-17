@@ -1,94 +1,142 @@
 ---
-/** Cómo funciona + FAQ (dos columnas). */
+/** FAQ a ancho completo (landing). */
 ---
-      <section class="grid lg:grid-cols-2 gap-8 items-start">
-        <div
-          data-landing-reveal
-          style="--lr-delay: 50ms"
-          class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-7 shadow-sm"
-        >
-          <h2 class="m-0 text-lg font-semibold" data-i18n="landing.howTitle">Cómo funciona</h2>
-          <div class="mt-5 space-y-3" style="overflow-anchor: none;">
-            <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
-              <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
-                <span data-i18n="landing.how1Summary">1) Define tecnologías</span>
-                <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
-              </summary>
-              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.how1Body">SQL, Tableau, Python… tu mapa base.</p>
-            </details>
-            <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
-              <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
-                <span data-i18n="landing.how2Summary">2) Añade conceptos</span>
-                <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
-              </summary>
-              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.how2Body">
-                Lo que realmente aprendes dentro de cada tecnología.
-              </p>
-            </details>
-            <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
-              <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
-                <span data-i18n="landing.how3Summary">3) Crea proyectos y evidencias</span>
-                <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
-              </summary>
-              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.how3Body">
-                URLs (enlace o embed), tecnologías, conceptos, rol y resultado.
-              </p>
-            </details>
-            <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
-              <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
-                <span data-i18n="landing.how4Summary">4) Publica portfolio</span>
-                <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
-              </summary>
-              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.how4Body">
-                Tarjetas claras, filtro por tecnología y evidencia principal destacada.
-              </p>
-            </details>
-          </div>
-        </div>
 
-        <div
-          data-landing-reveal
-          style="--lr-delay: 90ms"
-          class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/75 dark:bg-gray-950/65 p-7 shadow-sm"
+<section
+  data-landing-reveal
+  style="--lr-delay: 50ms"
+  class="rounded-3xl border border-violet-200/50 dark:border-violet-900/40 bg-white/55 dark:bg-gray-950/45 shadow-sm overflow-hidden"
+  aria-labelledby="landing-faq-heading"
+>
+  <div
+    class="px-6 py-5 border-b border-gray-200/70 dark:border-gray-800/70 bg-linear-to-r from-violet-50/60 via-white/55 to-transparent dark:from-violet-950/35 dark:via-gray-950/50 dark:to-transparent backdrop-blur"
+  >
+    <div class="space-y-1 max-w-3xl">
+      <p class="m-0 text-xs font-semibold tracking-wide text-violet-600 dark:text-violet-300 uppercase" data-i18n="landing.faqKicker">
+        Ayuda
+      </p>
+      <h2 id="landing-faq-heading" class="m-0 text-xl md:text-2xl font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.faqTitle">
+        Preguntas frecuentes
+      </h2>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="landing.faqIntro">
+        Respuestas directas para quien llega sin sesión. Si necesitas algo más concreto, el contacto está abajo.
+      </p>
+    </div>
+  </div>
+
+  <div class="p-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3" style="overflow-anchor: none;">
+      <details
+        class="group rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white/85 dark:bg-gray-950/55 px-4 py-3 shadow-sm transition-colors hover:border-violet-300/70 dark:hover:border-violet-800/60 open:border-violet-400/50 dark:open:border-violet-700/50"
+      >
+        <summary
+          class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded-lg"
         >
-          <h2 class="m-0 text-lg font-semibold" data-i18n="landing.faqTitle">Preguntas frecuentes</h2>
-          <div class="mt-5 space-y-3" style="overflow-anchor: none;">
-            <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
-              <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
-                <span data-i18n="landing.faq1Q">¿Por qué solo por invitación?</span>
-                <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
-              </summary>
-              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.faq1A">
-                Para iterar sin fricción y cuidar la experiencia mientras el producto crece con cabeza.
-              </p>
-            </details>
-            <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
-              <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
-                <span data-i18n="landing.faq2Q">¿Qué es público hoy?</span>
-                <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
-              </summary>
-              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.faq2A">
-                Esta landing, la demo y la página de precios orientativa. La app completa necesita sesión.
-              </p>
-            </details>
-            <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
-              <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
-                <span data-i18n="landing.faq3Q">¿Cómo pido acceso?</span>
-                <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
-              </summary>
-              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.faq3A">
-                Usa “Solicitar acceso” y cuenta tu caso. Respondemos cuando haya hueco.
-              </p>
-            </details>
-            <details class="group rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/60 dark:bg-gray-950/40 p-4">
-              <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none">
-                <span data-i18n="landing.faq4Q">¿Qué sigue en desarrollo?</span>
-                <span class="text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
-              </summary>
-              <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.faq4A">
-                Todo lo de la hoja de ruta de abajo: enlaces públicos de portfolio, CV con export, salidas profesionales, flujo diario más mullido y cobros de verdad. Lo iremos contando cuando merezca la pena.
-              </p>
-            </details>
-          </div>
-        </div>
-      </section>
+          <span data-i18n="landing.faq1Q">¿Por qué solo por invitación?</span>
+          <span class="text-violet-500 dark:text-violet-400 text-lg leading-none group-open:rotate-180 transition-transform">⌄</span>
+        </summary>
+        <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed border-l-2 border-violet-200/80 dark:border-violet-900/60 pl-3" data-i18n="landing.faq1A">
+          Para iterar sin fricción y cuidar la experiencia mientras el producto crece con cabeza.
+        </p>
+      </details>
+
+      <details
+        class="group rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white/85 dark:bg-gray-950/55 px-4 py-3 shadow-sm transition-colors hover:border-violet-300/70 dark:hover:border-violet-800/60 open:border-violet-400/50 dark:open:border-violet-700/50"
+      >
+        <summary
+          class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded-lg"
+        >
+          <span data-i18n="landing.faq2Q">¿Qué es público hoy?</span>
+          <span class="text-violet-500 dark:text-violet-400 text-lg leading-none group-open:rotate-180 transition-transform">⌄</span>
+        </summary>
+        <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed border-l-2 border-violet-200/80 dark:border-violet-900/60 pl-3" data-i18n="landing.faq2A">
+          Esta landing con demos visuales, precios orientativos y la página de contacto sin sesión. Si alguien comparte su portfolio, también verás esa URL pública. El resto de la app requiere invitación e inicio de sesión.
+        </p>
+      </details>
+
+      <details
+        class="group rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white/85 dark:bg-gray-950/55 px-4 py-3 shadow-sm transition-colors hover:border-violet-300/70 dark:hover:border-violet-800/60 open:border-violet-400/50 dark:open:border-violet-700/50"
+      >
+        <summary
+          class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded-lg"
+        >
+          <span data-i18n="landing.faq3Q">¿Cómo pido acceso?</span>
+          <span class="text-violet-500 dark:text-violet-400 text-lg leading-none group-open:rotate-180 transition-transform">⌄</span>
+        </summary>
+        <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed border-l-2 border-violet-200/80 dark:border-violet-900/60 pl-3" data-i18n="landing.faq3A">
+          Usa “Solicitar acceso” y cuenta tu caso. Respondemos cuando haya hueco.
+        </p>
+      </details>
+
+      <details
+        class="group rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white/85 dark:bg-gray-950/55 px-4 py-3 shadow-sm transition-colors hover:border-violet-300/70 dark:hover:border-violet-800/60 open:border-violet-400/50 dark:open:border-violet-700/50"
+      >
+        <summary
+          class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded-lg"
+        >
+          <span data-i18n="landing.faq4Q">¿Qué sigue en desarrollo?</span>
+          <span class="text-violet-500 dark:text-violet-400 text-lg leading-none group-open:rotate-180 transition-transform">⌄</span>
+        </summary>
+        <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed border-l-2 border-violet-200/80 dark:border-violet-900/60 pl-3" data-i18n="landing.faq4A">
+          Lo publicamos en el backlog por versiones. Entre otras líneas: más plantillas, PDF de portfolio, duplicar proyectos y monetización cuando toque.
+        </p>
+      </details>
+
+      <details
+        class="group rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white/85 dark:bg-gray-950/55 px-4 py-3 shadow-sm transition-colors hover:border-violet-300/70 dark:hover:border-violet-800/60 open:border-violet-400/50 dark:open:border-violet-700/50"
+      >
+        <summary
+          class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded-lg"
+        >
+          <span data-i18n="landing.faq5Q">¿Dónde viven mis datos?</span>
+          <span class="text-violet-500 dark:text-violet-400 text-lg leading-none group-open:rotate-180 transition-transform">⌄</span>
+        </summary>
+        <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed border-l-2 border-violet-200/80 dark:border-violet-900/60 pl-3" data-i18n="landing.faq5A">
+          Con sesión, el núcleo vive en Supabase (PostgreSQL) con RLS por cuenta. Herramientas del kit pueden guardar solo en tu navegador hasta que actives almacenamiento en la nube donde exista.
+        </p>
+      </details>
+
+      <details
+        class="group rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white/85 dark:bg-gray-950/55 px-4 py-3 shadow-sm transition-colors hover:border-violet-300/70 dark:hover:border-violet-800/60 open:border-violet-400/50 dark:open:border-violet-700/50"
+      >
+        <summary
+          class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded-lg"
+        >
+          <span data-i18n="landing.faq6Q">¿Tengo que publicar portfolio o CV?</span>
+          <span class="text-violet-500 dark:text-violet-400 text-lg leading-none group-open:rotate-180 transition-transform">⌄</span>
+        </summary>
+        <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed border-l-2 border-violet-200/80 dark:border-violet-900/60 pl-3" data-i18n="landing.faq6A">
+          No. Puedes trabajar todo en privado y encender enlaces públicos solo cuando quieras, desde Ajustes.
+        </p>
+      </details>
+
+      <details
+        class="group rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white/85 dark:bg-gray-950/55 px-4 py-3 shadow-sm transition-colors hover:border-violet-300/70 dark:hover:border-violet-800/60 open:border-violet-400/50 dark:open:border-violet-700/50"
+      >
+        <summary
+          class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded-lg"
+        >
+          <span data-i18n="landing.faq7Q">¿Qué son los precios de la web?</span>
+          <span class="text-violet-500 dark:text-violet-400 text-lg leading-none group-open:rotate-180 transition-transform">⌄</span>
+        </summary>
+        <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed border-l-2 border-violet-200/80 dark:border-violet-900/60 pl-3" data-i18n="landing.faq7A">
+          Una guía orientativa para equipos y uso personal. Los cargos reales llegarán con términos claros cuando activemos facturación.
+        </p>
+      </details>
+
+      <details
+        class="group rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white/85 dark:bg-gray-950/55 px-4 py-3 shadow-sm transition-colors hover:border-violet-300/70 dark:hover:border-violet-800/60 open:border-violet-400/50 dark:open:border-violet-700/50"
+      >
+        <summary
+          class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded-lg"
+        >
+          <span data-i18n="landing.faq8Q">¿Hay app nativa?</span>
+          <span class="text-violet-500 dark:text-violet-400 text-lg leading-none group-open:rotate-180 transition-transform">⌄</span>
+        </summary>
+        <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed border-l-2 border-violet-200/80 dark:border-violet-900/60 pl-3" data-i18n="landing.faq8A">
+          Hoy SkillAtlas es una web app moderna (navegador). Priorizamos flujo de escritorio; el móvil va mejorando de forma incremental.
+        </p>
+      </details>
+    </div>
+  </div>
+</section>

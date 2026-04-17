@@ -90,7 +90,6 @@ function initCommandPalette() {
   const authedNavItems: PaletteItem[] = [
     { id: "go-landing", label: "Inicio · landing pública", href: "/", hint: "/", section: "nav" },
     { id: "go-pricing", label: "Precios", href: "/pricing", hint: "/pricing", section: "nav" },
-    { id: "go-prep", label: "Preparación (visión)", href: "/prep", hint: "/prep", section: "nav" },
     { id: "go-backlog", label: "Historial del producto", href: "/backlog", hint: "/backlog", section: "nav" },
     { id: "go-contact", label: "Contacto", href: "/contact", hint: "/contact", section: "nav" },
     { id: "go-app", label: "Abrir app", href: "/app", hint: "/app", section: "nav" },
@@ -99,6 +98,7 @@ function initCommandPalette() {
     { id: "go-portfolio", label: "Portfolio", href: "/portfolio", hint: "/portfolio", section: "nav" },
     { id: "go-study", label: "Estudio", href: "/study", hint: "/study", section: "nav" },
     { id: "go-tools", label: "Herramientas", href: "/tools", hint: "/tools", section: "nav" },
+    { id: "go-tools-expenses", label: "Herramientas · Gastos", href: "/tools/expense-tracker", hint: "/tools/expense-tracker", section: "nav" },
     { id: "go-tools-habits", label: "Herramientas · Hábitos", href: "/tools/habits", hint: "/tools/habits", section: "nav" },
     { id: "go-tools-convert", label: "Herramientas · Convertidor", href: "/tools/convert", hint: "/tools/convert", section: "nav" },
     { id: "go-tools-readme", label: "Herramientas · Vista Markdown / README", href: "/tools/readme-preview", hint: "/tools/readme-preview", section: "nav" },
@@ -127,11 +127,10 @@ function initCommandPalette() {
   const unauthedItems: PaletteItem[] = [
     { id: "go-landing", label: "Inicio · landing", href: "/", hint: "/", section: "nav" },
     { id: "go-pricing", label: "Precios", href: "/pricing", hint: "/pricing", section: "nav" },
-    { id: "go-prep", label: "Preparación (visión)", href: "/prep", hint: "/prep", section: "nav" },
     { id: "go-backlog", label: "Historial del producto", href: "/backlog", hint: "/backlog", section: "nav" },
     { id: "go-contact", label: "Contacto", href: "/contact", hint: "/contact", section: "nav" },
     { id: "go-login", label: "Entrar (acceso privado)", href: "/login", hint: "/login", section: "nav" },
-    { id: "go-demo", label: "Ver demo", href: "/demo", hint: "/demo", section: "nav" },
+    { id: "go-landing-tools", label: "Herramientas (landing)", href: "/#landing-tools", hint: "/#landing-tools", section: "nav" },
     {
       id: "request-access",
       label: "Solicitar acceso",

@@ -1,0 +1,569 @@
+---
+/** Demos estáticas de herramientas (/tools) para la landing; el carrusel del gasto se anima en `landing-tools-showcase.ts`. */
+---
+
+<section
+  id="landing-tools"
+  data-landing-tools-showcase
+  data-landing-reveal
+  style="--lr-delay: 20ms"
+  class="rounded-3xl border border-indigo-200/40 dark:border-indigo-900/35 bg-white/55 dark:bg-gray-950/50 shadow-md overflow-hidden"
+>
+  <div
+    class="px-6 py-5 border-b border-gray-200/70 dark:border-gray-800/70 bg-linear-to-r from-indigo-50/50 via-white/60 to-violet-50/35 dark:from-indigo-950/25 dark:via-gray-950/45 dark:to-violet-950/20"
+  >
+    <div class="flex flex-wrap items-center gap-2 gap-y-1">
+      <p
+        class="m-0 text-xs font-semibold tracking-wide text-indigo-700 dark:text-indigo-300 uppercase"
+        data-i18n="landing.toolsShowcaseKicker"
+      >
+        Herramientas
+      </p>
+      <span
+        class="text-[10px] font-bold uppercase tracking-wider rounded-full border border-violet-300/80 dark:border-violet-700/60 px-2 py-0.5 text-violet-800 dark:text-violet-200 bg-violet-50/90 dark:bg-violet-950/40"
+        data-i18n="landing.toolsShowcaseBadgeDemo"
+      >
+        Demo
+      </span>
+    </div>
+    <h2 class="mt-2 mb-0 text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100" data-i18n="landing.toolsShowcaseTitle">
+      Un vistazo a las herramientas de la app
+    </h2>
+    <p class="mt-2 mb-0 text-sm text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed" data-i18n="landing.toolsShowcaseIntro">
+      Son demos estáticas con datos de ejemplo para que notes la interfaz sin iniciar sesión.
+    </p>
+    <p class="mt-3 mb-0">
+      <a
+        href="/tools"
+        class="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-700 dark:text-indigo-300 hover:underline"
+        data-i18n="landing.toolsShowcaseAllTools"
+      >
+        Todas las herramientas
+      </a>
+    </p>
+  </div>
+
+  <div class="p-6 space-y-14">
+    <!-- Gastos (destacado) -->
+    <article class="space-y-4" data-landing-tools-et-root>
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h3 class="m-0 text-base font-semibold tracking-tight text-gray-900 dark:text-gray-50" data-i18n="landing.toolsShowcaseEtFeatured">
+            Gastos y suscripciones
+          </h3>
+          <p class="m-0 mt-1 text-sm text-gray-600 dark:text-gray-400 max-w-2xl" data-i18n="landing.toolsShowcaseEtIntro">
+            KPIs, suscripciones y gráficos como en la app.
+          </p>
+        </div>
+        <a
+          href="/tools/expense-tracker"
+          class="inline-flex items-center justify-center rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/90 dark:bg-indigo-950/50 px-4 py-2 text-sm font-semibold text-indigo-900 dark:text-indigo-100 hover:bg-indigo-100/90 dark:hover:bg-indigo-900/40 shrink-0"
+          data-i18n="landing.toolsShowcaseEtCta"
+        >
+          Abrir gastos y suscripciones
+        </a>
+      </div>
+
+      <div
+        class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 shadow-sm p-4 sm:p-5 space-y-5 dark:[color-scheme:dark]"
+        data-landing-tools-et-demo-surface
+      >
+        <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
+          <div class="flex flex-wrap items-end gap-3 min-w-0">
+            <label class="space-y-1">
+              <span
+                class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                data-i18n="landing.toolsShowcaseEtPeriodLabel">Período gastos</span>
+              <span
+                class="lt-et-field min-w-[10rem] font-medium inline-flex items-center px-2 py-1.5 text-sm text-gray-700 dark:text-gray-200"
+                data-i18n="landing.toolsShowcaseEtPeriodValue">Últimos 30 días</span>
+            </label>
+            <label class="space-y-1">
+              <span
+                class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                data-i18n="landing.toolsShowcaseEtChartModeLabel">Gráficos / totales</span>
+              <span
+                class="lt-et-field min-w-[11rem] font-medium inline-flex items-center px-2 py-1.5 text-sm text-gray-700 dark:text-gray-200"
+                data-i18n="landing.toolsShowcaseEtModeValue">Unificar en euros</span>
+            </label>
+          </div>
+          <div class="flex flex-wrap gap-2 shrink-0 pointer-events-none opacity-90" aria-hidden="true">
+            <span class="lt-et-btn-secondary text-sm" data-i18n="landing.toolsShowcaseEtBtnCategory">Nueva categoría</span>
+            <span class="lt-et-btn-secondary text-sm" data-i18n="landing.toolsShowcaseEtBtnExpense">Añadir gasto</span>
+            <span class="lt-et-btn-accent" data-i18n="landing.toolsShowcaseEtBtnSub">Nueva suscripción</span>
+          </div>
+        </div>
+
+        <details class="group rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-900/35 pointer-events-none opacity-90">
+          <summary
+            class="cursor-default list-none px-4 py-3 flex items-center justify-between gap-2 font-semibold text-gray-900 dark:text-gray-100"
+          >
+            <span data-i18n="landing.toolsShowcaseEtBackupSummary">Copia de seguridad y archivos</span>
+            <span class="text-xs font-normal text-gray-500 dark:text-gray-400">···</span>
+          </summary>
+        </details>
+
+        <div
+          class="relative rounded-2xl border border-violet-200/50 dark:border-violet-900/35 bg-gray-950/[0.03] dark:bg-gray-900/40 overflow-hidden"
+          data-landing-tools-et-slider-wrap
+        >
+          <div
+            class="flex overflow-x-auto scroll-smooth snap-x snap-mandatory gap-0 lt-et-slider-track"
+            data-landing-tools-et-track
+            tabindex="0"
+            role="region"
+            aria-roledescription="carousel"
+            data-i18n="landing.toolsShowcaseEtSliderAria"
+            data-i18n-attr="aria-label"
+            aria-label="Carrusel demo del gasto"
+          >
+            <!-- Slide 1 -->
+            <div
+              class="min-w-full shrink-0 snap-center snap-always p-4 sm:p-5 space-y-5 border-r border-transparent"
+              data-landing-tools-et-slide
+              aria-hidden="false"
+            >
+              <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
+                <div
+                  class="rounded-2xl border border-emerald-400/35 dark:border-emerald-700/40 bg-gradient-to-br from-emerald-500/12 via-gray-50/80 to-white dark:from-emerald-950/25 dark:via-gray-950/60 dark:to-gray-900/80 p-4 shadow-sm"
+                >
+                  <p class="m-0 text-xs font-semibold uppercase tracking-wide text-emerald-800/90 dark:text-emerald-300/90" data-i18n="landing.toolsShowcaseEtKpiSubs">Suscripciones activas</p>
+                  <p class="mt-1 mb-0 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">63&nbsp;€</p>
+                  <p class="mt-1 mb-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtKpiSubsHint">Coste mensual equivalente</p>
+                </div>
+                <div
+                  class="rounded-2xl border border-sky-400/35 dark:border-sky-700/40 bg-gradient-to-br from-sky-500/12 via-gray-50/80 to-white dark:from-sky-950/25 dark:via-gray-950/60 dark:to-gray-900/80 p-4 shadow-sm"
+                >
+                  <p class="m-0 text-xs font-semibold uppercase tracking-wide text-sky-800/90 dark:text-sky-300/90" data-i18n="landing.toolsShowcaseEtKpiExp">Gastos en período</p>
+                  <p class="mt-1 mb-0 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">189&nbsp;€</p>
+                  <p class="mt-1 mb-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtKpiExpHint">Suma de filas de la tabla</p>
+                </div>
+                <div
+                  class="rounded-2xl border border-teal-400/40 dark:border-teal-800/45 bg-gradient-to-br from-teal-500/14 via-gray-50/80 to-white dark:from-teal-950/30 dark:via-gray-950/60 dark:to-gray-900/80 p-4 shadow-sm"
+                >
+                  <p class="m-0 text-xs font-semibold uppercase tracking-wide text-teal-800/90 dark:text-teal-300/90" data-i18n="landing.toolsShowcaseEtKpiInc">Ingresos (mes actual)</p>
+                  <p class="mt-1 mb-0 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">498&nbsp;€</p>
+                  <p class="mt-1 mb-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtKpiIncHint">Cobros previstos + extras</p>
+                </div>
+                <div
+                  class="rounded-2xl border border-rose-400/40 dark:border-rose-900/45 bg-gradient-to-br from-rose-500/12 via-gray-50/80 to-white dark:from-rose-950/25 dark:via-gray-950/60 dark:to-gray-900/80 p-4 shadow-sm"
+                >
+                  <p class="m-0 text-xs font-semibold uppercase tracking-wide text-rose-800/90 dark:text-rose-300/90" data-i18n="landing.toolsShowcaseEtKpiBal">Balance (mes actual)</p>
+                  <p class="mt-1 mb-0 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">309&nbsp;€</p>
+                  <p class="mt-1 mb-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtKpiBalHint">Ingresos − gastos del mes</p>
+                </div>
+                <div
+                  class="rounded-2xl border border-violet-400/35 dark:border-violet-700/40 bg-gradient-to-br from-violet-500/12 via-gray-50/80 to-white dark:from-violet-950/25 dark:via-gray-950/60 dark:to-gray-900/80 p-4 shadow-sm sm:col-span-2 xl:col-span-1"
+                >
+                  <p class="m-0 text-xs font-semibold uppercase tracking-wide text-violet-800/90 dark:text-violet-300/90" data-i18n="landing.toolsShowcaseEtKpiBlend">Total combinado (referencia)</p>
+                  <p class="mt-1 mb-0 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">≈&nbsp;252&nbsp;€ <span class="text-lg font-semibold">/ mes</span></p>
+                  <p class="mt-1 mb-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtKpiBlendHint">Subs mensual + gastos del período</p>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <h4 class="m-0 text-sm font-semibold tracking-tight text-gray-900 dark:text-gray-50" data-i18n="landing.toolsShowcaseEtSubsTitle">Suscripciones</h4>
+                <p class="m-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtSubsHint">Toca una tarjeta para editar</p>
+                <div class="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory scroll-smooth">
+                  <div
+                    class="snap-start shrink-0 w-[min(100vw-2rem,17rem)] text-left rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-950 dark:to-gray-900/60 p-4 shadow-sm pointer-events-none"
+                  >
+                    <div class="flex items-start gap-3">
+                      <span class="mt-0.5 h-10 w-1.5 rounded-full shrink-0 bg-amber-400"></span>
+                      <div class="min-w-0 flex-1 space-y-1">
+                        <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtSubActiveMonthly">Activa · Mensual</p>
+                        <p class="m-0 text-base font-semibold tracking-tight text-gray-900 dark:text-gray-50 truncate" data-i18n="landing.toolsShowcaseEtDemoSub1Name">Gimnasio Arco</p>
+                        <p class="m-0 text-lg font-bold text-indigo-700 dark:text-indigo-300 font-mono" data-i18n="landing.toolsShowcaseEtDemoSub1Price">38,50 € · ≈ 38,50 /mes</p>
+                        <p class="m-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtDemoSub1Meta">Desde 2024-09-03</p>
+                        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400 truncate" data-i18n="landing.toolsShowcaseEtDemoSub1Tag">salud</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    class="snap-start shrink-0 w-[min(100vw-2rem,17rem)] text-left rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-950 dark:to-gray-900/60 p-4 shadow-sm pointer-events-none"
+                  >
+                    <div class="flex items-start gap-3">
+                      <span class="mt-0.5 h-10 w-1.5 rounded-full shrink-0 bg-orange-500"></span>
+                      <div class="min-w-0 flex-1 space-y-1">
+                        <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtSubActiveMonthly">Activa · Mensual</p>
+                        <p class="m-0 text-base font-semibold tracking-tight text-gray-900 dark:text-gray-50 truncate" data-i18n="landing.toolsShowcaseEtDemoSub2Name">Suite de diseño</p>
+                        <p class="m-0 text-lg font-bold text-indigo-700 dark:text-indigo-300 font-mono" data-i18n="landing.toolsShowcaseEtDemoSub2Price">12,99 € · ≈ 12,99 /mes</p>
+                        <p class="m-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtDemoSub2Meta">Desde 2025-01-15</p>
+                        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400 truncate" data-i18n="landing.toolsShowcaseEtDemoSub2Tag">trabajo</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    class="snap-start shrink-0 w-[min(100vw-2rem,17rem)] text-left rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-950 dark:to-gray-900/60 p-4 shadow-sm pointer-events-none"
+                  >
+                    <div class="flex items-start gap-3">
+                      <span class="mt-0.5 h-10 w-1.5 rounded-full shrink-0 bg-violet-500"></span>
+                      <div class="min-w-0 flex-1 space-y-1">
+                        <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtSubActiveMonthly">Activa · Mensual</p>
+                        <p class="m-0 text-base font-semibold tracking-tight text-gray-900 dark:text-gray-50 truncate" data-i18n="landing.toolsShowcaseEtDemoSub3Name">Copias en la nube</p>
+                        <p class="m-0 text-lg font-bold text-indigo-700 dark:text-indigo-300 font-mono" data-i18n="landing.toolsShowcaseEtDemoSub3Price">4,99 € · ≈ 4,99 /mes</p>
+                        <p class="m-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtDemoSub3Meta">Desde 2024-05-20</p>
+                        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400 truncate" data-i18n="landing.toolsShowcaseEtDemoSub3Tag">archivos</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    class="snap-start shrink-0 w-[min(100vw-2rem,17rem)] text-left rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-950 dark:to-gray-900/60 p-4 shadow-sm pointer-events-none"
+                  >
+                    <div class="flex items-start gap-3">
+                      <span class="mt-0.5 h-10 w-1.5 rounded-full shrink-0 bg-sky-500"></span>
+                      <div class="min-w-0 flex-1 space-y-1">
+                        <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtSubActiveMonthly">Activa · Mensual</p>
+                        <p class="m-0 text-base font-semibold tracking-tight text-gray-900 dark:text-gray-50 truncate" data-i18n="landing.toolsShowcaseEtDemoSub4Name">Boletín técnico</p>
+                        <p class="m-0 text-lg font-bold text-indigo-700 dark:text-indigo-300 font-mono" data-i18n="landing.toolsShowcaseEtDemoSub4Price">6,50 € · ≈ 6,50 /mes</p>
+                        <p class="m-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtDemoSub4Meta">Desde 2025-02-01</p>
+                        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400 truncate" data-i18n="landing.toolsShowcaseEtDemoSub4Tag">lectura</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 2 -->
+            <div class="min-w-full shrink-0 snap-center snap-always p-4 sm:p-5 space-y-4" data-landing-tools-et-slide>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div
+                  class="rounded-2xl border border-fuchsia-200/70 dark:border-fuchsia-900/40 bg-gradient-to-r from-fuchsia-500/8 via-white/90 to-indigo-500/8 dark:from-fuchsia-950/25 dark:via-gray-950/60 dark:to-indigo-950/25 p-3 shadow-sm min-h-[280px]"
+                  data-landing-tools-et-chart-balance
+                >
+                </div>
+                <div
+                  class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-3 shadow-sm min-h-[280px]"
+                  data-landing-tools-et-chart-pie
+                >
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 3 -->
+            <div class="min-w-full shrink-0 snap-center snap-always p-4 sm:p-5" data-landing-tools-et-slide>
+              <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch">
+                <div
+                  class="xl:col-span-2 rounded-2xl border border-violet-200/70 dark:border-violet-900/40 bg-gradient-to-br from-violet-500/6 via-white/90 to-indigo-500/6 dark:from-violet-950/25 dark:via-gray-950/55 dark:to-indigo-950/25 p-3 shadow-sm min-h-[280px]"
+                  data-landing-tools-et-chart-year
+                >
+                </div>
+                <div class="space-y-3 min-w-0 flex flex-col">
+                  <div
+                    class="rounded-2xl border border-emerald-400/35 dark:border-emerald-800/40 bg-gradient-to-br from-emerald-500/10 to-white/90 dark:from-emerald-950/30 dark:to-gray-900/80 p-4 shadow-sm flex-1"
+                  >
+                    <p class="m-0 text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200" data-i18n="landing.toolsShowcaseEtYearInc">Ingresos (año natural)</p>
+                    <p class="mt-1 mb-0 text-xl font-bold text-gray-900 dark:text-gray-50">3&nbsp;120&nbsp;€</p>
+                    <p class="mt-1 mb-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtYearIncHint">Suma mensual en el año en curso</p>
+                  </div>
+                  <div
+                    class="rounded-2xl border border-orange-400/35 dark:border-orange-900/40 bg-gradient-to-br from-orange-500/10 to-white/90 dark:from-orange-950/25 dark:to-gray-900/80 p-4 shadow-sm flex-1"
+                  >
+                    <p class="m-0 text-xs font-semibold uppercase tracking-wide text-orange-900 dark:text-orange-200" data-i18n="landing.toolsShowcaseEtYearOut">Salidas (año natural)</p>
+                    <p class="mt-1 mb-0 text-xl font-bold text-gray-900 dark:text-gray-50">1&nbsp;895&nbsp;€</p>
+                    <p class="mt-1 mb-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtYearOutHint">Gastos confirmados + suscripciones</p>
+                  </div>
+                  <div
+                    class="rounded-2xl border border-fuchsia-400/40 dark:border-fuchsia-900/45 bg-gradient-to-br from-fuchsia-500/12 to-white/90 dark:from-fuchsia-950/30 dark:to-gray-900/80 p-4 shadow-sm flex-1"
+                  >
+                    <p class="m-0 text-xs font-semibold uppercase tracking-wide text-fuchsia-900 dark:text-fuchsia-200" data-i18n="landing.toolsShowcaseEtYearNet">Balance anual</p>
+                    <p class="mt-1 mb-0 text-xl font-bold text-gray-900 dark:text-gray-50">1&nbsp;225&nbsp;€</p>
+                    <p class="mt-1 mb-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseEtYearNetHint">Ingresos − salidas</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-center gap-2 pb-4 pt-1" data-landing-tools-et-dots>
+            <button
+              type="button"
+              class="group flex h-8 w-8 items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/80"
+              data-landing-tools-et-dot
+              data-i18n="landing.toolsShowcaseEtSlide1Label"
+              data-i18n-attr="aria-label"
+              aria-label="Resumen"
+              aria-current="true"
+            >
+              <span class="block h-2 w-8 rounded-full bg-indigo-500 dark:bg-indigo-400 transition-all" aria-hidden="true"></span>
+            </button>
+            <button
+              type="button"
+              class="group flex h-8 w-8 items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/80"
+              data-landing-tools-et-dot
+              data-i18n="landing.toolsShowcaseEtSlide2Label"
+              data-i18n-attr="aria-label"
+              aria-label="Gráficos"
+              aria-current="false"
+            >
+              <span class="block h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600 transition-all group-hover:bg-gray-400 dark:group-hover:bg-gray-500" aria-hidden="true"></span>
+            </button>
+            <button
+              type="button"
+              class="group flex h-8 w-8 items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/80"
+              data-landing-tools-et-dot
+              data-i18n="landing.toolsShowcaseEtSlide3Label"
+              data-i18n-attr="aria-label"
+              aria-label="Proyección anual"
+              aria-current="false"
+            >
+              <span class="block h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600 transition-all group-hover:bg-gray-400 dark:group-hover:bg-gray-500" aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Hábitos + Pomodoro -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:items-stretch">
+      <article class="relative flex flex-col space-y-3 lg:h-full" data-landing-tools-habits-demo>
+        <svg class="pointer-events-none absolute h-px w-px overflow-hidden opacity-0" aria-hidden="true" focusable="false">
+          <defs>
+            <filter
+              id="skillatlas-landing-habit-crayon"
+              x="-45%"
+              y="-45%"
+              width="190%"
+              height="190%"
+              color-interpolation-filters="sRGB"
+            >
+              <feTurbulence type="fractalNoise" baseFrequency="0.09" numOctaves="2" seed="7" result="n"></feTurbulence>
+              <feDisplacementMap in="SourceGraphic" in2="n" scale="0.9" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+              <feGaussianBlur stdDeviation="0.28"></feGaussianBlur>
+            </filter>
+          </defs>
+        </svg>
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div>
+            <h3 class="m-0 text-base font-semibold tracking-tight text-gray-900 dark:text-gray-50" data-i18n="landing.toolsShowcaseHabitsTitle">Hábitos</h3>
+            <p class="m-0 mt-1 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.toolsShowcaseHabitsIntro">Rejilla mensual.</p>
+          </div>
+          <a
+            href="/tools/habits"
+            class="inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 px-4 py-2 text-sm font-semibold text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 shrink-0"
+            data-i18n="landing.toolsShowcaseHabitsCta"
+          >
+            Abrir hábitos
+          </a>
+        </div>
+        <div class="flex flex-1 flex-col min-h-0 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm p-4 sm:p-5 space-y-3">
+          <div class="flex flex-wrap items-end justify-between gap-3 opacity-90 pointer-events-none">
+            <label class="space-y-1">
+              <span class="text-sm font-semibold text-gray-800 dark:text-gray-100" data-i18n="landing.toolsShowcaseHabitsMonth">Mes</span>
+              <span class="inline-block rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-3 py-2 text-sm font-mono">2026-04</span>
+            </label>
+            <div class="flex flex-col sm:flex-row gap-2 sm:items-end">
+              <span class="text-sm font-semibold text-gray-800 dark:text-gray-100" data-i18n="landing.toolsShowcaseHabitsNew">Nuevo hábito</span>
+              <span class="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 px-3 py-2 text-sm text-gray-400">···</span>
+            </div>
+          </div>
+          <div class="overflow-x-auto rounded-xl border border-gray-200/80 dark:border-gray-800">
+            <table class="w-full border-collapse text-sm min-w-[28rem]">
+              <thead class="sticky top-0 bg-gray-50 dark:bg-gray-900 z-[1]">
+                <tr>
+                  <th class="text-left p-2.5 border-b border-gray-200 dark:border-gray-800 min-w-[10rem] font-semibold text-gray-700 dark:text-gray-200" data-i18n="landing.toolsShowcaseHabitsColHabit">Hábito</th>
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <th class="p-1.5 border-b border-gray-200 dark:border-gray-800 text-center text-[11px] font-semibold text-gray-500 dark:text-gray-400 w-9">{i + 1}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tr>
+                  <td class="p-2.5 font-medium text-gray-900 dark:text-gray-50" data-i18n="landing.toolsShowcaseHabitRead">Leer 20 min</td>
+                  {[1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0].map((on) => (
+                    <td class="p-1 text-center">
+                      <span
+                        class:list={[
+                          "inline-flex h-8 w-8 items-center justify-center rounded-md border text-xs font-bold transition-colors",
+                          on
+                            ? "lt-habit-on habit-cell--paint border-indigo-300/60 dark:border-indigo-700/50"
+                            : "border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600",
+                        ]}
+                      >
+                        {on ? "✓" : ""}
+                      </span>
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td class="p-2.5 font-medium text-gray-900 dark:text-gray-50" data-i18n="landing.toolsShowcaseHabitWalk">Caminar</td>
+                  {[1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1].map((on) => (
+                    <td class="p-1 text-center">
+                      <span
+                        class:list={[
+                          "inline-flex h-8 w-8 items-center justify-center rounded-md border text-xs font-bold",
+                          on
+                            ? "lt-habit-on habit-cell--paint border-indigo-300/60 dark:border-indigo-700/50"
+                            : "border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600",
+                        ]}
+                      >
+                        {on ? "✓" : ""}
+                      </span>
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td class="p-2.5 font-medium text-gray-900 dark:text-gray-50" data-i18n="landing.toolsShowcaseHabitStretch">Estiramientos</td>
+                  {[0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1].map((on) => (
+                    <td class="p-1 text-center">
+                      <span
+                        class:list={[
+                          "inline-flex h-8 w-8 items-center justify-center rounded-md border text-xs font-bold",
+                          on
+                            ? "lt-habit-on habit-cell--paint border-indigo-300/60 dark:border-indigo-700/50"
+                            : "border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600",
+                        ]}
+                      >
+                        {on ? "✓" : ""}
+                      </span>
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td class="p-2.5 font-medium text-gray-900 dark:text-gray-50" data-i18n="landing.toolsShowcaseHabitWater">Agua 2 L</td>
+                  {[1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1].map((on) => (
+                    <td class="p-1 text-center">
+                      <span
+                        class:list={[
+                          "inline-flex h-8 w-8 items-center justify-center rounded-md border text-xs font-bold",
+                          on
+                            ? "lt-habit-on habit-cell--paint border-indigo-300/60 dark:border-indigo-700/50"
+                            : "border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600",
+                        ]}
+                      >
+                        {on ? "✓" : ""}
+                      </span>
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="m-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseHabitsTip">Tip: pulsa una celda para marcar.</p>
+        </div>
+      </article>
+
+      <article class="flex flex-col space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div>
+            <h3 class="m-0 text-base font-semibold tracking-tight text-gray-900 dark:text-gray-50" data-i18n="landing.toolsShowcasePomoTitle">Pomodoro</h3>
+            <p class="m-0 mt-1 text-sm text-gray-600 dark:text-gray-400" data-i18n="landing.toolsShowcasePomoIntro">Temporizador.</p>
+          </div>
+          <a
+            href="/tools/pomodoro"
+            class="inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 px-4 py-2 text-sm font-semibold text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 shrink-0"
+            data-i18n="landing.toolsShowcasePomoCta"
+          >
+            Abrir Pomodoro
+          </a>
+        </div>
+        <div class="max-w-md mx-auto lg:mx-0 text-center space-y-4 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-8 pointer-events-none opacity-95">
+          <p class="m-0 text-sm font-semibold text-indigo-600 dark:text-indigo-400" data-i18n="landing.toolsShowcasePomoPhase">Enfoque</p>
+          <p class="m-0 text-5xl sm:text-6xl font-mono font-bold tabular-nums text-gray-900 dark:text-gray-100">18:42</p>
+          <p class="m-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcasePomoStat">Pomodoros hoy: 3</p>
+          <div class="flex flex-wrap justify-center gap-2 justify-items-center text-xs text-gray-600 dark:text-gray-400">
+            <span class="inline-flex items-center gap-1">
+              <span data-i18n="landing.toolsShowcasePomoWork">Trabajo (min)</span>
+              <span class="w-16 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 font-mono">25</span>
+            </span>
+            <span class="inline-flex items-center gap-1">
+              <span data-i18n="landing.toolsShowcasePomoBreak">Descanso (min)</span>
+              <span class="w-14 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 font-mono">5</span>
+            </span>
+          </div>
+          <div class="flex flex-wrap justify-center gap-2">
+            <span class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white" data-i18n="landing.toolsShowcasePomoStart">Iniciar</span>
+            <span class="rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-semibold text-gray-800 dark:text-gray-100" data-i18n="landing.toolsShowcasePomoPause">Pausa</span>
+            <span class="rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-semibold text-gray-800 dark:text-gray-100" data-i18n="landing.toolsShowcasePomoReset">Reiniciar</span>
+          </div>
+        </div>
+
+        <div class="mt-3 pt-3 border-t border-dashed border-gray-200/90 dark:border-gray-700/80">
+          <p class="m-0 mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="landing.toolsShowcaseMoreTitle">
+            Más herramientas
+          </p>
+          <nav
+            class="flex flex-wrap items-center gap-x-1 gap-y-1 text-xs sm:text-sm text-gray-800 dark:text-gray-200"
+            aria-label="Más herramientas"
+          >
+            <a href="/tools/convert" class="font-medium hover:text-indigo-600 dark:hover:text-indigo-300 hover:underline underline-offset-2" data-i18n="landing.toolsShowcaseMoreConvertTitle">Convertidor</a>
+            <span class="text-gray-300 dark:text-gray-600 select-none px-0.5" aria-hidden="true">·</span>
+            <a href="/tools/readme-preview" class="font-medium hover:text-indigo-600 dark:hover:text-indigo-300 hover:underline underline-offset-2" data-i18n="landing.toolsShowcaseMoreReadmeTitle">README</a>
+            <span class="text-gray-300 dark:text-gray-600 select-none px-0.5" aria-hidden="true">·</span>
+            <a href="/tools/text-diff" class="font-medium hover:text-indigo-600 dark:hover:text-indigo-300 hover:underline underline-offset-2" data-i18n="landing.toolsShowcaseMoreDiffTitle">Diff</a>
+            <span class="text-gray-300 dark:text-gray-600 select-none px-0.5" aria-hidden="true">·</span>
+            <a href="/tools/interview-prep" class="font-medium hover:text-indigo-600 dark:hover:text-indigo-300 hover:underline underline-offset-2" data-i18n="landing.toolsShowcaseMoreInterviewTitle">Entrevista</a>
+            <span class="text-gray-300 dark:text-gray-600 select-none px-0.5" aria-hidden="true">·</span>
+            <a href="/tools/talk-timer" class="font-medium hover:text-indigo-600 dark:hover:text-indigo-300 hover:underline underline-offset-2" data-i18n="landing.toolsShowcaseMoreTalkTitle">Charla</a>
+          </nav>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  :root {
+    --lt-habit-accent-fallback: 239 84% 67%;
+  }
+  [data-landing-tools-et-demo-surface] .lt-et-field {
+    border-radius: 0.5rem;
+    border: 1px solid rgb(229 231 235);
+    background: rgb(255 255 255);
+    box-sizing: border-box;
+  }
+  .dark [data-landing-tools-et-demo-surface] .lt-et-field {
+    border-color: rgb(55 65 81);
+    background: rgb(3 7 18);
+  }
+  [data-landing-tools-et-demo-surface] .lt-et-btn-secondary {
+    border-radius: 0.5rem;
+    border: 1px solid rgb(229 231 235);
+    background: rgb(255 255 255);
+    color: rgb(55 65 81);
+    font-weight: 600;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+  }
+  .dark [data-landing-tools-et-demo-surface] .lt-et-btn-secondary {
+    border-color: rgb(55 65 81);
+    background: rgb(17 24 39);
+    color: rgb(229 231 235);
+  }
+  [data-landing-tools-et-demo-surface] .lt-et-btn-accent {
+    border-radius: 0.5rem;
+    border: 1px solid rgb(165 180 252);
+    background: rgb(238 242 255);
+    color: rgb(55 48 163);
+    font-weight: 600;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+  }
+  .dark [data-landing-tools-et-demo-surface] .lt-et-btn-accent {
+    border-color: rgb(67 56 202 / 0.5);
+    background: rgb(30 27 75 / 0.35);
+    color: rgb(224 231 255);
+  }
+  .lt-et-slider-track {
+    scrollbar-width: none;
+  }
+  .lt-et-slider-track::-webkit-scrollbar {
+    display: none;
+  }
+  [data-landing-tools-habits-demo] .habit-cell--paint {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    filter: url("#skillatlas-landing-habit-crayon");
+  }
+  [data-landing-tools-habits-demo] .lt-habit-on {
+    background-color: hsl(var(--app-accent-hsl, var(--lt-habit-accent-fallback)) / 0.92) !important;
+    color: white;
+    box-shadow: 0 0 0 1px hsl(var(--app-accent-hsl, var(--lt-habit-accent-fallback)) / 0.25) inset !important;
+  }
+</style>
