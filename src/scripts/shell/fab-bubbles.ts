@@ -2,10 +2,10 @@ import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 import { loadPrefs } from "@scripts/core/prefs";
 import { loadClientState, scheduleSaveClientState } from "@scripts/core/user-client-state";
 
-type FabPane = "shortcuts" | "calendar" | "curiosities" | "ai";
+type FabPane = "shortcuts" | "calendar" | "curiosities" | "cvTips" | "ai";
 
 function isFabPane(t: string | null | undefined): t is FabPane {
-  return t === "shortcuts" || t === "calendar" || t === "curiosities" || t === "ai";
+  return t === "shortcuts" || t === "calendar" || t === "curiosities" || t === "cvTips" || t === "ai";
 }
 
 type CalendarItem = { id: string; date: string; title: string; tag?: string };
@@ -220,6 +220,8 @@ function renderCalendar(root: HTMLElement) {
   }
 }
 
+let fabOpenPaneDocListener = false;
+
 function bindFabRoot(root: HTMLElement) {
   const backdrop = root.querySelector<HTMLElement>("[data-fab-backdrop]");
   const panel = root.querySelector<HTMLElement>("[data-fab-panel]");
@@ -306,6 +308,11 @@ function bindFabRoot(root: HTMLElement) {
     if (!allowCal && root.dataset.fabActivePane === "calendar") setFabTab(root, "shortcuts");
     if (!allowCur && root.dataset.fabActivePane === "curiosities") setFabTab(root, "shortcuts");
 
+    const cvTipsTab = root.querySelector<HTMLButtonElement>("[data-fab-tab='cvTips']");
+    const allowCvTips = Boolean(prefs.showFabCvTips ?? true);
+    cvTipsTab?.classList.toggle("hidden", !allowCvTips);
+    if (!allowCvTips && root.dataset.fabActivePane === "cvTips") setFabTab(root, "shortcuts");
+
     const shTab = root.querySelector<HTMLButtonElement>("[data-fab-tab='shortcuts']");
     const allowShortcuts = Boolean(prefs.showFabShortcuts ?? true);
     shTab?.classList.toggle("hidden", !allowShortcuts);
@@ -318,6 +325,19 @@ function bindFabRoot(root: HTMLElement) {
   };
 
   (root as HTMLElement & { __fabApplyLayout?: (a: boolean) => void }).__fabApplyLayout = applyLayout;
+
+  if (!fabOpenPaneDocListener) {
+    fabOpenPaneDocListener = true;
+    document.addEventListener("skillatlas:open-fab-pane", ((evt: Event) => {
+      const r = document.querySelector<HTMLElement>("[data-fab-root]");
+      if (!r || r.dataset.fabBound !== "1") return;
+      const pane = (evt as CustomEvent<{ pane?: string }>).detail?.pane;
+      if (!isFabPane(pane)) return;
+      const prefs = loadPrefs();
+      if (pane === "cvTips" && !(prefs.showFabCvTips ?? true)) return;
+      openFabPanel(r, pane);
+    }) as EventListener);
+  }
 }
 
 async function syncFabBubbles() {
