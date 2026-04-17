@@ -1,0 +1,71 @@
+---
+/** Kanban de ofertas (enlaces guardados en prefs). */
+---
+
+<div data-cv-tab-panel="ofertas" class="cv-tab-panel hidden space-y-5 print:hidden">
+  <div
+    class="rounded-2xl border border-gray-200/70 bg-gradient-to-br from-white/95 to-indigo-50/40 p-5 shadow-md ring-1 ring-black/5 dark:border-gray-700/80 dark:from-gray-950/90 dark:to-indigo-950/20 dark:ring-white/5"
+  >
+    <h2 class="m-0 text-lg font-bold text-gray-900 dark:text-gray-100" data-i18n="cv.jobOffersTitle">Ofertas de empleo</h2>
+    <p class="m-0 mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-400" data-i18n="cv.jobOffersIntro">
+      Pega enlaces a anuncios y muévelos entre columnas. Los datos se guardan en tus preferencias (este dispositivo / cuenta).
+    </p>
+    <form data-cv-job-offer-form class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end">
+      <label class="min-w-0 flex-1 space-y-1">
+        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.jobOfferUrlLabel">Enlace a la oferta</span>
+        <input
+          type="url"
+          data-cv-job-offer-url-input
+          placeholder="https://…"
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+        />
+      </label>
+      <label class="sm:w-56 space-y-1">
+        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.jobOfferTitleLabel">Título (opcional)</span>
+        <input
+          type="text"
+          data-cv-job-offer-title-input
+          placeholder="Empresa · rol"
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+        />
+      </label>
+      <button
+        type="submit"
+        class="inline-flex shrink-0 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+        data-i18n="cv.jobOfferAddBtn"
+      >
+        Añadir
+      </button>
+    </form>
+  </div>
+
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-3" data-cv-job-kanban>
+    <section
+      class="rounded-2xl border border-violet-200/90 bg-gradient-to-b from-violet-50/90 to-white/70 p-3 shadow-sm ring-1 ring-violet-200/40 dark:border-violet-900/40 dark:from-violet-950/35 dark:to-gray-950/40 dark:ring-violet-900/30"
+      data-cv-job-col="todo"
+    >
+      <h3 class="m-0 px-1 text-xs font-bold uppercase tracking-wide text-violet-800 dark:text-violet-200" data-i18n="cv.jobColTodo">
+        Por aplicar
+      </h3>
+      <div data-cv-job-list="todo" class="cv-job-drop-list mt-2 space-y-2 border border-transparent p-0.5"></div>
+    </section>
+    <section
+      class="rounded-2xl border border-sky-200/90 bg-gradient-to-b from-sky-50/90 to-white/70 p-3 shadow-sm ring-1 ring-sky-200/40 dark:border-sky-900/40 dark:from-sky-950/30 dark:to-gray-950/40 dark:ring-sky-900/30"
+      data-cv-job-col="applied"
+    >
+      <h3 class="m-0 px-1 text-xs font-bold uppercase tracking-wide text-sky-800 dark:text-sky-200" data-i18n="cv.jobColApplied">
+        Enviadas
+      </h3>
+      <div data-cv-job-list="applied" class="cv-job-drop-list mt-2 space-y-2 border border-transparent p-0.5"></div>
+    </section>
+    <section
+      class="rounded-2xl border border-amber-200/90 bg-gradient-to-b from-amber-50/90 to-white/70 p-3 shadow-sm ring-1 ring-amber-200/50 dark:border-amber-900/40 dark:from-amber-950/25 dark:to-gray-950/40 dark:ring-amber-900/25"
+      data-cv-job-col="followup"
+    >
+      <h3 class="m-0 px-1 text-xs font-bold uppercase tracking-wide text-amber-900 dark:text-amber-100" data-i18n="cv.jobColFollowup">
+        Seguimiento
+      </h3>
+      <div data-cv-job-list="followup" class="cv-job-drop-list mt-2 space-y-2 border border-transparent p-0.5"></div>
+    </section>
+  </div>
+</div>

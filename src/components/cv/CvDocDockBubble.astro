@@ -1,0 +1,57 @@
+---
+/** /cv: enlace fijo al documento + consejos (bubble ámbar) y panel al hover a la derecha. */
+---
+
+<div class="cv-dock-col-wrap print:hidden">
+  <a
+    href="#cv-document"
+    data-cv-doc-bubble
+    class="cv-doc-bubble-fixed no-underline"
+    data-i18n="cv.bubbleDocLabel"
+    data-i18n-attr="title"
+  >
+    <span class="cv-dock-bubble__icon" aria-hidden="true">📄</span>
+    <span class="cv-dock-bubble__lines">
+      <span class="cv-dock-bubble__prefix" data-i18n="cv.bubbleGoPrefix">Ir al</span>
+      <span class="cv-dock-bubble__strong" data-i18n="cv.bubbleDocShort">documento</span>
+    </span>
+  </a>
+
+  <div class="cv-dock-column--tips">
+    <div class="cv-dock-tips-host" data-cv-dock-tips-host>
+      <button
+        type="button"
+        class="cv-dock-bubble cv-dock-bubble--tips cv-dock-tips-trigger"
+        aria-haspopup="dialog"
+        data-i18n="cv.bubbleTipsAria"
+        data-i18n-attr="aria-label,title"
+      >
+        <span class="cv-dock-bubble__icon" aria-hidden="true">💡</span>
+        <span class="cv-dock-bubble__lines">
+          <span class="cv-dock-bubble__strong" data-i18n="cv.bubbleTipsShort">Consejos</span>
+        </span>
+      </button>
+      <div class="cv-dock-tips-popover">
+        <p class="cv-dock-tips-popover__title" data-i18n="fab.cvTipsTitle">Buenas prácticas de CV</p>
+        <p class="cv-dock-tips-popover__intro" data-i18n="fab.cvTipsIntro"></p>
+        <ul class="cv-dock-tips-popover__list">
+          <li>
+            <span class="cv-dock-tips-popover__bullet" aria-hidden="true">•</span>
+            <span data-i18n="fab.cvTipsBullet1"></span>
+          </li>
+          <li>
+            <span class="cv-dock-tips-popover__bullet" aria-hidden="true">•</span>
+            <span data-i18n="fab.cvTipsBullet2"></span>
+          </li>
+          <li>
+            <span class="cv-dock-tips-popover__bullet" aria-hidden="true">•</span>
+            <span data-i18n="fab.cvTipsBullet3"></span>
+          </li>
+        </ul>
+        <button type="button" class="cv-dock-tips-popover__fab-btn" data-cv-dock-tips-open-fab data-i18n="cv.dockTipsOpenFab">
+          Abrir panel flotante
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

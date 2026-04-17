@@ -1,27 +1,60 @@
 ---
 import AppShell from "../layouts/AppShell.astro";
 import CvPageHeader from "../components/cv/CvPageHeader.astro";
+import CvBrowserTabs from "../components/cv/CvBrowserTabs.astro";
 import CvStatusLines from "../components/cv/CvStatusLines.astro";
 import CvEditorPanel from "../components/cv/CvEditorPanel.astro";
 import CvDocumentHost from "../components/cv/CvDocumentHost.astro";
+import CvCoverTab from "../components/cv/CvCoverTab.astro";
+import CvJobOffersTab from "../components/cv/CvJobOffersTab.astro";
+import CvDocDockBubble from "../components/cv/CvDocDockBubble.astro";
 import CvPreviewModal from "../components/cv/CvPreviewModal.astro";
 import CvImportModal from "../components/cv/CvImportModal.astro";
 import CvImportConfirmModal from "../components/cv/CvImportConfirmModal.astro";
 import CvClearConfirmModal from "../components/cv/CvClearConfirmModal.astro";
 import CvDocumentDialogs from "../components/cv/CvDocumentDialogs.astro";
+import CvSettingsModal from "../components/cv/CvSettingsModal.astro";
 
 const title = "CV";
 ---
 
 <AppShell title={title}>
   <div data-requires-auth class="hidden"></div>
-  <div data-cv-mount class="space-y-8">
-    <CvPageHeader title={title} />
-    <CvStatusLines />
-    <CvEditorPanel />
-    <CvDocumentHost />
+  <div data-cv-mount class="cv-page-shell print:block">
+    <CvDocDockBubble />
+
+    <div class="cv-page-shell__main min-w-0">
+      <CvPageHeader title={title} />
+
+      <div class="cv-tab-zone print:hidden">
+        <CvBrowserTabs />
+      </div>
+
+      <div data-cv-tab-panels-shell class="cv-tab-panels-shell">
+        <div data-cv-tab-panel="cv" class="cv-tab-panel space-y-8 print:space-y-8">
+          <CvStatusLines />
+          <CvEditorPanel />
+          <CvDocumentHost />
+        </div>
+
+        <CvCoverTab />
+        <CvJobOffersTab />
+      </div>
+    </div>
+
+    <aside
+      data-cv-scroll-rail
+      class="cv-scroll-rail print:hidden"
+      aria-label="CV rápidos"
+    >
+      <p class="m-0 text-[10px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.scrollRailTitle">
+        Tus CV
+      </p>
+      <div data-cv-scroll-rail-cards class="mt-2 flex flex-col gap-2"></div>
+    </aside>
   </div>
 
+  <CvSettingsModal />
   <CvPreviewModal />
   <CvImportModal />
   <CvImportConfirmModal />

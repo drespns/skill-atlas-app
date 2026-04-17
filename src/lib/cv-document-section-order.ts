@@ -7,6 +7,7 @@ export const CV_DOCUMENT_SECTION_IDS = [
   "languages",
   "projects",
   "highlights",
+  "coverLetters",
 ] as const;
 
 export type CvDocumentSectionId = (typeof CV_DOCUMENT_SECTION_IDS)[number];

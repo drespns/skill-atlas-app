@@ -10,6 +10,8 @@ import {
 } from "@lib/cv-contact-html";
 import { clampCvPrintMaxPages, cvPrintTypographicScale } from "@lib/cv-print-scale";
 import { applyCvDocumentSectionOrder } from "@lib/cv-document-section-order";
+import { formatCvDateRange } from "@lib/cv-display-format";
+import { CV_TEMPLATE_BODY_CLASSES, normalizeCvTemplateId } from "@lib/cv-templates";
 
 function tt(key: string, fallback: string): string {
   const v = i18next.t(key);
@@ -123,6 +125,15 @@ type RpcCvProfile = {
   cvDocumentSectionOrder?: string[];
   cvPrintMaxPages?: number;
   cvFeaturedProjectSlug?: string;
+  cvTemplate?: string;
+  cvDateDisplayExperience?: string;
+  cvDateDisplayEducation?: string;
+  cvShowExperienceLocation?: boolean;
+  cvShowEducationLocation?: boolean;
+  cvShowEducationDetails?: boolean;
+  cvShowProjectDescriptions?: boolean;
+  cvShowContactLocation?: boolean;
+  coverLetters?: { id?: string; title?: string; body?: string }[];
 };
 
 type RpcPayload = {
@@ -156,6 +167,8 @@ async function run() {
   const docLangSection = document.querySelector<HTMLElement>("[data-public-cv-doc-languages-section]");
   const docLang = document.querySelector<HTMLElement>("[data-public-cv-doc-languages]");
   const docProjectsSection = document.querySelector<HTMLElement>("[data-public-cv-doc-projects-section]");
+  const docCoverSection = document.querySelector<HTMLElement>("[data-public-cv-doc-cover-section]");
+  const docCoverLetters = document.querySelector<HTMLElement>("[data-public-cv-doc-cover-letters]");
   const docPhoto = document.querySelector<HTMLImageElement>("[data-public-cv-doc-photo]");
   const printBtn = document.querySelector<HTMLButtonElement>("[data-public-cv-print]");
 
@@ -232,11 +245,12 @@ async function run() {
 
   if (docContact) {
     const chips: string[] = [];
+    const showLoc = cvProfile.cvShowContactLocation !== false;
     const location = (cvProfile.location ?? "").trim();
     const email = normalizeEmail((cvProfile.email ?? "").trim());
     const phoneMobile = (cvProfile.phoneMobile ?? "").trim();
     const phoneLandline = (cvProfile.phoneLandline ?? "").trim();
-    if (location) chips.push(`<span class="inline-flex items-center gap-1"><span class="text-gray-400">📍</span> ${esc(location)}</span>`);
+    if (location && showLoc) chips.push(`<span class="inline-flex items-center gap-1"><span class="text-gray-400">📍</span> ${esc(location)}</span>`);
     if (email && isProbablyEmail(email)) {
       chips.push(`<a class="no-underline hover:underline" href="mailto:${esc(email)}">${esc(email)}</a>`);
     }
@@ -257,7 +271,8 @@ async function run() {
   const summary = (cvProfile.summary ?? "").trim();
   const finalSummary = summary || bio || "";
   docBio.textContent = finalSummary;
-  docBio.classList.toggle("hidden", !finalSummary);
+  const showSummary = showBlock("summary");
+  docBio.classList.toggle("hidden", !finalSummary || !showSummary);
 
   const showHelp = cvProfile.showHelpStack ?? true;
   if (docHelpStack) {
@@ -316,7 +331,8 @@ async function run() {
         role || outcome
           ? `<p class="m-0 mt-2 text-sm text-gray-600 dark:text-gray-400"><span class="font-semibold text-gray-800 dark:text-gray-200">${esc(role || "—")}</span>${role && outcome ? " · " : ""}${esc(outcome)}</p>`
           : "";
-      const desc = (p.description ?? "").trim();
+      const descOn = cvProfile.cvShowProjectDescriptions !== false;
+      const desc = descOn ? (p.description ?? "").trim() : "";
       const coverPath = (p.coverImagePath ?? "").trim();
       const coverUrl = coverPath ? publicStorageObjectUrl("project_covers", coverPath) : "";
       const pe = p.primaryEmbed;
@@ -389,6 +405,8 @@ async function run() {
     const exp = Array.isArray(cvProfile.experiences) ? cvProfile.experiences : [];
     const show = exp.length > 0 && showBlock("experience");
     docExperienceSection.classList.toggle("hidden", !show);
+    const expDateMode = cvProfile.cvDateDisplayExperience === "year" ? "year" : "full";
+    const expShowLoc = cvProfile.cvShowExperienceLocation !== false;
     docExperience.innerHTML = show
       ? exp
           .map((x) => {
@@ -397,7 +415,7 @@ async function run() {
             const loc = (x.location ?? "").trim();
             const start = (x.start ?? "").trim();
             const end = (x.end ?? "").trim();
-            const when = [start, end].filter(Boolean).join(" – ");
+            const when = formatCvDateRange(start, end, expDateMode);
             const bullets = linesToBullets(x.bullets ?? "");
             const bulletsHtml =
               bullets.length > 0
@@ -405,11 +423,14 @@ async function run() {
                     .map((b) => `<li>${esc(b)}</li>`)
                     .join("")}</ul>`
                 : "";
+            const subParts = [company];
+            if (expShowLoc && loc) subParts.push(loc);
+            const subLine = subParts.filter(Boolean).join(" · ");
             return `<section class="cv-doc-project">
               <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                 <div class="min-w-0">
                   <p class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100">${esc(role || company || tt("cv.untitled", "—"))}</p>
-                  <p class="m-0 text-sm text-gray-600 dark:text-gray-400">${esc([company, loc].filter(Boolean).join(" · "))}</p>
+                  <p class="m-0 text-sm text-gray-600 dark:text-gray-400">${esc(subLine)}</p>
                 </div>
                 <p class="m-0 text-xs font-semibold text-gray-500 dark:text-gray-400">${esc(when)}</p>
               </div>
@@ -425,6 +446,9 @@ async function run() {
     const edu = Array.isArray(cvProfile.education) ? cvProfile.education : [];
     const show = edu.length > 0 && showBlock("education");
     docEducationSection.classList.toggle("hidden", !show);
+    const eduDateMode = cvProfile.cvDateDisplayEducation === "year" ? "year" : "full";
+    const eduShowLoc = cvProfile.cvShowEducationLocation !== false;
+    const eduShowDetails = cvProfile.cvShowEducationDetails !== false;
     docEducation.innerHTML = show
       ? edu
           .map((x) => {
@@ -433,19 +457,22 @@ async function run() {
             const loc = (x.location ?? "").trim();
             const start = (x.start ?? "").trim();
             const end = (x.end ?? "").trim();
-            const when = [start, end].filter(Boolean).join(" – ");
+            const when = formatCvDateRange(start, end, eduDateMode);
             const details = linesToBullets(x.details ?? "");
             const detailsHtml =
-              details.length > 0
+              eduShowDetails && details.length > 0
                 ? `<ul class="mt-2 space-y-1 pl-5 text-sm text-gray-700 dark:text-gray-300">${details
                     .map((b) => `<li>${esc(b)}</li>`)
                     .join("")}</ul>`
                 : "";
+            const subParts = [school];
+            if (eduShowLoc && loc) subParts.push(loc);
+            const subLine = subParts.filter(Boolean).join(" · ");
             return `<section class="cv-doc-project">
               <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                 <div class="min-w-0">
                   <p class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100">${esc(degree || school || tt("cv.untitled", "—"))}</p>
-                  <p class="m-0 text-sm text-gray-600 dark:text-gray-400">${esc([school, loc].filter(Boolean).join(" · "))}</p>
+                  <p class="m-0 text-sm text-gray-600 dark:text-gray-400">${esc(subLine)}</p>
                 </div>
                 <p class="m-0 text-xs font-semibold text-gray-500 dark:text-gray-400">${esc(when)}</p>
               </div>
@@ -501,8 +528,32 @@ async function run() {
       : "";
   }
 
+  if (docCoverSection && docCoverLetters) {
+    const letters = Array.isArray(cvProfile.coverLetters) ? cvProfile.coverLetters : [];
+    const show = letters.some((c) => (c.body ?? "").trim().length > 0) && showBlock("coverLetters");
+    docCoverSection.classList.toggle("hidden", !show);
+    docCoverLetters.innerHTML = show
+      ? letters
+          .filter((c) => (c.body ?? "").trim().length > 0)
+          .map((c) => {
+            const t0 = (c.title ?? "").trim() || tt("cv.coverUntitled", "Carta");
+            const body = (c.body ?? "").trim();
+            const wc = body.split(/\s+/).filter(Boolean).length;
+            return `<section class="cv-doc-project">
+                <h4 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100">${esc(t0)}</h4>
+                <p class="m-0 mt-2 whitespace-pre-wrap text-sm leading-relaxed text-gray-700 dark:text-gray-300">${esc(body)}</p>
+                <p class="m-0 mt-1 text-[10px] text-gray-400">${wc} ${esc(tt("cv.coverWords", "palabras"))}</p>
+              </section>`;
+          })
+          .join("")
+      : "";
+  }
+
   const sectionsHost = docEl.querySelector<HTMLElement>("[data-cv-doc-sections]");
   applyCvDocumentSectionOrder(sectionsHost, cvProfile.cvDocumentSectionOrder);
+
+  docEl.classList.remove(...CV_TEMPLATE_BODY_CLASSES);
+  docEl.classList.add(`cv-template-${normalizeCvTemplateId(cvProfile.cvTemplate)}`);
 
   const maxP = clampCvPrintMaxPages(cvProfile.cvPrintMaxPages);
   docEl.style.setProperty("--cv-print-scale", String(cvPrintTypographicScale(maxP)));

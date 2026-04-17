@@ -1,0 +1,35 @@
+---
+/** Pestañas estilo carpeta para /cv (CV · Cartas · Ofertas). */
+---
+
+<div class="cv-browser-tabs print:hidden" data-cv-browser-tabs>
+  <div class="flex flex-wrap items-end gap-0" role="tablist" aria-label="CV workspace">
+    <button
+      type="button"
+      role="tab"
+      aria-selected="true"
+      data-cv-nav-tab="cv"
+      class="cv-folder-tab cv-folder-tab--cv cv-folder-tab-active"
+    >
+      <span data-i18n="cv.tabCv">CV</span>
+    </button>
+    <button
+      type="button"
+      role="tab"
+      aria-selected="false"
+      data-cv-nav-tab="cartas"
+      class="cv-folder-tab cv-folder-tab--cartas"
+    >
+      <span data-i18n="cv.tabCartas">Cartas</span>
+    </button>
+    <button
+      type="button"
+      role="tab"
+      aria-selected="false"
+      data-cv-nav-tab="ofertas"
+      class="cv-folder-tab cv-folder-tab--ofertas"
+    >
+      <span data-i18n="cv.tabOfertas">Ofertas</span>
+    </button>
+  </div>
+</div>

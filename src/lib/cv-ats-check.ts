@@ -10,7 +10,10 @@ export type CvTemplateForAts =
   | "compact"
   | "mono"
   | "sidebar"
-  | "serif";
+  | "serif"
+  | "atlas"
+  | "contrast"
+  | "focus";
 
 export type AtsCvProfileInput = {
   email?: string;
@@ -28,6 +31,8 @@ export type AtsCvProfileInput = {
   showHelpStack?: boolean;
   highlights?: string;
   cvSectionVisibility?: Record<string, boolean>;
+  /** Cartas guardadas en el perfil (solo se usa presencia para el checklist). */
+  coverLetters?: Array<{ body?: string }>;
 };
 
 /** Claves i18n bajo `cv.ats.*` (mensaje completo por clave). */
@@ -46,7 +51,10 @@ function normalizeTemplate(raw: string): CvTemplateForAts | string {
     t === "compact" ||
     t === "mono" ||
     t === "sidebar" ||
-    t === "serif"
+    t === "serif" ||
+    t === "atlas" ||
+    t === "contrast" ||
+    t === "focus"
   )
     return t;
   return "classic";
@@ -97,8 +105,15 @@ export function analyzeCvForAts(profile: AtsCvProfileInput, templateId: string):
   if (edu.length === 0) info.push("cv.ats.info.noEducation");
 
   if (tpl === "sidebar") warn.push("cv.ats.warn.sidebarLayout");
+  if (tpl === "atlas") info.push("cv.ats.info.decorativeTemplate");
+
+  const cov = Array.isArray(profile.coverLetters)
+    ? profile.coverLetters.filter((c) => String(c?.body ?? "").trim())
+    : [];
+  if (cov.length > 0) ok.push("cv.ats.ok.coverLetters");
 
   const vis = profile.cvSectionVisibility ?? {};
+  if (vis.summary === false) warn.push("cv.ats.warn.sectionSummaryHidden");
   if (vis.experience === false) warn.push("cv.ats.warn.sectionExperienceHidden");
   if (vis.education === false) info.push("cv.ats.info.sectionEducationHidden");
   if (vis.projects === false) info.push("cv.ats.info.sectionProjectsHidden");

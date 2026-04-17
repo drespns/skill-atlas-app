@@ -7,5 +7,7 @@ export function clampCvPrintMaxPages(raw: unknown, fallback = 3): number {
 
 export function cvPrintTypographicScale(maxPages: unknown): number {
   const n = clampCvPrintMaxPages(maxPages);
-  return 0.78 + ((n - 1) / 5) * 0.22;
+  /** Objetivo 1 página: escala más agresiva para acercar el documento a una sola hoja A4. */
+  if (n === 1) return 0.66;
+  return 0.74 + ((n - 2) / 4) * 0.24;
 }
