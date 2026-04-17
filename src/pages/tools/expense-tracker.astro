@@ -1,0 +1,1023 @@
+---
+import AppShell from "../../layouts/AppShell.astro";
+
+const title = "Gastos y suscripciones";
+const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
+---
+
+<AppShell title={title}>
+  <div data-requires-auth class="hidden"></div>
+  <section class="space-y-6 w-full" data-tools-expense-page>
+    <header class="space-y-3">
+      <a href="/tools" class="text-sm font-semibold text-gray-700 dark:text-gray-200 hover:underline">← Herramientas</a>
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div class="space-y-2 min-w-0 flex-1">
+          <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">{title}</h1>
+          <p class="m-0 text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed">
+            Tus gastos se quedan en este navegador salvo que tú actives una copia en tu cuenta (botón arriba a la derecha).
+            Incluso con copia en la nube, <strong class="font-medium text-gray-800 dark:text-gray-200">otro usuario de la app no puede abrir tu hoja</strong>: cada uno solo ve lo suyo. Si además usas la frase del cuaderno, la copia sube cifrada y
+            <strong class="font-medium text-gray-800 dark:text-gray-200">ni quien tenga acceso técnico a la base de datos puede leer los importes</strong> sin esa frase (que no guardamos en servidor).
+          </p>
+        </div>
+        <div class="relative shrink-0" data-et-sync-host>
+          <button
+            type="button"
+            data-et-sync-popover-toggle
+            class="inline-flex items-center gap-2 rounded-xl border border-indigo-200/90 dark:border-indigo-800/80 bg-indigo-50/90 dark:bg-indigo-950/40 px-3 py-2 text-sm font-semibold text-indigo-900 dark:text-indigo-100 hover:bg-indigo-100/90 dark:hover:bg-indigo-950/70 shadow-sm"
+            aria-expanded="false"
+            aria-haspopup="dialog"
+            aria-controls="et-sync-popover-panel"
+            id="et-sync-popover-trigger"
+          >
+            <span class="relative inline-flex h-2 w-2 shrink-0 rounded-full bg-indigo-400 dark:bg-indigo-500 opacity-0" data-et-sync-status-dot aria-hidden="true"></span>
+            <span>Copia en tu cuenta</span>
+            <svg class="h-4 w-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="m6 9 6 6 6-6"></path>
+            </svg>
+          </button>
+          <div
+            id="et-sync-popover-panel"
+            data-et-sync-popover
+            class="hidden absolute right-0 sm:right-0 left-0 sm:left-auto top-full mt-2 w-[min(100%,22rem)] sm:w-[min(100vw-2rem,24rem)] rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-white/98 dark:bg-gray-950/98 backdrop-blur-md shadow-xl z-50 p-4 space-y-3"
+            role="dialog"
+            aria-labelledby="et-sync-popover-title"
+          >
+            <h2 id="et-sync-popover-title" class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">
+              Copia en tu cuenta
+            </h2>
+            <details
+              class="group rounded-xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/90 dark:bg-gray-900/45 px-3 py-2.5"
+            >
+              <summary
+                class="cursor-pointer list-none flex items-center justify-between gap-2 text-xs font-semibold text-gray-800 dark:text-gray-200 select-none"
+              >
+                <span>Guía rápida</span>
+                <span class="text-[10px] font-normal text-gray-500 dark:text-gray-400 group-open:hidden">Abrir</span>
+                <span class="text-[10px] font-normal text-gray-500 dark:text-gray-400 hidden group-open:inline">Cerrar</span>
+              </summary>
+              <div class="mt-3 space-y-3 text-xs text-gray-600 dark:text-gray-400 leading-snug border-t border-gray-200/80 dark:border-gray-800 pt-3">
+                <div class="rounded-lg bg-white/80 dark:bg-gray-950/50 border border-gray-200/70 dark:border-gray-700/80 px-2.5 py-2 space-y-1.5">
+                  <p class="m-0 font-semibold text-gray-900 dark:text-gray-100 text-[11px] uppercase tracking-wide">¿Quién puede ver tus gastos?</p>
+                  <ul class="m-0 pl-4 space-y-1 list-disc marker:text-indigo-400">
+                    <li><strong class="text-gray-800 dark:text-gray-200">Solo en el navegador:</strong> no salen de tu equipo.</li>
+                    <li><strong class="text-gray-800 dark:text-gray-200">Copia en cuenta (sin segunda casilla):</strong> la app solo enseña tu copia a tu sesión; otro usuario o un “admin” usando la web con su cuenta <strong class="text-gray-800 dark:text-gray-200">no entra en tus filas</strong>.</li>
+                    <li><strong class="text-gray-800 dark:text-gray-200">Copia + frase del cuaderno:</strong> en el servidor solo hay caracteres sin sentido; <strong class="text-gray-800 dark:text-gray-200">sin tu frase no se leen los importes</strong> ni desde la app ni abriendo la base a mano.</li>
+                  </ul>
+                </div>
+                <ul class="m-0 pl-4 space-y-2 list-disc marker:text-gray-400">
+                  <li>
+                    <strong class="text-gray-800 dark:text-gray-200">Casilla 1 — Guardar en mi cuenta:</strong> misma hoja en varios dispositivos con tu usuario.
+                  </li>
+                  <li>
+                    <strong class="text-gray-800 dark:text-gray-200">Casilla 2 — Proteger con frase:</strong> solo tras la 1. Cifra la copia antes de subirla; hace falta la <strong class="text-gray-800 dark:text-gray-200">frase del cuaderno</strong> (tú la inventas; no la guardamos).
+                  </li>
+                </ul>
+                <div class="rounded-lg border border-dashed border-gray-300/90 dark:border-gray-600 px-2.5 py-2 space-y-1">
+                  <p class="m-0 text-[11px] font-semibold text-gray-700 dark:text-gray-300">Ejemplo de frase (no la copies tal cual)</p>
+                  <p class="m-0 font-mono text-[11px] text-gray-800 dark:text-gray-200 break-all">gatos-Luna-cafe-2026</p>
+                  <p class="m-0 text-[10px] text-gray-500 dark:text-gray-500">Mezcla palabras que recuerdes; mínimo 8 caracteres.</p>
+                </div>
+                <p class="m-0 text-[11px] text-gray-500 dark:text-gray-500">
+                  Orden: 1) cuenta → 2) opcional frase → 3) botón «Elegir o cambiar la frase…». Si olvidas la frase, la copia cifrada no se recupera.
+                </p>
+              </div>
+            </details>
+            <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400">Las dos casillas son opcionales.</p>
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                data-et-sync
+                class="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span class="text-sm leading-snug">
+                <span class="font-semibold text-gray-900 dark:text-gray-100">Guardar también en mi cuenta</span>
+                <span class="block text-gray-600 dark:text-gray-400 mt-0.5 text-xs">Misma hoja en otros dispositivos con tu sesión; conexión cifrada.</span>
+              </span>
+            </label>
+            <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-800 pt-3">
+              <input
+                type="checkbox"
+                data-et-cloud-e2e
+                class="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span class="text-sm leading-snug">
+                <span class="font-semibold text-gray-900 dark:text-gray-100">Proteger la copia con frase</span>
+                <span class="block text-gray-600 dark:text-gray-400 mt-0.5 text-xs">Requiere la primera. Sin la frase, la copia en la nube es ilegible. No guardamos la frase.</span>
+              </span>
+            </label>
+            <p class="hidden m-0 text-xs text-amber-800 dark:text-amber-200/95 rounded-lg bg-amber-50/90 dark:bg-amber-950/35 px-2.5 py-2" data-et-e2e-pass-hint>
+              Marca «Proteger la copia con frase» y luego pulsa el botón de abajo para escribir la frase del cuaderno (sin ella no se sube nada cifrado).
+            </p>
+            <button
+              type="button"
+              data-et-e2e-passphrase
+              class="w-full rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/80 dark:bg-indigo-950/50 px-3 py-2 text-sm font-semibold text-indigo-900 dark:text-indigo-100 hover:bg-indigo-100/80 dark:hover:bg-indigo-900/40"
+            >
+              Elegir o cambiar la frase del cuaderno…
+            </button>
+            <div
+              class="hidden rounded-xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/90 dark:bg-amber-950/30 px-3 py-2.5 text-xs text-amber-950 dark:text-amber-100 space-y-2"
+              data-et-e2e-unlock-banner
+            >
+              <p class="m-0 leading-snug" data-et-e2e-unlock-text></p>
+              <button type="button" data-et-e2e-unlock-btn class="w-full rounded-lg bg-amber-200/90 dark:bg-amber-900/50 px-2 py-1.5 font-semibold text-amber-950 dark:text-amber-50">
+                Introducir frase y continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="hidden m-0 text-sm text-amber-900 dark:text-amber-100/95 max-w-3xl" data-et-e2e-outside-hint>
+        Hay una copia en tu cuenta protegida con frase.
+        <button type="button" class="font-semibold underline ml-1" data-et-sync-open-popover>Abrir ajustes</button>
+      </p>
+    </header>
+
+    <div
+      class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 shadow-sm p-4 sm:p-5 space-y-5 dark:[color-scheme:dark]"
+      data-et-surface
+    >
+      <div class="rounded-xl border border-cyan-200/60 dark:border-cyan-900/40 bg-gradient-to-r from-cyan-500/10 via-white/80 to-sky-500/5 dark:from-cyan-950/30 dark:via-gray-950/40 dark:to-sky-950/20 px-3 py-2.5 sm:px-4 sm:py-3">
+        <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3">
+          <span class="text-xs font-semibold uppercase tracking-wide text-cyan-900/90 dark:text-cyan-200/90 shrink-0">Tipo de cambio</span>
+          <div class="flex flex-wrap items-center gap-2 min-w-0">
+            <span class="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">1 USD →</span>
+            <input type="number" step="0.0001" min="0.2" max="5" data-et-fx class="et-field w-24 sm:w-28 font-mono text-sm py-1.5" title="Euros que equivalen a 1 USD" />
+            <span class="text-xs text-gray-600 dark:text-gray-400">EUR</span>
+          </div>
+          <p class="m-0 text-[11px] text-gray-600 dark:text-gray-400 font-mono sm:ml-auto min-w-0" data-et-fx-hint></p>
+        </div>
+      </div>
+
+      <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
+        <div class="flex flex-wrap items-end gap-3 min-w-0">
+          <label class="space-y-1">
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Período gastos</span>
+            <select data-et-period class="et-field min-w-[10rem] font-medium">
+              <option value="30d">Últimos 30 días</option>
+              <option value="90d">Últimos 90 días</option>
+              <option value="6m">Últimos 6 meses</option>
+              <option value="12m">Últimos 12 meses</option>
+              <option value="ytd">Este año (YTD)</option>
+              <option value="all">Todo</option>
+            </select>
+          </label>
+          <label class="space-y-1">
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Gráficos / totales</span>
+            <select data-et-chart-mode class="et-field min-w-[11rem] font-medium">
+              <option value="mixed">Mixto (EUR y USD)</option>
+              <option value="unify_eur">Unificar en euros</option>
+              <option value="unify_usd">Unificar en dólares</option>
+            </select>
+          </label>
+        </div>
+        <div class="flex flex-wrap gap-2 shrink-0">
+          <button type="button" data-et-add-category class="et-btn-secondary">Nueva categoría</button>
+          <button type="button" data-et-add-expense class="et-btn-secondary text-sm">Añadir gasto</button>
+          <button type="button" data-et-open-sub-modal class="et-btn-accent">Nueva suscripción</button>
+        </div>
+      </div>
+
+      <details class="group rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-900/35 open:shadow-md">
+        <summary class="cursor-pointer list-none px-4 py-3 flex items-center justify-between gap-2 font-semibold text-gray-900 dark:text-gray-100">
+          <span>Copia de seguridad y archivos</span>
+          <span class="text-xs font-normal text-gray-500 dark:text-gray-400 group-open:hidden">Mostrar ayuda y botones</span>
+          <span class="text-xs font-normal text-gray-500 dark:text-gray-400 hidden group-open:inline">Ocultar</span>
+        </summary>
+        <div class="px-4 pb-4 pt-0 space-y-4 border-t border-gray-200/80 dark:border-gray-800">
+          <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-3xl">
+            Aquí sacas o metes una copia de <strong class="text-gray-800 dark:text-gray-200">toda la hoja</strong> (gastos, suscripciones, categorías, recordatorios…).
+            <span class="text-gray-500 dark:text-gray-500">CSV</span> abre en Excel;
+            <span class="text-gray-500">JSON</span> es el formato interno exacto (ideal para respaldo);
+            <span class="text-gray-500">XLSX</span> es una hoja de cálculo con varias pestañas (misma información que JSON).
+          </p>
+          <input type="file" accept=".csv,text/csv" class="hidden" data-et-file-csv />
+          <input type="file" accept=".json,.txt,application/json" class="hidden" data-et-file-json />
+          <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="hidden" data-et-file-xlsx />
+          <div class="flex flex-wrap gap-2">
+            <button type="button" data-et-export-csv class="et-btn-secondary text-sm">Descargar CSV</button>
+            <button type="button" data-et-export-json class="et-btn-secondary text-sm">Descargar JSON</button>
+            <button type="button" data-et-export-xlsx class="et-btn-secondary text-sm">Descargar XLSX</button>
+            <button type="button" data-et-import-csv class="et-btn-dashed text-sm">Importar CSV (añade filas)</button>
+            <button type="button" data-et-import-json class="et-btn-dashed text-sm">Importar JSON</button>
+            <button type="button" data-et-import-xlsx class="et-btn-dashed text-sm">Importar XLSX</button>
+          </div>
+          <ul class="m-0 pl-5 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+            <li><strong class="text-gray-700 dark:text-gray-300">CSV:</strong> columnas tipo (<code class="text-[11px]">gasto</code>, <code class="text-[11px]">ingreso</code>, <code class="text-[11px]">suscripcion</code>), fechas, importe, moneda, categoría (puedes usar «Padre / Hijo»), etiquetas, enlaces, notas.</li>
+            <li><strong class="text-gray-700 dark:text-gray-300">JSON:</strong> al importar, Aceptar fusiona por id; Cancelar sustituye el cuaderno (se mantienen opciones de vista y sync).</li>
+            <li><strong class="text-gray-700 dark:text-gray-300">XLSX:</strong> mismas reglas que JSON; hojas Gastos, Ingresos, Suscripciones, Recordatorios, Cobros, Meta, TagBank.</li>
+          </ul>
+        </div>
+      </details>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
+        <div
+          class="rounded-2xl border border-emerald-400/35 dark:border-emerald-700/40 bg-gradient-to-br from-emerald-500/12 via-gray-50/80 to-white dark:from-emerald-950/25 dark:via-gray-950/60 dark:to-gray-900/80 p-4 shadow-sm"
+        >
+          <p class="m-0 text-xs font-semibold uppercase tracking-wide text-emerald-800/90 dark:text-emerald-300/90">Suscripciones activas</p>
+          <p class="mt-1 mb-0 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50" data-et-kpi-subs>—</p>
+          <p class="mt-1 mb-0 text-xs text-gray-500 dark:text-gray-400">Coste mensual equivalente (según ciclo)</p>
+        </div>
+        <div
+          class="rounded-2xl border border-sky-400/35 dark:border-sky-700/40 bg-gradient-to-br from-sky-500/12 via-gray-50/80 to-white dark:from-sky-950/25 dark:via-gray-950/60 dark:to-gray-900/80 p-4 shadow-sm"
+        >
+          <p class="m-0 text-xs font-semibold uppercase tracking-wide text-sky-800/90 dark:text-sky-300/90">Gastos en período</p>
+          <p class="mt-1 mb-0 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50" data-et-kpi-expenses>—</p>
+          <p class="mt-1 mb-0 text-xs text-gray-500 dark:text-gray-400">Suma de filas de la tabla</p>
+        </div>
+        <div
+          class="rounded-2xl border border-teal-400/40 dark:border-teal-800/45 bg-gradient-to-br from-teal-500/14 via-gray-50/80 to-white dark:from-teal-950/30 dark:via-gray-950/60 dark:to-gray-900/80 p-4 shadow-sm"
+        >
+          <p class="m-0 text-xs font-semibold uppercase tracking-wide text-teal-800/90 dark:text-teal-300/90">Ingresos (mes actual)</p>
+          <p class="mt-1 mb-0 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50" data-et-kpi-income>—</p>
+          <p class="mt-1 mb-0 text-xs text-gray-500 dark:text-gray-400">Cobros previstos + extras en el mes</p>
+        </div>
+        <div
+          class="rounded-2xl border border-rose-400/40 dark:border-rose-900/45 bg-gradient-to-br from-rose-500/12 via-gray-50/80 to-white dark:from-rose-950/25 dark:via-gray-950/60 dark:to-gray-900/80 p-4 shadow-sm"
+        >
+          <p class="m-0 text-xs font-semibold uppercase tracking-wide text-rose-800/90 dark:text-rose-300/90">Balance (mes actual)</p>
+          <p class="mt-1 mb-0 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50" data-et-kpi-balance>—</p>
+          <p class="mt-1 mb-0 text-xs text-gray-500 dark:text-gray-400">Ingresos − gastos del mes en curso</p>
+        </div>
+        <div
+          class="rounded-2xl border border-violet-400/35 dark:border-violet-700/40 bg-gradient-to-br from-violet-500/12 via-gray-50/80 to-white dark:from-violet-950/25 dark:via-gray-950/60 dark:to-gray-900/80 p-4 shadow-sm sm:col-span-2 xl:col-span-1"
+        >
+          <p class="m-0 text-xs font-semibold uppercase tracking-wide text-violet-800/90 dark:text-violet-300/90">Total combinado (referencia)</p>
+          <p class="mt-1 mb-0 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50" data-et-kpi-blend>—</p>
+          <p class="mt-1 mb-0 text-xs text-gray-500 dark:text-gray-400">Subs mensual + gastos del período</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-3">
+      <h2 class="m-0 text-lg font-semibold tracking-tight">Suscripciones</h2>
+      <p class="m-0 text-xs text-gray-500 dark:text-gray-400">Toca una tarjeta para editar</p>
+      <div
+        class="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory scroll-smooth"
+        data-et-subs-strip
+      >
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-amber-200/70 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 px-4 py-3 text-sm text-amber-950 dark:text-amber-100 hidden" data-et-remind-banner></div>
+
+    <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 shadow-sm" id="et-expenses-table" data-et-expenses-anchor>
+      <div class="border-b border-gray-100 dark:border-gray-800 px-4 py-3 flex flex-col gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="m-0 text-lg font-semibold tracking-tight">Gastos</h2>
+          <button
+            type="button"
+            data-et-add-expense
+            class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:from-indigo-500 hover:via-violet-500 hover:to-fuchsia-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950 transition"
+          >
+            <span class="text-lg leading-none font-light">+</span>
+            Nuevo gasto
+          </button>
+        </div>
+        <div class="flex flex-wrap items-end gap-3">
+          <label class="space-y-1">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Mes</span>
+            <input type="month" data-et-exp-filter-month class="et-field py-1.5 text-sm w-[11rem] font-mono" />
+          </label>
+          <label class="space-y-1">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Día</span>
+            <select data-et-exp-filter-day class="et-field py-1.5 text-sm w-[8.5rem]">
+              <option value="">Todo el mes</option>
+              {filterDays.map((d) => (
+                <option value={String(d)}>{d}</option>
+              ))}
+            </select>
+          </label>
+          <span class="text-xs text-gray-500 dark:text-gray-400 max-w-xl pb-1"
+            >Solo se listan filas del mes (y día si lo eliges). Borradores: borde cian; confirmados: tono rojizo.</span
+          >
+        </div>
+      </div>
+      <div
+        class="max-h-[min(55vh,28rem)] overflow-y-auto overflow-x-auto et-expenses-x-scroll rounded-b-2xl"
+        data-et-expenses-scroll
+      >
+        <table class="w-full min-w-[80rem] text-sm border-collapse">
+          <thead class="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-900/90 backdrop-blur-sm">
+            <tr class="text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              <th class="px-3 py-2.5 w-28">Fecha</th>
+              <th class="px-3 py-2.5 min-w-[10rem]">Concepto</th>
+              <th class="px-3 py-2.5 w-28">Importe</th>
+              <th class="px-3 py-2.5 w-24">Moneda</th>
+              <th class="px-3 py-2.5 min-w-[9rem]">Categoría</th>
+              <th class="px-3 py-2.5 min-w-[9rem]">Etiquetas</th>
+              <th class="px-3 py-2.5 min-w-[11rem]">Enlaces</th>
+              <th class="px-3 py-2.5 min-w-[8rem]">Notas</th>
+              <th class="px-3 py-2.5 w-[7.5rem]">Estado</th>
+              <th class="px-3 py-2.5 w-24"></th>
+            </tr>
+          </thead>
+          <tbody data-et-expenses-body class="divide-y divide-gray-100 dark:divide-gray-800"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-emerald-200/80 dark:border-emerald-900/50 bg-white/80 dark:bg-gray-950/60 shadow-sm" id="et-income-table" data-et-income-anchor>
+      <div class="border-b border-emerald-100/90 dark:border-emerald-900/40 px-4 py-3 flex flex-col gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="m-0 text-lg font-semibold tracking-tight">Ingresos</h2>
+          <button
+            type="button"
+            data-et-add-income
+            class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/25 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:via-teal-500 hover:to-cyan-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950 transition"
+          >
+            <span class="text-lg leading-none font-light">+</span>
+            Nuevo ingreso
+          </button>
+        </div>
+        <div class="flex flex-wrap items-end gap-3">
+          <label class="space-y-1">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Mes</span>
+            <input type="month" data-et-inc-filter-month class="et-field py-1.5 text-sm w-[11rem] font-mono" />
+          </label>
+          <label class="space-y-1">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Día</span>
+            <select data-et-inc-filter-day class="et-field py-1.5 text-sm w-[8.5rem]">
+              <option value="">Todo el mes</option>
+              {filterDays.map((d) => (
+                <option value={String(d)}>{d}</option>
+              ))}
+            </select>
+          </label>
+          <span class="text-xs text-gray-500 dark:text-gray-400 max-w-xl pb-1"
+            >Misma lógica que gastos: confirma para contar en gráficos y KPIs. Filtro por mes/día para no cargar todo el historial.</span
+          >
+        </div>
+      </div>
+      <div
+        class="max-h-[min(55vh,28rem)] overflow-y-auto overflow-x-auto rounded-b-2xl"
+        data-et-income-scroll
+      >
+        <table class="w-full min-w-[80rem] text-sm border-collapse">
+          <thead class="sticky top-0 z-10 bg-emerald-50/95 dark:bg-gray-900/90 backdrop-blur-sm">
+            <tr class="text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              <th class="px-3 py-2.5 w-28">Fecha</th>
+              <th class="px-3 py-2.5 min-w-[10rem]">Concepto</th>
+              <th class="px-3 py-2.5 w-28">Importe</th>
+              <th class="px-3 py-2.5 w-24">Moneda</th>
+              <th class="px-3 py-2.5 min-w-[9rem]">Categoría</th>
+              <th class="px-3 py-2.5 min-w-[9rem]">Etiquetas</th>
+              <th class="px-3 py-2.5 min-w-[11rem]">Enlaces</th>
+              <th class="px-3 py-2.5 min-w-[8rem]">Notas</th>
+              <th class="px-3 py-2.5 w-[7.5rem]">Estado</th>
+              <th class="px-3 py-2.5 w-24"></th>
+            </tr>
+          </thead>
+          <tbody data-et-income-body class="divide-y divide-gray-100 dark:divide-gray-800"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 shadow-sm p-4 sm:p-5 space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h2 class="m-0 text-lg font-semibold tracking-tight">Recordatorios</h2>
+          <p class="m-0 mt-1 text-xs text-gray-500 dark:text-gray-400 max-w-2xl">
+            Fechas a recordar (p. ej. renovaciones). Opción de notificación del navegador el día indicado (requiere permiso).
+          </p>
+        </div>
+        <button type="button" data-et-reminder-notify-perm class="et-btn-secondary shrink-0 text-xs py-2">
+          Activar permiso de notificaciones
+        </button>
+      </div>
+      <div class="flex flex-wrap gap-2 items-end" data-et-reminder-form>
+        <label class="space-y-1">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Fecha</span>
+          <input type="date" data-et-reminder-date class="et-field py-1.5 text-sm w-[11rem]" />
+        </label>
+        <label class="space-y-1 flex-1 min-w-[8rem]">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Título</span>
+          <input type="text" data-et-reminder-title class="et-field py-1.5 text-sm w-full min-w-[8rem]" placeholder="Renovación hosting" />
+        </label>
+        <label class="space-y-1 flex-1 min-w-[10rem]">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Nota</span>
+          <input type="text" data-et-reminder-note class="et-field py-1.5 text-sm w-full min-w-[10rem]" />
+        </label>
+        <label class="flex items-center gap-2 text-xs font-medium pt-5">
+          <input type="checkbox" data-et-reminder-notify class="h-4 w-4 rounded border-gray-300 text-indigo-600" />
+          Notificar
+        </label>
+        <button type="button" data-et-reminder-add class="et-btn-primary py-2 text-sm">Añadir</button>
+      </div>
+      <ul class="m-0 p-0 list-none space-y-2" data-et-reminders-list></ul>
+    </div>
+
+    <details
+      class="group rounded-2xl border border-rose-200/70 dark:border-rose-900/45 bg-gradient-to-br from-rose-500/8 via-white/85 to-orange-500/5 dark:from-rose-950/30 dark:via-gray-950/55 dark:to-orange-950/20 shadow-md open:shadow-lg"
+    >
+      <summary
+        class="cursor-pointer list-none flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl marker:content-none [&::-webkit-details-marker]:hidden"
+      >
+        <div class="min-w-0">
+          <h2 class="m-0 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-50">Gastos previstos</h2>
+          <p class="m-0 mt-1 text-xs text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed">
+            Recurrentes fijos (alquiler, cuotas…): importe habitual, categoría y ajuste por mes. Se suman al mes en gráficos y balance junto con suscripciones.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+          <span
+            class="text-xs font-semibold text-rose-700 dark:text-rose-300 rounded-full border border-rose-200/80 dark:border-rose-800/60 px-2.5 py-1 group-open:hidden"
+            >Plegado</span
+          >
+          <span
+            class="text-xs font-semibold text-rose-700 dark:text-rose-300 rounded-full border border-rose-200/80 dark:border-rose-800/60 px-2.5 py-1 hidden group-open:inline"
+            >Desplegado</span
+          >
+        </div>
+      </summary>
+      <div class="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 space-y-4 border-t border-rose-100/80 dark:border-rose-900/30">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2 items-end" data-et-planned-form>
+          <label class="space-y-1 sm:col-span-2 xl:col-span-2">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Nombre</span>
+            <input type="text" data-et-planned-title class="et-field py-1.5 text-sm w-full" placeholder="Alquiler, préstamo…" />
+          </label>
+          <label class="space-y-1">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Importe habitual</span>
+            <input type="number" step="0.01" min="0" data-et-planned-amount class="et-field py-1.5 text-sm w-full font-mono" placeholder="0" />
+          </label>
+          <label class="space-y-1">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Moneda</span>
+            <select data-et-planned-currency class="et-field py-1.5 text-sm w-full">
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+            </select>
+          </label>
+          <label class="space-y-1 sm:col-span-2 xl:col-span-2">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Categoría</span>
+            <select data-et-planned-category class="et-field py-1.5 text-sm w-full"></select>
+          </label>
+          <label class="space-y-1">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Mín. (opc.)</span>
+            <input type="number" step="0.01" min="0" data-et-planned-min class="et-field py-1.5 text-sm w-full font-mono" placeholder="—" />
+          </label>
+          <label class="space-y-1">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Máx. (opc.)</span>
+            <input type="number" step="0.01" min="0" data-et-planned-max class="et-field py-1.5 text-sm w-full font-mono" placeholder="—" />
+          </label>
+          <label class="space-y-1">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Día del mes</span>
+            <input type="number" min="1" max="31" value="1" data-et-planned-day class="et-field py-1.5 text-sm w-full font-mono" />
+          </label>
+          <label class="space-y-1">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Ventana (días antes)</span>
+            <input type="number" min="0" max="15" value="" data-et-planned-window class="et-field py-1.5 text-sm w-full font-mono" placeholder="0" />
+          </label>
+          <label class="space-y-1">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Desde</span>
+            <input type="date" data-et-planned-from class="et-field py-1.5 text-sm w-full font-mono" />
+          </label>
+          <label class="space-y-1">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Hasta (opc.)</span>
+            <input type="date" data-et-planned-until class="et-field py-1.5 text-sm w-full font-mono" />
+          </label>
+          <label class="space-y-1 sm:col-span-2 xl:col-span-2">
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Nota</span>
+            <input type="text" data-et-planned-note class="et-field py-1.5 text-sm w-full" placeholder="Opcional" />
+          </label>
+          <button type="button" data-et-planned-add class="et-btn-primary py-2 text-sm w-full sm:w-auto xl:col-span-1">Añadir</button>
+        </div>
+        <div class="relative py-3" aria-hidden="true">
+          <div
+            class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-0.5 bg-gradient-to-r from-transparent via-rose-400/90 to-transparent dark:via-rose-500/80 rounded-full"
+          >
+          </div>
+          <p
+            class="relative m-0 text-center text-[11px] font-bold uppercase tracking-[0.2em] text-rose-700 dark:text-rose-200 bg-gradient-to-b from-white/95 to-white/80 dark:from-gray-950/95 dark:to-gray-950/80 px-3 py-1 rounded-full border border-rose-200/70 dark:border-rose-800/60 w-fit mx-auto"
+          >
+            Registros guardados
+          </p>
+        </div>
+        <div
+          class="grid grid-cols-1 gap-2 max-h-[min(52vh,26rem)] overflow-y-auto overflow-x-hidden pr-1 scroll-smooth"
+          data-et-planned-list
+        >
+        </div>
+      </div>
+    </details>
+
+    <details
+      class="group rounded-2xl border border-teal-200/70 dark:border-teal-900/50 bg-gradient-to-br from-teal-500/8 via-white/85 to-emerald-500/5 dark:from-teal-950/35 dark:via-gray-950/55 dark:to-emerald-950/20 shadow-md open:shadow-lg"
+    >
+      <summary
+        class="cursor-pointer list-none flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl marker:content-none [&::-webkit-details-marker]:hidden"
+      >
+        <div class="min-w-0">
+          <h2 class="m-0 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-50">Cobros previstos</h2>
+          <p class="m-0 mt-1 text-xs text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed">
+            Importe habitual (y rango opcional si varía), vigencia del cobro y ajuste por mes. Los importes alimentan los gráficos de ingresos y balance.
+          </p>
+        </div>
+        <span
+          class="text-xs font-semibold text-teal-800 dark:text-teal-200 rounded-full border border-teal-200/80 dark:border-teal-800/60 px-2.5 py-1 shrink-0 group-open:hidden"
+          >Plegado</span
+        >
+        <span
+          class="text-xs font-semibold text-teal-800 dark:text-teal-200 rounded-full border border-teal-200/80 dark:border-teal-800/60 px-2.5 py-1 shrink-0 hidden group-open:inline"
+          >Desplegado</span
+        >
+      </summary>
+      <div class="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 space-y-4 border-t border-teal-100/80 dark:border-teal-900/30">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2 items-end" data-et-paycheck-form>
+        <label class="space-y-1 sm:col-span-2 xl:col-span-2">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Nombre</span>
+          <input type="text" data-et-paycheck-title class="et-field py-1.5 text-sm w-full" placeholder="Nómina, paro…" />
+        </label>
+        <label class="space-y-1">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Importe habitual</span>
+          <input type="number" step="0.01" min="0" data-et-paycheck-amount class="et-field py-1.5 text-sm w-full font-mono" placeholder="0" />
+        </label>
+        <label class="space-y-1">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Moneda</span>
+          <select data-et-paycheck-currency class="et-field py-1.5 text-sm w-full">
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
+          </select>
+        </label>
+        <label class="space-y-1">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Mín. (opc.)</span>
+          <input type="number" step="0.01" min="0" data-et-paycheck-min class="et-field py-1.5 text-sm w-full font-mono" placeholder="—" />
+        </label>
+        <label class="space-y-1">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Máx. (opc.)</span>
+          <input type="number" step="0.01" min="0" data-et-paycheck-max class="et-field py-1.5 text-sm w-full font-mono" placeholder="—" />
+        </label>
+        <label class="space-y-1">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Día del mes</span>
+          <input type="number" min="1" max="31" value="1" data-et-paycheck-day class="et-field py-1.5 text-sm w-full font-mono" />
+        </label>
+        <label class="space-y-1">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Ventana (días antes)</span>
+          <input type="number" min="0" max="15" value="" data-et-paycheck-window class="et-field py-1.5 text-sm w-full font-mono" placeholder="0" />
+        </label>
+        <label class="space-y-1">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Desde</span>
+          <input type="date" data-et-paycheck-from class="et-field py-1.5 text-sm w-full font-mono" />
+        </label>
+        <label class="space-y-1">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Hasta (opc.)</span>
+          <input type="date" data-et-paycheck-until class="et-field py-1.5 text-sm w-full font-mono" />
+        </label>
+        <label class="space-y-1 sm:col-span-2 xl:col-span-2">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Nota</span>
+          <input type="text" data-et-paycheck-note class="et-field py-1.5 text-sm w-full" placeholder="Opcional" />
+        </label>
+        <button type="button" data-et-paycheck-add class="et-btn-primary py-2 text-sm w-full sm:w-auto xl:col-span-1">Añadir</button>
+      </div>
+      <div class="relative py-3" aria-hidden="true">
+        <div
+          class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-0.5 bg-gradient-to-r from-transparent via-teal-400/90 to-transparent dark:via-teal-500/80 rounded-full"
+        >
+        </div>
+        <p
+          class="relative m-0 text-center text-[11px] font-bold uppercase tracking-[0.2em] text-teal-800 dark:text-teal-200 bg-gradient-to-b from-white/95 to-white/80 dark:from-gray-950/95 dark:to-gray-950/80 px-3 py-1 rounded-full border border-teal-200/70 dark:border-teal-800/60 w-fit mx-auto"
+        >
+          Registros guardados
+        </p>
+      </div>
+      <div
+        class="grid grid-cols-1 gap-2 max-h-[min(52vh,26rem)] overflow-y-auto overflow-x-hidden pr-1 scroll-smooth"
+        data-et-paychecks-list
+      >
+      </div>
+      </div>
+    </details>
+
+    <div
+      class="rounded-2xl border border-indigo-200/60 dark:border-indigo-900/40 bg-indigo-50/40 dark:bg-indigo-950/25 px-4 py-3 sm:px-5 sm:py-4 space-y-2"
+    >
+      <h3 class="m-0 text-sm font-semibold text-indigo-950 dark:text-indigo-100">Filtro de gráficos</h3>
+      <p class="m-0 text-xs text-gray-600 dark:text-gray-400 max-w-3xl">
+        Afecta a la evolución mensual, etiquetas y día de la semana. Elige una categoría o subcategoría, o «Todas».
+      </p>
+      <label class="inline-block space-y-1 max-w-md">
+        <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Evolución por categoría</span>
+        <select data-et-chart-cat-filter class="et-field min-w-[12rem] font-medium w-full max-w-md">
+          <option value="">Todas las categorías</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <div
+        class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-3 shadow-sm min-h-[300px]"
+        data-et-chart-line
+      >
+      </div>
+      <div
+        class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-3 shadow-sm min-h-[300px]"
+        data-et-chart-bar
+      >
+      </div>
+    </div>
+
+    <div
+      class="rounded-2xl border border-fuchsia-200/70 dark:border-fuchsia-900/40 bg-gradient-to-r from-fuchsia-500/8 via-white/90 to-indigo-500/8 dark:from-fuchsia-950/25 dark:via-gray-950/60 dark:to-indigo-950/25 p-3 shadow-sm min-h-[280px]"
+      data-et-chart-balance
+    >
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4" data-et-chart-pies-row>
+      <div
+        class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-3 shadow-sm min-h-[280px]"
+        data-et-chart-pie-eur
+      >
+      </div>
+      <div
+        class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-3 shadow-sm min-h-[280px]"
+        data-et-chart-pie-usd
+      >
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div
+        class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-3 shadow-sm min-h-[260px]"
+        data-et-chart-tags
+      >
+      </div>
+      <div
+        class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-3 shadow-sm min-h-[260px]"
+        data-et-chart-dow
+      >
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch">
+      <div
+        class="xl:col-span-2 rounded-2xl border border-violet-200/70 dark:border-violet-900/40 bg-gradient-to-br from-violet-500/6 via-white/90 to-indigo-500/6 dark:from-violet-950/25 dark:via-gray-950/55 dark:to-indigo-950/25 p-3 shadow-sm min-h-[280px]"
+        data-et-chart-year-proj
+      >
+      </div>
+      <div class="space-y-3 min-w-0 flex flex-col">
+        <div
+          class="rounded-2xl border border-emerald-400/35 dark:border-emerald-800/40 bg-gradient-to-br from-emerald-500/10 to-white/90 dark:from-emerald-950/30 dark:to-gray-900/80 p-4 shadow-sm flex-1"
+        >
+          <p class="m-0 text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200">Ingresos (año natural)</p>
+          <p class="mt-1 mb-0 text-xl font-bold text-gray-900 dark:text-gray-50" data-et-kpi-year-income>—</p>
+          <p class="mt-1 mb-0 text-[11px] text-gray-500 dark:text-gray-400">Suma mensual en el año en curso</p>
+        </div>
+        <div
+          class="rounded-2xl border border-orange-400/35 dark:border-orange-900/40 bg-gradient-to-br from-orange-500/10 to-white/90 dark:from-orange-950/25 dark:to-gray-900/80 p-4 shadow-sm flex-1"
+        >
+          <p class="m-0 text-xs font-semibold uppercase tracking-wide text-orange-900 dark:text-orange-200">Salidas (año natural)</p>
+          <p class="mt-1 mb-0 text-xl font-bold text-gray-900 dark:text-gray-50" data-et-kpi-year-out>—</p>
+          <p class="mt-1 mb-0 text-[11px] text-gray-500 dark:text-gray-400">Gastos confirmados + suscripciones + previstos</p>
+        </div>
+        <div
+          class="rounded-2xl border border-fuchsia-400/40 dark:border-fuchsia-900/45 bg-gradient-to-br from-fuchsia-500/12 to-white/90 dark:from-fuchsia-950/30 dark:to-gray-900/80 p-4 shadow-sm flex-1"
+        >
+          <p class="m-0 text-xs font-semibold uppercase tracking-wide text-fuchsia-900 dark:text-fuchsia-200">Balance anual</p>
+          <p class="mt-1 mb-0 text-xl font-bold text-gray-900 dark:text-gray-50" data-et-kpi-year-net>—</p>
+          <p class="mt-1 mb-0 text-[11px] text-gray-500 dark:text-gray-400">Ingresos − salidas (mismo criterio que el gráfico)</p>
+        </div>
+      </div>
+    </div>
+
+    <dialog data-et-sub-dialog class="et-dialog et-sub-dialog p-0 w-[min(100vw-1.5rem,28rem)] max-w-[calc(100vw-1.25rem)]">
+      <div class="divide-y divide-gray-100 dark:divide-gray-800 flex flex-col" data-et-sub-form>
+        <div class="px-5 py-4 flex items-start justify-between gap-3 shrink-0">
+          <div>
+            <h3 class="m-0 text-lg font-semibold" data-et-sub-dialog-title>Suscripción</h3>
+            <p class="m-0 mt-1 text-xs text-gray-500 dark:text-gray-400">Se usa el importe por ciclo indicado.</p>
+          </div>
+          <button
+            type="button"
+            data-et-sub-close
+            class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-900"
+            aria-label="Cerrar"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="px-5 py-4 space-y-3">
+          <input type="hidden" data-et-sub-id value="" />
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Nombre</span>
+            <input required data-et-sub-name class="et-field w-full text-sm py-2" />
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block space-y-1">
+              <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Importe</span>
+              <input required type="number" step="0.01" min="0" data-et-sub-amount class="et-field w-full text-sm py-2 font-mono" />
+            </label>
+            <label class="block space-y-1">
+              <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Moneda</span>
+              <select data-et-sub-currency class="et-field w-full text-sm py-2">
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+              </select>
+            </label>
+          </div>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Ciclo</span>
+            <select data-et-sub-cycle class="et-field w-full text-sm py-2">
+              <option value="weekly">Semanal</option>
+              <option value="monthly">Mensual</option>
+              <option value="quarterly">Trimestral</option>
+              <option value="yearly">Anual</option>
+            </select>
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Categoría</span>
+            <select data-et-sub-category class="et-field w-full text-sm py-2"></select>
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Desde (primer cargo / inicio)</span>
+            <input type="date" data-et-sub-billing-start class="et-field w-full text-sm py-2" />
+          </label>
+          <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-et-sub-next-hint>
+            Con la fecha de inicio y el ciclo se calcula el próximo cobro (p. ej. mensual → mes siguiente).
+          </p>
+          <label class="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" data-et-sub-active class="h-4 w-4 rounded border-gray-300 text-indigo-600" checked />
+            Activa (cuenta en totales)
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Etiquetas (coma)</span>
+            <input type="text" data-et-sub-tags class="et-field w-full text-sm py-2" placeholder="cloud, trabajo" />
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Notas</span>
+            <textarea data-et-sub-notes rows="2" class="et-field et-textarea w-full text-sm py-2 min-h-[3.25rem]"></textarea>
+          </label>
+        </div>
+        <div class="px-5 py-4 flex items-center justify-between gap-2 bg-gray-50/80 dark:bg-gray-900/40 shrink-0">
+          <button type="button" data-et-sub-delete class="text-sm font-semibold text-red-600 dark:text-red-400 hover:underline">
+            Eliminar
+          </button>
+          <div class="flex gap-2">
+            <button type="button" data-et-sub-cancel class="et-btn-secondary text-sm py-2">Cancelar</button>
+            <button type="button" data-et-sub-save class="et-btn-primary text-sm py-2">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog data-et-dlg-alert class="et-dialog w-[min(100vw-1.5rem,24rem)] p-0">
+      <div class="et-dialog-panel space-y-4">
+        <p class="m-0 text-sm text-gray-700 dark:text-gray-200" data-et-dlg-alert-msg></p>
+        <div class="flex justify-end">
+          <button type="button" class="et-btn-primary text-sm py-2" data-et-dlg-alert-ok>Aceptar</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog data-et-dlg-confirm class="et-dialog w-[min(100vw-1.5rem,26rem)] p-0">
+      <div class="et-dialog-panel space-y-4">
+        <p class="m-0 text-sm text-gray-700 dark:text-gray-200" data-et-dlg-confirm-msg></p>
+        <div class="flex justify-end gap-2">
+          <button type="button" class="et-btn-secondary text-sm py-2" data-et-dlg-confirm-cancel>Cancelar</button>
+          <button type="button" class="et-btn-primary text-sm py-2" data-et-dlg-confirm-ok data-et-dlg-confirm-ok-label>Continuar</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog data-et-dlg-import class="et-dialog w-[min(100vw-1.5rem,28rem)] p-0">
+      <div class="et-dialog-panel space-y-4">
+        <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-50">Importar cuaderno</h3>
+        <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-et-dlg-import-hint></p>
+        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-1">
+          <button type="button" class="et-btn-secondary text-sm py-2" data-et-dlg-import-cancel>Cancelar</button>
+          <button type="button" class="et-btn-dashed text-sm py-2" data-et-dlg-import-replace>Sustituir datos</button>
+          <button type="button" class="et-btn-primary text-sm py-2" data-et-dlg-import-merge>Fusionar por id</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog data-et-dlg-link class="et-dialog w-[min(100vw-1.5rem,26rem)] p-0">
+      <div class="et-dialog-panel space-y-3">
+        <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-50">Añadir enlace</h3>
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Título</span>
+          <input type="text" class="et-field w-full text-sm py-2" data-et-dlg-link-title placeholder="Factura, portal…" />
+        </label>
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">URL (https)</span>
+          <input type="url" class="et-field w-full text-sm py-2 font-mono" data-et-dlg-link-url placeholder="https://…" />
+        </label>
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" class="et-btn-secondary text-sm py-2" data-et-dlg-link-cancel>Cancelar</button>
+          <button type="button" class="et-btn-primary text-sm py-2" data-et-dlg-link-save>Guardar</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog data-et-dlg-category class="et-dialog et-dialog-narrow w-[min(100vw-1.5rem,26rem)] max-w-[calc(100vw-1.25rem)] p-0 overflow-x-hidden">
+      <div class="et-dialog-panel et-dialog-panel--fit space-y-3">
+        <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-50">Nueva categoría</h3>
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Nombre</span>
+          <input type="text" class="et-field w-full text-sm py-2" data-et-dlg-cat-name placeholder="p. ej. Netflix" />
+        </label>
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Dentro de (opcional)</span>
+          <select class="et-field w-full text-sm py-2" data-et-dlg-cat-parent></select>
+        </label>
+        <p class="m-0 text-xs text-gray-500 dark:text-gray-400">Si eliges una categoría padre, esta fila será una subcategoría (se suma al padre en gráficos).</p>
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" class="et-btn-secondary text-sm py-2" data-et-dlg-cat-cancel>Cancelar</button>
+          <button type="button" class="et-btn-primary text-sm py-2" data-et-dlg-cat-save>Crear</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog data-et-dlg-e2e-set class="et-dialog w-[min(100vw-1.5rem,26rem)] p-0">
+      <div class="et-dialog-panel space-y-3">
+        <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-50">Frase del cuaderno</h3>
+        <p class="m-0 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+          Es la <strong class="font-medium text-gray-700 dark:text-gray-300">clave secreta</strong> con la que se bloquea o desbloquea la copia en la nube. Solo existe en esta pestaña: no la enviamos al servidor. Mínimo 8 caracteres; inventa la tuya (p. ej. <span class="font-mono text-[11px] text-gray-700 dark:text-gray-300">gatos-Luna-cafe-2026</span>).
+        </p>
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Escribe la frase</span>
+          <input type="password" class="et-field w-full text-sm py-2" data-et-dlg-e2e-p1 autocomplete="new-password" />
+        </label>
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Repite la misma frase</span>
+          <input type="password" class="et-field w-full text-sm py-2" data-et-dlg-e2e-p2 autocomplete="new-password" />
+        </label>
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" class="et-btn-secondary text-sm py-2" data-et-dlg-e2e-set-cancel>Cancelar</button>
+          <button type="button" class="et-btn-primary text-sm py-2" data-et-dlg-e2e-set-save>Guardar</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog data-et-dlg-e2e-unlock class="et-dialog w-[min(100vw-1.5rem,26rem)] p-0">
+      <div class="et-dialog-panel space-y-3">
+        <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-50">Desbloquear copia en la nube</h3>
+        <p class="m-0 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+          Escribe la <strong class="font-medium text-gray-700 dark:text-gray-300">misma frase del cuaderno</strong> que usaste cuando protegiste esa copia. Así esta hoja y la de la nube pueden fusionarse.
+        </p>
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Frase del cuaderno</span>
+          <input type="password" class="et-field w-full text-sm py-2" data-et-dlg-e2e-unlock-pass autocomplete="current-password" />
+        </label>
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" class="et-btn-secondary text-sm py-2" data-et-dlg-e2e-unlock-cancel>Cancelar</button>
+          <button type="button" class="et-btn-primary text-sm py-2" data-et-dlg-e2e-unlock-go>Desbloquear</button>
+        </div>
+      </div>
+    </dialog>
+  </section>
+
+  <style is:global>
+    [data-tools-expense-page] .et-dialog,
+    dialog.et-dialog {
+      margin: auto;
+      max-height: min(92dvh, 36rem);
+      border-radius: 1rem;
+      border: 1px solid rgb(229 231 235);
+      background: rgb(255 255 255);
+      box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+      color: rgb(17 24 39);
+    }
+    [data-tools-expense-page] dialog.et-sub-dialog {
+      max-height: none;
+      overflow: visible;
+    }
+    [data-tools-expense-page] dialog.et-dialog-narrow {
+      max-height: min(92dvh, 40rem);
+    }
+    [data-tools-expense-page] .et-expenses-x-scroll {
+      overflow-y: visible;
+    }
+    .dark dialog.et-dialog,
+    .dark [data-tools-expense-page] .et-dialog {
+      border-color: rgb(31 41 55);
+      background: rgb(3 7 18);
+      color: rgb(243 244 246);
+    }
+    [data-tools-expense-page] .et-dialog::backdrop,
+    dialog.et-dialog::backdrop {
+      background: rgba(15, 23, 42, 0.45);
+    }
+    [data-tools-expense-page] .et-dialog-panel {
+      padding: 1.25rem 1.35rem;
+      max-height: min(88dvh, 34rem);
+      overflow: auto;
+    }
+    [data-tools-expense-page] .et-dialog-panel--fit {
+      max-height: none;
+      overflow: visible;
+    }
+    [data-tools-expense-page] .et-field,
+    [data-tools-expense-page] select.et-field {
+      width: 100%;
+      max-width: 100%;
+      border-radius: 0.5rem;
+      border: 1px solid rgb(229 231 235);
+      background: rgb(255 255 255);
+      padding: 0.5rem 0.65rem;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      color: rgb(17 24 39);
+      box-sizing: border-box;
+    }
+    .dark [data-tools-expense-page] .et-field,
+    .dark [data-tools-expense-page] select.et-field {
+      border-color: rgb(55 65 81);
+      background: rgb(3 7 18);
+      color: rgb(243 244 246);
+    }
+    [data-tools-expense-page] .et-field:focus,
+    [data-tools-expense-page] select.et-field:focus {
+      outline: 2px solid transparent;
+      outline-offset: 2px;
+      box-shadow: 0 0 0 2px rgb(255 255 255), 0 0 0 4px rgb(99 102 241);
+    }
+    .dark [data-tools-expense-page] .et-field:focus,
+    .dark [data-tools-expense-page] select.et-field:focus {
+      box-shadow: 0 0 0 2px rgb(3 7 18), 0 0 0 4px rgb(129 140 248);
+    }
+    [data-tools-expense-page] .et-textarea {
+      resize: vertical;
+      min-height: 3.25rem;
+    }
+    [data-tools-expense-page] .et-btn-primary {
+      border-radius: 0.5rem;
+      background: rgb(79 70 229);
+      color: white;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      border: none;
+      cursor: pointer;
+    }
+    [data-tools-expense-page] .et-btn-primary:hover {
+      background: rgb(99 102 241);
+    }
+    [data-tools-expense-page] .et-btn-secondary {
+      border-radius: 0.5rem;
+      border: 1px solid rgb(229 231 235);
+      background: rgb(255 255 255);
+      color: rgb(55 65 81);
+      font-weight: 600;
+      padding: 0.5rem 0.85rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    [data-tools-expense-page] .et-btn-secondary:hover {
+      background: rgb(249 250 251);
+    }
+    .dark [data-tools-expense-page] .et-btn-secondary {
+      border-color: rgb(55 65 81);
+      background: rgb(17 24 39);
+      color: rgb(229 231 235);
+    }
+    .dark [data-tools-expense-page] .et-btn-secondary:hover {
+      background: rgb(31 41 55);
+    }
+    [data-tools-expense-page] .et-btn-accent {
+      border-radius: 0.5rem;
+      border: 1px solid rgb(165 180 252);
+      background: rgb(238 242 255);
+      color: rgb(55 48 163);
+      font-weight: 600;
+      padding: 0.5rem 0.85rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    [data-tools-expense-page] .et-btn-accent:hover {
+      background: rgb(224 231 255);
+    }
+    .dark [data-tools-expense-page] .et-btn-accent {
+      border-color: rgb(67 56 202 / 0.5);
+      background: rgb(30 27 75 / 0.35);
+      color: rgb(224 231 255);
+    }
+    [data-tools-expense-page] .et-btn-dashed {
+      border-radius: 0.5rem;
+      border: 1px dashed rgb(209 213 219);
+      background: rgb(255 255 255);
+      color: rgb(75 85 99);
+      font-weight: 600;
+      padding: 0.5rem 0.85rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    [data-tools-expense-page] .et-btn-dashed:hover {
+      background: rgb(249 250 251);
+    }
+    .dark [data-tools-expense-page] .et-btn-dashed {
+      border-color: rgb(75 85 99);
+      background: rgb(17 24 39);
+      color: rgb(209 213 219);
+    }
+    [data-tools-expense-page] input[type="date"].et-field {
+      min-height: 2.5rem;
+    }
+    [data-tools-expense-page] details > summary {
+      list-style: none;
+    }
+    [data-tools-expense-page] details > summary::-webkit-details-marker {
+      display: none;
+    }
+  </style>
+
+  <script src="../../scripts/tools/expense-tracker.ts"></script>
+</AppShell>

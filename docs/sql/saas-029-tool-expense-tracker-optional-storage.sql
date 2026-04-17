@@ -1,0 +1,30 @@
+-- saas-029-tool-expense-tracker-optional-storage.sql
+--
+-- OPCIONAL (futuro): adjuntos binarios (recibos) para la herramienta /tools/expense-tracker.
+--
+-- Hoy la app persiste el cuaderno en JSONB vía `user_client_state` scope `tools_expense_tracker`
+-- (ver docs/sql/saas-024-user-client-state.sql). No hace falta ejecutar este script para usar la herramienta.
+--
+-- Si más adelante quieres subir PDF/imágenes a Supabase Storage, típicamente necesitarás:
+-- 1) Un bucket dedicado (p. ej. `tool_expense_attachments`) con políticas por `auth.uid()` en la ruta.
+-- 2) Columnas o tablas solo si dejas de guardar el binario en JSON (recomendado para tamaño).
+--
+-- Plantilla comentada (no ejecuta nada):
+--
+-- insert into storage.buckets (id, name, public)
+-- values ('tool_expense_attachments', 'tool_expense_attachments', false)
+-- on conflict (id) do nothing;
+--
+-- create policy "tool_expense_attachments_insert_own"
+-- on storage.objects for insert to authenticated
+-- with check (bucket_id = 'tool_expense_attachments' and (storage.foldername(name))[1] = auth.uid()::text);
+--
+-- create policy "tool_expense_attachments_select_own"
+-- on storage.objects for select to authenticated
+-- using (bucket_id = 'tool_expense_attachments' and (storage.foldername(name))[1] = auth.uid()::text);
+--
+-- create policy "tool_expense_attachments_delete_own"
+-- on storage.objects for delete to authenticated
+-- using (bucket_id = 'tool_expense_attachments' and (storage.foldername(name))[1] = auth.uid()::text);
+
+select 1 as saas_029_placeholder;
