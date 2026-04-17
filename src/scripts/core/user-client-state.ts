@@ -3,6 +3,7 @@ import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 export type ClientStateScope =
   | "fab_calendar"
   | "tools_habits"
+  | "tools_expense_tracker"
   | "study_workspace"
   | "study_dossiers"
   | "study_prefs"

@@ -148,7 +148,7 @@ const FLAG_FILES = [
     <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
       Decide qué pestañas aparecen en el panel flotante de ayuda. La IA está desactivada por defecto.
     </p>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       <label class="flex items-start gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2.5">
         <input type="checkbox" class="mt-1" data-pref-fab-shortcuts />
         <span class="min-w-0">
@@ -168,6 +168,13 @@ const FLAG_FILES = [
         <span class="min-w-0">
           <span class="block text-sm font-semibold">Curiosidades</span>
           <span class="block text-xs text-gray-500 dark:text-gray-400">Links e ideas</span>
+        </span>
+      </label>
+      <label class="flex items-start gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2.5">
+        <input type="checkbox" class="mt-1" data-pref-fab-cv-tips />
+        <span class="min-w-0">
+          <span class="block text-sm font-semibold" data-i18n="settings.prefs.fabCvTips">Consejos de CV (panel flotante)</span>
+          <span class="block text-xs text-gray-500 dark:text-gray-400" data-i18n="settings.prefs.fabCvTipsHint">Muestra la pestaña con ideas para candidaturas y exportación a PDF.</span>
         </span>
       </label>
       <label class="flex items-start gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/60 px-3 py-2.5">

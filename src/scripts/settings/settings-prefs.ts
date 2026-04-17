@@ -60,6 +60,7 @@ function initSettingsPrefs() {
   const fabCalendarEls = document.querySelectorAll<HTMLInputElement>("[data-pref-fab-calendar]");
   const fabCuriositiesEls = document.querySelectorAll<HTMLInputElement>("[data-pref-fab-curiosities]");
   const fabAiEls = document.querySelectorAll<HTMLInputElement>("[data-pref-fab-ai]");
+  const fabCvTipsEls = document.querySelectorAll<HTMLInputElement>("[data-pref-fab-cv-tips]");
   if (
     !theme ||
     fontEls.length === 0 ||
@@ -136,6 +137,9 @@ function initSettingsPrefs() {
     });
     fabAiEls.forEach((el) => {
       el.checked = Boolean(p.showFabAi ?? false);
+    });
+    fabCvTipsEls.forEach((el) => {
+      el.checked = Boolean(p.showFabCvTips ?? true);
     });
 
     // Ensure custom select-popovers reflect programmatic value updates.
@@ -214,6 +218,7 @@ function initSettingsPrefs() {
   bindChecks(fabCalendarEls, (checked) => ({ showFabCalendar: checked }));
   bindChecks(fabCuriositiesEls, (checked) => ({ showFabCuriosities: checked }));
   bindChecks(fabAiEls, (checked) => ({ showFabAi: checked }));
+  bindChecks(fabCvTipsEls, (checked) => ({ showFabCvTips: checked }));
   bindChecks(fabShortcutsEls, (checked) => ({ showFabShortcuts: checked }));
 
   document.querySelectorAll<HTMLButtonElement>("[data-pref-reset]").forEach((reset) => {
@@ -238,6 +243,7 @@ function initSettingsPrefs() {
         settingsActiveSection: "prefs",
         qaTesterMode: false,
         showFabAi: false,
+        showFabCvTips: true,
         showFabCalendar: true,
         showFabCuriosities: true,
         showFabShortcuts: true,

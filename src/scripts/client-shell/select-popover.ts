@@ -55,12 +55,38 @@ function renderList(list: HTMLElement, items: SelectItem[], selected: string, q:
     .join("");
 }
 
+function clearPanelFixed(panel: HTMLElement) {
+  panel.dataset.selectPanelFixed = "";
+  panel.style.position = "";
+  panel.style.left = "";
+  panel.style.top = "";
+  panel.style.right = "";
+  panel.style.width = "";
+  panel.style.maxHeight = "";
+  panel.style.zIndex = "";
+}
+
+function positionPanelInDialog(panel: HTMLElement, trigger: HTMLButtonElement) {
+  const tr = trigger.getBoundingClientRect();
+  const gap = 4;
+  const maxH = Math.max(120, Math.min(288, window.innerHeight - tr.bottom - gap - 12));
+  panel.dataset.selectPanelFixed = "1";
+  panel.style.position = "fixed";
+  panel.style.left = `${Math.max(8, Math.min(tr.left, window.innerWidth - tr.width - 8))}px`;
+  panel.style.top = `${tr.bottom + gap}px`;
+  panel.style.right = "auto";
+  panel.style.width = `${tr.width}px`;
+  panel.style.maxHeight = `${maxH}px`;
+  panel.style.zIndex = "400";
+}
+
 function setOpen(wrap: HTMLElement, open: boolean) {
   const panel = wrap.querySelector<HTMLElement>("[data-select-panel]");
   const trigger = wrap.querySelector<HTMLButtonElement>("[data-select-trigger]");
   if (!panel || !trigger) return;
   trigger.setAttribute("aria-expanded", open ? "true" : "false");
   panel.classList.toggle("hidden", !open);
+  if (!open) clearPanelFixed(panel);
   if (open) {
     const search = wrap.querySelector<HTMLInputElement>("[data-select-search]");
     if (search) {
@@ -186,15 +212,47 @@ export function initSelectPopovers() {
     state.__selectPopoverRender = render;
     state.__selectPopoverIsOpen = () => open;
 
+    const stopRepos = () => {
+      const fn = (wrap as any).__selectPopoverStopRepos as (() => void) | undefined;
+      if (fn) {
+        fn();
+        (wrap as any).__selectPopoverStopRepos = undefined;
+      }
+    };
+
     const close = () => {
+      stopRepos();
       open = false;
       setOpen(wrap, false);
     };
 
+    const syncDialogPanel = () => {
+      if (!open) return;
+      const panel = wrap.querySelector<HTMLElement>("[data-select-panel]");
+      const trigger = wrap.querySelector<HTMLButtonElement>("[data-select-trigger]");
+      if (!panel || !trigger || panel.dataset.selectPanelFixed !== "1") return;
+      positionPanelInDialog(panel, trigger);
+    };
+
     const openNow = () => {
+      stopRepos();
       open = true;
       setOpen(wrap, true);
       render();
+      const panel = wrap.querySelector<HTMLElement>("[data-select-panel]");
+      const trigger = wrap.querySelector<HTMLButtonElement>("[data-select-trigger]");
+      const useFixed = panel && trigger && (wrap.closest("dialog") || wrap.closest("[data-et-expenses-scroll]"));
+      if (useFixed) {
+        positionPanelInDialog(panel, trigger);
+        requestAnimationFrame(() => syncDialogPanel());
+        const reposition = () => syncDialogPanel();
+        window.addEventListener("scroll", reposition, true);
+        window.addEventListener("resize", reposition);
+        (wrap as any).__selectPopoverStopRepos = () => {
+          window.removeEventListener("scroll", reposition, true);
+          window.removeEventListener("resize", reposition);
+        };
+      }
     };
 
     trigger.addEventListener("click", (e) => {

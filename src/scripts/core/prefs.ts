@@ -96,17 +96,52 @@ export type CvLanguageV1 = {
 
 /** Qué bloques del CV se muestran en vista previa / impresión (por defecto todo visible). */
 export type CvSectionVisibilityV1 = {
+  /** Resumen / bio del bloque superior del documento. */
+  summary?: boolean;
   highlights?: boolean;
   projects?: boolean;
   experience?: boolean;
   education?: boolean;
   certifications?: boolean;
   languages?: boolean;
+  coverLetters?: boolean;
 };
 
 export type CvSocialLinkDisplayV1 = "url" | "icon" | "both";
 
-export type CvTemplateIdV1 = "classic" | "minimal" | "modern" | "compact" | "mono" | "sidebar" | "serif";
+export type CvTemplateIdV1 =
+  | "classic"
+  | "minimal"
+  | "modern"
+  | "compact"
+  | "mono"
+  | "sidebar"
+  | "serif"
+  | "atlas"
+  | "contrast"
+  | "focus";
+
+export type CvDateDisplayModeV1 = "full" | "year";
+
+export type CvCoverLetterV1 = {
+  id: string;
+  title: string;
+  body: string;
+};
+
+/** Columna Kanban de seguimiento de ofertas (prefs globales, no por slot de CV). */
+export type CvJobOfferColumnV1 = "todo" | "applied" | "followup";
+
+export type CvJobOfferV1 = {
+  id: string;
+  url: string;
+  title?: string;
+  /** Notas libres (se recortan al guardar). */
+  notes?: string;
+  column: CvJobOfferColumnV1;
+};
+
+export const CV_JOB_OFFERS_MAX = 40;
 
 export type CvProfileV1 = {
   headline?: string;
@@ -147,6 +182,19 @@ export type CvProfileV1 = {
   cvPrintMaxPages?: number;
   /** Proyecto resaltado en el CV (slug); el resto se muestra en lista compacta. */
   cvFeaturedProjectSlug?: string;
+  /** Fechas en experiencia: texto completo o solo año aproximado. */
+  cvDateDisplayExperience?: CvDateDisplayModeV1;
+  /** Fechas en educación. */
+  cvDateDisplayEducation?: CvDateDisplayModeV1;
+  cvShowExperienceLocation?: boolean;
+  cvShowEducationLocation?: boolean;
+  cvShowEducationDetails?: boolean;
+  /** Descripción larga en tarjetas de proyecto (si false, solo título + rol corto). */
+  cvShowProjectDescriptions?: boolean;
+  /** Ciudad / ubicación en la franja de contacto superior. */
+  cvShowContactLocation?: boolean;
+  /** Cartas de presentación (texto libre; no van al RPC público salvo que dupliques en bio). */
+  coverLetters?: CvCoverLetterV1[];
 };
 
 /** Máximo de CV guardados por usuario (prefs + sync remoto). */
@@ -207,6 +255,8 @@ export type AppPrefsV1 = {
   cvDocuments?: CvDocumentSlotV1[];
   /** Id del documento CV mostrado en `/cv`. */
   cvActiveDocumentId?: string;
+  /** Seguimiento de ofertas (enlaces) en la pestaña «Ofertas» de `/cv`. */
+  cvJobOffers?: CvJobOfferV1[];
   /** Modo tester (QA): habilita checklist, seed y debug UI en Ajustes. */
   qaTesterMode?: boolean;
   /** Mostrar pestaña IA en bubble (solo invitado; por defecto apagado). */
@@ -217,6 +267,8 @@ export type AppPrefsV1 = {
   showFabCuriosities?: boolean;
   /** Mostrar pestaña Atajos en bubble. */
   showFabShortcuts?: boolean;
+  /** Mostrar pestaña «Consejos CV» en bubble. */
+  showFabCvTips?: boolean;
   /** Estilo de marcado en la herramienta de hábitos. */
   habitsMarkStyle?: HabitsMarkStyle;
   /** Recorrido guiado (spotlight): progreso y completados. */
@@ -249,6 +301,7 @@ const DEFAULT_PREFS: AppPrefsV1 = {
   showFabCalendar: true,
   showFabCuriosities: true,
   showFabShortcuts: true,
+  showFabCvTips: true,
   habitsMarkStyle: "paint",
   onboardingV2: { done: false, step: 0, completedIds: [], dismissed: false },
 };
@@ -286,6 +339,26 @@ function normalizeUiFontScale(raw: unknown): UiFontScale {
 
 function normalizeHabitsMarkStyle(raw: unknown): HabitsMarkStyle {
   return raw === "fill" || raw === "check" ? raw : "paint";
+}
+
+function normalizeCvJobOffers(raw: unknown): CvJobOfferV1[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: CvJobOfferV1[] = [];
+  for (const x of raw) {
+    if (!x || typeof x !== "object") continue;
+    const rx = x as Record<string, unknown>;
+    const id = typeof rx.id === "string" ? rx.id.trim() : "";
+    let url = typeof rx.url === "string" ? rx.url.trim() : "";
+    if (!id || !url) continue;
+    if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+    const title = typeof rx.title === "string" ? rx.title.trim().slice(0, 140) : "";
+    const notesRaw = typeof rx.notes === "string" ? rx.notes.trim().slice(0, 600) : "";
+    const col =
+      rx.column === "applied" || rx.column === "followup" ? (rx.column as CvJobOfferColumnV1) : ("todo" as CvJobOfferColumnV1);
+    out.push({ id, url, title: title || undefined, notes: notesRaw || undefined, column: col });
+    if (out.length >= CV_JOB_OFFERS_MAX) break;
+  }
+  return out.length > 0 ? out : undefined;
 }
 
 function normalizeCvProjectSlugs(raw: unknown): string[] | undefined {
@@ -373,18 +446,55 @@ function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
     tpl === "compact" ||
     tpl === "mono" ||
     tpl === "sidebar" ||
-    tpl === "serif"
+    tpl === "serif" ||
+    tpl === "atlas" ||
+    tpl === "contrast" ||
+    tpl === "focus"
   )
     out.cvTemplate = tpl;
 
   if (r.cvSectionVisibility && typeof r.cvSectionVisibility === "object") {
     const v = r.cvSectionVisibility as Record<string, unknown>;
     const vis: CvSectionVisibilityV1 = {};
-    for (const k of ["highlights", "projects", "experience", "education", "certifications", "languages"] as const) {
+    for (const k of [
+      "summary",
+      "highlights",
+      "projects",
+      "experience",
+      "education",
+      "certifications",
+      "languages",
+      "coverLetters",
+    ] as const) {
       if (typeof v[k] === "boolean") (vis as any)[k] = v[k];
     }
     if (Object.keys(vis).length > 0) out.cvSectionVisibility = vis;
   }
+
+  const dde = r.cvDateDisplayExperience;
+  if (dde === "full" || dde === "year") out.cvDateDisplayExperience = dde;
+  const dded = r.cvDateDisplayEducation;
+  if (dded === "full" || dded === "year") out.cvDateDisplayEducation = dded;
+
+  if (typeof r.cvShowExperienceLocation === "boolean") out.cvShowExperienceLocation = r.cvShowExperienceLocation;
+  if (typeof r.cvShowEducationLocation === "boolean") out.cvShowEducationLocation = r.cvShowEducationLocation;
+  if (typeof r.cvShowEducationDetails === "boolean") out.cvShowEducationDetails = r.cvShowEducationDetails;
+  if (typeof r.cvShowProjectDescriptions === "boolean") out.cvShowProjectDescriptions = r.cvShowProjectDescriptions;
+  if (typeof r.cvShowContactLocation === "boolean") out.cvShowContactLocation = r.cvShowContactLocation;
+
+  const lettersRaw = Array.isArray(r.coverLetters) ? r.coverLetters : [];
+  const coverLetters: CvCoverLetterV1[] = [];
+  for (const x of lettersRaw) {
+    if (!x || typeof x !== "object") continue;
+    const rx = x as Record<string, unknown>;
+    const id = typeof rx.id === "string" ? rx.id.trim() : "";
+    const title = typeof rx.title === "string" ? rx.title.trim().slice(0, 100) : "";
+    const body = typeof rx.body === "string" ? rx.body.slice(0, 12000) : "";
+    if (!id || !body.trim()) continue;
+    coverLetters.push({ id, title: title || "Carta", body });
+    if (coverLetters.length >= 10) break;
+  }
+  if (coverLetters.length > 0) out.coverLetters = coverLetters;
 
   const expRaw = Array.isArray(r.experiences) ? r.experiences : [];
   const experiences = expRaw
@@ -638,6 +748,10 @@ export function loadPrefs(): AppPrefsV1 {
       typeof (base as any).showFabShortcuts === "boolean"
         ? Boolean((base as any).showFabShortcuts)
         : DEFAULT_PREFS.showFabShortcuts,
+    showFabCvTips:
+      typeof (base as any).showFabCvTips === "boolean"
+        ? Boolean((base as any).showFabCvTips)
+        : DEFAULT_PREFS.showFabCvTips,
     habitsMarkStyle: normalizeHabitsMarkStyle((base as any).habitsMarkStyle ?? DEFAULT_PREFS.habitsMarkStyle),
     onboardingV2: (() => {
       const raw = (base as any)?.onboardingV2;
@@ -654,6 +768,7 @@ export function loadPrefs(): AppPrefsV1 {
       return { done, step, dismissed, completedIds: Array.from(new Set(completedIds)).slice(0, 30) };
     })(),
     projectEvidenceLayout: normalizeProjectEvidenceLayout((base as Partial<AppPrefsV1>).projectEvidenceLayout),
+    cvJobOffers: normalizeCvJobOffers((base as any).cvJobOffers),
     font: normalizeFontId((base as Partial<AppPrefsV1>).font ?? DEFAULT_PREFS.font),
     uiFontScale: normalizeUiFontScale((base as Partial<AppPrefsV1>).uiFontScale),
     headerLangPopover: normalizeHeaderPopoverTrigger(

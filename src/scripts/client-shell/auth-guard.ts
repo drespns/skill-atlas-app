@@ -14,7 +14,5 @@ export async function initAuthGuard() {
   } catch {
     // ignore
   }
-  const url = new URL(window.location.origin + "/");
-  url.searchParams.set("reason", "auth");
-  window.location.href = url.toString();
+  window.location.href = "/login";
 }
