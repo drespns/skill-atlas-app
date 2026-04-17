@@ -10,7 +10,29 @@ Documento orientado al **historial** de lo implementado y a **ideas** sin orden 
 
 ## Registro de versiones (historial de producto)
 
-### v0.130.0 (actual)
+### v0.140.0 (actual)
+
+**Numeración:** salto de minor por cierre transversal: **landing** renovada (métricas, herramientas, FAQ, CTAs), **retirada** de rutas públicas **`/demo`** y **`/prep`**, **CV** ampliado (tabs, portada, ofertas, ajustes, ATS/plantillas), herramienta **Expense tracker** en **`/tools`**, refinamiento de **shell/prefs/estilos** y documentación al día.
+
+- **Landing (`/`):** bloque **Métricas** con gráfico de líneas (Apache **ECharts**, serie ficticia 2025) y tarjetas inspiradas en **`/app`** (stack con barras + actividad reciente); carrusel **Recorrido** con faceta **Herramientas**; sección **Herramientas** con demos (carrusel de gastos, hábitos, Pomodoro, fila de enlaces compacta); franja superior enlaza solo a **`/backlog`**; eliminados el diagrama “Dentro de la app”, el teaser “Próxima pieza” y las páginas **`/demo`** y **`/prep`** (y el componente **`PrepRoadmap`**); **FAQ** a ancho completo en grid con más preguntas; CTA final con copy renovado y botón **Contacto** (`/contact`).
+- **i18n (ES/EN):** ampliación de claves para landing, CV, herramientas, dashboard y textos públicos coherentes con lo anterior.
+- **Dashboard (`/app`):** enlace **Backlog** en “Enlaces útiles” sustituye al enlace **Prep** (ruta retirada).
+- **Command palette:** sin entrada a **`/prep`**.
+- **Prefs y estado cliente:** extensiones en `prefs.ts`, `settings-prefs.ts`, `SettingsPrefsFields.astro` y `user_client_state.ts` para nuevos flujos (CV, herramientas, shell).
+- **CV (`/cv` y público `/cv/p/[token]`):** pestañas del documento, portada, ofertas, modal de ajustes de CV, burbuja dock; libs **`cv-ats-score`**, **`cv-display-format`**, **`cv-templates`** y retoques en ATS; mejoras en host, editor, cabecera, preview y páginas; scripts `cv-page.ts`, `public-cv-by-token.ts`, rieles y UI por pestaña (`cv-browser-tabs.ts`, `cv-job-offers-ui.ts`, `cv-scroll-doc-rail.ts`, `cv-settings-modal.ts`).
+- **Herramientas — control de gastos (`/tools/expense-tracker`):** implementación en cliente con **`src/lib/tools-expense-tracker.ts`**, export **XLSX**, utilidades de sync/cifrado en rama, SQL opcional **`docs/sql/saas-029-tool-expense-tracker-optional-storage.sql`** (Storage Supabase); entrada en el hub **`/tools`**; dependencia **`exceljs`**.
+- **Shell y FAB:** ajustes en **`AppHeader.astro`**, **`AppFabShell.astro`** y **`fab-bubbles.ts`** (accesos alineados con herramientas y CV).
+- **Cliente transversal:** `auth-guard.ts`, ampliación de **`select-popover.ts`**, `command-palette.ts`.
+- **Estilos:** **`src/styles/global.css`** (utilidades y refinamiento visual).
+- **Documentación:** `docs/architecture.md`, `docs/code-locations.md`, `docs/db.md`, `docs/local-persistence.md` y **`README.md`** (rutas, persistencia opcional de gastos, referencias sin `/prep`).
+
+#### Estudio (`/study`) — UX / cohesión (siguiente iteración; no cerrado en v0.140.0)
+
+- **Objetivo:** acción explícita de **guardar** (o auto-guardado con feedback inequívoco: guardado / error / pendiente) y **continuar / proceder** — enlace o CTA que encadene el flujo (p. ej. bajar foco a fuentes, dossier o “siguiente paso”), no solo texto de ayuda bajo el input.
+- **Cohesión:** Objetivo, SkillAtlas (tech + proyecto) y Temario se perciben como bloques inconexos; acercar jerarquía (pasos numerados, pestañas, acordeón o strip colapsable) y menos rejilla densa a la vez en viewport.
+- **Mini-espec** de pantalla Estudio (flujo feliz + qué va a “Más / avanzado”) antes de rediseños grandes; alinear copy y CTAs con ese orden.
+
+### v0.130.0
 
 **Numeración:** el trabajo acumulado que estaba documentado como salida **0.120.x** se publica como **0.130.0** (salto de versión por alcance: Estudio, `/tools` ampliado, CV, admin, SQL y sync en cuenta).
 
@@ -61,7 +83,6 @@ Documento orientado al **historial** de lo implementado y a **ideas** sin orden 
 - **Proyectos — duplicar:** botón en detalle CSR que copia proyecto (stack, conceptos enlazados, evidencias); sin copiar portada.
 - **Actividad reciente:** scope `user_client_state` **`recent_activity`**; merge con `localStorage` al iniciar sesión y guardado tras cada visita.
 - **Dashboard:** línea de progreso del **temario** (`study_curriculum`: temas hechos / total).
-- **`/prep`:** bloque “qué usar ya” con enlaces a `/app`, `/technologies`, `/study`.
 - **Estudio (`/study`) — fase 3 (chat + citas interactivas):**
   - Endpoint `POST /api/study/chat` (feature flag servidor `STUDY_CHAT_ENABLED`): RAG sobre chunks Postgres, respuesta con citas numeradas; cada cita incluye **`body`** (texto del chunk, capado) para resaltar en cliente sin otra petición.
   - UI en `/study`: mensajes del asistente con botones **`[[n]]`**; panel de cita con fragmento resaltado (`<mark>`), enlace “Abrir fuente” y “Resaltar en lista” (scroll + anillo en la fila de fuentes).
@@ -93,10 +114,6 @@ Documento orientado al **historial** de lo implementado y a **ideas** sin orden 
 - **Fixes:**
   - Planificador de hábitos: arreglado click y Shift+click (evita doble toggle por múltiples bindings).
 - **Admin — siguiente nivel (idea):** métricas agregadas (DAU, registros por día), tabla de **audit log** si se añade SQL, export CSV, paginación `listUsers` >100, **nunca** exponer service role al cliente.
-- **Estudio (`/study`) — UX / cohesión (pendiente; próximo tramo hacia 0.140.0):**
-  - **Objetivo:** acción explícita de **guardar** (o auto-guardado con feedback inequívoco: guardado / error / pendiente) y **continuar / proceder** — enlace o CTA que encadene el flujo (p. ej. bajar foco a fuentes, dossier o “siguiente paso”), no solo texto de ayuda bajo el input.
-  - **Cohesión:** Objetivo, SkillAtlas (tech + proyecto) y Temario se perciben como bloques inconexos; acercar jerarquía (pasos numerados, pestañas, acordeón o strip colapsable) y menos rejilla densa a la vez en viewport.
-  - **Mini-espec** de pantalla Estudio (flujo feliz + qué va a “Más / avanzado”) antes de rediseños grandes; alinear copy y CTAs con ese orden.
 
 #### Estudio — roadmap tipo NotebookLM (siguiente trabajo; priorizar velocidad y UX, evitar sobre-ingeniería)
 
@@ -202,7 +219,7 @@ Orden acordado para RAG / asistente sobre fuentes:
 - **QA / tester:** panel en Ajustes (modo tester, checklist, seed, debug); nota si el seed choca con constraints de conceptos.
 - **OG / compartir:** meta OG/Twitter en **`/portfolio/<slug>`** y **`/p/<token>`**; imagen dinámica **`/og/portfolio.svg`**.
 - **Onboarding:** tour + spotlight (minimizar, progreso, prefs); botones en **`/app`**.
-- **`/prep`**, **`/study`** (workspace local, tres columnas); landing y navegación actualizadas.
+- **`/study`** (workspace local, tres columnas); landing y navegación actualizadas (la ruta pública **`/prep`** se retiró después).
 - Documentación al día con ese alcance.
 
 ### v0.45.0
@@ -289,18 +306,17 @@ Lista **explícita** — no implica prioridad; **no eliminar** entradas por ahor
 4. ~~Actividad reciente multi-dispositivo~~ → implementado vía `recent_activity` + merge al login.
 5. **Insights en `/app`** (gráficos, heatmap, eventos).
 6. **`/study`** — Storage y extracción de texto ya en curso; RAG / NotebookLM: ver tabla **“Estudio — roadmap tipo NotebookLM”** bajo **v0.130.0** (chunking + FTS → chat con citas → UI → notas → salidas → embeddings).
-7. **`/prep`** — convocatorias / proyectos de estudio ampliados.
-8. **Monetización** — pasarela, planes, límites (tras validar demanda).
-9. **Tech Note** por tecnología (markdown) + mejoras de import / tiers en DB.
-10. **Observabilidad** — e2e, snapshots visuales.
-11. **Rendimiento navegación** — menos recarga completa, caché de listas CSR, skeletons.
-12. **i18n** — textos restantes (p. ej. mensajes de `userFacingDbError` en EN cuando UI en EN).
-13. **i18n multi-idioma amplio** — además de ES/EN en shell, **muchos idiomas** en selector, traducciones completas de landing/app y mantenimiento de `*.json` (pendiente de priorizar; hoy solo ES/EN en UI principal).
-14. **QA seed** — el botón “Crear datos de prueba” puede chocar con constraints de `concepts` (p. ej. `progress`); alinear seed con DB real.
-15. **Categorías / columnas** en conceptos (`category`, `tier`) si se sale del modelo actual.
-16. **CV — import enriquecido:** subida **PDF/DOCX**, extracción de texto en servidor, opcional **IA** para mapear a `experiences` / `education` con fechas en formatos heterogéneos (mes/año, rangos, etc.); complementa el import por pegado en **v0.100.0**.
-17. **`/tools` — ampliar utilidades y modo Pro:** el hub y la primera tanda de herramientas cliente ya están en **v0.130.0**; pendiente priorizar **PDF→Word**, **PNG→ICO**, edición PDF, conversiones server-side/WASM pesado, etc., inspirado en Convertio pero embebido en SkillAtlas.
-18. **Alta de tecnología/librería por URL o identificador de registro** — *parcial:* npm/PyPI rellena nombre/slug/descripción vía API; **pendiente:** sugerir/asignar **icono** automáticamente y ampliar a otros registros o GitHub package.
+7. **Monetización** — pasarela, planes, límites (tras validar demanda).
+8. **Tech Note** por tecnología (markdown) + mejoras de import / tiers en DB.
+9. **Observabilidad** — e2e, snapshots visuales.
+10. **Rendimiento navegación** — menos recarga completa, caché de listas CSR, skeletons.
+11. **i18n** — textos restantes (p. ej. mensajes de `userFacingDbError` en EN cuando UI en EN).
+12. **i18n multi-idioma amplio** — además de ES/EN en shell, **muchos idiomas** en selector, traducciones completas de landing/app y mantenimiento de `*.json` (pendiente de priorizar; hoy solo ES/EN en UI principal).
+13. **QA seed** — el botón “Crear datos de prueba” puede chocar con constraints de `concepts` (p. ej. `progress`); alinear seed con DB real.
+14. **Categorías / columnas** en conceptos (`category`, `tier`) si se sale del modelo actual.
+15. **CV — import enriquecido:** subida **PDF/DOCX**, extracción de texto en servidor, opcional **IA** para mapear a `experiences` / `education` con fechas en formatos heterogéneos (mes/año, rangos, etc.); complementa el import por pegado en **v0.100.0**.
+16. **`/tools` — ampliar utilidades y modo Pro:** el hub y la primera tanda de herramientas cliente ya están en **v0.130.0**; pendiente priorizar **PDF→Word**, **PNG→ICO**, edición PDF, conversiones server-side/WASM pesado, etc., inspirado en Convertio pero embebido en SkillAtlas.
+17. **Alta de tecnología/librería por URL o identificador de registro** — *parcial:* npm/PyPI rellena nombre/slug/descripción vía API; **pendiente:** sugerir/asignar **icono** automáticamente y ampliar a otros registros o GitHub package.
 
 ---
 
