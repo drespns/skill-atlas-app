@@ -41,6 +41,7 @@
     "dompurify": "^3.3.3",
     "echarts": "^6.0.0",
     "exceljs": "^4.4.0",
+    "flatpickr": "^4.6.13",
     "i18next": "^25.10.10",
     "marked": "^18.0.0",
     "pdfjs-dist": "^4.10.38",

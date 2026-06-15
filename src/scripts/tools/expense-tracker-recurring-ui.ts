@@ -202,8 +202,8 @@ export function renderInvestmentSection(root: HTMLElement, deps: RecurringUiDeps
     const c = parseCardColor(h.cardColor) ?? "#8b5cf6";
     card.className =
       "et-recurring-card text-left rounded-2xl border shadow-sm p-4 space-y-2 w-full";
-    card.style.borderColor = `${c}55`;
-    card.style.background = `linear-gradient(135deg,${c}28,${c}10,transparent)`;
+    card.style.borderColor = `${c}99`;
+    card.style.background = `linear-gradient(135deg,${c}66 0%,${c}38 42%,${c}1a 100%)`;
     const type = document.createElement("p");
     type.className = "m-0 text-[10px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300";
     type.textContent = `${investmentTypeLabel(h.type)} · ${h.platform}`;

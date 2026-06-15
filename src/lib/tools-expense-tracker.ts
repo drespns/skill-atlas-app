@@ -88,6 +88,16 @@ export type WealthAccount = {
   isDefaultIncome?: boolean;
 };
 
+/** Traspaso interno entre cuentas de patrimonio (no es gasto ni ingreso). */
+export type WealthTransfer = {
+  id: string;
+  date: string;
+  fromAccountId: string;
+  toAccountId: string;
+  amount: number;
+  note?: string;
+};
+
 /** Posición manual (sin precio en tiempo real; rendimiento % actualizado a mano). */
 export type InvestmentHolding = {
   id: string;
@@ -220,6 +230,8 @@ export type ExpenseTrackerState = {
   investments: InvestmentHolding[];
   /** Cuentas de liquidez (patrimonio en efectivo). */
   wealthAccounts: WealthAccount[];
+  /** Historial de traspasos entre cuentas. */
+  wealthTransfers?: WealthTransfer[];
   /** Si true, patrimonio = efectivo + capital invertido (sin P/L). Si false, incluye valor de mercado estimado. */
   patrimonioRealMode?: boolean;
 };
@@ -260,6 +272,7 @@ export function defaultExpenseTrackerState(): ExpenseTrackerState {
     plannedExpenseMonthOverrides: [],
     investments: [],
     wealthAccounts: [],
+    wealthTransfers: [],
     patrimonioRealMode: false,
   };
 }
@@ -348,6 +361,35 @@ export function formatIbanDisplay(prefix?: string): string {
   const p = String(prefix ?? "").trim().toUpperCase().slice(0, 4);
   if (!p) return "**** **** **** ****";
   return `${p} **** **** **** ****`;
+}
+
+/** Importes en EUR con locale es-ES (miles con punto, decimales con coma). */
+export function formatEurEs(amount: number, compact = false): string {
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: compact ? 0 : 2,
+    maximumFractionDigits: compact ? 0 : 2,
+  }).format(amount);
+}
+
+function parseWealthTransfers(raw: unknown): WealthTransfer[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((r: any) => {
+      const amt = Number(r?.amount);
+      const date = String(r?.date ?? "").slice(0, 10);
+      return {
+        id: String(r?.id || "").trim(),
+        date: date.length === 10 ? date : "",
+        fromAccountId: String(r?.fromAccountId || "").trim(),
+        toAccountId: String(r?.toAccountId || "").trim(),
+        amount: Number.isFinite(amt) ? Math.round(Math.max(0, amt) * 100) / 100 : 0,
+        note: String(r?.note ?? "").trim() || undefined,
+      };
+    })
+    .filter((t: WealthTransfer) => t.id && t.date && t.fromAccountId && t.toAccountId && t.amount > 0)
+    .slice(0, 500);
 }
 
 export function parseCardColor(raw: unknown): string | undefined {
@@ -491,12 +533,92 @@ export function totalIncomeInPeriod(state: ExpenseTrackerState, filter: PeriodFi
   return Math.round(total * 100) / 100;
 }
 
+function lastDayIsoOfMonth(monthKey: string): string {
+  const dim = daysInMonthKey(monthKey);
+  return `${monthKey}-${String(dim).padStart(2, "0")}`;
+}
+
+/** Fracción del mes (0–1) que cae dentro de [periodStart, periodEnd]. */
+function monthOverlapFraction(monthKey: string, periodStart: string | null, periodEnd: string): number {
+  const monthStart = `${monthKey}-01`;
+  const monthEnd = lastDayIsoOfMonth(monthKey);
+  const winStart = periodStart && periodStart > monthStart ? periodStart : monthStart;
+  const winEnd = periodEnd < monthEnd ? periodEnd : monthEnd;
+  if (winStart > winEnd) return 0;
+  const dim = daysInMonthKey(monthKey);
+  const toDay = (iso: string) => {
+    const [y, mo, d] = iso.split("-").map(Number);
+    return Date.UTC(y!, mo! - 1, d!);
+  };
+  const days = Math.floor((toDay(winEnd) - toDay(winStart)) / 86_400_000) + 1;
+  return Math.max(0, Math.min(1, days / dim));
+}
+
+/** Gastos del período: confirmados + suscripciones (prorrateadas) + previstos con cobro en rango. */
+export function totalExpensesInPeriod(state: ExpenseTrackerState, filter: PeriodFilter): number {
+  const start = periodStartIso(filter);
+  const fx = state.eurPerUsd;
+  const today = new Date().toISOString().slice(0, 10);
+  let total = 0;
+
+  for (const row of state.expenses) {
+    if (row.confirmed === false) continue;
+    if (start && row.date < start) continue;
+    if (row.date > today) continue;
+    total += convertAmount(Math.max(0, row.amount), row.currency, "EUR", fx);
+  }
+
+  const endMk = today.slice(0, 7);
+  let startMk = start ? start.slice(0, 7) : endMk;
+  if (!/^\d{4}-\d{2}$/.test(startMk)) startMk = endMk;
+  let y = Number(startMk.slice(0, 4));
+  let m = Number(startMk.slice(5, 7));
+  const ty = Number(endMk.slice(0, 4));
+  const tm = Number(endMk.slice(5, 7));
+  const planOverrides = state.plannedExpenseMonthOverrides ?? [];
+
+  while (y < ty || (y === ty && m <= tm)) {
+    const mk = `${y}-${String(m).padStart(2, "0")}`;
+    const frac = monthOverlapFraction(mk, start, today);
+    if (frac > 0) {
+      const refDate = mk === endMk ? today : lastDayIsoOfMonth(mk);
+      let burnEur = 0;
+      let burnUsd = 0;
+      for (const s of state.subscriptions) {
+        if (!subscriptionCountsInTotals(s, refDate)) continue;
+        const monthly = subscriptionToMonthlyAmount(s, refDate);
+        if (monthly <= 0) continue;
+        if (s.currency === "EUR") burnEur += monthly * frac;
+        else burnUsd += monthly * frac;
+      }
+      total += burnEur + convertAmount(burnUsd, "USD", "EUR", fx);
+    }
+
+    for (const p of state.plannedExpenses ?? []) {
+      if (!plannedExpenseActiveInMonth(p, mk)) continue;
+      const charge = recurringChargeDate(p.dayOfMonth, mk);
+      if (start && charge < start) continue;
+      if (charge > today) continue;
+      const { amount, currency } = effectivePlannedExpenseAmount(p, mk, planOverrides);
+      if (amount > 0) total += convertAmount(amount, currency, "EUR", fx);
+    }
+
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+  }
+
+  return Math.round(total * 100) / 100;
+}
+
 /** ¿La suscripción cuenta en KPIs y gráficos en la fecha de referencia? */
 export function subscriptionCountsInTotals(s: SubscriptionRow, refDate?: string): boolean {
   if (!s.active) return false;
   const today = (refDate ?? new Date().toISOString().slice(0, 10)).slice(0, 10);
   const cancel = s.cancelEffectiveDate?.trim().slice(0, 10);
-  if (cancel && cancel.length === 10 && today >= cancel) return false;
+  if (cancel && cancel.length === 10 && today > cancel) return false;
   return true;
 }
 
@@ -999,6 +1121,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
   const plannedOverridesClean = plannedExpenseMonthOverrides.filter((r) => planIds.has(r.plannedExpenseId));
   const investments = parseInvestmentHoldings(o.investments);
   const wealthAccounts = parseWealthAccounts(o.wealthAccounts);
+  const wealthTransfers = parseWealthTransfers(o.wealthTransfers);
 
   return {
     v: 2,
@@ -1020,6 +1143,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
     plannedExpenseMonthOverrides: plannedOverridesClean,
     investments,
     wealthAccounts,
+    wealthTransfers,
     patrimonioRealMode: Boolean(o.patrimonioRealMode),
   };
 }
@@ -1111,6 +1235,7 @@ export function mergeExpenseTrackerRemoteLocal(remote: ExpenseTrackerState, loca
     ),
     investments: mergeRows(remote.investments ?? [], local.investments ?? []),
     wealthAccounts: mergeRows(remote.wealthAccounts ?? [], local.wealthAccounts ?? []),
+    wealthTransfers: mergeRows(remote.wealthTransfers ?? [], local.wealthTransfers ?? []),
     patrimonioRealMode: local.patrimonioRealMode,
   });
 }
@@ -1137,6 +1262,7 @@ export function applyExpenseImportReplace(current: ExpenseTrackerState, imported
     plannedExpenseMonthOverrides: imported.plannedExpenseMonthOverrides ?? [],
     investments: imported.investments ?? [],
     wealthAccounts: imported.wealthAccounts ?? [],
+    wealthTransfers: imported.wealthTransfers ?? [],
   });
 }
 

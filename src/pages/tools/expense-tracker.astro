@@ -10,32 +10,15 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
   <div data-requires-auth class="hidden"></div>
   <section class="space-y-6 w-full" data-tools-expense-page>
     <ToolsPageHeader titleI18nKey="tools.expenseTrackerTitle" title={title}>
-      <div slot="intro" class="et-header-intro-grid">
+      <div slot="intro">
         <p class="m-0 text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed">
           Tus gastos se quedan en este navegador salvo que tú actives una copia en tu cuenta (botón arriba a la derecha).
           Incluso con copia en la nube, <strong class="font-medium text-gray-800 dark:text-gray-200">otro usuario de la app no puede abrir tu hoja</strong>: cada uno solo ve lo suyo. Si además usas la frase del cuaderno, la copia sube cifrada y
           <strong class="font-medium text-gray-800 dark:text-gray-200">ni quien tenga acceso técnico a la base de datos puede leer los importes</strong> sin esa frase (que no guardamos en servidor).
         </p>
-        <div
-          class="rounded-xl border p-3 sm:p-3.5 space-y-2 transition-colors min-w-0 et-header-sync-strip"
-          data-et-sync-strip
-        >
-          <label class="flex items-start gap-2.5 cursor-pointer m-0">
-            <input
-              type="checkbox"
-              data-et-sync-strip-toggle
-              class="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 shrink-0"
-            />
-            <span class="text-xs sm:text-sm leading-snug min-w-0">
-              <span class="font-semibold text-gray-900 dark:text-gray-100" data-et-sync-strip-title>Guardar en mi cuenta (Supabase)</span>
-              <span class="block text-[11px] sm:text-xs mt-0.5 text-gray-500 dark:text-gray-400/90" data-et-sync-strip-hint>
-                Desactivado: los datos solo viven en este navegador.
-              </span>
-            </span>
-          </label>
-        </div>
       </div>
-      <div slot="actions" class="relative w-full sm:w-auto flex sm:justify-end" data-et-sync-host>
+      <div slot="actions" class="flex flex-col items-stretch sm:items-end gap-2.5 w-full sm:min-w-[17rem] sm:max-w-[22rem]">
+        <div class="relative w-full" data-et-sync-host>
           <button
             type="button"
             data-et-sync-popover-toggle
@@ -145,6 +128,25 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
             </div>
           </div>
         </div>
+        <div
+          class="rounded-xl border p-3 sm:p-3.5 space-y-2 transition-colors w-full et-header-sync-strip"
+          data-et-sync-strip
+        >
+          <label class="flex items-start gap-2.5 cursor-pointer m-0">
+            <input
+              type="checkbox"
+              data-et-sync-strip-toggle
+              class="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 shrink-0"
+            />
+            <span class="text-xs sm:text-sm leading-snug min-w-0">
+              <span class="font-semibold text-gray-900 dark:text-gray-100" data-et-sync-strip-title>Guardar en mi cuenta (Supabase)</span>
+              <span class="block text-[11px] sm:text-xs mt-0.5 text-gray-500 dark:text-gray-400/90" data-et-sync-strip-hint>
+                Desactivado: los datos solo viven en este navegador.
+              </span>
+            </span>
+          </label>
+        </div>
+      </div>
     </ToolsPageHeader>
     <p class="hidden m-0 text-sm text-amber-900 dark:text-amber-100/95 max-w-3xl" data-et-e2e-outside-hint>
       Hay una copia en tu cuenta protegida con frase.
@@ -193,19 +195,26 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
         </div>
       </details>
 
-      <div class="rounded-2xl border border-amber-300/50 dark:border-amber-800/50 bg-gradient-to-br from-amber-500/10 via-white/90 to-orange-500/8 dark:from-amber-950/35 dark:via-gray-950/55 dark:to-orange-950/20 p-4 sm:p-5 space-y-3">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div>
+      <details class="group et-wealth-panel rounded-2xl border border-amber-300/50 dark:border-amber-800/50 bg-gradient-to-br from-amber-500/10 via-white/90 to-orange-500/8 dark:from-amber-950/35 dark:via-gray-950/55 dark:to-orange-950/20 open:shadow-md" open>
+        <summary class="cursor-pointer list-none px-4 sm:px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+          <div class="min-w-0">
             <h2 class="m-0 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-50">Patrimonio — cuentas</h2>
             <p class="m-0 mt-1 text-xs text-gray-600 dark:text-gray-400 max-w-2xl">
-              Indica el efectivo en cada cuenta. El total de <strong class="font-medium">Inversiones</strong> se suma automáticamente al patrimonio.
+              Efectivo por cuenta, traspasos internos e IBAN parcial. El total de <strong class="font-medium">Inversiones</strong> se suma al patrimonio.
             </p>
           </div>
-          <button type="button" data-et-wealth-add class="et-btn-secondary text-sm shrink-0">Añadir cuenta</button>
+          <span class="text-xs font-normal text-gray-500 dark:text-gray-400 shrink-0 group-open:hidden">Mostrar cuentas</span>
+          <span class="text-xs font-normal text-gray-500 dark:text-gray-400 shrink-0 hidden group-open:inline">Ocultar</span>
+        </summary>
+        <div class="px-4 sm:px-5 pb-4 pt-0 space-y-3 border-t border-amber-200/40 dark:border-amber-900/35">
+          <div class="flex flex-wrap gap-2 justify-end pt-3">
+            <button type="button" data-et-wealth-transfer class="et-btn-accent text-sm">Traspaso entre cuentas</button>
+            <button type="button" data-et-wealth-add class="et-btn-secondary text-sm shrink-0">Añadir cuenta</button>
+          </div>
+          <div class="space-y-2" data-et-wealth-list></div>
+          <p class="m-0 text-xs text-gray-500 dark:text-gray-400 hidden" data-et-wealth-empty>Aún no hay cuentas. Añade bancos, brokers o efectivo.</p>
         </div>
-        <div class="space-y-2" data-et-wealth-list></div>
-        <p class="m-0 text-xs text-gray-500 dark:text-gray-400 hidden" data-et-wealth-empty>Aún no hay cuentas. Añade bancos, brokers o efectivo.</p>
-      </div>
+      </details>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <div
@@ -223,7 +232,7 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
           <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-et-patrimonio-mode-hint>
             Valor estimado: incluye rendimiento % de inversiones. Real: solo efectivo + capital invertido.
           </p>
-          <p class="mt-1 mb-0 text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-50 font-mono" data-et-kpi-patrimonio-total>—</p>
+          <p class="mt-1 mb-0 text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-50 et-amount" data-et-kpi-patrimonio-total>—</p>
           <div class="space-y-1.5 text-sm" data-et-kpi-patrimonio-breakdown></div>
         </div>
       </div>
@@ -300,7 +309,7 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
         >
           <p class="m-0 text-xs font-semibold uppercase tracking-wide text-sky-800/90 dark:text-sky-300/90">Gastos (período)</p>
           <p class="mt-1 mb-0 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50" data-et-kpi-expenses>—</p>
-          <p class="mt-1 mb-0 text-xs text-gray-500 dark:text-gray-400">Suma de filas confirmadas</p>
+          <p class="mt-1 mb-0 text-xs text-gray-500 dark:text-gray-400">Confirmados + suscripciones (prorrateadas) + previstos</p>
         </div>
         <div
           class="rounded-2xl border border-indigo-400/35 dark:border-indigo-700/40 bg-gradient-to-br from-indigo-500/12 via-gray-50/80 to-white dark:from-indigo-950/25 dark:via-gray-950/60 dark:to-gray-900/80 p-4 shadow-sm sm:col-span-2 xl:col-span-2"
@@ -309,6 +318,20 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
           <p class="mt-1 mb-0 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50" data-et-kpi-income-period>—</p>
           <p class="mt-1 mb-0 text-xs text-gray-500 dark:text-gray-400">Cobros puntuales + previstos en el período</p>
         </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div
+          class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-3 shadow-sm min-h-[280px]"
+          data-et-chart-pie-eur
+        >
+        </div>
+        <div
+          class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-3 shadow-sm min-h-[280px]"
+          data-et-chart-bar
+        >
+        </div>
+        <div class="hidden" data-et-chart-pie-usd></div>
       </div>
     </div>
 
@@ -556,25 +579,10 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
       >
       </div>
       <div
-        class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-3 shadow-sm min-h-[300px]"
-        data-et-chart-bar
+        class="rounded-2xl border border-fuchsia-200/70 dark:border-fuchsia-900/40 bg-gradient-to-r from-fuchsia-500/8 via-white/90 to-indigo-500/8 dark:from-fuchsia-950/25 dark:via-gray-950/60 dark:to-indigo-950/25 p-3 shadow-sm min-h-[300px]"
+        data-et-chart-balance
       >
       </div>
-    </div>
-
-    <div
-      class="rounded-2xl border border-fuchsia-200/70 dark:border-fuchsia-900/40 bg-gradient-to-r from-fuchsia-500/8 via-white/90 to-indigo-500/8 dark:from-fuchsia-950/25 dark:via-gray-950/60 dark:to-indigo-950/25 p-3 shadow-sm min-h-[280px]"
-      data-et-chart-balance
-    >
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4" data-et-chart-pies-row>
-      <div
-        class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-3 shadow-sm min-h-[280px] lg:col-span-2"
-        data-et-chart-pie-eur
-      >
-      </div>
-      <div class="hidden" data-et-chart-pie-usd></div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -589,6 +597,41 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
       >
       </div>
     </div>
+
+    <dialog data-et-dlg-transfer class="et-dialog p-0 w-[min(100vw-1.5rem,26rem)] max-w-[calc(100vw-1.25rem)]">
+      <div class="divide-y divide-gray-100 dark:divide-gray-800 flex flex-col">
+        <div class="px-5 py-4 shrink-0">
+          <h3 class="m-0 text-lg font-semibold">Traspaso entre cuentas</h3>
+          <p class="m-0 mt-1 text-xs text-gray-500 dark:text-gray-400">Mueve efectivo entre cuentas (p. ej. nómina → tarjeta). No es un gasto: solo ajusta saldos.</p>
+        </div>
+        <div class="px-5 py-4 space-y-3">
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Desde</span>
+            <select data-et-transfer-from class="et-field w-full text-sm py-2"></select>
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Hacia</span>
+            <select data-et-transfer-to class="et-field w-full text-sm py-2"></select>
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Importe (€)</span>
+            <input type="number" step="0.01" min="0" data-et-transfer-amount class="et-field w-full text-sm py-2 et-amount" />
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Fecha</span>
+            <input type="date" data-et-transfer-date class="et-field et-date w-full text-sm py-2" />
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Nota (opc.)</span>
+            <input type="text" data-et-transfer-note class="et-field w-full text-sm py-2" placeholder="p. ej. Nómina → tarjeta" />
+          </label>
+        </div>
+        <div class="px-5 py-4 flex justify-end gap-2 shrink-0">
+          <button type="button" data-et-transfer-cancel class="et-btn-secondary text-sm">Cancelar</button>
+          <button type="button" data-et-transfer-save class="et-btn-primary text-sm">Registrar traspaso</button>
+        </div>
+      </div>
+    </dialog>
 
     <dialog data-et-sub-dialog class="et-dialog et-sub-dialog p-0 w-[min(100vw-1.5rem,28rem)] max-w-[calc(100vw-1.25rem)]">
       <div class="divide-y divide-gray-100 dark:divide-gray-800 flex flex-col" data-et-sub-form>
@@ -1022,15 +1065,34 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
       height: 100%;
       min-height: 0;
     }
-    [data-tools-expense-page] .et-header-intro-grid {
-      display: grid;
-      gap: 1rem;
-      align-items: start;
+    [data-tools-expense-page] .et-wealth-panel > summary::-webkit-details-marker {
+      display: none;
     }
-    @media (min-width: 1024px) {
-      [data-tools-expense-page] .et-header-intro-grid {
-        grid-template-columns: 1fr min(18rem, 38%);
-      }
+    [data-tools-expense-page] .et-amount {
+      font-variant-numeric: tabular-nums;
+    }
+    [data-tools-expense-page] .flatpickr-calendar {
+      border-radius: 0.75rem;
+      border: 1px solid rgb(229 231 235);
+      box-shadow: 0 10px 40px rgb(15 23 42 / 0.12);
+      font-family: inherit;
+    }
+    .dark [data-tools-expense-page] .flatpickr-calendar.et-fp-dark {
+      background: rgb(17 24 39);
+      border-color: rgb(55 65 81);
+      color: rgb(243 244 246);
+    }
+    .dark [data-tools-expense-page] .flatpickr-calendar.et-fp-dark .flatpickr-day.selected,
+    .dark [data-tools-expense-page] .flatpickr-calendar.et-fp-dark .flatpickr-day.selected:hover {
+      background: rgb(99 102 241);
+      border-color: rgb(99 102 241);
+    }
+    [data-tools-expense-page] .flatpickr-day.selected {
+      background: rgb(79 70 229);
+      border-color: rgb(79 70 229);
+    }
+    [data-tools-expense-page] input.flatpickr-input.et-field {
+      cursor: pointer;
     }
     [data-tools-expense-page] .et-header-sync-strip[data-sync-on="true"] {
       border-color: rgb(52 211 153 / 0.55);
