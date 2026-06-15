@@ -36,6 +36,7 @@ import {
   scheduleSubscriptionCancel,
   validateCategoryTree,
   computePatrimonioSnapshot,
+  computeCashAvailableTotal,
   computeInvestmentTotalInvested,
   monthsForRecurringEntry,
   monthsForRecurringRange,
@@ -65,8 +66,10 @@ import {
   type InvestmentHolding,
   type WealthAccount,
   type WealthTransfer,
+  type WealthBizum,
+  type WealthBizumDirection,
 } from "@lib/tools-expense-tracker";
-import { initExpenseDatePickers, readDateFieldValue, refreshExpenseDatePicker } from "./expense-tracker-dates";
+import { initExpenseDatePickers, readDateFieldValue, readMonthFieldValue, refreshExpenseDatePicker } from "./expense-tracker-dates";
 import { layoutTreemap } from "@lib/treemap-layout";
 import { isExpenseEncryptedEnvelope, openExpenseEnvelope, sealExpenseState } from "@lib/tools-expense-tracker-crypto";
 import type { EncryptedExpenseEnvelope } from "@lib/tools-expense-tracker-crypto";
@@ -639,6 +642,37 @@ function renderPatrimonioKpi(root: HTMLElement) {
     hint.textContent = "Configura cuentas arriba o añade inversiones.";
     elBreak.appendChild(hint);
   }
+  renderCashAvailableKpi(root);
+}
+
+function renderCashAvailableKpi(root: HTMLElement) {
+  const elTotal = root.querySelector<HTMLElement>("[data-et-kpi-cash-available]");
+  const elBreak = root.querySelector<HTMLElement>("[data-et-kpi-cash-breakdown]");
+  if (!elTotal || !elBreak) return;
+  const accounts = state.wealthAccounts ?? [];
+  const total = computeCashAvailableTotal(accounts);
+  elTotal.textContent = fmtEur(total);
+  elBreak.innerHTML = "";
+  if (!accounts.length) {
+    const hint = document.createElement("p");
+    hint.className = "m-0 text-xs text-gray-500 dark:text-gray-400";
+    hint.textContent = "Añade cuentas en Patrimonio para ver el desglose.";
+    elBreak.appendChild(hint);
+    return;
+  }
+  for (const a of accounts) {
+    const row = document.createElement("div");
+    row.className = "flex justify-between gap-2 text-gray-700 dark:text-gray-300";
+    const name = document.createElement("span");
+    name.className = "truncate";
+    const mask = a.ibanPrefix ? ` ${formatIbanDisplay(a.ibanPrefix)}` : "";
+    name.textContent = `${a.name}${mask}`;
+    const val = document.createElement("span");
+    val.className = "et-amount font-semibold shrink-0";
+    val.textContent = fmtEur(a.balance);
+    row.append(name, val);
+    elBreak.appendChild(row);
+  }
 }
 
 function renderTrackingBaseline(root: HTMLElement) {
@@ -929,28 +963,217 @@ function renderWealthAccounts(root: HTMLElement) {
     row.append(top, mask, roles, balRow);
     list.appendChild(row);
   }
-  const transfers = [...(state.wealthTransfers ?? [])]
-    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
-    .slice(0, 6);
-  if (transfers.length) {
-    const box = document.createElement("div");
-    box.className =
-      "rounded-xl border border-dashed border-indigo-200/70 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-indigo-950/15 p-3 space-y-1.5";
-    const title = document.createElement("p");
-    title.className = "m-0 text-[11px] font-semibold uppercase tracking-wide text-indigo-800/90 dark:text-indigo-300/90";
-    title.textContent = "Últimos traspasos (nómina ↔ tarjeta)";
-    box.appendChild(title);
-    const acctName = (id: string) => accounts.find((x) => x.id === id)?.name ?? "Cuenta";
-    for (const t of transfers) {
-      const line = document.createElement("p");
-      line.className = "m-0 text-xs text-gray-700 dark:text-gray-300";
-      const note = t.note ? ` · ${t.note}` : "";
-      line.textContent = `${t.date.slice(0, 10)} · ${acctName(t.fromAccountId)} → ${acctName(t.toAccountId)} · ${fmtEur(t.amount)}${note}`;
-      box.appendChild(line);
-    }
-    list.appendChild(box);
-  }
+  updateTransfersHistoryButton(root);
+  updateBizumsHistoryButton(root);
   renderPatrimonioKpi(root);
+}
+
+function formatTransferDate(iso: string): string {
+  const d = iso.slice(0, 10);
+  if (d.length !== 10) return iso;
+  const [y, m, day] = d.split("-");
+  return `${day}/${m}/${y}`;
+}
+
+function updateTransfersHistoryButton(root: HTMLElement) {
+  const btn = root.querySelector<HTMLButtonElement>("[data-et-wealth-transfers-history]");
+  if (!btn) return;
+  const n = (state.wealthTransfers ?? []).length;
+  btn.classList.toggle("hidden", n === 0);
+  btn.textContent = n === 1 ? "Ver traspaso (1)" : `Ver traspasos (${n})`;
+}
+
+function openTransfersHistoryDialog(root: HTMLElement) {
+  const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-transfers-history]");
+  const listEl = root.querySelector<HTMLElement>("[data-et-transfers-history-list]");
+  if (!dlg || !listEl) return;
+  const accounts = state.wealthAccounts ?? [];
+  const acctName = (id: string) => accounts.find((x) => x.id === id)?.name ?? "Cuenta";
+  const transfers = [...(state.wealthTransfers ?? [])].sort((a, b) =>
+    a.date < b.date ? 1 : a.date > b.date ? -1 : 0,
+  );
+  listEl.innerHTML = "";
+  if (!transfers.length) {
+    const empty = document.createElement("p");
+    empty.className = "m-0 text-sm text-gray-500 dark:text-gray-400 text-center py-6";
+    empty.textContent = "Aún no hay traspasos registrados.";
+    listEl.appendChild(empty);
+  } else {
+    for (const t of transfers) {
+      const card = document.createElement("article");
+      card.className =
+        "rounded-xl border border-indigo-200/70 dark:border-indigo-800/50 bg-gradient-to-br from-indigo-500/12 via-white/95 to-sky-500/8 dark:from-indigo-950/35 dark:via-gray-950/80 dark:to-sky-950/20 p-3.5 shadow-sm space-y-2";
+      const top = document.createElement("div");
+      top.className = "flex flex-wrap items-start justify-between gap-2";
+      const date = document.createElement("p");
+      date.className = "m-0 text-[11px] font-semibold uppercase tracking-wide text-indigo-700/90 dark:text-indigo-300/90";
+      date.textContent = formatTransferDate(t.date);
+      const amt = document.createElement("p");
+      amt.className = "m-0 text-lg font-bold et-amount text-gray-900 dark:text-gray-50 shrink-0";
+      amt.textContent = fmtEur(t.amount);
+      top.append(date, amt);
+      const flow = document.createElement("div");
+      flow.className = "flex flex-wrap items-center gap-2 text-sm font-medium text-gray-800 dark:text-gray-100";
+      const from = document.createElement("span");
+      from.className = "rounded-lg bg-white/80 dark:bg-gray-900/60 border border-gray-200/80 dark:border-gray-700 px-2 py-1 truncate max-w-[11rem]";
+      from.textContent = acctName(t.fromAccountId);
+      const arrow = document.createElement("span");
+      arrow.className = "text-indigo-500 dark:text-indigo-400 font-bold";
+      arrow.textContent = "→";
+      const to = document.createElement("span");
+      to.className = "rounded-lg bg-white/80 dark:bg-gray-900/60 border border-gray-200/80 dark:border-gray-700 px-2 py-1 truncate max-w-[11rem]";
+      to.textContent = acctName(t.toAccountId);
+      flow.append(from, arrow, to);
+      card.append(top, flow);
+      if (t.note) {
+        const note = document.createElement("p");
+        note.className = "m-0 text-xs text-gray-500 dark:text-gray-400";
+        note.textContent = t.note;
+        card.appendChild(note);
+      }
+      listEl.appendChild(card);
+    }
+  }
+  dlg.showModal();
+}
+
+function updateBizumsHistoryButton(root: HTMLElement) {
+  const btn = root.querySelector<HTMLButtonElement>("[data-et-wealth-bizums-history]");
+  if (!btn) return;
+  const n = (state.wealthBizums ?? []).length;
+  btn.classList.toggle("hidden", n === 0);
+  btn.textContent = n === 1 ? "Ver bizum (1)" : `Ver bizums (${n})`;
+}
+
+function readBizumDirection(root: HTMLElement): WealthBizumDirection {
+  const checked = root.querySelector<HTMLInputElement>("input[data-et-bizum-direction]:checked");
+  return checked?.value === "received" ? "received" : "sent";
+}
+
+function syncBizumDialogLabels(root: HTMLElement) {
+  const dir = readBizumDirection(root);
+  const lab = root.querySelector<HTMLElement>("[data-et-bizum-account-label]");
+  if (lab) {
+    lab.textContent =
+      dir === "sent" ? "Cuenta (desde la que envías)" : "Cuenta (donde recibes el dinero)";
+  }
+  const accounts = state.wealthAccounts ?? [];
+  const sel = root.querySelector<HTMLSelectElement>("[data-et-bizum-account]");
+  if (sel && accounts.length) {
+    const def =
+      dir === "sent"
+        ? defaultWealthAccountId(accounts, "expense")
+        : defaultWealthAccountId(accounts, "income");
+    fillTransferAccountSelect(sel, def ?? accounts[0]?.id);
+  }
+}
+
+function openBizumDialog(root: HTMLElement) {
+  const accounts = state.wealthAccounts ?? [];
+  if (!accounts.length) {
+    void showAlertDialog(root, "Añade al menos una cuenta en Patrimonio.");
+    return;
+  }
+  const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-bizum]");
+  const amtEl = root.querySelector<HTMLInputElement>("[data-et-bizum-amount]");
+  const dateEl = root.querySelector<HTMLInputElement>("[data-et-bizum-date]");
+  const noteEl = root.querySelector<HTMLInputElement>("[data-et-bizum-note]");
+  if (!dlg || !amtEl || !dateEl || !noteEl) return;
+  const sentRadio = root.querySelector<HTMLInputElement>('input[data-et-bizum-direction][value="sent"]');
+  if (sentRadio) sentRadio.checked = true;
+  syncBizumDialogLabels(root);
+  amtEl.value = "";
+  noteEl.value = "";
+  dlg.showModal();
+  refreshExpenseDatePicker(dateEl, todayIso());
+}
+
+function saveBizumFromDialog(root: HTMLElement) {
+  const acctSel = root.querySelector<HTMLSelectElement>("[data-et-bizum-account]");
+  const amtEl = root.querySelector<HTMLInputElement>("[data-et-bizum-amount]");
+  const dateEl = root.querySelector<HTMLInputElement>("[data-et-bizum-date]");
+  const noteEl = root.querySelector<HTMLInputElement>("[data-et-bizum-note]");
+  if (!acctSel || !amtEl || !dateEl) return;
+  const accountId = acctSel.value;
+  const amount = Number(amtEl.value);
+  const date = readDateFieldValue(dateEl);
+  const direction = readBizumDirection(root);
+  if (!accountId) {
+    void showAlertDialog(root, "Elige la cuenta.");
+    return;
+  }
+  if (!Number.isFinite(amount) || amount <= 0) {
+    void showAlertDialog(root, "Indica un importe mayor que 0.");
+    return;
+  }
+  if (date.length !== 10) {
+    void showAlertDialog(root, "Indica una fecha válida.");
+    return;
+  }
+  const rounded = roundMoney(amount);
+  adjustWealthBalance(accountId, direction === "sent" ? -rounded : rounded);
+  const row: WealthBizum = {
+    id: makeId(),
+    date,
+    direction,
+    accountId,
+    amount: rounded,
+    note: noteEl?.value?.trim() || undefined,
+  };
+  state.wealthBizums = [...(state.wealthBizums ?? []), row].slice(0, 500);
+  root.querySelector<HTMLDialogElement>("[data-et-dlg-bizum]")?.close();
+  persist();
+  renderAll(root);
+}
+
+function openBizumsHistoryDialog(root: HTMLElement) {
+  const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-bizums-history]");
+  const listEl = root.querySelector<HTMLElement>("[data-et-bizums-history-list]");
+  if (!dlg || !listEl) return;
+  const accounts = state.wealthAccounts ?? [];
+  const acctName = (id: string) => accounts.find((x) => x.id === id)?.name ?? "Cuenta";
+  const bizums = [...(state.wealthBizums ?? [])].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  listEl.innerHTML = "";
+  if (!bizums.length) {
+    const empty = document.createElement("p");
+    empty.className = "m-0 text-sm text-gray-500 dark:text-gray-400 text-center py-6";
+    empty.textContent = "Aún no hay bizums registrados.";
+    listEl.appendChild(empty);
+  } else {
+    for (const b of bizums) {
+      const sent = b.direction === "sent";
+      const card = document.createElement("article");
+      card.className =
+        "rounded-xl border border-cyan-200/70 dark:border-cyan-800/50 bg-gradient-to-br from-cyan-500/12 via-white/95 to-teal-500/8 dark:from-cyan-950/35 dark:via-gray-950/80 dark:to-teal-950/20 p-3.5 shadow-sm space-y-2";
+      const top = document.createElement("div");
+      top.className = "flex flex-wrap items-start justify-between gap-2";
+      const meta = document.createElement("div");
+      meta.className = "space-y-0.5 min-w-0";
+      const date = document.createElement("p");
+      date.className = "m-0 text-[11px] font-semibold uppercase tracking-wide text-cyan-700/90 dark:text-cyan-300/90";
+      date.textContent = formatTransferDate(b.date);
+      const badge = document.createElement("p");
+      badge.className = `m-0 text-xs font-semibold ${sent ? "text-rose-700 dark:text-rose-300" : "text-emerald-700 dark:text-emerald-300"}`;
+      badge.textContent = sent ? "Enviado" : "Recibido";
+      meta.append(date, badge);
+      const amt = document.createElement("p");
+      amt.className = `m-0 text-lg font-bold et-amount shrink-0 ${sent ? "text-rose-800 dark:text-rose-200" : "text-emerald-800 dark:text-emerald-200"}`;
+      amt.textContent = `${sent ? "−" : "+"}${fmtEur(b.amount)}`;
+      top.append(meta, amt);
+      const acct = document.createElement("p");
+      acct.className = "m-0 text-sm font-medium text-gray-800 dark:text-gray-100";
+      acct.textContent = sent ? `Desde: ${acctName(b.accountId)}` : `En: ${acctName(b.accountId)}`;
+      card.append(top, acct);
+      if (b.note) {
+        const note = document.createElement("p");
+        note.className = "m-0 text-xs text-gray-500 dark:text-gray-400";
+        note.textContent = b.note;
+        card.appendChild(note);
+      }
+      listEl.appendChild(card);
+    }
+  }
+  dlg.showModal();
 }
 
 function renderKpis(root: HTMLElement) {
@@ -1219,6 +1442,10 @@ function restoreExpenseFocusSnap(root: HTMLElement, snap: ExpenseFocusSnap) {
   }
 }
 
+function refreshTableDatePickers(root: HTMLElement) {
+  queueMicrotask(() => initExpenseDatePickers(root));
+}
+
 function refreshExpenseTableAndMoney(root: HTMLElement) {
   renderExpenseTable(root);
   refreshMoneyViews(root);
@@ -1231,16 +1458,18 @@ function defaultFilterMonthValue(): string {
 }
 
 function readExpenseTableFilter(root: HTMLElement): { month: string; day: string } {
-  const m = root.querySelector<HTMLInputElement>("[data-et-exp-filter-month]")?.value?.slice(0, 7) ?? "";
+  const mEl = root.querySelector<HTMLInputElement>("[data-et-exp-filter-month]");
+  const m = readMonthFieldValue(mEl);
   const day = root.querySelector<HTMLSelectElement>("[data-et-exp-filter-day]")?.value ?? "";
-  const month = /^\d{4}-\d{2}$/.test(m) ? m : defaultFilterMonthValue();
+  const month = m || defaultFilterMonthValue();
   return { month, day };
 }
 
 function readIncomeTableFilter(root: HTMLElement): { month: string; day: string } {
-  const m = root.querySelector<HTMLInputElement>("[data-et-inc-filter-month]")?.value?.slice(0, 7) ?? "";
+  const mEl = root.querySelector<HTMLInputElement>("[data-et-inc-filter-month]");
+  const m = readMonthFieldValue(mEl);
   const day = root.querySelector<HTMLSelectElement>("[data-et-inc-filter-day]")?.value ?? "";
-  const month = /^\d{4}-\d{2}$/.test(m) ? m : defaultFilterMonthValue();
+  const month = m || defaultFilterMonthValue();
   return { month, day };
 }
 
@@ -1255,10 +1484,12 @@ function dateMatchesMonthDayFilter(dateIso: string, month: string, day: string):
 }
 
 function ensureMonthFilterInputs(root: HTMLElement) {
+  const def = defaultFilterMonthValue();
   const exp = root.querySelector<HTMLInputElement>("[data-et-exp-filter-month]");
-  if (exp && !exp.value) exp.value = defaultFilterMonthValue();
+  if (exp && !exp.value) exp.value = def;
   const inc = root.querySelector<HTMLInputElement>("[data-et-inc-filter-month]");
-  if (inc && !inc.value) inc.value = defaultFilterMonthValue();
+  if (inc && !inc.value) inc.value = def;
+  initExpenseDatePickers(root);
 }
 
 /** Fecha inicial de una fila nueva: hoy si cae en el mes visible; si no, día 1 de ese mes. */
@@ -1292,10 +1523,10 @@ function renderExpenseTable(root: HTMLElement) {
     const inDate = document.createElement("input");
     inDate.type = "date";
     inDate.value = row.date;
-    inDate.className = `${ET_FIELD_MONO} min-w-[7rem] py-1.5`;
+    inDate.className = `${ET_FIELD_MONO} et-date min-w-[7rem] py-1.5 cursor-pointer`;
     inDate.dataset.etExpId = row.id;
     inDate.dataset.etExpField = "date";
-    inDate.addEventListener("change", () => patchExpense(row.id, { date: inDate.value }, "date"));
+    inDate.addEventListener("change", () => patchExpense(row.id, { date: readDateFieldValue(inDate) }, "date"));
     tdDate.appendChild(inDate);
 
     const tdLabel = document.createElement("td");
@@ -1343,64 +1574,6 @@ function renderExpenseTable(root: HTMLElement) {
       patchExpense(row.id, { wealthAccountId: selAcct.value || undefined }, "wealthAccount"),
     );
 
-    const tdTags = document.createElement("td");
-    tdTags.className = "px-2 py-1.5";
-    const inTags = document.createElement("input");
-    inTags.type = "text";
-    inTags.value = row.tags.join(", ");
-    inTags.placeholder = "tag1, tag2";
-    inTags.className = `${ET_FIELD} py-1.5`;
-    inTags.dataset.etExpId = row.id;
-    inTags.dataset.etExpField = "tags";
-    inTags.addEventListener("change", () => {
-      const tags = parseTags(inTags.value);
-      patchExpense(row.id, { tags }, "tags");
-      pushTagBankFrom(tags);
-    });
-
-    const tdAtt = document.createElement("td");
-    tdAtt.className = "px-2 py-1.5 space-y-1";
-    const attWrap = document.createElement("div");
-    attWrap.className = "flex flex-col gap-1 max-w-[14rem]";
-    for (const a of row.attachments) {
-      const rowL = document.createElement("div");
-      rowL.className = "flex items-center gap-1 min-w-0";
-      const link = document.createElement("a");
-      link.href = a.url;
-      link.rel = "noopener noreferrer";
-      link.target = "_blank";
-      link.className = "text-xs font-medium text-indigo-600 dark:text-indigo-300 truncate hover:underline";
-      link.textContent = a.title || "enlace";
-      const rm = document.createElement("button");
-      rm.type = "button";
-      rm.textContent = "×";
-      rm.className = "shrink-0 text-xs text-gray-500 hover:text-red-600 cursor-pointer";
-      rm.addEventListener("click", async () => {
-        if (!(await showConfirmDialog(root, "¿Quitar este enlace del gasto?", "Quitar"))) return;
-        patchExpense(row.id, { attachments: row.attachments.filter((x) => x.id !== a.id) });
-      });
-      rowL.append(link, rm);
-      attWrap.appendChild(rowL);
-    }
-    const addL = document.createElement("button");
-    addL.type = "button";
-    addL.textContent = "+ HTTPS";
-    addL.className =
-      "text-xs font-semibold rounded border border-dashed border-gray-300 dark:border-gray-600 px-2 py-0.5 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900";
-    addL.addEventListener("click", async () => {
-      const res = await showLinkDialog(root);
-      if (!res) return;
-      const url = normalizeHttpsUrl(res.url);
-      if (!url) {
-        await showAlertDialog(root, "La URL debe empezar por https://");
-        return;
-      }
-      const att: ExpenseAttachment = { id: makeId(), title: res.title.trim() || "Enlace", url };
-      patchExpense(row.id, { attachments: [...row.attachments, att] });
-    });
-    attWrap.appendChild(addL);
-    tdAtt.appendChild(attWrap);
-
     const tdNotes = document.createElement("td");
     tdNotes.className = "px-2 py-1.5";
     const inNotes = document.createElement("input");
@@ -1445,9 +1618,10 @@ function renderExpenseTable(root: HTMLElement) {
     tdCat.appendChild(selCat);
     tdAcct.appendChild(selAcct);
     tdDel.appendChild(del);
-    tr.append(tdDate, tdLabel, tdAmt, tdCat, tdAcct, tdTags, tdAtt, tdNotes, tdState, tdDel);
+    tr.append(tdDate, tdLabel, tdAmt, tdCat, tdAcct, tdNotes, tdState, tdDel);
     body.appendChild(tr);
   }
+  refreshTableDatePickers(root);
 }
 
 type IncomeFocusSnap = { incomeId: string; field: string; start?: number; end?: number };
@@ -1513,10 +1687,10 @@ function renderIncomeTable(root: HTMLElement) {
     const inDate = document.createElement("input");
     inDate.type = "date";
     inDate.value = row.date;
-    inDate.className = `${ET_FIELD_MONO} min-w-[7rem] py-1.5`;
+    inDate.className = `${ET_FIELD_MONO} et-date min-w-[7rem] py-1.5 cursor-pointer`;
     inDate.dataset.etIncId = row.id;
     inDate.dataset.etIncField = "date";
-    inDate.addEventListener("change", () => patchIncome(row.id, { date: inDate.value }, "date"));
+    inDate.addEventListener("change", () => patchIncome(row.id, { date: readDateFieldValue(inDate) }, "date"));
     tdDate.appendChild(inDate);
 
     const tdLabel = document.createElement("td");
@@ -1564,66 +1738,6 @@ function renderIncomeTable(root: HTMLElement) {
       patchIncome(row.id, { wealthAccountId: selAcct.value || undefined }, "wealthAccount"),
     );
 
-    const tags = row.tags ?? [];
-    const tdTags = document.createElement("td");
-    tdTags.className = "px-2 py-1.5";
-    const inTags = document.createElement("input");
-    inTags.type = "text";
-    inTags.value = tags.join(", ");
-    inTags.placeholder = "tag1, tag2";
-    inTags.className = `${ET_FIELD} py-1.5`;
-    inTags.dataset.etIncId = row.id;
-    inTags.dataset.etIncField = "tags";
-    inTags.addEventListener("change", () => {
-      const t = parseTags(inTags.value);
-      patchIncome(row.id, { tags: t }, "tags");
-      pushTagBankFrom(t);
-    });
-
-    const atts = row.attachments ?? [];
-    const tdAtt = document.createElement("td");
-    tdAtt.className = "px-2 py-1.5 space-y-1";
-    const attWrap = document.createElement("div");
-    attWrap.className = "flex flex-col gap-1 max-w-[14rem]";
-    for (const a of atts) {
-      const rowL = document.createElement("div");
-      rowL.className = "flex items-center gap-1 min-w-0";
-      const link = document.createElement("a");
-      link.href = a.url;
-      link.rel = "noopener noreferrer";
-      link.target = "_blank";
-      link.className = "text-xs font-medium text-indigo-600 dark:text-indigo-300 truncate hover:underline";
-      link.textContent = a.title || "enlace";
-      const rm = document.createElement("button");
-      rm.type = "button";
-      rm.textContent = "×";
-      rm.className = "shrink-0 text-xs text-gray-500 hover:text-red-600 cursor-pointer";
-      rm.addEventListener("click", async () => {
-        if (!(await showConfirmDialog(root, "¿Quitar este enlace del ingreso?", "Quitar"))) return;
-        patchIncome(row.id, { attachments: atts.filter((x) => x.id !== a.id) });
-      });
-      rowL.append(link, rm);
-      attWrap.appendChild(rowL);
-    }
-    const addL = document.createElement("button");
-    addL.type = "button";
-    addL.textContent = "+ HTTPS";
-    addL.className =
-      "text-xs font-semibold rounded border border-dashed border-gray-300 dark:border-gray-600 px-2 py-0.5 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900";
-    addL.addEventListener("click", async () => {
-      const res = await showLinkDialog(root);
-      if (!res) return;
-      const url = normalizeHttpsUrl(res.url);
-      if (!url) {
-        await showAlertDialog(root, "La URL debe empezar por https://");
-        return;
-      }
-      const att: ExpenseAttachment = { id: makeId(), title: res.title.trim() || "Enlace", url };
-      patchIncome(row.id, { attachments: [...atts, att] });
-    });
-    attWrap.appendChild(addL);
-    tdAtt.appendChild(attWrap);
-
     const tdNotes = document.createElement("td");
     tdNotes.className = "px-2 py-1.5";
     const inNotes = document.createElement("input");
@@ -1668,9 +1782,10 @@ function renderIncomeTable(root: HTMLElement) {
     tdCat.appendChild(selCat);
     tdAcct.appendChild(selAcct);
     tdDel.appendChild(del);
-    tr.append(tdDate, tdLabel, tdAmt, tdCat, tdAcct, tdTags, tdAtt, tdNotes, tdState, tdDel);
+    tr.append(tdDate, tdLabel, tdAmt, tdCat, tdAcct, tdNotes, tdState, tdDel);
     body.appendChild(tr);
   }
+  refreshTableDatePickers(root);
 }
 
 function patchIncome(id: string, patch: Partial<IncomeAdhocRow>, refocusField?: string) {
@@ -2582,7 +2697,7 @@ function openTransferDialog(root: HTMLElement) {
   dateEl.value = todayIso();
   noteEl.value = "";
   dlg.showModal();
-  initExpenseDatePickers(root);
+  refreshExpenseDatePicker(dateEl, todayIso());
 }
 
 function saveTransferFromDialog(root: HTMLElement) {
@@ -2595,7 +2710,7 @@ function saveTransferFromDialog(root: HTMLElement) {
   const fromId = fromSel.value;
   const toId = toSel.value;
   const amount = Number(amtEl.value);
-  const date = dateEl.value.slice(0, 10);
+  const date = readDateFieldValue(dateEl);
   if (!fromId || !toId || fromId === toId) {
     void showAlertDialog(root, "Elige dos cuentas distintas.");
     return;
@@ -3730,6 +3845,35 @@ function wire(root: HTMLElement) {
   root.querySelector<HTMLButtonElement>("[data-et-wealth-transfer]")?.addEventListener("click", () =>
     openTransferDialog(root),
   );
+  root.querySelector<HTMLButtonElement>("[data-et-wealth-transfers-history]")?.addEventListener("click", () =>
+    openTransfersHistoryDialog(root),
+  );
+  const closeTransfersHistory = () =>
+    root.querySelector<HTMLDialogElement>("[data-et-dlg-transfers-history]")?.close();
+  root.querySelector<HTMLButtonElement>("[data-et-transfers-history-close]")?.addEventListener("click", closeTransfersHistory);
+  root.querySelector<HTMLButtonElement>("[data-et-transfers-history-close-footer]")?.addEventListener("click", closeTransfersHistory);
+  root.querySelector<HTMLButtonElement>("[data-et-transfers-history-new]")?.addEventListener("click", () => {
+    closeTransfersHistory();
+    openTransferDialog(root);
+  });
+  root.querySelector<HTMLButtonElement>("[data-et-wealth-bizum]")?.addEventListener("click", () => openBizumDialog(root));
+  root.querySelector<HTMLButtonElement>("[data-et-wealth-bizums-history]")?.addEventListener("click", () =>
+    openBizumsHistoryDialog(root),
+  );
+  const closeBizumsHistory = () => root.querySelector<HTMLDialogElement>("[data-et-dlg-bizums-history]")?.close();
+  root.querySelector<HTMLButtonElement>("[data-et-bizums-history-close]")?.addEventListener("click", closeBizumsHistory);
+  root.querySelector<HTMLButtonElement>("[data-et-bizums-history-close-footer]")?.addEventListener("click", closeBizumsHistory);
+  root.querySelector<HTMLButtonElement>("[data-et-bizums-history-new]")?.addEventListener("click", () => {
+    closeBizumsHistory();
+    openBizumDialog(root);
+  });
+  root.querySelector<HTMLButtonElement>("[data-et-bizum-save]")?.addEventListener("click", () => saveBizumFromDialog(root));
+  root.querySelector<HTMLButtonElement>("[data-et-bizum-cancel]")?.addEventListener("click", () =>
+    root.querySelector<HTMLDialogElement>("[data-et-dlg-bizum]")?.close(),
+  );
+  root.querySelectorAll<HTMLInputElement>("input[data-et-bizum-direction]").forEach((el) => {
+    el.addEventListener("change", () => syncBizumDialogLabels(root));
+  });
   root.querySelector<HTMLButtonElement>("[data-et-transfer-save]")?.addEventListener("click", () =>
     saveTransferFromDialog(root),
   );

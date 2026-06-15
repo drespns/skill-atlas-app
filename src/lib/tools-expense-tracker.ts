@@ -102,6 +102,19 @@ export type WealthTransfer = {
   note?: string;
 };
 
+export type WealthBizumDirection = "sent" | "received";
+
+/** Bizum u otro pago P2P: ajusta una sola cuenta (enviado resta, recibido suma). */
+export type WealthBizum = {
+  id: string;
+  date: string;
+  direction: WealthBizumDirection;
+  accountId: string;
+  amount: number;
+  /** Persona o concepto (opc.) */
+  note?: string;
+};
+
 /** Posición manual (sin precio en tiempo real; rendimiento % actualizado a mano). */
 export type InvestmentHolding = {
   id: string;
@@ -236,6 +249,8 @@ export type ExpenseTrackerState = {
   wealthAccounts: WealthAccount[];
   /** Historial de traspasos entre cuentas. */
   wealthTransfers?: WealthTransfer[];
+  /** Bizums y pagos P2P (una cuenta). */
+  wealthBizums?: WealthBizum[];
   /** Si true, patrimonio = efectivo + capital invertido (sin P/L). Si false, incluye valor de mercado estimado. */
   patrimonioRealMode?: boolean;
   /** Solo se contabilizan movimientos en KPIs/gráficos desde esta fecha (YYYY-MM-DD). */
@@ -281,6 +296,7 @@ export function defaultExpenseTrackerState(): ExpenseTrackerState {
     investments: [],
     wealthAccounts: [],
     wealthTransfers: [],
+    wealthBizums: [],
     patrimonioRealMode: false,
   };
 }
@@ -417,6 +433,29 @@ function parseWealthTransfers(raw: unknown): WealthTransfer[] {
     .slice(0, 500);
 }
 
+function parseWealthBizums(raw: unknown): WealthBizum[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((r: any) => {
+      const amt = Number(r?.amount);
+      const date = String(r?.date ?? "").slice(0, 10);
+      const dirRaw = String(r?.direction ?? "").trim();
+      const direction: WealthBizumDirection | null =
+        dirRaw === "received" ? "received" : dirRaw === "sent" ? "sent" : null;
+      return {
+        id: String(r?.id || "").trim(),
+        date: date.length === 10 ? date : "",
+        direction,
+        accountId: String(r?.accountId || "").trim(),
+        amount: Number.isFinite(amt) ? Math.round(Math.max(0, amt) * 100) / 100 : 0,
+        note: String(r?.note ?? "").trim() || undefined,
+      };
+    })
+    .filter((b) => b.id && b.date && b.accountId && b.amount > 0 && b.direction)
+    .map((b) => ({ ...b, direction: b.direction as WealthBizumDirection }))
+    .slice(0, 500);
+}
+
 export function parseCardColor(raw: unknown): string | undefined {
   const s = String(raw ?? "").trim();
   return /^#[0-9a-fA-F]{6}$/.test(s) ? s : undefined;
@@ -465,7 +504,7 @@ export function computePatrimonioSnapshot(
   state: Pick<ExpenseTrackerState, "wealthAccounts" | "investments" | "patrimonioRealMode">,
 ): PatrimonioSnapshot {
   const accounts = state.wealthAccounts ?? [];
-  const accountsTotal = Math.round(accounts.reduce((s, a) => s + a.balance, 0) * 100) / 100;
+  const accountsTotal = computeCashAvailableTotal(accounts);
   const inv = investmentPortfolioTotals(state.investments ?? []);
   const realMode = Boolean(state.patrimonioRealMode);
   const investmentsPart = realMode ? inv.invested : inv.current;
@@ -476,6 +515,11 @@ export function computePatrimonioSnapshot(
     accounts,
     realMode,
   };
+}
+
+/** Suma de saldos en cuentas (sin inversiones). */
+export function computeCashAvailableTotal(accounts: WealthAccount[]): number {
+  return Math.round(accounts.reduce((s, a) => s + a.balance, 0) * 100) / 100;
 }
 
 export function daysInMonthKey(monthKey: string): number {
@@ -1172,6 +1216,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
   const investments = parseInvestmentHoldings(o.investments);
   const wealthAccounts = parseWealthAccounts(o.wealthAccounts);
   const wealthTransfers = parseWealthTransfers(o.wealthTransfers);
+  const wealthBizums = parseWealthBizums(o.wealthBizums);
 
   return {
     v: 2,
@@ -1194,6 +1239,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
     investments,
     wealthAccounts,
     wealthTransfers,
+    wealthBizums,
     patrimonioRealMode: Boolean(o.patrimonioRealMode),
     trackingStartDate: String(o.trackingStartDate ?? "").slice(0, 10) || undefined,
   };
@@ -1287,6 +1333,7 @@ export function mergeExpenseTrackerRemoteLocal(remote: ExpenseTrackerState, loca
     investments: mergeRows(remote.investments ?? [], local.investments ?? []),
     wealthAccounts: mergeRows(remote.wealthAccounts ?? [], local.wealthAccounts ?? []),
     wealthTransfers: mergeRows(remote.wealthTransfers ?? [], local.wealthTransfers ?? []),
+    wealthBizums: mergeRows(remote.wealthBizums ?? [], local.wealthBizums ?? []),
     patrimonioRealMode: local.patrimonioRealMode,
   });
 }
@@ -1314,6 +1361,7 @@ export function applyExpenseImportReplace(current: ExpenseTrackerState, imported
     investments: imported.investments ?? [],
     wealthAccounts: imported.wealthAccounts ?? [],
     wealthTransfers: imported.wealthTransfers ?? [],
+    wealthBizums: imported.wealthBizums ?? [],
   });
 }
 

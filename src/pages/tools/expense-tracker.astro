@@ -226,7 +226,10 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
             </div>
           </div>
           <div class="flex flex-wrap gap-2 justify-end pt-1">
+            <button type="button" data-et-wealth-transfers-history class="et-btn-secondary text-sm hidden">Ver traspasos</button>
+            <button type="button" data-et-wealth-bizums-history class="et-btn-secondary text-sm hidden">Ver bizums</button>
             <button type="button" data-et-wealth-transfer class="et-btn-accent text-sm">Traspaso entre cuentas</button>
+            <button type="button" data-et-wealth-bizum class="et-btn-secondary text-sm border-cyan-400/50 dark:border-cyan-700/50 text-cyan-800 dark:text-cyan-200">Bizum</button>
             <button type="button" data-et-wealth-add class="et-btn-secondary text-sm shrink-0">Añadir cuenta</button>
           </div>
           <div class="space-y-2" data-et-wealth-list></div>
@@ -252,6 +255,16 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
           </p>
           <p class="mt-1 mb-0 text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-50 et-amount" data-et-kpi-patrimonio-total>—</p>
           <div class="space-y-1.5 text-sm" data-et-kpi-patrimonio-breakdown></div>
+        </div>
+        <div
+          class="sm:col-span-2 xl:col-span-2 rounded-2xl border-2 border-cyan-400/45 dark:border-cyan-600/40 bg-gradient-to-br from-cyan-500/16 via-cyan-50/90 to-white dark:from-cyan-950/35 dark:via-gray-950/60 dark:to-sky-950/25 p-4 sm:p-5 shadow-md space-y-3"
+        >
+          <p class="m-0 text-xs font-bold uppercase tracking-wider text-cyan-800 dark:text-cyan-200">Efectivo disponible</p>
+          <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400">
+            Solo saldos en cuentas. Las inversiones y posiciones en broker no cuentan aquí.
+          </p>
+          <p class="mt-1 mb-0 text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-50 et-amount" data-et-kpi-cash-available>—</p>
+          <div class="space-y-1.5 text-sm" data-et-kpi-cash-breakdown></div>
         </div>
       </div>
 
@@ -445,7 +458,7 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
         <div class="flex flex-wrap items-end gap-3">
           <label class="space-y-1">
             <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Mes</span>
-            <input type="month" data-et-exp-filter-month class="et-field et-date py-1.5 text-sm w-[11rem] font-mono" />
+            <input type="text" data-et-exp-filter-month data-et-month-picker class="et-field et-date py-1.5 text-sm w-[11rem] cursor-pointer" readonly placeholder="Mes…" />
           </label>
           <label class="space-y-1">
             <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Día</span>
@@ -465,17 +478,15 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
         class="max-h-[min(55vh,28rem)] overflow-y-auto overflow-x-auto et-expenses-x-scroll rounded-b-2xl"
         data-et-expenses-scroll
       >
-        <table class="w-full min-w-[75rem] text-sm border-collapse">
+        <table class="w-full min-w-[52rem] text-sm border-collapse">
           <thead class="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-900/90 backdrop-blur-sm">
             <tr class="text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
               <th class="px-3 py-2.5 w-28">Fecha</th>
-              <th class="px-3 py-2.5 min-w-[10rem]">Concepto</th>
+              <th class="px-3 py-2.5 min-w-[11rem]">Concepto</th>
               <th class="px-3 py-2.5 w-32">Importe (€)</th>
-              <th class="px-3 py-2.5 min-w-[9rem]">Categoría</th>
-              <th class="px-3 py-2.5 min-w-[7rem]">Cuenta</th>
-              <th class="px-3 py-2.5 min-w-[9rem]">Etiquetas</th>
-              <th class="px-3 py-2.5 min-w-[11rem]">Enlaces</th>
-              <th class="px-3 py-2.5 min-w-[8rem]">Notas</th>
+              <th class="px-3 py-2.5 min-w-[10rem]">Categoría</th>
+              <th class="px-3 py-2.5 min-w-[9rem]">Cuenta</th>
+              <th class="px-3 py-2.5 min-w-[10rem]">Notas</th>
               <th class="px-3 py-2.5 w-[7.5rem]">Estado</th>
               <th class="px-3 py-2.5 w-24"></th>
             </tr>
@@ -501,7 +512,7 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
         <div class="flex flex-wrap items-end gap-3">
           <label class="space-y-1">
             <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Mes</span>
-            <input type="month" data-et-inc-filter-month class="et-field et-date py-1.5 text-sm w-[11rem] font-mono" />
+            <input type="text" data-et-inc-filter-month data-et-month-picker class="et-field et-date py-1.5 text-sm w-[11rem] cursor-pointer" readonly placeholder="Mes…" />
           </label>
           <label class="space-y-1">
             <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Día</span>
@@ -521,17 +532,15 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
         class="max-h-[min(55vh,28rem)] overflow-y-auto overflow-x-auto rounded-b-2xl"
         data-et-income-scroll
       >
-        <table class="w-full min-w-[75rem] text-sm border-collapse">
+        <table class="w-full min-w-[52rem] text-sm border-collapse">
           <thead class="sticky top-0 z-10 bg-emerald-50/95 dark:bg-gray-900/90 backdrop-blur-sm">
             <tr class="text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
               <th class="px-3 py-2.5 w-28">Fecha</th>
-              <th class="px-3 py-2.5 min-w-[10rem]">Concepto</th>
+              <th class="px-3 py-2.5 min-w-[11rem]">Concepto</th>
               <th class="px-3 py-2.5 w-32">Importe (€)</th>
-              <th class="px-3 py-2.5 min-w-[9rem]">Categoría</th>
-              <th class="px-3 py-2.5 min-w-[7rem]">Cuenta</th>
-              <th class="px-3 py-2.5 min-w-[9rem]">Etiquetas</th>
-              <th class="px-3 py-2.5 min-w-[11rem]">Enlaces</th>
-              <th class="px-3 py-2.5 min-w-[8rem]">Notas</th>
+              <th class="px-3 py-2.5 min-w-[10rem]">Categoría</th>
+              <th class="px-3 py-2.5 min-w-[9rem]">Cuenta</th>
+              <th class="px-3 py-2.5 min-w-[10rem]">Notas</th>
               <th class="px-3 py-2.5 w-[7.5rem]">Estado</th>
               <th class="px-3 py-2.5 w-24"></th>
             </tr>
@@ -616,9 +625,9 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
       </div>
     </div>
 
-    <dialog data-et-dlg-transfer class="et-dialog p-0 w-[min(100vw-1.5rem,26rem)] max-w-[calc(100vw-1.25rem)]">
+    <dialog data-et-dlg-transfer class="et-dialog et-dialog--transfer p-0 w-[min(100vw-1.5rem,26rem)] max-w-[calc(100vw-1.25rem)]">
       <div class="divide-y divide-gray-100 dark:divide-gray-800 flex flex-col">
-        <div class="px-5 py-4 shrink-0">
+        <div class="px-5 py-4 shrink-0 bg-gradient-to-br from-indigo-500/12 via-white to-violet-500/8 dark:from-indigo-950/40 dark:via-gray-950 dark:to-violet-950/30">
           <h3 class="m-0 text-lg font-semibold">Traspaso entre cuentas</h3>
           <p class="m-0 mt-1 text-xs text-gray-500 dark:text-gray-400">Mueve efectivo entre cuentas (p. ej. nómina → tarjeta). No es un gasto: solo ajusta saldos.</p>
         </div>
@@ -647,6 +656,98 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
         <div class="px-5 py-4 flex justify-end gap-2 shrink-0">
           <button type="button" data-et-transfer-cancel class="et-btn-secondary text-sm">Cancelar</button>
           <button type="button" data-et-transfer-save class="et-btn-primary text-sm">Registrar traspaso</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog data-et-dlg-transfers-history class="et-dialog p-0 w-[min(100vw-1.5rem,34rem)] max-w-[calc(100vw-1.25rem)]">
+      <div class="divide-y divide-gray-100 dark:divide-gray-800 flex flex-col">
+        <div class="px-5 py-4 flex items-start justify-between gap-3 shrink-0 bg-gradient-to-br from-indigo-500/14 via-white to-sky-500/10 dark:from-indigo-950/45 dark:via-gray-950 dark:to-sky-950/25">
+          <div>
+            <h3 class="m-0 text-lg font-semibold">Traspasos entre cuentas</h3>
+            <p class="m-0 mt-1 text-xs text-gray-500 dark:text-gray-400">Movimientos internos de efectivo (no son gastos ni ingresos).</p>
+          </div>
+          <button
+            type="button"
+            data-et-transfers-history-close
+            class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-900 shrink-0"
+            aria-label="Cerrar"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="px-5 py-4 max-h-[min(58vh,26rem)] overflow-y-auto space-y-2.5" data-et-transfers-history-list></div>
+        <div class="px-5 py-4 flex flex-wrap items-center justify-between gap-2 shrink-0 bg-gray-50/80 dark:bg-gray-900/40">
+          <button type="button" data-et-transfers-history-new class="et-btn-accent text-sm">+ Nuevo traspaso</button>
+          <button type="button" data-et-transfers-history-close-footer class="et-btn-secondary text-sm">Cerrar</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog data-et-dlg-bizum class="et-dialog et-dialog--bizum p-0 w-[min(100vw-1.5rem,26rem)] max-w-[calc(100vw-1.25rem)]">
+      <div class="divide-y divide-gray-100 dark:divide-gray-800 flex flex-col">
+        <div class="px-5 py-4 shrink-0 bg-gradient-to-br from-cyan-500/14 via-white to-teal-500/8 dark:from-cyan-950/40 dark:via-gray-950 dark:to-teal-950/30">
+          <h3 class="m-0 text-lg font-semibold">Bizum</h3>
+          <p class="m-0 mt-1 text-xs text-gray-500 dark:text-gray-400">Registra un envío o cobro P2P. Ajusta el saldo de una sola cuenta.</p>
+        </div>
+        <div class="px-5 py-4 space-y-3">
+          <fieldset class="m-0 p-0 border-0 space-y-2">
+            <legend class="text-xs font-semibold text-gray-600 dark:text-gray-300">Tipo</legend>
+            <div class="flex flex-wrap gap-4 text-sm">
+              <label class="inline-flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="et-bizum-direction" value="sent" data-et-bizum-direction checked class="h-4 w-4 text-cyan-600" />
+                Enviado (sale de mi cuenta)
+              </label>
+              <label class="inline-flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="et-bizum-direction" value="received" data-et-bizum-direction class="h-4 w-4 text-cyan-600" />
+                Recibido (entra en mi cuenta)
+              </label>
+            </div>
+          </fieldset>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300" data-et-bizum-account-label>Cuenta (desde la que envías)</span>
+            <select data-et-bizum-account class="et-field w-full text-sm py-2"></select>
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Importe (€)</span>
+            <input type="number" step="0.01" min="0" data-et-bizum-amount class="et-field w-full text-sm py-2 et-amount" />
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Fecha</span>
+            <input type="date" data-et-bizum-date class="et-field et-date w-full text-sm py-2" />
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Persona / concepto (opc.)</span>
+            <input type="text" data-et-bizum-note class="et-field w-full text-sm py-2" placeholder="p. ej. María, cena" />
+          </label>
+        </div>
+        <div class="px-5 py-4 flex justify-end gap-2 shrink-0">
+          <button type="button" data-et-bizum-cancel class="et-btn-secondary text-sm">Cancelar</button>
+          <button type="button" data-et-bizum-save class="et-btn-primary text-sm">Registrar bizum</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog data-et-dlg-bizums-history class="et-dialog p-0 w-[min(100vw-1.5rem,34rem)] max-w-[calc(100vw-1.25rem)]">
+      <div class="divide-y divide-gray-100 dark:divide-gray-800 flex flex-col">
+        <div class="px-5 py-4 flex items-start justify-between gap-3 shrink-0 bg-gradient-to-br from-cyan-500/14 via-white to-teal-500/10 dark:from-cyan-950/45 dark:via-gray-950 dark:to-teal-950/25">
+          <div>
+            <h3 class="m-0 text-lg font-semibold">Bizums</h3>
+            <p class="m-0 mt-1 text-xs text-gray-500 dark:text-gray-400">Envíos y cobros P2P registrados (ajustan saldo de una cuenta).</p>
+          </div>
+          <button
+            type="button"
+            data-et-bizums-history-close
+            class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-900 shrink-0"
+            aria-label="Cerrar"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="px-5 py-4 max-h-[min(58vh,26rem)] overflow-y-auto space-y-2.5" data-et-bizums-history-list></div>
+        <div class="px-5 py-4 flex flex-wrap items-center justify-between gap-2 shrink-0 bg-gray-50/80 dark:bg-gray-900/40">
+          <button type="button" data-et-bizums-history-new class="et-btn-accent text-sm">+ Nuevo bizum</button>
+          <button type="button" data-et-bizums-history-close-footer class="et-btn-secondary text-sm">Cerrar</button>
         </div>
       </div>
     </dialog>
@@ -1069,6 +1170,13 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
       max-height: none;
       overflow: visible;
     }
+    [data-tools-expense-page] dialog.et-dialog--transfer,
+    [data-tools-expense-page] dialog[data-et-dlg-transfers-history],
+    [data-tools-expense-page] dialog.et-dialog--bizum,
+    [data-tools-expense-page] dialog[data-et-dlg-bizums-history] {
+      max-height: none;
+      overflow: visible;
+    }
     [data-tools-expense-page] dialog.et-dialog-narrow {
       max-height: none;
       overflow: visible;
@@ -1112,15 +1220,60 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
       font-variant-numeric: tabular-nums;
     }
     [data-tools-expense-page] .flatpickr-calendar {
+      z-index: 100001;
       border-radius: 0.75rem;
       border: 1px solid rgb(229 231 235);
       box-shadow: 0 10px 40px rgb(15 23 42 / 0.12);
       font-family: inherit;
+      background: rgb(255 255 255);
+      color: rgb(17 24 39);
+    }
+    [data-tools-expense-page] .flatpickr-calendar .flatpickr-months,
+    [data-tools-expense-page] .flatpickr-calendar .flatpickr-month {
+      background: rgb(249 250 251);
+      color: rgb(17 24 39);
+    }
+    [data-tools-expense-page] .flatpickr-current-month {
+      color: rgb(17 24 39);
+      font-weight: 600;
+    }
+    [data-tools-expense-page] .flatpickr-current-month .flatpickr-monthDropdown-months,
+    [data-tools-expense-page] .flatpickr-current-month .numInputWrapper input,
+    [data-tools-expense-page] .flatpickr-weekday {
+      color: rgb(55 65 81);
+      font-weight: 600;
+    }
+    [data-tools-expense-page] .flatpickr-day {
+      color: rgb(31 41 55);
+    }
+    [data-tools-expense-page] .flatpickr-day.prevMonthDay,
+    [data-tools-expense-page] .flatpickr-day.nextMonthDay {
+      color: rgb(156 163 175);
     }
     .dark [data-tools-expense-page] .flatpickr-calendar.et-fp-dark {
       background: rgb(17 24 39);
       border-color: rgb(55 65 81);
       color: rgb(243 244 246);
+    }
+    .dark [data-tools-expense-page] .flatpickr-calendar.et-fp-dark .flatpickr-months,
+    .dark [data-tools-expense-page] .flatpickr-calendar.et-fp-dark .flatpickr-month {
+      background: rgb(31 41 55);
+      color: rgb(243 244 246);
+    }
+    .dark [data-tools-expense-page] .flatpickr-calendar.et-fp-dark .flatpickr-current-month,
+    .dark [data-tools-expense-page] .flatpickr-calendar.et-fp-dark .flatpickr-current-month .flatpickr-monthDropdown-months,
+    .dark [data-tools-expense-page] .flatpickr-calendar.et-fp-dark .flatpickr-current-month .numInputWrapper input {
+      color: rgb(243 244 246);
+    }
+    .dark [data-tools-expense-page] .flatpickr-calendar.et-fp-dark .flatpickr-weekday {
+      color: rgb(156 163 175);
+    }
+    .dark [data-tools-expense-page] .flatpickr-calendar.et-fp-dark .flatpickr-day {
+      color: rgb(229 231 235);
+    }
+    .dark [data-tools-expense-page] .flatpickr-calendar.et-fp-dark .flatpickr-day.prevMonthDay,
+    .dark [data-tools-expense-page] .flatpickr-calendar.et-fp-dark .flatpickr-day.nextMonthDay {
+      color: rgb(107 114 128);
     }
     .dark [data-tools-expense-page] .flatpickr-calendar.et-fp-dark .flatpickr-day.selected,
     .dark [data-tools-expense-page] .flatpickr-calendar.et-fp-dark .flatpickr-day.selected:hover {
