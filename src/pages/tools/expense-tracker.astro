@@ -80,16 +80,19 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
                 </p>
               </div>
             </details>
-            <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400">Las dos casillas son opcionales.</p>
-            <label class="flex items-start gap-3 cursor-pointer">
+            <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400">Las dos casillas son opcionales. Sin la primera, nada se sube a Supabase.</p>
+            <label
+              class="flex items-start gap-3 cursor-pointer rounded-xl border-2 border-dashed border-indigo-200/80 dark:border-indigo-800/70 bg-indigo-50/50 dark:bg-indigo-950/25 px-3 py-3 transition-colors"
+              data-et-sync-label
+            >
               <input
                 type="checkbox"
                 data-et-sync
-                class="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                class="mt-0.5 h-5 w-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
               />
               <span class="text-sm leading-snug">
-                <span class="font-semibold text-gray-900 dark:text-gray-100">Guardar también en mi cuenta</span>
-                <span class="block text-gray-600 dark:text-gray-400 mt-0.5 text-xs">Misma hoja en otros dispositivos con tu sesión; conexión cifrada.</span>
+                <span class="font-semibold text-gray-900 dark:text-gray-100">Guardar también en mi cuenta (Supabase)</span>
+                <span class="block text-gray-600 dark:text-gray-400 mt-1 text-xs">Actívalo para que los cambios (incluidos borrados) se guarden en la nube con tu sesión.</span>
               </span>
             </label>
             <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-800 pt-3">
@@ -129,6 +132,28 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
       Hay una copia en tu cuenta protegida con frase.
       <button type="button" class="font-semibold underline ml-1" data-et-sync-open-popover>Abrir ajustes</button>
     </p>
+
+    <div
+      class="rounded-2xl border p-4 sm:p-5 space-y-3 transition-colors"
+      data-et-sync-strip
+    >
+      <label class="flex items-start gap-3 cursor-pointer m-0">
+        <input
+          type="checkbox"
+          data-et-sync-strip-toggle
+          class="mt-1 h-5 w-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+        />
+        <span class="text-sm leading-snug min-w-0">
+          <span class="font-semibold text-gray-900 dark:text-gray-100" data-et-sync-strip-title>Guardar en mi cuenta (Supabase)</span>
+          <span class="block text-xs mt-1 text-gray-500 dark:text-gray-400/90" data-et-sync-strip-hint>
+            Desactivado: los datos solo viven en este navegador. Si borras gastos aquí pero tenías una copia en la nube sin activar esto, al recargar pueden volver desde el servidor.
+          </span>
+        </span>
+      </label>
+      <p class="m-0 text-[11px] text-gray-400 dark:text-gray-500 pl-8">
+        Más opciones (frase de cifrado, guía) en el botón <strong class="font-medium text-gray-500 dark:text-gray-400">Copia en tu cuenta</strong> arriba a la derecha.
+      </p>
+    </div>
 
     <div
       class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 shadow-sm p-4 sm:p-5 space-y-5 dark:[color-scheme:dark]"
@@ -187,7 +212,28 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
         </div>
       </details>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
+      <div class="rounded-2xl border border-amber-300/50 dark:border-amber-800/50 bg-gradient-to-br from-amber-500/10 via-white/90 to-orange-500/8 dark:from-amber-950/35 dark:via-gray-950/55 dark:to-orange-950/20 p-4 sm:p-5 space-y-3">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="m-0 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-50">Patrimonio — cuentas</h2>
+            <p class="m-0 mt-1 text-xs text-gray-600 dark:text-gray-400 max-w-2xl">
+              Indica el efectivo en cada cuenta. El total de <strong class="font-medium">Inversiones</strong> se suma automáticamente al patrimonio.
+            </p>
+          </div>
+          <button type="button" data-et-wealth-add class="et-btn-secondary text-sm shrink-0">Añadir cuenta</button>
+        </div>
+        <div class="space-y-2" data-et-wealth-list></div>
+        <p class="m-0 text-xs text-gray-500 dark:text-gray-400 hidden" data-et-wealth-empty>Aún no hay cuentas. Añade bancos, brokers o efectivo.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3">
+        <div
+          class="sm:col-span-2 xl:col-span-2 rounded-2xl border-2 border-amber-400/50 dark:border-amber-600/45 bg-gradient-to-br from-amber-500/18 via-amber-50/90 to-white dark:from-amber-950/40 dark:via-gray-950/60 dark:to-gray-900/80 p-4 sm:p-5 shadow-md"
+        >
+          <p class="m-0 text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-200">Patrimonio</p>
+          <p class="mt-2 mb-0 text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-50 font-mono" data-et-kpi-patrimonio-total>—</p>
+          <div class="mt-3 space-y-1.5 text-sm" data-et-kpi-patrimonio-breakdown></div>
+        </div>
         <div
           class="rounded-2xl border border-emerald-400/35 dark:border-emerald-700/40 bg-gradient-to-br from-emerald-500/12 via-gray-50/80 to-white dark:from-emerald-950/25 dark:via-gray-950/60 dark:to-gray-900/80 p-4 shadow-sm"
         >
@@ -234,7 +280,7 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
         </div>
       </div>
       <div
-        class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 auto-rows-[minmax(7.5rem,auto)] gap-3"
+        class="relative w-full min-h-[18rem] sm:min-h-[22rem] rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40 overflow-hidden"
         data-et-subs-strip
       >
       </div>
@@ -245,7 +291,7 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
         <div>
           <h2 class="m-0 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-50">Inversiones</h2>
           <p class="m-0 mt-1 text-xs text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed">
-            Posiciones manuales (sin tiempo real): activo, entidad, precio medio, total invertido y % P/L que actualizas cuando quieras.
+            Posiciones manuales (sin tiempo real): activo, entidad, precio medio, cantidad y rendimiento % que actualizas cuando quieras.
           </p>
         </div>
         <button type="button" data-et-open-inv-modal class="et-btn-accent shrink-0">Nueva posición</button>
@@ -260,7 +306,7 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
           <p class="mt-1 mb-0 text-xl font-bold font-mono text-gray-900 dark:text-gray-50" data-et-inv-kpi-current>—</p>
         </div>
         <div class="rounded-xl border border-fuchsia-200/60 dark:border-fuchsia-800/50 bg-white/80 dark:bg-gray-950/60 p-3">
-          <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-fuchsia-800 dark:text-fuchsia-200">P/L acumulado</p>
+          <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-fuchsia-800 dark:text-fuchsia-200">Rendimiento acumulado</p>
           <p class="mt-1 mb-0 text-xl font-bold font-mono text-gray-900 dark:text-gray-50" data-et-inv-kpi-pnl>—</p>
         </div>
       </div>
@@ -711,8 +757,8 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
       </div>
     </dialog>
 
-    <dialog data-et-dlg-planned class="et-dialog w-[min(100vw-1.5rem,32rem)] p-0">
-      <div class="et-dialog-panel space-y-3" data-et-planned-form>
+    <dialog data-et-dlg-planned class="et-dialog et-dialog--form w-[min(100vw-1.5rem,40rem)] p-0">
+      <div class="et-dialog-panel et-dialog-panel--fit space-y-3" data-et-planned-form>
         <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-50" data-et-planned-dialog-title>Gasto previsto</h3>
         <input type="hidden" data-et-planned-id value="" />
         <label class="block space-y-1">
@@ -761,6 +807,13 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
           <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Nota</span>
           <input type="text" data-et-planned-note class="et-field w-full text-sm py-2" />
         </label>
+        <details class="rounded-xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/40 px-3 py-2.5" open>
+          <summary class="cursor-pointer text-xs font-semibold text-gray-800 dark:text-gray-200 select-none">Importe por mes (opcional)</summary>
+          <p class="m-0 mt-2 mb-2 text-[11px] text-gray-500 dark:text-gray-400 leading-snug">
+            Deja vacío para usar el importe habitual. Cambia solo los meses que necesites (p. ej. subsidio distinto en agosto).
+          </p>
+          <div class="max-h-[14rem] overflow-y-auto space-y-1.5 pr-1" data-et-planned-month-list></div>
+        </details>
         <div class="flex justify-between gap-2 pt-1">
           <button type="button" class="text-sm font-semibold text-red-600 dark:text-red-400 hover:underline" data-et-planned-delete>Eliminar</button>
           <div class="flex gap-2">
@@ -771,8 +824,8 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
       </div>
     </dialog>
 
-    <dialog data-et-dlg-paycheck class="et-dialog w-[min(100vw-1.5rem,32rem)] p-0">
-      <div class="et-dialog-panel space-y-3" data-et-paycheck-form>
+    <dialog data-et-dlg-paycheck class="et-dialog et-dialog--form w-[min(100vw-1.5rem,40rem)] p-0">
+      <div class="et-dialog-panel et-dialog-panel--fit space-y-3" data-et-paycheck-form>
         <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-50" data-et-paycheck-dialog-title>Ingreso previsto</h3>
         <input type="hidden" data-et-paycheck-id value="" />
         <label class="block space-y-1">
@@ -817,6 +870,13 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
           <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Nota</span>
           <input type="text" data-et-paycheck-note class="et-field w-full text-sm py-2" />
         </label>
+        <details class="rounded-xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/40 px-3 py-2.5" open>
+          <summary class="cursor-pointer text-xs font-semibold text-gray-800 dark:text-gray-200 select-none">Importe por mes (opcional)</summary>
+          <p class="m-0 mt-2 mb-2 text-[11px] text-gray-500 dark:text-gray-400 leading-snug">
+            Ajusta meses concretos dentro del rango de fechas (p. ej. nómina 1789 € un mes y 1800 € al siguiente).
+          </p>
+          <div class="max-h-[14rem] overflow-y-auto space-y-1.5 pr-1" data-et-paycheck-month-list></div>
+        </details>
         <div class="flex justify-between gap-2 pt-1">
           <button type="button" class="text-sm font-semibold text-red-600 dark:text-red-400 hover:underline" data-et-paycheck-delete>Eliminar</button>
           <div class="flex gap-2">
@@ -827,8 +887,8 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
       </div>
     </dialog>
 
-    <dialog data-et-dlg-investment class="et-dialog w-[min(100vw-1.5rem,32rem)] p-0">
-      <div class="et-dialog-panel space-y-3" data-et-inv-form>
+    <dialog data-et-dlg-investment class="et-dialog et-dialog--form w-[min(100vw-1.5rem,36rem)] p-0">
+      <div class="et-dialog-panel et-dialog-panel--fit space-y-3" data-et-inv-form>
         <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-50" data-et-inv-dialog-title>Posición</h3>
         <input type="hidden" data-et-inv-id value="" />
         <label class="block space-y-1">
@@ -859,16 +919,16 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
             <input type="number" step="0.0001" min="0" data-et-inv-avg class="et-field w-full text-sm py-2 font-mono" />
           </label>
           <label class="block space-y-1">
-            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Cantidad (opc.)</span>
-            <input type="number" step="any" min="0" data-et-inv-qty class="et-field w-full text-sm py-2 font-mono" />
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Activos (cantidad)</span>
+            <input type="number" step="any" min="0" required data-et-inv-qty class="et-field w-full text-sm py-2 font-mono" />
           </label>
         </div>
+        <div class="rounded-lg border border-violet-200/70 dark:border-violet-800/50 bg-violet-50/60 dark:bg-violet-950/25 px-3 py-2">
+          <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-violet-800 dark:text-violet-200">Total invertido (calculado)</p>
+          <p class="m-0 mt-1 text-lg font-bold font-mono text-gray-900 dark:text-gray-50" data-et-inv-total-display>—</p>
+        </div>
         <label class="block space-y-1">
-          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Total invertido (€)</span>
-          <input type="number" step="0.01" min="0" data-et-inv-total class="et-field w-full text-sm py-2 font-mono" />
-        </label>
-        <label class="block space-y-1">
-          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">P/L actual (%)</span>
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Rendimiento %</span>
           <input type="number" step="0.01" data-et-inv-pnl class="et-field w-full text-sm py-2 font-mono" placeholder="p. ej. -12.5 o 8" />
         </label>
         <label class="block space-y-1">
@@ -890,19 +950,25 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
     [data-tools-expense-page] .et-dialog,
     dialog.et-dialog {
       margin: auto;
-      max-height: min(92dvh, 36rem);
+      max-height: none;
+      overflow: visible;
       border-radius: 1rem;
       border: 1px solid rgb(229 231 235);
       background: rgb(255 255 255);
       box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
       color: rgb(17 24 39);
     }
+    [data-tools-expense-page] .et-dialog--form {
+      width: min(100vw - 1.5rem, 40rem);
+      max-width: calc(100vw - 1.25rem);
+    }
     [data-tools-expense-page] dialog.et-sub-dialog {
       max-height: none;
       overflow: visible;
     }
     [data-tools-expense-page] dialog.et-dialog-narrow {
-      max-height: min(92dvh, 40rem);
+      max-height: none;
+      overflow: visible;
     }
     [data-tools-expense-page] .et-expenses-x-scroll {
       overflow-y: visible;
@@ -919,12 +985,47 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
     }
     [data-tools-expense-page] .et-dialog-panel {
       padding: 1.25rem 1.35rem;
-      max-height: min(88dvh, 34rem);
-      overflow: auto;
+      max-height: none;
+      overflow: visible;
+      box-sizing: border-box;
     }
     [data-tools-expense-page] .et-dialog-panel--fit {
       max-height: none;
       overflow: visible;
+    }
+    [data-tools-expense-page] .et-sub-treemap-card {
+      position: absolute;
+      box-sizing: border-box;
+      padding: 0.35rem;
+    }
+    [data-tools-expense-page] .et-sub-treemap-card > article {
+      height: 100%;
+      min-height: 0;
+    }
+    [data-tools-expense-page] [data-et-sync-strip][data-sync-on="true"] {
+      border-color: rgb(52 211 153 / 0.55);
+      background: linear-gradient(135deg, rgb(16 185 129 / 0.08), rgb(255 255 255 / 0.95));
+    }
+    .dark [data-tools-expense-page] [data-et-sync-strip][data-sync-on="true"] {
+      border-color: rgb(16 185 129 / 0.35);
+      background: linear-gradient(135deg, rgb(6 78 59 / 0.35), rgb(3 7 18 / 0.85));
+    }
+    [data-tools-expense-page] [data-et-sync-strip][data-sync-off="true"] {
+      border-color: rgb(251 191 36 / 0.45);
+      background: linear-gradient(135deg, rgb(245 158 11 / 0.07), rgb(255 255 255 / 0.92));
+    }
+    .dark [data-tools-expense-page] [data-et-sync-strip][data-sync-off="true"] {
+      border-color: rgb(245 158 11 / 0.3);
+      background: linear-gradient(135deg, rgb(120 53 15 / 0.25), rgb(3 7 18 / 0.85));
+    }
+    [data-tools-expense-page] [data-et-sync-label][data-sync-on="true"] {
+      border-style: solid;
+      border-color: rgb(52 211 153 / 0.65);
+      background: rgb(236 253 245 / 0.85);
+    }
+    .dark [data-tools-expense-page] [data-et-sync-label][data-sync-on="true"] {
+      border-color: rgb(16 185 129 / 0.45);
+      background: rgb(6 78 59 / 0.35);
     }
     [data-tools-expense-page] .et-field,
     [data-tools-expense-page] select.et-field {
