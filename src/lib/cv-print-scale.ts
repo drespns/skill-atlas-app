@@ -5,9 +5,33 @@ export function clampCvPrintMaxPages(raw: unknown, fallback = 3): number {
   return Math.min(6, Math.max(1, Math.round(n)));
 }
 
-export function cvPrintTypographicScale(maxPages: unknown): number {
+export type CvPrintScaleOpts = {
+  /** Secciones del documento con datos (visibles y no vacías); solo afecta cuando el objetivo es 1 página. */
+  densityFilledSections?: number;
+};
+
+/**
+ * Con muchas secciones rellenas, el objetivo «1 página» necesita algo más de compresión que el valor base.
+ * Fórmula suave a partir de 5 bloques; tope para no volver ilegible el texto.
+ */
+export function cvPrintTypographicScale(maxPages: unknown, opts?: CvPrintScaleOpts): number {
   const n = clampCvPrintMaxPages(maxPages);
-  /** Objetivo 1 página: escala más agresiva para acercar el documento a una sola hoja A4. */
-  if (n === 1) return 0.66;
-  return 0.74 + ((n - 2) / 4) * 0.24;
+  let base: number;
+  if (n === 1) {
+    base = 0.66;
+    const c = opts?.densityFilledSections;
+    if (typeof c === "number" && Number.isFinite(c)) {
+      const blocks = Math.max(0, Math.min(14, Math.round(c)));
+      const extraShrink = Math.max(0, blocks - 5) * 0.024;
+      base = Math.max(0.52, base - extraShrink);
+    }
+  } else {
+    base = Math.min(1, 0.86 + ((n - 2) / 4) * 0.14);
+  }
+  return base;
+}
+
+/** Porcentaje entero (p. ej. 74) para UI de «objetivo de extensión». */
+export function cvPrintTypographicScalePercent(maxPages: unknown, opts?: CvPrintScaleOpts): number {
+  return Math.round(cvPrintTypographicScale(maxPages, opts) * 100);
 }
