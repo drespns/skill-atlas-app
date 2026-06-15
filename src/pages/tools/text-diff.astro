@@ -1,32 +1,62 @@
 ---
 import AppShell from "../../layouts/AppShell.astro";
+import ToolsPageHeader from "../../components/tools/ToolsPageHeader.astro";
 
 const title = "Diff de texto";
 ---
 
 <AppShell title={title}>
   <div data-requires-auth class="hidden"></div>
-  <section class="space-y-6" data-tools-diff-page>
-    <header class="space-y-2">
-      <a href="/tools" class="text-sm font-semibold text-gray-700 dark:text-gray-200 hover:underline">← Herramientas</a>
-      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">{title}</h1>
-      <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-2xl">
-        Comparación línea a línea: verde añadido, rojo eliminado (respecto al texto A → B).
+  <section class="space-y-6 w-full" data-tools-diff-page>
+    <ToolsPageHeader titleI18nKey="tools.textDiffTitle" title={title}>
+      <p slot="intro" class="m-0" data-i18n="tools.textDiffIntro">
+        Comparación línea a línea en el navegador: vista en columnas alineadas (A | B) o unificada con prefijos +/− .
       </p>
-    </header>
+    </ToolsPageHeader>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
       <label class="block space-y-1">
-        <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Texto A</span>
-        <textarea data-diff-a rows="14" class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm font-mono"></textarea>
+        <span class="text-xs font-semibold text-gray-500 dark:text-gray-400" data-i18n="tools.textDiffColA">Texto A</span>
+        <textarea data-diff-a rows="14" class="et-field et-textarea w-full"></textarea>
       </label>
       <label class="block space-y-1">
-        <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Texto B</span>
-        <textarea data-diff-b rows="14" class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm font-mono"></textarea>
+        <span class="text-xs font-semibold text-gray-500 dark:text-gray-400" data-i18n="tools.textDiffColB">Texto B</span>
+        <textarea data-diff-b rows="14" class="et-field et-textarea w-full"></textarea>
       </label>
     </div>
-    <button type="button" data-diff-run class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Comparar</button>
-    <div data-diff-out></div>
+
+    <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
+      <button type="button" data-diff-run class="et-btn-primary" data-i18n="tools.textDiffCompare">Comparar</button>
+      <p class="hidden m-0 text-xs text-gray-500 dark:text-gray-400 sm:ml-1" data-diff-stats aria-live="polite"></p>
+      <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Vista del diff">
+        <button type="button" data-diff-view-split class="et-btn-accent text-xs sm:text-sm" data-i18n="tools.textDiffSplitView">Columnas</button>
+        <button type="button" data-diff-view-unified class="et-btn-secondary text-xs sm:text-sm" data-i18n="tools.textDiffUnifiedView">Unificado</button>
+      </div>
+      <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+        <input type="checkbox" data-diff-hide-equal class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+        <span data-i18n="tools.textDiffHideEqual">Ocultar líneas sin cambios</span>
+      </label>
+    </div>
+
+    <div class="space-y-2" data-diff-mount>
+      <div data-diff-split-root class="hidden rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden bg-white/90 dark:bg-gray-950/50">
+        <div
+          class="grid grid-cols-[minmax(2rem,2.75rem)_1fr_minmax(2rem,2.75rem)_1fr] border-b border-gray-200 dark:border-gray-800 bg-gray-50/95 dark:bg-gray-900/80 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+        >
+          <div class="px-1 py-1.5 text-center border-r border-gray-200/70 dark:border-gray-700/60" data-i18n="tools.textDiffLineNum">#</div>
+          <div class="px-2 py-1.5 border-r border-gray-200/90 dark:border-gray-800" data-i18n="tools.textDiffColA">Texto A</div>
+          <div class="px-1 py-1.5 text-center border-r border-gray-200/70 dark:border-gray-700/60" data-i18n="tools.textDiffLineNum">#</div>
+          <div class="px-2 py-1.5" data-i18n="tools.textDiffColB">Texto B</div>
+        </div>
+        <div class="overflow-auto max-h-[min(32rem,70vh)]">
+          <div
+            data-diff-split-grid
+            class="grid w-full min-w-[22rem] grid-cols-[minmax(2rem,2.75rem)_1fr_minmax(2rem,2.75rem)_1fr] divide-x-0 text-xs font-mono"
+          ></div>
+        </div>
+      </div>
+      <div data-diff-unified-root class="hidden"></div>
+    </div>
   </section>
   <script src="../../scripts/tools/text-diff.ts"></script>
 </AppShell>

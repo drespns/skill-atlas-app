@@ -1,30 +1,144 @@
 ---
 import AppShell from "../../layouts/AppShell.astro";
+import ToolsPageHeader from "../../components/tools/ToolsPageHeader.astro";
 
 const title = "Código QR";
 ---
 
 <AppShell title={title}>
   <div data-requires-auth class="hidden"></div>
-  <section class="space-y-6" data-tools-qr-page>
-    <header class="space-y-2">
-      <a href="/tools" class="text-sm font-semibold text-gray-700 dark:text-gray-200 hover:underline">← Herramientas</a>
-      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">{title}</h1>
-      <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-2xl">URL o texto corto → QR PNG en el navegador.</p>
-    </header>
-
-    <div class="max-w-md space-y-4 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-4">
-      <label class="block space-y-1">
-        <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Contenido</span>
-        <input type="text" data-qr-text class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm" placeholder="https://…" />
-      </label>
-      <div class="flex flex-wrap gap-2">
-        <button type="button" data-qr-gen class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Generar</button>
-        <button type="button" data-qr-dl class="rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900">Descargar PNG</button>
+  <section class="space-y-8 sm:space-y-10 w-full" data-tools-qr-page>
+    <ToolsPageHeader titleI18nKey="tools.qrGeneratorTitle" title={title}>
+      <div slot="intro" class="space-y-3 sm:space-y-4">
+        <p data-i18n="tools.qrIntroPara1">
+          El QR se dibuja en un canvas en tu navegador: nada se sube a SkillAtlas. Sirve para compartir enlaces, redes Wi‑Fi en formato estándar, contactos
+          vCard o cualquier texto que quepa en el código.
+        </p>
+        <p data-i18n="tools.qrIntroPara2">
+          Ajusta tamaño, margen silencioso (quiet zone) y nivel de corrección de errores: más corrección permite suciedad o logos, pero reduce la capacidad de datos.
+          Si el contenido es muy largo, algunos móviles escanean peor; te avisamos con un aviso suave.
+        </p>
       </div>
-      <p class="m-0 text-xs text-rose-600 dark:text-rose-400" data-qr-err></p>
-      <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white p-4 inline-block">
-        <canvas width="240" height="240" data-qr-canvas class="block"></canvas>
+    </ToolsPageHeader>
+
+    <details class="tool-details group rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-900/35 open:shadow-md">
+      <summary
+        class="cursor-pointer px-5 py-4 sm:px-6 sm:py-4 flex items-center justify-between gap-3 font-semibold text-gray-900 dark:text-gray-100 rounded-2xl"
+      >
+        <span class="min-w-0" data-i18n="tools.qrGuideTitle">Guía rápida: formatos y opciones</span>
+        <span class="tool-details-toggle shrink-0 select-none">
+          <span class="group-open:hidden" data-i18n="tools.qrGuideOpen">Mostrar guía</span>
+          <span class="hidden group-open:inline" data-i18n="tools.qrGuideClose">Ocultar</span>
+        </span>
+      </summary>
+      <div class="px-5 pb-5 sm:px-6 sm:pb-6 pt-0 space-y-5 border-t border-gray-200/80 dark:border-gray-800">
+        <div class="rounded-xl bg-white/85 dark:bg-gray-950/55 border border-gray-200/70 dark:border-gray-700/80 px-3 py-3 space-y-3">
+          <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="tools.qrGuideP1"></p>
+          <p class="m-0 text-xs font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-300" data-i18n="tools.qrGuideWifiTitle">Wi‑Fi (WPA / WPA2)</p>
+          <p class="m-0 text-xs text-gray-600 dark:text-gray-400 leading-relaxed font-mono bg-gray-100/90 dark:bg-gray-900/60 rounded-lg px-2 py-1.5 break-all" data-i18n="tools.qrGuideWifiExample"></p>
+          <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="tools.qrGuideWifiBody"></p>
+          <p class="m-0 text-xs font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-300" data-i18n="tools.qrGuideEcTitle">Corrección de errores (L M Q H)</p>
+          <p class="m-0 text-sm text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="tools.qrGuideEcBody"></p>
+        </div>
+        <div class="rounded-lg border border-dashed border-gray-300/90 dark:border-gray-600 px-3 py-2.5 space-y-1">
+          <p class="m-0 text-[11px] font-semibold text-gray-700 dark:text-gray-300" data-i18n="tools.qrGuidePrivacyTitle">Privacidad</p>
+          <p class="m-0 text-xs text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="tools.qrGuidePrivacyBody"></p>
+        </div>
+      </div>
+    </details>
+
+    <div
+      class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 shadow-sm p-5 sm:p-6 md:p-7 space-y-6 sm:space-y-7 dark:[color-scheme:dark]"
+      data-qr-surface
+    >
+      <div
+        class="rounded-xl border border-emerald-200/60 dark:border-emerald-900/40 bg-gradient-to-r from-emerald-500/10 via-white/80 to-cyan-500/5 dark:from-emerald-950/25 dark:via-gray-950/40 dark:to-cyan-950/20 px-3 py-2.5 sm:px-4 sm:py-3"
+      >
+        <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3">
+          <span class="text-xs font-semibold uppercase tracking-wide text-emerald-900/90 dark:text-emerald-200/90 shrink-0" data-i18n="tools.qrStripLabel"
+            >Generación local</span
+          >
+          <p class="m-0 text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-snug min-w-0" data-i18n="tools.qrStripBody">
+            El bitmap se crea aquí mismo. Copiar PNG usa el portapapeles del sistema (donde el navegador lo permita). Descarga un archivo PNG listo para pegar en documentos o redes.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid gap-7 lg:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,19rem)]">
+        <div class="space-y-5 min-w-0">
+          <label class="block space-y-2">
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="tools.qrContentLabel">Contenido</span>
+            <textarea
+              data-qr-text
+              rows="8"
+              class="et-field et-textarea"
+              placeholder="https://…"
+            ></textarea>
+          </label>
+          <div>
+            <p class="m-0 mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="tools.qrPresetsLabel">
+              Plantillas
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" data-qr-preset="url" class="et-btn-secondary text-xs py-1.5 px-2.5" data-i18n="tools.qrPresetUrl">Plantilla URL</button>
+              <button type="button" data-qr-preset="wifi" class="et-btn-secondary text-xs py-1.5 px-2.5" data-i18n="tools.qrPresetWifi">Plantilla Wi‑Fi</button>
+              <button type="button" data-qr-preset="vcard" class="et-btn-secondary text-xs py-1.5 px-2.5" data-i18n="tools.qrPresetVcard">Plantilla vCard</button>
+              <button type="button" data-qr-preset="plain" class="et-btn-secondary text-xs py-1.5 px-2.5" data-i18n="tools.qrPresetPlain">Texto libre</button>
+            </div>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="block space-y-1.5">
+              <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="tools.qrSize">Tamaño (px)</span>
+              <input type="range" data-qr-size min="160" max="400" step="20" value="280" class="w-full accent-indigo-600" />
+              <span class="text-xs font-mono text-gray-600 dark:text-gray-400" data-qr-size-val>280</span>
+            </label>
+            <label class="block space-y-1.5">
+              <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="tools.qrMargin">Margen (módulos)</span>
+              <input type="range" data-qr-margin min="1" max="4" step="1" value="2" class="w-full accent-indigo-600" />
+              <span class="text-xs font-mono text-gray-600 dark:text-gray-400" data-qr-margin-val>2</span>
+            </label>
+          </div>
+
+          <label class="block space-y-1.5">
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="tools.qrEcLabel">Corrección de errores</span>
+            <select data-qr-ec class="et-field font-medium">
+              <option value="L" data-i18n="tools.qrEcL">Bajo (~7%)</option>
+              <option value="M" selected data-i18n="tools.qrEcM">Medio (~15%)</option>
+              <option value="Q" data-i18n="tools.qrEcQ">Alto (~25%)</option>
+              <option value="H" data-i18n="tools.qrEcH">Máximo (~30%)</option>
+            </select>
+          </label>
+
+          <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200/80 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/30 px-3 py-2.5">
+            <input type="checkbox" data-qr-invert class="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+            <span class="text-sm font-medium text-gray-800 dark:text-gray-200 leading-snug" data-i18n="tools.qrDarkToggle">Módulos claros (modo oscuro)</span>
+          </label>
+
+          <div class="flex flex-wrap gap-2">
+            <button type="button" data-qr-dl class="et-btn-primary text-sm" data-i18n="tools.qrDownloadBtn">Descargar PNG</button>
+            <button type="button" data-qr-copy class="et-btn-secondary text-sm" data-i18n="tools.qrCopyPngBtn">Copiar PNG</button>
+            <button type="button" data-qr-clear class="et-btn-secondary text-sm" data-i18n="tools.qrClearBtn">Vaciar</button>
+          </div>
+
+          <p class="m-0 text-xs text-amber-800 dark:text-amber-200/90 min-h-[1rem] rounded-lg bg-amber-50/90 dark:bg-amber-950/30 px-2.5 py-1.5" data-qr-warn></p>
+          <p class="m-0 text-sm text-rose-600 dark:text-rose-400 min-h-[1.25rem]" data-qr-err></p>
+          <p class="m-0 text-xs text-gray-500 dark:text-gray-400" data-qr-chars></p>
+        </div>
+
+        <div
+          class="flex flex-col items-center gap-4 rounded-xl border border-gray-200/80 dark:border-gray-800 bg-gradient-to-b from-gray-50/95 to-white dark:from-gray-900/50 dark:to-gray-950 p-5 sm:p-6 shadow-inner"
+        >
+          <p class="m-0 w-full text-center text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="tools.qrLiveLabel">
+            Vista previa en vivo
+          </p>
+          <div class="rounded-2xl border border-gray-200/90 dark:border-gray-700 bg-white p-4 shadow-md ring-1 ring-black/5 dark:ring-white/10 dark:bg-gray-900/40">
+            <canvas width="280" height="280" data-qr-canvas class="block max-w-full h-auto rounded-lg"></canvas>
+          </div>
+          <p class="m-0 text-center text-[11px] text-gray-500 dark:text-gray-400 max-w-[16rem] leading-relaxed" data-i18n="tools.qrPreviewHint">
+            Los cambios se aplican al escribir (con una breve pausa) para no parpadear en cada tecla.
+          </p>
+        </div>
       </div>
     </div>
   </section>
