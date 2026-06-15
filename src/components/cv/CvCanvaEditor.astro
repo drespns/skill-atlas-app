@@ -1,0 +1,176 @@
+---
+import CvDocumentHost from "./CvDocumentHost.astro";
+---
+
+<section data-cv-canva-v2-root class="cv-canva-v2 grid min-h-[calc(100vh-var(--app-header-h,4rem)-2.5rem)] grid-cols-1 gap-3 xl:grid-cols-[13rem_minmax(0,1fr)] xl:items-start">
+  <aside
+    class="rounded-xl border border-gray-200/85 bg-white/80 p-3 dark:border-gray-800 dark:bg-gray-950/45 xl:sticky xl:top-[calc(var(--app-header-h,4rem)+0.75rem)] xl:max-h-[calc(100dvh-var(--app-header-h,4rem)-2rem)] xl:overflow-y-auto xl:self-start"
+  >
+    <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Capas</p>
+    <p class="mt-1 mb-2 text-xs text-gray-500 dark:text-gray-400">Arrastra para reordenar secciones.</p>
+    <ul data-cv-canva-layers class="m-0 space-y-1.5 p-0"></ul>
+  </aside>
+
+  <div class="flex min-w-0 flex-col gap-2">
+    <details data-cv-canva-doc-settings class="group shrink-0 rounded-xl border border-gray-200/85 bg-white/80 open:shadow-sm dark:border-gray-800 dark:bg-gray-950/45">
+      <summary
+        class="flex cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold text-gray-800 dark:text-gray-100 [&::-webkit-details-marker]:hidden"
+      >
+        <span data-i18n="cv.canvaDocSettingsSummary">Ajustes del documento</span>
+        <span class="text-[10px] text-gray-400 transition-transform group-open:rotate-180 dark:text-gray-500" aria-hidden="true">▼</span>
+      </summary>
+      <div class="space-y-3 border-t border-gray-200/80 px-3 py-3 dark:border-gray-700">
+        <div class="flex flex-wrap items-end gap-2">
+          <label class="flex flex-col gap-0.5">
+            <span class="text-[10px] font-medium text-gray-600 dark:text-gray-400">Plantilla</span>
+            <select data-cv-canva-template class="min-w-36 rounded-lg border border-gray-200/90 bg-white px-2 py-1.5 text-xs font-medium text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"></select>
+          </label>
+          <label class="flex flex-col gap-0.5">
+            <span class="text-[10px] font-medium text-gray-600 dark:text-gray-400">Extensión objetivo</span>
+            <select data-cv-canva-pages class="min-w-36 rounded-lg border border-gray-200/90 bg-white px-2 py-1.5 text-xs font-medium text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"></select>
+          </label>
+          <label class="flex flex-col gap-0.5">
+            <span class="text-[10px] font-medium text-gray-600 dark:text-gray-400">Secciones</span>
+            <select data-cv-canva-flow class="min-w-36 rounded-lg border border-gray-200/90 bg-white px-2 py-1.5 text-xs font-medium text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100">
+              <option value="single">Una columna</option>
+              <option value="two">Dos columnas</option>
+            </select>
+          </label>
+          <button type="button" data-cv-canva-reset class="rounded-lg border border-gray-300/80 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800">
+            Reset layout
+          </button>
+        </div>
+        <p data-cv-canva-pages-readout class="m-0 text-[11px] text-gray-500 dark:text-gray-400">—</p>
+        <p data-cv-canva-pages-guides-hint class="m-0 text-[10px] leading-snug text-gray-500 dark:text-gray-500" data-i18n="cv.canvaPageGuidesHint">
+          Las líneas discontinuas marcan cortes A4 aproximados (misma altura de referencia que el cálculo de páginas).
+        </p>
+        <div class="rounded-lg border border-gray-200/80 bg-gray-50/80 p-3 dark:border-gray-700 dark:bg-gray-900/40">
+          <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Propiedades del bloque</p>
+          <p data-cv-canva-selected-label class="mt-1 mb-2 text-xs text-gray-600 dark:text-gray-300">Selecciona un bloque.</p>
+          <label class="mb-2 flex flex-col gap-1">
+            <span class="text-[10px] font-medium text-gray-600 dark:text-gray-400">Ancho bloque</span>
+            <input data-cv-canva-width type="range" min="55" max="100" step="1" class="h-1.5 accent-indigo-600" disabled />
+            <span data-cv-canva-width-readout class="text-[11px] text-gray-500 dark:text-gray-400">—</span>
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="text-[10px] font-medium text-gray-600 dark:text-gray-400">Escala tipográfica global</span>
+            <input data-cv-canva-font-scale type="range" min="80" max="120" step="1" class="h-1.5 accent-indigo-600" />
+            <span data-cv-canva-font-scale-readout class="text-[11px] text-gray-500 dark:text-gray-400">100%</span>
+          </label>
+        </div>
+      </div>
+    </details>
+
+    <div
+      data-cv-canva-format-toolbar-host
+      class="shrink-0 rounded-xl border border-gray-200/85 bg-white/90 py-1 dark:border-gray-800 dark:bg-gray-950/55"
+    ></div>
+
+    <div data-cv-canva-workspace class="cv-canva-v2-workspace relative min-h-[min(70vh,920px)] overflow-x-hidden rounded-xl border border-gray-300/80 bg-gray-200/75 dark:border-gray-700 dark:bg-gray-900/65" tabindex="0">
+      <div class="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center px-2">
+        <div
+          class="pointer-events-auto inline-flex items-center gap-0.5 rounded-full border border-gray-200/90 bg-white/95 px-1 py-0.5 shadow-lg backdrop-blur-sm dark:border-gray-600 dark:bg-gray-900/90"
+          data-cv-canva-zoom-bar
+        >
+          <button
+            type="button"
+            data-cv-canva-zoom-out
+            class="rounded-full px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+            data-i18n="cv.studioCanvasZoomOut"
+            data-i18n-attr="aria-label,title"
+          >
+            −
+          </button>
+          <span data-cv-canva-zoom-pct class="min-w-11 px-1 text-center text-[11px] font-semibold tabular-nums text-gray-600 dark:text-gray-300">100%</span>
+          <button
+            type="button"
+            data-cv-canva-zoom-in
+            class="rounded-full px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+            data-i18n="cv.studioCanvasZoomIn"
+            data-i18n-attr="aria-label,title"
+          >
+            +
+          </button>
+          <span class="mx-0.5 h-4 w-px shrink-0 bg-gray-200 dark:bg-gray-600" aria-hidden="true"></span>
+          <button
+            type="button"
+            data-cv-canva-fit-zoom
+            class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+            data-i18n="cv.studioCanvasFit"
+          >
+            Ajustar
+          </button>
+        </div>
+      </div>
+      <div class="flex justify-center px-4 py-8 pb-16">
+        <div data-cv-canva-zoom-wrap class="cv-canva-v2-zoom-wrap relative w-full max-w-[210mm] shrink-0">
+          <div data-cv-canva-zoom-inner class="relative">
+            <div data-cv-studio-doc-root class="cv-canva-v2-sheet relative mx-auto w-full max-w-[210mm]">
+              <div data-cv-studio-doc-loading class="flex min-h-[min(72vh,860px)] items-center justify-center px-4 py-12 text-sm text-gray-500 dark:text-gray-400">
+                Cargando…
+              </div>
+              <p data-cv-studio-doc-error class="m-0 hidden min-h-[min(72vh,860px)] px-4 py-8 text-sm leading-relaxed text-red-700 dark:text-red-300" role="alert"></p>
+              <div data-cv-studio-doc-panel class="hidden cv-studio-inline-doc-wrap">
+                <div class="cv-studio-inline-pages relative mx-auto w-full max-w-[210mm]" data-cv-studio-pages-wrap>
+                  <div data-cv-studio-page-guides class="cv-studio-page-guides" aria-hidden="true"></div>
+                  <div class="cv-studio-inline-doc-surface relative z-1">
+                    <CvDocumentHost />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-cv-canva-selection-root class="pointer-events-none absolute inset-0 z-10">
+        <div
+          data-cv-canva-selection-frame
+          class="pointer-events-none absolute hidden rounded-sm border-2 border-indigo-500/90 shadow-[0_0_0_1px_rgb(255_255_255/0.85)] dark:border-indigo-400/90"
+          aria-hidden="true"
+        >
+          <button
+            type="button"
+            data-cv-canva-handle="nw"
+            class="pointer-events-auto absolute -left-2 -top-2 h-3.5 w-3.5 cursor-nwse-resize rounded-full border-2 border-white bg-indigo-500 shadow-md dark:bg-indigo-400"
+            aria-label="Resize width"
+          ></button>
+          <button
+            type="button"
+            data-cv-canva-handle="ne"
+            class="pointer-events-auto absolute -right-2 -top-2 h-3.5 w-3.5 cursor-nesw-resize rounded-full border-2 border-white bg-indigo-500 shadow-md dark:bg-indigo-400"
+            aria-label="Resize width"
+          ></button>
+          <button
+            type="button"
+            data-cv-canva-handle="sw"
+            class="pointer-events-auto absolute -bottom-2 -left-2 h-3.5 w-3.5 cursor-nesw-resize rounded-full border-2 border-white bg-indigo-500 shadow-md dark:bg-indigo-400"
+            aria-label="Resize width"
+          ></button>
+          <button
+            type="button"
+            data-cv-canva-handle="se"
+            class="pointer-events-auto absolute -bottom-2 -right-2 h-3.5 w-3.5 cursor-nwse-resize rounded-full border-2 border-white bg-indigo-500 shadow-md dark:bg-indigo-400"
+            aria-label="Resize width"
+          ></button>
+          <button
+            type="button"
+            data-cv-canva-handle="w"
+            class="pointer-events-auto absolute top-1/2 -left-2 h-4 w-4 -translate-y-1/2 cursor-ew-resize rounded-full border-2 border-white bg-indigo-500 shadow-md dark:bg-indigo-400"
+            aria-label="Resize width"
+          ></button>
+          <button
+            type="button"
+            data-cv-canva-handle="e"
+            class="pointer-events-auto absolute top-1/2 -right-2 h-4 w-4 -translate-y-1/2 cursor-ew-resize rounded-full border-2 border-white bg-indigo-500 shadow-md dark:bg-indigo-400"
+            aria-label="Resize width"
+          ></button>
+        </div>
+      </div>
+    </div>
+    <p class="m-0 text-center text-[10px] text-gray-500 dark:text-gray-500" data-i18n="cv.studioCanvasWheelHint">Ctrl (o ⌘) + rueda: zoom en el lienzo.</p>
+  </div>
+</section>
+
+<script>
+  import "@scripts/cv/cv-canva-v2";
+</script>

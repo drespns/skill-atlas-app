@@ -1,0 +1,287 @@
+---
+import CvDocumentHost from "./CvDocumentHost.astro";
+
+export interface Props {
+  /** Escape hatch: carga `/cv?doc=1&embed=1` en iframe como antes. */
+  legacyIframe?: boolean;
+}
+
+const { legacyIframe = false } = Astro.props;
+---
+
+<div data-cv-studio-canvas-root class="cv-studio-canvas-root min-w-0" data-cv-studio-layout={legacyIframe ? "iframe" : "inline"}>
+  <div
+    class="cv-studio-canvas-toolbar flex flex-wrap items-center gap-x-2 gap-y-1.5"
+    role="toolbar"
+    data-i18n="cv.studioCanvasToolbarAria"
+    data-i18n-attr="aria-label"
+  >
+    <span class="me-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.studioCanvasKicker">
+      Lienzo
+    </span>
+    <span class="inline-flex items-center gap-0.5 rounded-lg border border-gray-200/90 bg-gray-50 p-0.5 dark:border-gray-700 dark:bg-gray-900/80">
+      <button
+        type="button"
+        data-cv-studio-canvas-zoom-out
+        class="rounded-md px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-white hover:text-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-white"
+        data-i18n="cv.studioCanvasZoomOut"
+        data-i18n-attr="aria-label,title"
+      >
+        −
+      </button>
+      <span
+        data-cv-studio-canvas-zoom-pct
+        class="min-w-[2.75rem] px-1 text-center text-[11px] font-semibold tabular-nums text-gray-500 dark:text-gray-400"
+      >
+        100%
+      </span>
+      <button
+        type="button"
+        data-cv-studio-canvas-zoom-in
+        class="rounded-md px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-white hover:text-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-white"
+        data-i18n="cv.studioCanvasZoomIn"
+        data-i18n-attr="aria-label,title"
+      >
+        +
+      </button>
+    </span>
+    <!-- Oculto hasta Fase 2 (guías de página / bloques); el script sigue encontrando el nodo si se reactiva. -->
+    <button
+      type="button"
+      data-cv-studio-grid-toggle
+      hidden
+      class="rounded-lg border border-gray-200/90 bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-700 hover:border-indigo-300 hover:text-indigo-800 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-200 dark:hover:border-indigo-500/50 dark:hover:text-indigo-100"
+      data-i18n="cv.studioCanvasGrid"
+      aria-pressed="false"
+    >
+      Rejilla
+    </button>
+    <button
+      type="button"
+      data-cv-studio-canvas-fit
+      class="rounded-lg border border-gray-200/90 bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-700 hover:border-indigo-300 hover:text-indigo-800 dark:border-gray-700 dark:bg-gray-900/80 dark:text-gray-200 dark:hover:border-indigo-500/50 dark:hover:text-indigo-100"
+      data-i18n="cv.studioCanvasFit"
+    >
+      Ajustar
+    </button>
+  </div>
+  <p class="m-0 text-[10px] leading-snug text-gray-500 dark:text-gray-500" data-i18n="cv.studioCanvasWheelHint">
+    Ctrl (o ⌘) + rueda: zoom en el lienzo.
+  </p>
+
+  {
+    !legacyIframe && (
+      <div
+        class="mb-2 flex flex-wrap items-end justify-between gap-3 rounded-xl border border-violet-200/80 bg-gradient-to-br from-violet-50/90 to-white/80 p-3 dark:border-violet-900/40 dark:from-violet-950/30 dark:to-gray-950/50"
+        data-cv-studio-maquette-bar
+      >
+        <div class="min-w-0 space-y-1.5">
+          <p
+            class="m-0 text-[10px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-300/90"
+            data-i18n="cv.studioMaquetteKicker"
+          >
+            Maquetación
+          </p>
+            <div class="flex flex-wrap items-end gap-2">
+            <label class="flex flex-col gap-0.5">
+              <span class="text-[10px] font-medium text-gray-600 dark:text-gray-400" data-i18n="cv.studioMaquetteTemplate">
+                Plantilla
+              </span>
+              <select
+                data-cv-studio-template
+                class="min-w-[9.5rem] rounded-lg border border-gray-200/90 bg-white px-2 py-1.5 text-xs font-medium text-gray-900 shadow-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+              ></select>
+            </label>
+            <label class="flex flex-col gap-0.5">
+              <span class="text-[10px] font-medium text-gray-600 dark:text-gray-400" data-i18n="cv.studioMaquetteDensity">
+                Escala / extensión
+              </span>
+              <select
+                data-cv-studio-print-pages
+                class="min-w-[9rem] rounded-lg border border-gray-200/90 bg-white px-2 py-1.5 text-xs font-medium text-gray-900 shadow-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+              ></select>
+            </label>
+            <label class="flex flex-col gap-0.5">
+              <span class="text-[10px] font-medium text-gray-600 dark:text-gray-400" data-i18n="cv.studioSectionFlowLabel">
+                Secciones
+              </span>
+              <select
+                data-cv-studio-section-flow
+                class="min-w-[9.5rem] rounded-lg border border-gray-200/90 bg-white px-2 py-1.5 text-xs font-medium text-gray-900 shadow-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+              >
+                <option value="single" data-i18n="cv.studioSectionFlowSingle">Una columna</option>
+                <option value="two" data-i18n="cv.studioSectionFlowTwo">Dos columnas</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              data-cv-studio-add-sticky
+              class="rounded-lg border border-violet-300/70 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-violet-800 shadow-sm hover:bg-violet-50 dark:border-violet-800 dark:bg-gray-900 dark:text-violet-100 dark:hover:bg-violet-950/50"
+              data-i18n="cv.studioAddStickyNote"
+            >
+              Nota adhesiva
+            </button>
+            <button
+              type="button"
+              data-cv-studio-reset-layout
+              class="rounded-lg border border-gray-300/80 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 shadow-sm hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+              data-i18n="cv.studioResetLayout"
+            >
+              Reset layout
+            </button>
+          </div>
+        </div>
+        <p class="m-0 max-w-[17rem] text-end text-[10px] leading-snug text-gray-600 dark:text-gray-400" data-cv-studio-pages-readout>
+          —
+        </p>
+      </div>
+    )
+  }
+
+  {
+    !legacyIframe && (
+      <div
+        data-cv-studio-inspector-root
+        class="mb-2 hidden rounded-xl border border-gray-200/90 bg-gray-50/90 p-3 text-sm dark:border-gray-700 dark:bg-gray-900/60"
+      >
+        <div class="mb-2 flex items-center justify-between gap-2">
+          <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.studioInspectorKicker">
+            Edición
+          </span>
+          <button
+            type="button"
+            data-cv-studio-inspector-dismiss
+            class="rounded-md px-2 py-0.5 text-[11px] font-semibold text-gray-600 hover:bg-gray-200/80 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+            data-i18n="cv.studioInspectorDismiss"
+            data-i18n-attr="aria-label,title"
+          >
+            Cerrar
+          </button>
+        </div>
+
+        <div data-cv-studio-hero-editor class="hidden space-y-2">
+          <p class="m-0 text-xs text-gray-600 dark:text-gray-400" data-i18n="cv.studioHeroEditorIntro">
+            Edita el bloque superior (cabecera). Los cambios se guardan en preferencias de este navegador.
+          </p>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <label class="grid gap-0.5 text-[11px] font-medium text-gray-600 dark:text-gray-400">
+              <span data-i18n="cv.studioHeroHeadlineLabel">Titular</span>
+              <input
+                type="text"
+                data-cv-studio-hero-headline
+                class="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-900 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100"
+              />
+            </label>
+            <label class="grid gap-0.5 text-[11px] font-medium text-gray-600 dark:text-gray-400">
+              <span data-i18n="cv.studioHeroTargetRoleLabel">Rol objetivo</span>
+              <input
+                type="text"
+                data-cv-studio-hero-target-role
+                class="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-900 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100"
+              />
+            </label>
+          </div>
+          <label class="grid gap-0.5 text-[11px] font-medium text-gray-600 dark:text-gray-400">
+            <span data-i18n="cv.studioHeroSummaryLabel">Resumen</span>
+            <textarea
+              data-cv-studio-hero-summary
+              rows={3}
+              class="resize-y rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-900 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100"
+            />
+          </label>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <label class="grid gap-0.5 text-[11px] font-medium text-gray-600 dark:text-gray-400">
+              <span data-i18n="cv.studioHeroWorkArrLabel">Modalidad</span>
+              <input
+                type="text"
+                data-cv-studio-hero-work-arrangement
+                class="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-900 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100"
+              />
+            </label>
+            <label class="grid gap-0.5 text-[11px] font-medium text-gray-600 dark:text-gray-400">
+              <span data-i18n="cv.studioHeroWorkAuthLabel">Autorización de trabajo</span>
+              <input
+                type="text"
+                data-cv-studio-hero-work-authorization
+                class="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-900 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100"
+              />
+            </label>
+          </div>
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button
+              type="button"
+              data-cv-studio-hero-save
+              class="rounded-lg border border-indigo-300/80 bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 dark:border-indigo-500/40 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+              data-i18n="cv.studioHeroSave"
+            >
+              Guardar
+            </button>
+          </div>
+        </div>
+
+        <div data-cv-studio-block-edit-hint class="hidden text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+          <span data-i18n="cv.studioBlockEditHintBefore">Para editar el contenido de esta sección, usa el</span>{" "}
+          <a href="/cv" class="font-semibold text-indigo-600 underline-offset-2 hover:underline dark:text-indigo-400" data-i18n="cv.studioBlockEditHintLink">
+            editor completo en /cv
+          </a>
+          <span data-i18n="cv.studioBlockEditHintAfter">.</span>
+        </div>
+      </div>
+    )
+  }
+
+  <div
+    tabindex="0"
+    data-cv-studio-canvas-viewport
+    class:list={[
+      "cv-studio-canvas-viewport outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60",
+      !legacyIframe && "cv-studio-canvas-viewport--desk",
+    ]}
+  >
+    <div class="cv-studio-canvas-viewport-inner">
+      {
+        legacyIframe ? (
+          <div class="cv-studio-canvas-sheet">
+            <iframe
+              data-cv-studio-live
+              src="/cv?doc=1&embed=1"
+              data-i18n="cv.studioIframeTitle"
+              data-i18n-attr="title"
+            />
+          </div>
+        ) : (
+          <div class="cv-studio-canvas-sheet cv-studio-canvas-sheet--inline-doc" data-cv-studio-doc-root>
+            <div
+              data-cv-studio-doc-loading
+              class="flex min-h-[min(72vh,860px)] items-center justify-center px-4 py-12 text-sm text-gray-500 dark:text-gray-400"
+            >
+              <span data-i18n="cv.studioDocLoading">…</span>
+            </div>
+            <p
+              data-cv-studio-doc-error
+              class="m-0 hidden min-h-[min(72vh,860px)] px-4 py-8 text-sm leading-relaxed text-red-700 dark:text-red-300"
+              role="alert"
+            />
+            <div data-cv-studio-doc-panel class="hidden cv-studio-inline-doc-wrap">
+              <div class="cv-studio-inline-pages relative mx-auto w-full max-w-[210mm]" data-cv-studio-pages-wrap>
+                <div data-cv-studio-page-guides class="cv-studio-page-guides" aria-hidden="true" />
+                <div class="cv-studio-inline-doc-surface relative z-[1]">
+                  <CvDocumentHost />
+                </div>
+                <div
+                  data-cv-studio-sticky-mount
+                  class="pointer-events-none absolute inset-0 z-[12] print:hidden"
+                  aria-hidden="true"
+                />
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </div>
+  </div>
+</div>
+
+<script>
+  import "@scripts/cv/cv-studio-canvas";
+</script>

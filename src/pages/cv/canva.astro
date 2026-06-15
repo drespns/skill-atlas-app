@@ -1,0 +1,13 @@
+---
+import AppShell from "../../layouts/AppShell.astro";
+import CvCanvaEditor from "../../components/cv/CvCanvaEditor.astro";
+
+const title = "CV — Canva";
+---
+
+<AppShell title={title}>
+  <div data-requires-auth class="hidden"></div>
+  <div class="w-full px-4 py-5 sm:px-6 lg:px-8">
+    <CvCanvaEditor />
+  </div>
+</AppShell>

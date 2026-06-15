@@ -1,0 +1,94 @@
+---
+import AppShell from "../../layouts/AppShell.astro";
+import CvStudioCanvas from "../../components/cv/CvStudioCanvas.astro";
+
+const title = "CV — Estudio";
+const legacyIframe = Astro.url.searchParams.get("legacyIframe") === "1";
+---
+
+<AppShell title={title}>
+  <div data-requires-auth class="hidden"></div>
+  <div data-cv-studio-root class="w-full px-4 py-8 sm:px-6 lg:px-8">
+    <div class="grid gap-10 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start">
+      <div class="min-w-0 space-y-8">
+        <header class="space-y-2">
+          <p class="m-0 text-xs font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-400" data-i18n="cv.studioKicker">
+            Beta · maquetación
+          </p>
+          <h1 class="m-0 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100" data-i18n="cv.studioTitle">
+            Estudio del CV
+          </h1>
+          <p class="m-0 text-sm leading-relaxed text-gray-600 dark:text-gray-400" data-i18n="cv.studioLead">
+            Punto de partida para un layout más flexible: el PDF sigue siendo HTML del navegador; aquí definimos el roadmap y los límites (ATS, orden semántico).
+          </p>
+        </header>
+
+        <section class="space-y-3 rounded-xl border border-indigo-200/70 bg-indigo-50/40 p-4 dark:border-indigo-900/45 dark:bg-indigo-950/25">
+          <h2 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100" data-i18n="cv.studioLiveTitle">
+            Documento en vivo
+          </h2>
+          <p class="m-0 text-xs leading-relaxed text-gray-600 dark:text-gray-400" data-i18n="cv.studioLiveHint">
+            Misma sesión y mismas preferencias que en /cv. La vista «solo documento» oculta el editor para ahorrar espacio en pantalla o en un iframe.
+          </p>
+        </section>
+
+        <section class="space-y-3 rounded-xl border border-gray-200/80 bg-white/70 p-4 dark:border-gray-800 dark:bg-gray-950/40">
+          <h2 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100" data-i18n="cv.studioOrderTitle">
+            Orden de secciones (documento)
+          </h2>
+          <p class="m-0 text-[11px] leading-snug text-gray-500 dark:text-gray-400" data-cv-studio-order-hint></p>
+          <ul data-cv-studio-section-order class="m-0 list-none space-y-2 p-0"></ul>
+        </section>
+
+        <section class="space-y-3 rounded-xl border border-gray-200/80 bg-white/70 p-4 dark:border-gray-800 dark:bg-gray-950/40">
+          <h2 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100" data-i18n="cv.studioSectionNowTitle">
+            Ya disponible en el editor
+          </h2>
+          <ul class="m-0 list-disc space-y-1.5 pl-5 text-sm text-gray-700 dark:text-gray-300">
+            <li data-i18n="cv.studioSectionNowBand">Opción de impresión para colocar tecnologías y el proyecto destacado en dos columnas (menos altura en una hoja).</li>
+            <li data-i18n="cv.studioSectionNowOrder">Orden de secciones del documento desde la vista previa (rail con arrastre).</li>
+          </ul>
+          <p class="m-0 text-sm">
+            <a
+              href="/cv"
+              class="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+              data-i18n="cv.studioBackToCv"
+            >
+              Volver al CV
+            </a>
+          </p>
+        </section>
+
+        <section class="space-y-3 rounded-xl border border-gray-200/80 bg-white/70 p-4 dark:border-gray-800 dark:bg-gray-950/40">
+          <h2 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100" data-i18n="cv.studioSectionNextTitle">
+            Próximos pasos (prioridad producto)
+          </h2>
+          <ul class="m-0 list-disc space-y-1.5 pl-5 text-sm text-gray-700 dark:text-gray-300">
+            <li data-i18n="cv.studioSectionNextBlocks">
+              Modelo de bloques serializable (ver spike en el repositorio: docs/cv-blocks-spike.md).
+            </li>
+            <li data-i18n="cv.studioSectionNextGrid">Preview con rejillas acotadas (plantillas, no lienzo infinito).</li>
+            <li data-i18n="cv.studioSectionNextAts">Chequeos ATS al usar layouts “creativos”: avisos claros si el DOM o el orden de lectura se alejan de lo seguro.</li>
+          </ul>
+        </section>
+
+        <section class="space-y-2 rounded-xl border border-amber-200/70 bg-amber-50/50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+          <h2 class="m-0 text-base font-semibold text-amber-950 dark:text-amber-100" data-i18n="cv.studioSectionAtsTitle">
+            ATS y parsers
+          </h2>
+          <p class="m-0 text-sm leading-relaxed text-amber-950/90 dark:text-amber-100/90" data-i18n="cv.studioSectionAtsBody">
+            Los sistemas ATS suelen extraer texto en orden de documento. Cualquier diseño avanzado debe mantener secciones reconocibles y un orden lógico; evitamos canvas como única fuente de verdad para no perder accesibilidad ni copiar/pegar útil.
+          </p>
+        </section>
+      </div>
+
+      <div class="min-w-0 space-y-2 lg:sticky lg:top-[calc(var(--app-header-h,4rem)+1rem)] lg:self-start">
+        <CvStudioCanvas legacyIframe={legacyIframe} />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import "@scripts/cv/cv-studio-page";
+  </script>
+</AppShell>
