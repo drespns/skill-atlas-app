@@ -17,5 +17,9 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    /** Evita dos copias de i18next (p. ej. chunks de página vs client.ts) con `isInitialized` desincronizado. */
+    resolve: {
+      dedupe: ["i18next"],
+    },
   },
 });

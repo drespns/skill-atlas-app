@@ -1,7 +1,7 @@
 {
   "name": "skill-atlas-app",
   "type": "module",
-  "version": "0.140.0",
+  "version": "0.150.0",
   "engines": {
     "node": ">=22.12.0"
   },
@@ -17,7 +17,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@astrojs/vercel": "^10.0.3",
+    "@astrojs/vercel": "^10.0.4",
     "@codemirror/lang-cpp": "^6.0.3",
     "@codemirror/lang-css": "^6.3.1",
     "@codemirror/lang-go": "^6.0.1",
@@ -33,8 +33,10 @@
     "@tailwindcss/vite": "^4.2.2",
     "@vercel/og": "^0.11.1",
     "@vscode/codicons": "^0.0.45",
-    "astro": "^6.0.8",
+    "astro": "^6.1.8",
     "codemirror": "^6.0.2",
+    "cron-parser": "^5.5.0",
+    "cronstrue": "^3.14.0",
     "diff": "^9.0.0",
     "dompurify": "^3.3.3",
     "echarts": "^6.0.0",
