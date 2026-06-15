@@ -1,9 +1,11 @@
 import i18next from "i18next";
+import { normalizeFavoriteToolIds } from "@lib/tools-favorites";
 import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 import { getSessionUserId } from "@scripts/core/auth-session";
 import { isSkillAtlasAdmin } from "@scripts/core/admin-role";
+import { loadPrefs } from "@scripts/core/prefs";
 
-type PaletteSection = "admin" | "nav" | "actions" | "tech" | "project";
+type PaletteSection = "admin" | "favorites" | "nav" | "actions" | "tech" | "project";
 
 type PaletteItem = {
   id: string;
@@ -22,6 +24,7 @@ function tt(key: string, fallback: string): string {
 
 const SECTION_LABEL_KEY: Record<PaletteSection, string> = {
   admin: "common.paletteSectionAdmin",
+  favorites: "common.paletteSectionFavorites",
   nav: "common.paletteSectionNav",
   actions: "common.paletteSectionActions",
   tech: "common.paletteSectionTech",
@@ -30,6 +33,7 @@ const SECTION_LABEL_KEY: Record<PaletteSection, string> = {
 
 const SECTION_LABEL_FALLBACK: Record<PaletteSection, string> = {
   admin: "Admin",
+  favorites: "Favoritas",
   nav: "Navegación",
   actions: "Acciones rápidas",
   tech: "Tus tecnologías",
@@ -61,6 +65,93 @@ function isTypingInField(target: EventTarget | null) {
   return false;
 }
 
+function hubSlugFromToolHref(href: string): string {
+  const m = /^\/tools\/([^/?#]+)/.exec(href);
+  return m?.[1] ?? "";
+}
+
+const CORE_AUTHED_NAV: PaletteItem[] = [
+  { id: "go-landing", label: "Inicio · landing pública", href: "/", hint: "/", section: "nav" },
+  { id: "go-pricing", label: "Precios", href: "/pricing", hint: "/pricing", section: "nav" },
+  { id: "go-backlog", label: "Historial del producto", href: "/backlog", hint: "/backlog", section: "nav" },
+  { id: "go-contact", label: "Contacto", href: "/contact", hint: "/contact", section: "nav" },
+  { id: "go-app", label: "Abrir app", href: "/app", hint: "/app", section: "nav" },
+  { id: "go-technologies", label: "Tecnologías", href: "/technologies", hint: "/technologies", section: "nav" },
+  { id: "go-projects", label: "Proyectos", href: "/projects", hint: "/projects", section: "nav" },
+  { id: "go-portfolio", label: "Portfolio", href: "/portfolio", hint: "/portfolio", section: "nav" },
+  { id: "go-study", label: "Estudio", href: "/study", hint: "/study", section: "nav" },
+  { id: "go-tools", label: "Herramientas", href: "/tools", hint: "/tools", section: "nav" },
+];
+
+const TOOL_NAV_ITEMS: PaletteItem[] = [
+  { id: "go-tools-expenses", label: "Herramientas · Gastos", href: "/tools/expense-tracker", hint: "/tools/expense-tracker", section: "nav" },
+  { id: "go-tools-habits", label: "Herramientas · Hábitos", href: "/tools/habits", hint: "/tools/habits", section: "nav" },
+  { id: "go-tools-convert", label: "Herramientas · Convertidor", href: "/tools/convert", hint: "/tools/convert", section: "nav" },
+  { id: "go-tools-readme", label: "Herramientas · Vista Markdown / README", href: "/tools/readme-preview", hint: "/tools/readme-preview", section: "nav" },
+  { id: "go-tools-bio", label: "Herramientas · Bio corta", href: "/tools/bio-builder", hint: "/tools/bio-builder", section: "nav" },
+  { id: "go-tools-title", label: "Herramientas · Título y slug", href: "/tools/title-normalize", hint: "/tools/title-normalize", section: "nav" },
+  { id: "go-tools-interview", label: "Herramientas · Pre-entrevista", href: "/tools/interview-prep", hint: "/tools/interview-prep", section: "nav" },
+  { id: "go-tools-pomodoro", label: "Herramientas · Pomodoro", href: "/tools/pomodoro", hint: "/tools/pomodoro", section: "nav" },
+  { id: "go-tools-talk", label: "Herramientas · Cronómetro de charla", href: "/tools/talk-timer", hint: "/tools/talk-timer", section: "nav" },
+  { id: "go-tools-diff", label: "Herramientas · Diff de texto", href: "/tools/text-diff", hint: "/tools/text-diff", section: "nav" },
+  { id: "go-tools-playground", label: "Herramientas · Playground web", href: "/tools/playground", hint: "/tools/playground", section: "nav" },
+  { id: "go-tools-json", label: "Herramientas · JSON", href: "/tools/json-format", hint: "/tools/json-format", section: "nav" },
+  { id: "go-tools-snippet", label: "Herramientas · Snippet HTML", href: "/tools/code-snippet-html", hint: "/tools/code-snippet-html", section: "nav" },
+  { id: "go-tools-salary", label: "Herramientas · Bruto → neto", href: "/tools/salary-estimate", hint: "/tools/salary-estimate", section: "nav" },
+  { id: "go-tools-gitignore", label: "Herramientas · .gitignore", href: "/tools/gitignore-builder", hint: "/tools/gitignore-builder", section: "nav" },
+  { id: "go-tools-cron", label: "Herramientas · Cron", href: "/tools/cron", hint: "/tools/cron", section: "nav" },
+  { id: "go-tools-qr", label: "Herramientas · Código QR", href: "/tools/qr-generator", hint: "/tools/qr-generator", section: "nav" },
+];
+
+const TAIL_AUTHED_NAV: PaletteItem[] = [
+  { id: "go-cv", label: "CV", href: "/cv", hint: "/cv", section: "nav" },
+  { id: "go-cv-studio", label: "CV · Canvas / estudio (beta)", href: "/cv/studio", hint: "/cv/studio", section: "nav" },
+  { id: "go-settings", label: "Ajustes", href: "/settings#prefs", hint: "/settings#prefs", section: "nav" },
+];
+
+const AUTHED_ACTION_ITEMS: PaletteItem[] = [
+  { id: "new-technology", label: "Crear tecnología", href: "/technologies?create=1", hint: "Acción", section: "actions" },
+  { id: "new-project", label: "Crear proyecto", href: "/projects?create=1", hint: "Acción", section: "actions" },
+];
+
+/** Navegación autenticada + acciones, con herramientas favoritas al inicio (sin duplicar href en «nav»). */
+function buildAuthedPaletteItems(): PaletteItem[] {
+  const favIds = normalizeFavoriteToolIds(loadPrefs().favoriteToolIds) ?? [];
+  const favSet = new Set(favIds);
+  const bySlug = new Map<string, PaletteItem>();
+  for (const it of TOOL_NAV_ITEMS) {
+    const s = hubSlugFromToolHref(it.href);
+    if (s) bySlug.set(s, it);
+  }
+  const favStar = tt("tools.paletteFavoriteMark", "★");
+  const favItems: PaletteItem[] = favIds
+    .map((slug) => {
+      const base = bySlug.get(slug);
+      if (!base) return null;
+      const slugPart = hubSlugFromToolHref(base.href);
+      return {
+        ...base,
+        id: `fav:${base.id}`,
+        section: "favorites" as PaletteSection,
+        label: `${favStar} ${base.label}`.trim(),
+        searchBlob: `${base.searchBlob ?? ""} ${slugPart} favorite favorita`.trim(),
+      };
+    })
+    .filter((x): x is PaletteItem => Boolean(x));
+
+  const restTools = TOOL_NAV_ITEMS.filter((it) => !favSet.has(hubSlugFromToolHref(it.href)));
+
+  return [...favItems, ...CORE_AUTHED_NAV, ...restTools, ...TAIL_AUTHED_NAV, ...AUTHED_ACTION_ITEMS];
+}
+
+/** Favoritas primero, luego entradas `admin` (si hay), resto de la paleta autenticada. */
+function buildAuthedPaletteItemsWithAdmin(adminPrefix: PaletteItem[]): PaletteItem[] {
+  const body = buildAuthedPaletteItems();
+  const fav = body.filter((i) => i.section === "favorites");
+  const rest = body.filter((i) => i.section !== "favorites");
+  return [...fav, ...adminPrefix, ...rest];
+}
+
 function initCommandPalette() {
   const root = document.querySelector<HTMLElement>("[data-command-palette]");
   if (!root) return;
@@ -86,43 +177,6 @@ function initCommandPalette() {
   let allItems: PaletteItem[] = [];
   let filtered: PaletteItem[] = [];
   let activeIndex = 0;
-
-  const authedNavItems: PaletteItem[] = [
-    { id: "go-landing", label: "Inicio · landing pública", href: "/", hint: "/", section: "nav" },
-    { id: "go-pricing", label: "Precios", href: "/pricing", hint: "/pricing", section: "nav" },
-    { id: "go-backlog", label: "Historial del producto", href: "/backlog", hint: "/backlog", section: "nav" },
-    { id: "go-contact", label: "Contacto", href: "/contact", hint: "/contact", section: "nav" },
-    { id: "go-app", label: "Abrir app", href: "/app", hint: "/app", section: "nav" },
-    { id: "go-technologies", label: "Tecnologías", href: "/technologies", hint: "/technologies", section: "nav" },
-    { id: "go-projects", label: "Proyectos", href: "/projects", hint: "/projects", section: "nav" },
-    { id: "go-portfolio", label: "Portfolio", href: "/portfolio", hint: "/portfolio", section: "nav" },
-    { id: "go-study", label: "Estudio", href: "/study", hint: "/study", section: "nav" },
-    { id: "go-tools", label: "Herramientas", href: "/tools", hint: "/tools", section: "nav" },
-    { id: "go-tools-expenses", label: "Herramientas · Gastos", href: "/tools/expense-tracker", hint: "/tools/expense-tracker", section: "nav" },
-    { id: "go-tools-habits", label: "Herramientas · Hábitos", href: "/tools/habits", hint: "/tools/habits", section: "nav" },
-    { id: "go-tools-convert", label: "Herramientas · Convertidor", href: "/tools/convert", hint: "/tools/convert", section: "nav" },
-    { id: "go-tools-readme", label: "Herramientas · Vista Markdown / README", href: "/tools/readme-preview", hint: "/tools/readme-preview", section: "nav" },
-    { id: "go-tools-bio", label: "Herramientas · Bio corta", href: "/tools/bio-builder", hint: "/tools/bio-builder", section: "nav" },
-    { id: "go-tools-title", label: "Herramientas · Título y slug", href: "/tools/title-normalize", hint: "/tools/title-normalize", section: "nav" },
-    { id: "go-tools-interview", label: "Herramientas · Pre-entrevista", href: "/tools/interview-prep", hint: "/tools/interview-prep", section: "nav" },
-    { id: "go-tools-pomodoro", label: "Herramientas · Pomodoro", href: "/tools/pomodoro", hint: "/tools/pomodoro", section: "nav" },
-    { id: "go-tools-talk", label: "Herramientas · Cronómetro de charla", href: "/tools/talk-timer", hint: "/tools/talk-timer", section: "nav" },
-    { id: "go-tools-diff", label: "Herramientas · Diff de texto", href: "/tools/text-diff", hint: "/tools/text-diff", section: "nav" },
-    { id: "go-tools-json", label: "Herramientas · JSON", href: "/tools/json-format", hint: "/tools/json-format", section: "nav" },
-    { id: "go-tools-snippet", label: "Herramientas · Snippet HTML", href: "/tools/code-snippet-html", hint: "/tools/code-snippet-html", section: "nav" },
-    { id: "go-tools-salary", label: "Herramientas · Bruto → neto", href: "/tools/salary-estimate", hint: "/tools/salary-estimate", section: "nav" },
-    { id: "go-tools-gitignore", label: "Herramientas · .gitignore", href: "/tools/gitignore-builder", hint: "/tools/gitignore-builder", section: "nav" },
-    { id: "go-tools-qr", label: "Herramientas · Código QR", href: "/tools/qr-generator", hint: "/tools/qr-generator", section: "nav" },
-    { id: "go-cv", label: "CV", href: "/cv", hint: "/cv", section: "nav" },
-    { id: "go-settings", label: "Ajustes", href: "/settings#prefs", hint: "/settings#prefs", section: "nav" },
-  ];
-
-  const authedActionItems: PaletteItem[] = [
-    { id: "new-technology", label: "Crear tecnología", href: "/technologies?create=1", hint: "Acción", section: "actions" },
-    { id: "new-project", label: "Crear proyecto", href: "/projects?create=1", hint: "Acción", section: "actions" },
-  ];
-
-  const authedItems: PaletteItem[] = [...authedNavItems, ...authedActionItems];
 
   const unauthedItems: PaletteItem[] = [
     { id: "go-landing", label: "Inicio · landing", href: "/", hint: "/", section: "nav" },
@@ -224,20 +278,25 @@ function initCommandPalette() {
     const { data: sessionData } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
     const isAuthed = Boolean(sessionData?.session?.user);
 
-    allItems = isAuthed ? [...authedItems] : [...unauthedItems];
-
+    let adminPrefix: PaletteItem[] = [];
+    let userId: string | null = null;
     if (supabase && isAuthed) {
-      const userId = await getSessionUserId(supabase);
+      userId = await getSessionUserId(supabase);
       if (userId) {
-        const adminPrefix = (await isSkillAtlasAdmin(supabase, userId)) ? [PALETTE_ADMIN_ITEM] : [];
-        const cached = readCache(userId);
-        if (cached) {
-          allItems = [...adminPrefix, ...authedItems, ...cached];
-          render();
-          setTimeout(() => void hydrateFromSupabase(supabase, userId, adminPrefix.length > 0), 0);
-        } else {
-          await hydrateFromSupabase(supabase, userId, adminPrefix.length > 0);
-        }
+        adminPrefix = (await isSkillAtlasAdmin(supabase, userId)) ? [PALETTE_ADMIN_ITEM] : [];
+      }
+    }
+
+    allItems = isAuthed ? buildAuthedPaletteItemsWithAdmin(adminPrefix) : [...unauthedItems];
+
+    if (supabase && isAuthed && userId) {
+      const cached = readCache(userId);
+      if (cached) {
+        allItems = [...buildAuthedPaletteItemsWithAdmin(adminPrefix), ...cached];
+        render();
+        setTimeout(() => void hydrateFromSupabase(supabase, userId, adminPrefix.length > 0), 0);
+      } else {
+        await hydrateFromSupabase(supabase, userId, adminPrefix.length > 0);
       }
     }
 
@@ -285,7 +344,7 @@ function initCommandPalette() {
     }
     writeCache(userId, items);
     const prefix = isAdmin ? [PALETTE_ADMIN_ITEM] : [];
-    allItems = [...prefix, ...authedItems, ...items];
+    allItems = [...buildAuthedPaletteItemsWithAdmin(prefix), ...items];
     render();
   };
 

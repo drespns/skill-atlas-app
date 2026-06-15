@@ -25,6 +25,12 @@ body {
   padding-top: calc(var(--app-header-h, 4rem) + var(--app-main-py, 1.5rem));
 }
 
+/* AppShell minimalChrome: solo contenido (iframe CV en estudio). */
+.app-main-shell--embed {
+  padding-top: var(--app-main-py, 0.5rem);
+  --app-shell-inline: clamp(0.25rem, 1.2vw, 0.75rem);
+}
+
 .landing-facets-track.is-dragging {
   cursor: grabbing;
 }
@@ -63,15 +69,25 @@ html[data-platform="other"] [data-modkey="cmd"] {
 }
 
 /* Nav activo: el cliente actualiza `data-nav-active` en cada ruta (View Transitions). */
-[data-header-nav] .header-nav-link[data-nav-active="true"],
-[data-app-header] .header-admin-link[data-nav-active="true"] {
+[data-header-nav] .header-nav-link[data-nav-active="true"] {
   font-weight: 600;
   color: rgb(17 24 39);
 }
 
-.dark [data-header-nav] .header-nav-link[data-nav-active="true"],
-.dark [data-app-header] .header-admin-link[data-nav-active="true"] {
+.dark [data-header-nav] .header-nav-link[data-nav-active="true"] {
   color: rgb(249 250 251);
+}
+
+/* Admin en menú de avatar: estado activo cuando estás en /admin */
+[data-user-menu-panel] a.header-user-menu-item[data-user-menu-admin][data-nav-active="true"] {
+  font-weight: 600;
+  color: rgb(67 56 202);
+  background-color: rgb(238 242 255 / 0.95);
+}
+
+.dark [data-user-menu-panel] a.header-user-menu-item[data-user-menu-admin][data-nav-active="true"] {
+  color: rgb(199 210 254);
+  background-color: rgb(49 46 129 / 0.35);
 }
 
 /* Banner cerrado en localStorage: refuerzo tras cargar hoja (el crítico está en `AppShellBannerDismissScript.astro`). */
@@ -503,7 +519,7 @@ dialog[data-project-concepts-dialog].project-concepts-dialog[open] .project-conc
 
   @page {
     size: A4;
-    margin: 14mm 14mm 16mm;
+    margin: 10mm 10mm 12mm;
   }
 
   html,
@@ -519,13 +535,42 @@ dialog[data-project-concepts-dialog].project-concepts-dialog[open] .project-conc
     max-width: none !important;
   }
 
-  /* Escala tipográfica del CV según páginas objetivo + jerarquía por sección */
-  body.cv-print-mode [data-cv-document],
-  body.cv-print-mode [data-public-cv-doc] {
-    /* Print: escalado real del documento para acercarse al objetivo de páginas. */
-    transform: scale(var(--cv-print-scale, 1)) !important;
+  /*
+    Escala del CV en impresión: `zoom` encoge la maquetación real (mejor fragmentación en Chromium).
+    `transform: scale()` deja la caja “alta” en layout y el motor de páginas suele cortar antes, dejando
+    bandas blancas que no coinciden con lo que ves al escalar. Sin prefijo `body.cv-print-mode` para que
+    también aplique al iframe de impresión del editor.
+  */
+  [data-cv-document],
+  [data-public-cv-doc] {
+    --cv-print-scale-safe: max(0.05, var(--cv-print-scale, 1));
     transform-origin: top left !important;
-    /* No compensamos el ancho: evita scroll/espacio lateral raro en preview/print dialogs. */
+    max-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  @supports (zoom: 0.5) {
+    [data-cv-document],
+    [data-public-cv-doc] {
+      transform: none !important;
+      width: 100% !important;
+      zoom: var(--cv-print-scale, 1);
+    }
+  }
+
+  @supports not (zoom: 0.5) {
+    [data-cv-document],
+    [data-public-cv-doc] {
+      transform: scale(var(--cv-print-scale, 1)) !important;
+      transform-origin: top left !important;
+      width: calc(100% / var(--cv-print-scale-safe)) !important;
+    }
+  }
+
+  /* `flex-col` en el host de secciones puede fragmentar peor en PDF; el orden visual se mantiene en bloque. */
+  [data-cv-document] [data-cv-doc-sections],
+  [data-public-cv-doc] [data-cv-doc-sections] {
+    display: block !important;
   }
 
   body.cv-print-mode [data-cv-weight="support"] {
@@ -538,12 +583,24 @@ dialog[data-project-concepts-dialog].project-concepts-dialog[open] .project-conc
     border-color: rgb(229 231 235) !important;
   }
 
-  .cv-doc-project {
+  /*
+    Evitar `break-inside: avoid` en cada tarjeta del CV: si un bloque no cabe en el resto de la hoja,
+    el motor lo envía entero a la página siguiente y deja mucho blanco (muy visible con objetivo 1 página).
+    Permitir cortes dentro de entradas; el hero y chips cortos pueden seguir evitando corte.
+  */
+  [data-cv-document] .cv-doc-project,
+  [data-public-cv-doc] .cv-doc-project {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  [data-cv-document] [data-cv-doc-helpstack],
+  [data-public-cv-doc] [data-public-cv-doc-helpstack] {
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
-  [data-cv-doc-helpstack] {
+  [data-cv-document] .cv-doc-tech-featured-band:not(.hidden) {
     break-inside: avoid;
     page-break-inside: avoid;
   }
@@ -553,26 +610,82 @@ dialog[data-project-concepts-dialog].project-concepts-dialog[open] .project-conc
     color: inherit;
   }
 
-  h2,
-  h3,
-  h4 {
+  [data-cv-document] h2,
+  [data-cv-document] h3,
+  [data-cv-document] h4,
+  [data-public-cv-doc] h2,
+  [data-public-cv-doc] h3,
+  [data-public-cv-doc] h4 {
     page-break-after: avoid;
   }
 
-  p {
-    orphans: 3;
-    widows: 3;
+  [data-cv-document] p,
+  [data-public-cv-doc] p {
+    orphans: 1;
+    widows: 1;
+  }
+
+  /*
+    Cabecera en fila: grid en print (más estable que flex al paginar). Evitamos `break-inside: avoid-page`
+    en toda la fila (puede empujar entradas enteras a la página siguiente con mucho blanco). Ligamos
+    título + subtítulo en la columna izquierda; la fecha puede seguir en la misma fila sin forzar página.
+  */
+  [data-cv-document] .cv-doc-entry-head--row,
+  [data-public-cv-doc] .cv-doc-entry-head--row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    align-items: start;
+    row-gap: 0.25rem;
+    column-gap: 1rem;
+  }
+
+  [data-cv-document] .cv-doc-entry-head--row > .min-w-0,
+  [data-public-cv-doc] .cv-doc-entry-head--row > .min-w-0 {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  [data-cv-document] .cv-doc-entry-head--row > .min-w-0 > p:first-of-type,
+  [data-public-cv-doc] .cv-doc-entry-head--row > .min-w-0 > p:first-of-type {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  [data-cv-document] .cv-doc-entry-head--stack,
+  [data-public-cv-doc] .cv-doc-entry-head--stack {
+    display: block;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
 
-/* CV: escala tipográfica (vista previa alineada con impresión) */
-[data-cv-document],
-[data-public-cv-doc] {
-  /* Tailwind usa tamaños en `rem` (no heredan de `font-size` del contenedor).
-     Para que el control "Máximo de páginas (objetivo)" tenga efecto real en preview/impresión,
-     escalamos el documento completo. */
-  transform: scale(var(--cv-print-scale, 1));
-  transform-origin: top left;
+/* CV editor: plegado certificaciones / idiomas (chevron) */
+[data-cv-cert-collapse][aria-expanded="false"] .cv-form-chevron,
+[data-cv-lang-collapse][aria-expanded="false"] .cv-form-chevron {
+  transform: rotate(-90deg);
+}
+
+/* CV pantalla: scale() no encoge la caja de layout → scroll fantasma; con `zoom` sí (Chromium/Safari). Impresión: @media print. */
+@media screen {
+  /* Cabecera apilada: sin caja en pantalla; en @media print pasa a block + break-inside. */
+  [data-cv-document] .cv-doc-entry-head--stack,
+  [data-public-cv-doc] .cv-doc-entry-head--stack {
+    display: contents;
+  }
+
+  [data-cv-document],
+  [data-public-cv-doc] {
+    transform: scale(var(--cv-print-scale, 1));
+    transform-origin: top left;
+  }
+
+  @supports (zoom: 0.5) {
+    [data-cv-document],
+    [data-public-cv-doc] {
+      transform: none;
+      zoom: var(--cv-print-scale, 1);
+    }
+  }
 }
 
 [data-cv-document] [data-cv-weight="support"],
@@ -729,6 +842,292 @@ dialog[data-project-concepts-dialog].project-concepts-dialog[open] .project-conc
   margin-left: auto;
   margin-right: auto;
   min-width: 0;
+}
+
+/* /cv?doc=1 — iframe / estudio: solo documento + estados de carga/error */
+.cv-page-shell--doc-only .cv-page-shell__main > header,
+.cv-page-shell--doc-only .cv-tab-zone,
+.cv-page-shell--doc-only [data-cv-editor-chrome] {
+  display: none !important;
+}
+
+.cv-page-shell--doc-only [data-cv-tab-panel="cv"] {
+  padding-top: 0.25rem;
+}
+
+/* /cv?doc=1&embed=1 — iframe del estudio: sin banner ni márgenes de “página app”. */
+.cv-page-shell--studio-embed [data-cv-doc-only-banner] {
+  display: none !important;
+}
+
+.cv-page-shell--studio-embed .cv-page-shell__main {
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.cv-page-shell--studio-embed [data-cv-tab-panel="cv"] {
+  padding-top: 0;
+}
+
+/* —— CV studio: lienzo acotado (vista previa tipo “mesa de trabajo”) —— */
+.cv-studio-canvas-root {
+  --cv-studio-zoom: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+/* /cv/canva v2: un solo scroll en el workspace (columna central), zoom en el wrap */
+.cv-canva-v2-workspace {
+  outline: none;
+}
+
+.cv-canva-v2-zoom-wrap {
+  --cv-canva-zoom: 1;
+  transform: scale(var(--cv-canva-zoom, 1));
+  transform-origin: top center;
+  will-change: transform;
+}
+
+/* /cv/canva: guías A4 (misma idea que estudio inline; aquí no hay data-cv-studio-layout). */
+[data-cv-canva-v2-root] .cv-studio-page-guides {
+  position: absolute;
+  z-index: 2;
+  inset: 0 auto auto 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+[data-cv-canva-v2-root] .cv-studio-page-guide-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-top: -1px;
+  border-top: 1px dashed rgb(139 92 246 / 0.42);
+}
+
+[data-cv-canva-v2-root] [data-cv-doc-host] [data-cv-studio-selectable],
+[data-cv-canva-v2-root] [data-cv-doc-host] section[data-cv-section] {
+  cursor: pointer;
+}
+
+[data-cv-canva-v2-root] .cv-studio-block--selected {
+  outline: none !important;
+}
+
+[data-cv-canva-v2-root] .cv-canva-editable {
+  cursor: text;
+  outline: none;
+  border-radius: 0.125rem;
+  transition: box-shadow 0.12s ease;
+}
+
+[data-cv-canva-v2-root] .cv-canva-editable:focus {
+  box-shadow: 0 0 0 2px rgb(99 102 241 / 0.45);
+}
+
+/* Titular Canva: redimensionar franjas de texto dentro del hero; iconos escalables */
+[data-cv-document][data-cv-doc-canva-hero-chrome="1"] [data-cv-weight="hero"] {
+  --cv-hero-contact-icon-scale: 1;
+}
+
+[data-cv-document][data-cv-doc-canva-hero-chrome="1"] [data-cv-hero-resize-wrap] .cv-hero-resize-inner {
+  resize: horizontal;
+  overflow: hidden;
+  min-width: 8rem;
+  max-width: 100%;
+}
+
+[data-cv-document][data-cv-doc-canva-hero-chrome="1"] [data-cv-weight="hero"] .cv-social-slot-icon,
+[data-cv-document][data-cv-doc-canva-hero-chrome="1"] [data-cv-weight="hero"] .cv-social-link img {
+  width: calc(1rem * var(--cv-hero-contact-icon-scale, 1));
+  height: calc(1rem * var(--cv-hero-contact-icon-scale, 1));
+}
+
+[data-cv-document][data-cv-doc-canva-hero-chrome="1"] [data-cv-weight="hero"] .cv-hero-loc-icon {
+  font-size: calc(1rem * var(--cv-hero-contact-icon-scale, 1));
+  line-height: 1;
+}
+
+@media print {
+  [data-cv-document] [data-cv-hero-resize-wrap] .cv-hero-resize-inner {
+    resize: none !important;
+    overflow: visible !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+}
+
+.cv-canva-v2-sheet [data-cv-document] {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 210mm;
+  margin-inline: auto;
+  border-radius: 0.2rem !important;
+  padding: 10mm 10mm 12mm !important;
+  box-shadow:
+    0 0 0 1px rgb(15 23 42 / 0.06),
+    0 20px 48px -30px rgb(15 23 42 / 0.4);
+}
+
+.cv-studio-canvas-viewport {
+  position: relative;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(55 65 81 / 0.45);
+  background: rgb(15 23 42 / 0.92);
+  min-height: min(78vh, 920px);
+  max-height: min(78vh, 920px);
+  overflow: auto;
+  outline: none;
+}
+
+.cv-studio-canvas-viewport.cv-studio-canvas-viewport--grid {
+  background-color: rgb(15 23 42 / 0.92);
+  background-image:
+    radial-gradient(circle at 1px 1px, rgb(148 163 184 / 0.14) 1px, transparent 0);
+  background-size: 14px 14px;
+}
+
+.dark .cv-studio-canvas-viewport {
+  border-color: rgb(31 41 55 / 0.95);
+  background: rgb(3 7 18 / 0.96);
+}
+
+.dark .cv-studio-canvas-viewport.cv-studio-canvas-viewport--grid {
+  background-color: rgb(3 7 18 / 0.96);
+  background-image:
+    radial-gradient(circle at 1px 1px, rgb(100 116 139 / 0.2) 1px, transparent 0);
+}
+
+.cv-studio-canvas-viewport-inner {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0.75rem 1.25rem;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* Mesa de trabajo tipo “lienzo” (referencia Canva): fondo neutro alrededor de la hoja. */
+.cv-studio-canvas-viewport--desk {
+  background: rgb(241 243 246);
+  border-color: rgb(203 213 225 / 0.85);
+}
+
+.dark .cv-studio-canvas-viewport--desk {
+  background: rgb(16 18 22);
+  border-color: rgb(55 65 81 / 0.55);
+}
+
+.cv-studio-canvas-viewport--desk .cv-studio-canvas-viewport-inner {
+  background: transparent;
+}
+
+.cv-studio-canvas-sheet {
+  width: min(100%, 52.5rem);
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  box-shadow:
+    0 0 0 1px rgb(15 23 42 / 0.08),
+    0 18px 50px -24px rgb(0 0 0 / 0.65);
+  background: rgb(255 255 255);
+  overflow: hidden;
+  transform: scale(var(--cv-studio-zoom, 1));
+  transform-origin: top center;
+  will-change: transform;
+}
+
+.cv-studio-canvas-sheet iframe {
+  display: block;
+  width: 100%;
+  min-height: min(72vh, 860px);
+  height: min(72vh, 860px);
+  border: 0;
+  background: rgb(255 255 255);
+}
+
+.cv-studio-canvas-sheet--inline-doc {
+  overflow: auto;
+  max-width: 210mm;
+  width: 100%;
+}
+
+.cv-studio-inline-doc-wrap {
+  padding: 0.75rem 0.5rem 1rem;
+}
+
+.cv-studio-inline-doc-wrap [data-cv-doc-host] {
+  margin-inline: auto;
+  max-width: 100%;
+}
+
+/* Vista previa del estudio ≈ área imprimible A4 (mismos márgenes que @media print). */
+[data-cv-studio-layout="inline"] .cv-studio-inline-doc-surface [data-cv-document] {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 210mm;
+  margin-inline: auto;
+  border-radius: 0.2rem !important;
+  padding: 10mm 10mm 12mm !important;
+  box-shadow:
+    0 0 0 1px rgb(15 23 42 / 0.06),
+    0 12px 40px -28px rgb(15 23 42 / 0.35);
+}
+
+[data-cv-studio-layout="inline"] .cv-studio-inline-pages {
+  margin-inline: auto;
+}
+
+[data-cv-studio-layout="inline"] .cv-studio-page-guides {
+  position: absolute;
+  z-index: 2;
+  inset: 0 auto auto 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+[data-cv-studio-layout="inline"] .cv-studio-page-guide-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-top: -1px;
+  border-top: 1px dashed rgb(139 92 246 / 0.42);
+}
+
+/* Dos columnas: rejilla en el host de secciones (hero sigue fuera). Orden DOM = orden de lectura por filas. */
+[data-cv-document] [data-cv-doc-sections][data-cv-studio-section-flow="two"] {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 1rem;
+  row-gap: 1.5rem;
+  align-items: start;
+}
+
+@media print {
+  [data-cv-document] [data-cv-doc-sections][data-cv-studio-section-flow="two"] > section,
+  [data-cv-document] [data-cv-doc-sections][data-cv-studio-section-flow="two"] > .cv-doc-tech-featured-band {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* Selección de bloques (estudio inline): feedback tipo Canva; no afecta a /cv ni a impresión. */
+[data-cv-studio-layout="inline"] [data-cv-doc-host] [data-cv-studio-selectable],
+[data-cv-studio-layout="inline"] [data-cv-doc-host] section[data-cv-section] {
+  cursor: pointer;
+}
+
+[data-cv-studio-layout="inline"] [data-cv-doc-host] .cv-studio-block--selected {
+  outline: 2px solid rgb(139 92 246);
+  outline-offset: 3px;
+  border-radius: 0.375rem;
+}
+
+@media print {
+  .cv-studio-block--selected {
+    outline: none !important;
+  }
 }
 
 @media (min-width: 1280px) {
@@ -1115,7 +1514,7 @@ dialog[data-project-concepts-dialog].project-concepts-dialog[open] .project-conc
 
 .cv-tab-panels-shell {
   position: relative;
-  min-height: min(52vh, 36rem);
+  min-height: 0;
   transition: min-height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -1964,5 +2363,289 @@ html[data-motion="reduced"].landing-enhanced [data-landing-reveal] {
   height: auto;
   border-radius: 0.35rem;
   margin: 0.35em 0;
+}
+
+/* --- Herramientas Cron / QR / Diff / Playground: mismos tokens que expense-tracker (et-field, botones) --- */
+[data-tools-cron-page] .et-field,
+[data-tools-qr-page] .et-field,
+[data-tools-diff-page] .et-field,
+[data-tools-playground-page] .et-field,
+[data-tools-cron-page] select.et-field,
+[data-tools-qr-page] select.et-field,
+[data-tools-diff-page] select.et-field,
+[data-tools-playground-page] select.et-field {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(229 231 235);
+  background: rgb(255 255 255);
+  padding: 0.5rem 0.65rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: rgb(17 24 39);
+  box-sizing: border-box;
+}
+.dark [data-tools-cron-page] .et-field,
+.dark [data-tools-qr-page] .et-field,
+.dark [data-tools-diff-page] .et-field,
+.dark [data-tools-playground-page] .et-field,
+.dark [data-tools-cron-page] select.et-field,
+.dark [data-tools-qr-page] select.et-field,
+.dark [data-tools-diff-page] select.et-field,
+.dark [data-tools-playground-page] select.et-field {
+  border-color: rgb(55 65 81);
+  background: rgb(3 7 18);
+  color: rgb(243 244 246);
+}
+[data-tools-cron-page] .et-field:focus,
+[data-tools-qr-page] .et-field:focus,
+[data-tools-diff-page] .et-field:focus,
+[data-tools-playground-page] .et-field:focus,
+[data-tools-cron-page] select.et-field:focus,
+[data-tools-qr-page] select.et-field:focus,
+[data-tools-diff-page] select.et-field:focus,
+[data-tools-playground-page] select.et-field:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgb(255 255 255), 0 0 0 4px rgb(99 102 241);
+}
+.dark [data-tools-cron-page] .et-field:focus,
+.dark [data-tools-qr-page] .et-field:focus,
+.dark [data-tools-diff-page] .et-field:focus,
+.dark [data-tools-playground-page] .et-field:focus,
+.dark [data-tools-cron-page] select.et-field:focus,
+.dark [data-tools-qr-page] select.et-field:focus,
+.dark [data-tools-diff-page] select.et-field:focus,
+.dark [data-tools-playground-page] select.et-field:focus {
+  box-shadow: 0 0 0 2px rgb(3 7 18), 0 0 0 4px rgb(129 140 248);
+}
+[data-tools-cron-page] textarea.et-field.et-textarea,
+[data-tools-qr-page] textarea.et-field.et-textarea,
+[data-tools-diff-page] textarea.et-field.et-textarea,
+[data-tools-playground-page] textarea.et-field.et-textarea {
+  resize: vertical;
+  min-height: 6.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+[data-tools-cron-page] .et-btn-primary,
+[data-tools-qr-page] .et-btn-primary,
+[data-tools-diff-page] .et-btn-primary,
+[data-tools-playground-page] .et-btn-primary {
+  border-radius: 0.5rem;
+  background: rgb(79 70 229);
+  color: white;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+}
+[data-tools-cron-page] .et-btn-primary:hover,
+[data-tools-qr-page] .et-btn-primary:hover,
+[data-tools-diff-page] .et-btn-primary:hover,
+[data-tools-playground-page] .et-btn-primary:hover {
+  background: rgb(99 102 241);
+}
+[data-tools-cron-page] .et-btn-secondary,
+[data-tools-qr-page] .et-btn-secondary,
+[data-tools-diff-page] .et-btn-secondary,
+[data-tools-playground-page] .et-btn-secondary {
+  border-radius: 0.5rem;
+  border: 1px solid rgb(229 231 235);
+  background: rgb(255 255 255);
+  color: rgb(55 65 81);
+  font-weight: 600;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+[data-tools-cron-page] .et-btn-secondary:hover,
+[data-tools-qr-page] .et-btn-secondary:hover,
+[data-tools-diff-page] .et-btn-secondary:hover,
+[data-tools-playground-page] .et-btn-secondary:hover {
+  background: rgb(249 250 251);
+}
+.dark [data-tools-cron-page] .et-btn-secondary,
+.dark [data-tools-qr-page] .et-btn-secondary,
+.dark [data-tools-diff-page] .et-btn-secondary,
+.dark [data-tools-playground-page] .et-btn-secondary {
+  border-color: rgb(55 65 81);
+  background: rgb(17 24 39);
+  color: rgb(229 231 235);
+}
+.dark [data-tools-cron-page] .et-btn-secondary:hover,
+.dark [data-tools-qr-page] .et-btn-secondary:hover,
+.dark [data-tools-diff-page] .et-btn-secondary:hover,
+.dark [data-tools-playground-page] .et-btn-secondary:hover {
+  background: rgb(31 41 55);
+}
+[data-tools-cron-page] .et-btn-accent,
+[data-tools-qr-page] .et-btn-accent,
+[data-tools-diff-page] .et-btn-accent,
+[data-tools-playground-page] .et-btn-accent {
+  border-radius: 0.5rem;
+  border: 1px solid rgb(165 180 252);
+  background: rgb(238 242 255);
+  color: rgb(55 48 163);
+  font-weight: 600;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+[data-tools-cron-page] .et-btn-accent:hover,
+[data-tools-qr-page] .et-btn-accent:hover,
+[data-tools-diff-page] .et-btn-accent:hover,
+[data-tools-playground-page] .et-btn-accent:hover {
+  background: rgb(224 231 255);
+}
+.dark [data-tools-cron-page] .et-btn-accent,
+.dark [data-tools-qr-page] .et-btn-accent,
+.dark [data-tools-diff-page] .et-btn-accent,
+.dark [data-tools-playground-page] .et-btn-accent {
+  border-color: rgb(67 56 202 / 0.5);
+  background: rgb(30 27 75 / 0.35);
+  color: rgb(224 231 255);
+}
+[data-tools-cron-page] details.tool-details > summary,
+[data-tools-qr-page] details.tool-details > summary,
+[data-tools-diff-page] details.tool-details > summary,
+[data-tools-playground-page] details.tool-details > summary {
+  list-style: none;
+}
+[data-tools-cron-page] details.tool-details > summary::-webkit-details-marker,
+[data-tools-qr-page] details.tool-details > summary::-webkit-details-marker,
+[data-tools-diff-page] details.tool-details > summary::-webkit-details-marker,
+[data-tools-playground-page] details.tool-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* --- Herramientas: cabecera de página + enlaces como footer --- */
+.tool-page-header {
+  margin-bottom: 0.25rem;
+}
+.tool-page-header__toolbar {
+  margin-bottom: 1.25rem;
+}
+@media (min-width: 640px) {
+  .tool-page-header__toolbar {
+    margin-bottom: 1.5rem;
+  }
+}
+.tool-page-header__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1.25rem;
+}
+@media (min-width: 640px) {
+  .tool-page-header__hero {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+}
+.tool-page-header__lead {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.tool-page-header__actions {
+  flex-shrink: 0;
+  width: 100%;
+}
+@media (min-width: 640px) {
+  .tool-page-header__actions {
+    width: auto;
+    max-width: min(100%, 28rem);
+  }
+}
+.tool-page-header__actions:empty {
+  display: none;
+}
+.tool-page-header__title {
+  margin-bottom: 1.25rem;
+}
+@media (min-width: 640px) {
+  .tool-page-header__title {
+    margin-bottom: 1.5rem;
+  }
+}
+.tool-page-header__intro {
+  max-width: 48rem;
+}
+.tool-page-header__intro :where(p) {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: rgb(75 85 99);
+}
+@media (min-width: 640px) {
+  .tool-page-header__intro :where(p) {
+    font-size: 1rem;
+  }
+}
+.dark .tool-page-header__intro :where(p) {
+  color: rgb(156 163 175);
+}
+
+/* Misma idea que enlaces del footer (`AppFooter.astro`): pill + borde al hover */
+.tool-footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  color: rgb(55 65 81);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.tool-footer-link:hover {
+  background-color: rgb(255 255 255 / 0.8);
+  border-color: rgb(199 210 254 / 0.7);
+  color: rgb(67 56 202);
+}
+.dark .tool-footer-link {
+  color: rgb(229 231 235);
+}
+.dark .tool-footer-link:hover {
+  background-color: rgb(17 24 39 / 0.8);
+  border-color: rgb(55 48 163 / 0.5);
+  color: rgb(199 210 252);
+}
+
+.tool-details-toggle {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: rgb(75 85 99);
+  border: 1px solid transparent;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.tool-details-toggle:hover {
+  background-color: rgb(255 255 255 / 0.75);
+  border-color: rgb(199 210 254 / 0.65);
+  color: rgb(67 56 202);
+}
+.dark .tool-details-toggle {
+  color: rgb(156 163 175);
+}
+.dark .tool-details-toggle:hover {
+  background-color: rgb(17 24 39 / 0.75);
+  border-color: rgb(55 48 163 / 0.45);
+  color: rgb(199 210 252);
 }
 

@@ -26,8 +26,10 @@ const APP_LOGO_SRC = "/favicon.svg";
     class="shrink-0 border-b border-gray-200/80 dark:border-gray-800 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-gray-950/85"
     style="padding-top: var(--app-header-py, 1rem); padding-bottom: var(--app-header-py, 1rem);"
   >
-  <div class="max-w-screen-2xl mx-auto flex w-full min-w-0 items-center gap-3 sm:gap-4 px-4 sm:px-6 lg:px-8">
-    <div class="relative flex shrink-0 items-center gap-2 md:gap-3 min-w-0" data-home-wrap data-header-brand>
+  <div
+    class="max-w-screen-2xl mx-auto flex w-full min-w-0 items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 lg:px-8 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center"
+  >
+    <div class="relative flex shrink-0 items-center gap-2 md:gap-3 min-w-0 md:justify-self-start" data-home-wrap data-header-brand>
       <a
         href="/"
         data-home-link
@@ -69,7 +71,7 @@ const APP_LOGO_SRC = "/favicon.svg";
 
     <nav
       data-header-nav
-      class="hidden md:flex md:flex-1 flex-wrap items-center justify-center gap-x-0.5 gap-y-1 lg:gap-1 text-sm relative min-w-0"
+      class="hidden md:flex md:flex-wrap md:justify-self-center items-center justify-center gap-x-0.5 gap-y-1 lg:gap-1 text-sm relative min-w-0 max-w-full"
       data-i18n-scope="nav"
     >
       <div
@@ -157,6 +159,7 @@ const APP_LOGO_SRC = "/favicon.svg";
           <p class="m-0 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             <span data-i18n="tools.popoverKicker">Explorar herramientas</span>
           </p>
+          <div data-tools-favorites-slot class="hidden px-2 pb-2 mb-1 border-b border-gray-100 dark:border-gray-800"></div>
           <div class="mt-1 max-h-[min(70vh,22rem)] overflow-y-auto overscroll-contain -mx-0.5 px-0.5 space-y-0.5">
             <a
               href="/tools/expense-tracker"
@@ -229,6 +232,13 @@ const APP_LOGO_SRC = "/favicon.svg";
               <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/diff</span>
             </a>
             <a
+              href="/tools/playground"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.playgroundTitle">Playground</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/play</span>
+            </a>
+            <a
               href="/tools/json-format"
               class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
             >
@@ -257,6 +267,13 @@ const APP_LOGO_SRC = "/favicon.svg";
               <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/gitignore</span>
             </a>
             <a
+              href="/tools/cron"
+              class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
+            >
+              <span data-i18n="tools.cronTitle">Cron (crontab)</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">/cron</span>
+            </a>
+            <a
               href="/tools/qr-generator"
               class="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
             >
@@ -277,16 +294,7 @@ const APP_LOGO_SRC = "/favicon.svg";
       </div>
     </nav>
 
-    <div class="flex min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3 md:min-w-0">
-      <a
-        href="/admin"
-        data-admin-header-link
-        data-nav-active={isActive("/admin") ? "true" : "false"}
-        class="header-admin-link relative shrink-0 px-2 lg:px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
-      >
-        <span data-i18n="nav.admin">Admin</span>
-      </a>
-      <span class="hidden min-h-0 min-w-4 flex-1 basis-0 md:block" aria-hidden="true"></span>
+    <div class="flex min-w-0 shrink-0 items-center justify-end gap-2 sm:gap-3 md:min-w-0 md:justify-self-end">
       <div class="flex shrink-0 items-center gap-2 md:gap-2.5" data-header-icons>
         <button
           type="button"
@@ -407,38 +415,89 @@ const APP_LOGO_SRC = "/favicon.svg";
           </button>
           <div
             data-user-menu-panel
-            class="hidden absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/98 dark:bg-gray-950/98 backdrop-blur shadow-lg py-1.5"
+            class="hidden absolute right-0 top-full z-50 mt-2 w-[min(100vw-1.5rem,15.5rem)] rounded-2xl border border-gray-200/90 dark:border-gray-700/90 bg-white/98 dark:bg-gray-950/98 backdrop-blur-md shadow-xl shadow-gray-900/10 dark:shadow-black/40 py-1.5 ring-1 ring-black/5 dark:ring-white/10"
             role="menu"
             aria-label="Usuario"
             data-i18n="common.userMenuLabel"
             data-i18n-attr="aria-label"
           >
             <a
+              href="/admin"
+              role="menuitem"
+              data-user-menu-admin
+              data-nav-active={isActive("/admin") ? "true" : "false"}
+              class="header-user-menu-item mx-1.5 mt-0.5 hidden items-center gap-3 rounded-xl px-2.5 py-2.5 text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-100/90 dark:hover:bg-gray-800/80 no-underline transition-colors"
+            >
+              <span
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-100/90 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200"
+                aria-hidden="true"
+              >
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  <path d="m9 12 2 2 4-4"></path>
+                </svg>
+              </span>
+              <span class="min-w-0 truncate" data-i18n="nav.admin">Admin</span>
+            </a>
+            <div
+              data-user-menu-admin-divider
+              class="mx-2 my-1 hidden h-px bg-gray-200/90 dark:bg-gray-700/80"
+              aria-hidden="true"
+            >
+            </div>
+            <a
               href="/settings#prefs"
               role="menuitem"
               data-user-menu-settings
-              class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
-              data-i18n="nav.settings"
+              class="header-user-menu-item mx-1.5 flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-100/90 dark:hover:bg-gray-800/80 no-underline transition-colors"
             >
-              Ajustes
+              <span
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100/90 text-gray-600 dark:bg-gray-800/90 dark:text-gray-300"
+                aria-hidden="true"
+              >
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path
+                    d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
+                  ></path>
+                </svg>
+              </span>
+              <span class="min-w-0 truncate" data-i18n="nav.settings">Ajustes</span>
             </a>
             <a
               href="/contact"
               role="menuitem"
-              class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
-              data-i18n="nav.contact"
+              class="header-user-menu-item mx-1.5 flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-100/90 dark:hover:bg-gray-800/80 no-underline transition-colors"
             >
-              Contacto
+              <span
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100/90 text-gray-600 dark:bg-gray-800/90 dark:text-gray-300"
+                aria-hidden="true"
+              >
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                </svg>
+              </span>
+              <span class="min-w-0 truncate" data-i18n="nav.contact">Contacto</span>
             </a>
-            <div class="my-1 border-t border-gray-200/80 dark:border-gray-800" aria-hidden="true"></div>
+            <div class="mx-2 my-1.5 h-px bg-gray-200/90 dark:bg-gray-700/80" aria-hidden="true"></div>
             <button
               type="button"
               role="menuitem"
               data-user-menu-signout
-              class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30"
-              data-i18n="settings.auth.logout"
+              class="header-user-menu-item mx-1.5 mb-0.5 flex w-full max-w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left text-sm font-medium text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/35 transition-colors box-border"
             >
-              Cerrar sesión
+              <span
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-100/80 text-red-700 dark:bg-red-950/50 dark:text-red-300"
+                aria-hidden="true"
+              >
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" x2="9" y1="12" y2="12"></line>
+                </svg>
+              </span>
+              <span class="min-w-0 truncate" data-i18n="settings.auth.logout">Cerrar sesión</span>
             </button>
           </div>
         </div>

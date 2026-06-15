@@ -1,6 +1,14 @@
 import { applyFontToDocument, normalizeFontId } from "@config/font-catalog";
-import { CV_LINK_SLOT_COUNT, migrateCvLinksToSlots, slotsToPersistedLinks } from "@lib/cv-contact-html";
+import {
+  CV_LINK_SLOT_COUNT,
+  migrateCvLinksToSlots,
+  normalizeCvLinkSlotsArray,
+  slotsToPersistedLinks,
+} from "@lib/cv-contact-html";
+import { type CvSubmissionChecklistV1, normalizeCvSubmissionChecklist } from "@lib/cv-submission-checklist";
 import { isDefaultCvDocumentSectionOrder, normalizeCvDocumentSectionOrder } from "@lib/cv-document-section-order";
+import { normalizeCvStudioCanvasLayout, type CvStudioCanvasLayoutV1 } from "@lib/cv-studio-layout";
+import { normalizeFavoriteToolIds } from "@lib/tools-favorites";
 
 export type ThemeMode = "auto" | "light" | "dark";
 export type Density = "comfortable" | "compact";
@@ -79,6 +87,9 @@ export type CvEducationV1 = {
   location?: string;
   start?: string;
   end?: string;
+  /** Viñetas (una línea por punto); si está vacío, se usan las líneas de `details` como antes. */
+  bullets?: string;
+  /** Texto libre; si hay `bullets`, se muestra como párrafo bajo las viñetas. */
   details?: string;
 };
 
@@ -94,6 +105,29 @@ export type CvLanguageV1 = {
   level?: string;
 };
 
+export type CvPublicationV1 = {
+  title?: string;
+  venue?: string;
+  year?: string;
+  url?: string;
+};
+
+export type CvAwardV1 = {
+  title?: string;
+  issuer?: string;
+  year?: string;
+  url?: string;
+  detail?: string;
+};
+
+export type CvVolunteeringV1 = {
+  organization?: string;
+  role?: string;
+  start?: string;
+  end?: string;
+  bullets?: string;
+};
+
 /** Qué bloques del CV se muestran en vista previa / impresión (por defecto todo visible). */
 export type CvSectionVisibilityV1 = {
   /** Resumen / bio del bloque superior del documento. */
@@ -102,8 +136,16 @@ export type CvSectionVisibilityV1 = {
   projects?: boolean;
   experience?: boolean;
   education?: boolean;
+  /** Bootcamps, MOOCs, certificaciones largas sin mezclar con título formal. */
+  complementaryEducation?: boolean;
   certifications?: boolean;
   languages?: boolean;
+  /** Tecnologías / herramientas (SkillAtlas). */
+  technologies?: boolean;
+  publications?: boolean;
+  awards?: boolean;
+  volunteering?: boolean;
+  interests?: boolean;
   coverLetters?: boolean;
 };
 
@@ -120,6 +162,28 @@ export type CvTemplateIdV1 =
   | "atlas"
   | "contrast"
   | "focus";
+
+/** Origen de la lista de tecnologías en el bloque dedicado del CV. */
+export type CvTechnologiesModeV1 = "manual" | "fromCvProjects" | "helpStack" | "roleGroups";
+
+/** Subbloque de tecnologías con título libre (p. ej. rol: Data Engineer → PySpark…). */
+export type CvTechnologyRoleGroupV1 = {
+  id: string;
+  title: string;
+  /** IDs de filas `technologies` (Supabase). */
+  technologyIds: string[];
+};
+
+/** Máximo de subbloques «por rol» en un CV. */
+export const CV_TECH_ROLE_GROUPS_MAX = 12;
+
+/** Máximo de IDs por subbloque (guardado). */
+export const CV_TECH_ROLE_GROUP_IDS_MAX = 60;
+
+export const CV_TECH_ROLE_GROUP_TITLE_MAX = 80;
+
+/** Presentación del bloque tecnologías en el documento. */
+export type CvTechnologiesLayoutV1 = "chips" | "list";
 
 export type CvDateDisplayModeV1 = "full" | "year";
 
@@ -144,6 +208,12 @@ export type CvJobOfferV1 = {
 export const CV_JOB_OFFERS_MAX = 40;
 
 export type CvProfileV1 = {
+  /** Puesto objetivo al que aplicas (p. ej. para tailoring / ATS). */
+  cvTargetRole?: string;
+  /** Modalidad o disponibilidad laboral (texto libre: remoto, híbrido, relocación…). */
+  cvWorkArrangement?: string;
+  /** Autorización de trabajo / visado / derecho a trabajar (una línea). */
+  cvWorkAuthorization?: string;
   headline?: string;
   location?: string;
   email?: string;
@@ -158,14 +228,21 @@ export type CvProfileV1 = {
   showHelpStack?: boolean;
   /** Texto libre (líneas) para experiencia/logros. */
   highlights?: string;
+  /** Texto libre (líneas); se imprime como bullets, distinto de logros profesionales. */
+  cvInterests?: string;
   /** Mostrar foto (avatar de portfolio_profiles.avatar_url) en el CV. */
   showPhoto?: boolean;
   /** Fuente de la foto cuando hay varias opciones. */
   photoSource?: "uploaded" | "linkedin" | "provider";
   experiences?: CvExperienceV1[];
   education?: CvEducationV1[];
+  /** Formación complementaria (bootcamps, MOOCs, cursos) separada de `education`. */
+  complementaryEducation?: CvEducationV1[];
   certifications?: CvCertificationV1[];
   languages?: CvLanguageV1[];
+  publications?: CvPublicationV1[];
+  awards?: CvAwardV1[];
+  volunteering?: CvVolunteeringV1[];
   /**
    * URLs fijas por hueco (LinkedIn, GitHub, portfolio, X/Twitter, web).
    * Evita que al filtrar `links` se desalineen etiqueta y URL.
@@ -182,6 +259,11 @@ export type CvProfileV1 = {
   cvPrintMaxPages?: number;
   /** Proyecto resaltado en el CV (slug); el resto se muestra en lista compacta. */
   cvFeaturedProjectSlug?: string;
+  /**
+   * En vista previa / impresión: banda de dos columnas con «Tecnologías» y el proyecto destacado
+   * (HTML semántico; pensado para ahorrar altura sin sustituir un editor tipo Canva).
+   */
+  cvPrintTechFeaturedBand?: boolean;
   /** Fechas en experiencia: texto completo o solo año aproximado. */
   cvDateDisplayExperience?: CvDateDisplayModeV1;
   /** Fechas en educación. */
@@ -195,6 +277,21 @@ export type CvProfileV1 = {
   cvShowContactLocation?: boolean;
   /** Cartas de presentación (texto libre; no van al RPC público salvo que dupliques en bio). */
   coverLetters?: CvCoverLetterV1[];
+  /**
+   * Modo del bloque «Tecnologías»: catálogo manual, unión desde proyectos del CV, o etiquetas del stack de ayuda.
+   * Por defecto `fromCvProjects` en hidratación del cliente.
+   */
+  cvTechnologiesMode?: CvTechnologiesModeV1;
+  /** IDs de filas `technologies` (Supabase) cuando `cvTechnologiesMode === "manual"`. */
+  cvTechnologyIds?: string[];
+  /** Bloques con título libre cuando `cvTechnologiesMode === "roleGroups"`. */
+  cvTechnologyRoleGroups?: CvTechnologyRoleGroupV1[];
+  /** Chips (por defecto) o lista con viñetas en el PDF. */
+  cvTechnologiesLayout?: CvTechnologiesLayoutV1;
+  /** Mostrar «Idioma — nivel» en el documento; si false, solo el nombre del idioma. */
+  cvShowLanguageLevel?: boolean;
+  /** Layout tipo lienzo en estudio (anchuras de bloque, notas adhesivas); ver `@lib/cv-studio-layout`. */
+  cvStudioCanvasLayout?: CvStudioCanvasLayoutV1;
 };
 
 /** Máximo de CV guardados por usuario (prefs + sync remoto). */
@@ -210,6 +307,8 @@ export type CvDocumentSlotV1 = {
   cvProfile: CvProfileV1;
   cvProjectSlugs?: string[];
   cvProjectDisplayOrder?: string[];
+  /** Recordatorio por envío (plantilla): qué bloques revisar; no fuerza visibilidad. */
+  submissionChecklist?: CvSubmissionChecklistV1;
 };
 
 export type AppPrefsV1 = {
@@ -271,6 +370,8 @@ export type AppPrefsV1 = {
   showFabCvTips?: boolean;
   /** Estilo de marcado en la herramienta de hábitos. */
   habitsMarkStyle?: HabitsMarkStyle;
+  /** Ids del hub `/tools` marcados como favoritos (orden conservado en UI). */
+  favoriteToolIds?: string[];
   /** Recorrido guiado (spotlight): progreso y completados. */
   onboardingV2?: { done?: boolean; step?: number; completedIds?: string[]; dismissed?: boolean };
 };
@@ -381,11 +482,14 @@ function normalizeCvProjectDisplayOrder(raw: unknown): string[] | undefined {
   return out.length > 0 ? out : undefined;
 }
 
-const CV_LINK_CANON_LABELS = ["LinkedIn", "GitHub", "Portfolio", "X / Twitter", "Web"];
+const CV_LINK_CANON_LABELS = ["LinkedIn", "GitHub", "Portfolio", "X / Twitter", "Web", "ORCID", "Google Scholar"];
 
 function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
   if (!raw || typeof raw !== "object") return undefined;
   const r = raw as any;
+  const cvTargetRole = typeof r.cvTargetRole === "string" ? r.cvTargetRole.trim().slice(0, 120) : "";
+  const cvWorkArrangement = typeof r.cvWorkArrangement === "string" ? r.cvWorkArrangement.trim().slice(0, 160) : "";
+  const cvWorkAuthorization = typeof r.cvWorkAuthorization === "string" ? r.cvWorkAuthorization.trim().slice(0, 160) : "";
   const headline = typeof r.headline === "string" ? r.headline.trim() : "";
   const location = typeof r.location === "string" ? r.location.trim() : "";
   const email = typeof r.email === "string" ? r.email.trim() : "";
@@ -393,6 +497,7 @@ function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
   const phoneLandline = typeof r.phoneLandline === "string" ? r.phoneLandline.trim() : "";
   const summary = typeof r.summary === "string" ? r.summary.trim() : "";
   const highlights = typeof r.highlights === "string" ? r.highlights.trim() : "";
+  const cvInterestsRaw = typeof r.cvInterests === "string" ? r.cvInterests.trim().slice(0, 6000) : "";
   const showHelpStack = typeof r.showHelpStack === "boolean" ? r.showHelpStack : undefined;
   const showPhoto = typeof r.showPhoto === "boolean" ? r.showPhoto : undefined;
   const photoSource =
@@ -411,17 +516,17 @@ function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
     })
     .filter((x): x is CvLink => Boolean(x));
 
-  let cvLinkSlots: string[] = Array.from({ length: CV_LINK_SLOT_COUNT }, () => "");
-  const rawSlots = Array.isArray(r.cvLinkSlots) ? r.cvLinkSlots : null;
-  if (rawSlots && rawSlots.length === CV_LINK_SLOT_COUNT) {
-    cvLinkSlots = rawSlots.map((x: unknown) => (typeof x === "string" ? x.trim() : ""));
-  } else {
-    cvLinkSlots = migrateCvLinksToSlots(legacyPairs);
-  }
+  let cvLinkSlots =
+    Array.isArray(r.cvLinkSlots) && r.cvLinkSlots.length > 0
+      ? normalizeCvLinkSlotsArray(r.cvLinkSlots)
+      : migrateCvLinksToSlots(legacyPairs);
 
   const links = slotsToPersistedLinks(cvLinkSlots, CV_LINK_CANON_LABELS);
 
   const out: CvProfileV1 = {};
+  if (cvTargetRole) out.cvTargetRole = cvTargetRole;
+  if (cvWorkArrangement) out.cvWorkArrangement = cvWorkArrangement;
+  if (cvWorkAuthorization) out.cvWorkAuthorization = cvWorkAuthorization;
   if (headline) out.headline = headline;
   if (location) out.location = location;
   if (email) out.email = email;
@@ -429,10 +534,11 @@ function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
   if (phoneLandline) out.phoneLandline = phoneLandline;
   if (summary) out.summary = summary;
   if (highlights) out.highlights = highlights;
+  if (cvInterestsRaw) out.cvInterests = cvInterestsRaw;
   if (showHelpStack !== undefined) out.showHelpStack = showHelpStack;
   if (showPhoto !== undefined) out.showPhoto = showPhoto;
   if (photoSource !== undefined) out.photoSource = photoSource;
-  if (links.length > 0) out.links = links.slice(0, 6);
+  if (links.length > 0) out.links = links.slice(0, CV_LINK_SLOT_COUNT + 2);
   if (cvLinkSlots.some((s) => s.length > 0)) out.cvLinkSlots = cvLinkSlots;
 
   const disp = r.socialLinkDisplay;
@@ -462,8 +568,14 @@ function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
       "projects",
       "experience",
       "education",
+      "complementaryEducation",
       "certifications",
       "languages",
+      "technologies",
+      "publications",
+      "awards",
+      "volunteering",
+      "interests",
       "coverLetters",
     ] as const) {
       if (typeof v[k] === "boolean") (vis as any)[k] = v[k];
@@ -523,12 +635,31 @@ function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
       const location = typeof rx.location === "string" ? rx.location.trim() : "";
       const start = typeof rx.start === "string" ? rx.start.trim() : "";
       const end = typeof rx.end === "string" ? rx.end.trim() : "";
+      const bullets = typeof rx.bullets === "string" ? rx.bullets.trim() : "";
       const details = typeof rx.details === "string" ? rx.details.trim() : "";
-      if (!school && !degree && !details) return null;
-      return { school, degree, location, start, end, details } as CvEducationV1;
+      if (!school && !degree && !details && !bullets) return null;
+      return { school, degree, location, start, end, ...(bullets ? { bullets } : {}), ...(details ? { details } : {}) } as CvEducationV1;
     })
     .filter(Boolean) as CvEducationV1[];
   if (education.length > 0) out.education = education.slice(0, 12);
+
+  const complEduRaw = Array.isArray(r.complementaryEducation) ? r.complementaryEducation : [];
+  const complementaryEducation = complEduRaw
+    .map((x) => {
+      if (!x || typeof x !== "object") return null;
+      const rx = x as any;
+      const school = typeof rx.school === "string" ? rx.school.trim() : "";
+      const degree = typeof rx.degree === "string" ? rx.degree.trim() : "";
+      const location = typeof rx.location === "string" ? rx.location.trim() : "";
+      const start = typeof rx.start === "string" ? rx.start.trim() : "";
+      const end = typeof rx.end === "string" ? rx.end.trim() : "";
+      const bullets = typeof rx.bullets === "string" ? rx.bullets.trim() : "";
+      const details = typeof rx.details === "string" ? rx.details.trim() : "";
+      if (!school && !degree && !details && !bullets) return null;
+      return { school, degree, location, start, end, ...(bullets ? { bullets } : {}), ...(details ? { details } : {}) } as CvEducationV1;
+    })
+    .filter(Boolean) as CvEducationV1[];
+  if (complementaryEducation.length > 0) out.complementaryEducation = complementaryEducation.slice(0, 12);
 
   const certRaw = Array.isArray(r.certifications) ? r.certifications : [];
   const certifications = certRaw
@@ -558,6 +689,53 @@ function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
     .filter(Boolean) as CvLanguageV1[];
   if (languages.length > 0) out.languages = languages.slice(0, 16);
 
+  const pubRaw = Array.isArray(r.publications) ? r.publications : [];
+  const publications = pubRaw
+    .map((x) => {
+      if (!x || typeof x !== "object") return null;
+      const rx = x as any;
+      const title = typeof rx.title === "string" ? rx.title.trim() : "";
+      const venue = typeof rx.venue === "string" ? rx.venue.trim() : "";
+      const year = typeof rx.year === "string" ? rx.year.trim() : "";
+      const url = typeof rx.url === "string" ? rx.url.trim() : "";
+      if (!title && !venue && !year && !url) return null;
+      return { title, venue, year, url } as CvPublicationV1;
+    })
+    .filter(Boolean) as CvPublicationV1[];
+  if (publications.length > 0) out.publications = publications.slice(0, 20);
+
+  const awardRaw = Array.isArray(r.awards) ? r.awards : [];
+  const awards = awardRaw
+    .map((x) => {
+      if (!x || typeof x !== "object") return null;
+      const rx = x as any;
+      const title = typeof rx.title === "string" ? rx.title.trim() : "";
+      const issuer = typeof rx.issuer === "string" ? rx.issuer.trim() : "";
+      const year = typeof rx.year === "string" ? rx.year.trim() : "";
+      const url = typeof rx.url === "string" ? rx.url.trim() : "";
+      const detail = typeof rx.detail === "string" ? rx.detail.trim().slice(0, 500) : "";
+      if (!title && !issuer && !year && !url && !detail) return null;
+      return { title, issuer, year, url, detail } as CvAwardV1;
+    })
+    .filter(Boolean) as CvAwardV1[];
+  if (awards.length > 0) out.awards = awards.slice(0, 20);
+
+  const volRaw = Array.isArray(r.volunteering) ? r.volunteering : [];
+  const volunteering = volRaw
+    .map((x) => {
+      if (!x || typeof x !== "object") return null;
+      const rx = x as any;
+      const organization = typeof rx.organization === "string" ? rx.organization.trim() : "";
+      const role = typeof rx.role === "string" ? rx.role.trim() : "";
+      const start = typeof rx.start === "string" ? rx.start.trim() : "";
+      const end = typeof rx.end === "string" ? rx.end.trim() : "";
+      const bullets = typeof rx.bullets === "string" ? rx.bullets.trim() : "";
+      if (!organization && !role && !bullets) return null;
+      return { organization, role, start, end, bullets } as CvVolunteeringV1;
+    })
+    .filter(Boolean) as CvVolunteeringV1[];
+  if (volunteering.length > 0) out.volunteering = volunteering.slice(0, 12);
+
   const docOrder = normalizeCvDocumentSectionOrder(r.cvDocumentSectionOrder);
   if (!isDefaultCvDocumentSectionOrder(docOrder)) out.cvDocumentSectionOrder = docOrder;
 
@@ -569,6 +747,47 @@ function normalizeCvProfile(raw: unknown): CvProfileV1 | undefined {
 
   const feat = typeof r.cvFeaturedProjectSlug === "string" ? r.cvFeaturedProjectSlug.trim() : "";
   if (feat) out.cvFeaturedProjectSlug = feat;
+
+  if (typeof r.cvPrintTechFeaturedBand === "boolean") out.cvPrintTechFeaturedBand = r.cvPrintTechFeaturedBand;
+
+  const tm = r.cvTechnologiesMode;
+  if (tm === "manual" || tm === "fromCvProjects" || tm === "helpStack" || tm === "roleGroups") out.cvTechnologiesMode = tm;
+
+  const techIdsRaw = Array.isArray(r.cvTechnologyIds) ? r.cvTechnologyIds : [];
+  const cvTechnologyIds = techIdsRaw
+    .filter((x): x is string => typeof x === "string")
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .slice(0, 80);
+  if (cvTechnologyIds.length > 0) out.cvTechnologyIds = cvTechnologyIds;
+
+  const rgRaw = Array.isArray(r.cvTechnologyRoleGroups) ? r.cvTechnologyRoleGroups : [];
+  const cvTechnologyRoleGroups: CvTechnologyRoleGroupV1[] = [];
+  for (const row of rgRaw) {
+    if (!row || typeof row !== "object") continue;
+    const rr = row as Record<string, unknown>;
+    const id = typeof rr.id === "string" ? rr.id.trim().slice(0, 80) : "";
+    if (!id) continue;
+    const title =
+      typeof rr.title === "string" ? rr.title.trim().slice(0, CV_TECH_ROLE_GROUP_TITLE_MAX) : "";
+    const tidsRaw = Array.isArray(rr.technologyIds) ? rr.technologyIds : [];
+    const technologyIds = tidsRaw
+      .filter((x): x is string => typeof x === "string")
+      .map((x) => x.trim())
+      .filter(Boolean)
+      .slice(0, CV_TECH_ROLE_GROUP_IDS_MAX);
+    cvTechnologyRoleGroups.push({ id, title, technologyIds });
+    if (cvTechnologyRoleGroups.length >= CV_TECH_ROLE_GROUPS_MAX) break;
+  }
+  if (cvTechnologyRoleGroups.length > 0) out.cvTechnologyRoleGroups = cvTechnologyRoleGroups;
+
+  const tl = r.cvTechnologiesLayout;
+  if (tl === "chips" || tl === "list") out.cvTechnologiesLayout = tl;
+
+  if (typeof r.cvShowLanguageLevel === "boolean") out.cvShowLanguageLevel = r.cvShowLanguageLevel;
+
+  const cvStudioCanvasLayout = normalizeCvStudioCanvasLayout(r.cvStudioCanvasLayout);
+  if (cvStudioCanvasLayout) out.cvStudioCanvasLayout = cvStudioCanvasLayout;
 
   return out;
 }
@@ -602,6 +821,7 @@ function normalizeCvDocumentSlot(raw: unknown, fallbackProfile: CvProfileV1): Cv
   let name = typeof r.name === "string" ? r.name.trim().slice(0, 80) : "";
   if (!name) name = "CV";
   const prof = normalizeCvProfile(r.cvProfile) ?? fallbackProfile;
+  const submissionChecklist = normalizeCvSubmissionChecklist(r.submissionChecklist);
   return {
     id,
     name,
@@ -610,6 +830,7 @@ function normalizeCvDocumentSlot(raw: unknown, fallbackProfile: CvProfileV1): Cv
     cvProfile: prof,
     cvProjectSlugs: normalizeCvProjectSlugs(r.cvProjectSlugs),
     cvProjectDisplayOrder: normalizeCvProjectDisplayOrder(r.cvProjectDisplayOrder),
+    ...(submissionChecklist ? { submissionChecklist } : {}),
   };
 }
 
@@ -753,6 +974,7 @@ export function loadPrefs(): AppPrefsV1 {
         ? Boolean((base as any).showFabCvTips)
         : DEFAULT_PREFS.showFabCvTips,
     habitsMarkStyle: normalizeHabitsMarkStyle((base as any).habitsMarkStyle ?? DEFAULT_PREFS.habitsMarkStyle),
+    favoriteToolIds: normalizeFavoriteToolIds((base as any).favoriteToolIds),
     onboardingV2: (() => {
       const raw = (base as any)?.onboardingV2;
       if (!raw || typeof raw !== "object") return { ...DEFAULT_PREFS.onboardingV2 };
@@ -897,6 +1119,7 @@ export function mergeRemoteUserPrefs(remote: unknown): void {
   merged.headerUserMenuPopover = local.headerUserMenuPopover;
   // Prefer local for high-churn UI prefs to avoid race conditions on first hydrate.
   merged.habitsMarkStyle = local.habitsMarkStyle;
+  merged.favoriteToolIds = local.favoriteToolIds;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
   const next = loadPrefs();
   applyPrefs(next);

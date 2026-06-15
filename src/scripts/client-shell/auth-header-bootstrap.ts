@@ -1,10 +1,21 @@
 import i18next from "i18next";
+import { normalizeFavoriteToolIds, toolHubHref, toolHubTitleKey } from "@lib/tools-favorites";
 import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 import { isSkillAtlasAdmin } from "@scripts/core/admin-role";
 import { showToast } from "@scripts/core/ui-feedback";
 import { loadPrefs, type HeaderPopoverTrigger } from "@scripts/core/prefs";
 import { updateLandingCtas } from "@scripts/client-shell/landing-ctas";
+import { syncHeaderNavActive } from "@scripts/client-shell/header-nav";
 import { oauthPictureFromUser } from "@scripts/core/oauth-avatar";
+
+function tt(key: string, fallback: string): string {
+  const v = i18next.t(key);
+  return typeof v === "string" && v.length > 0 && v !== key ? v : fallback;
+}
+
+function escHtml(s: string) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
 
 export async function initAuthHeader() {
   const userMenuWrap = document.querySelector<HTMLElement>("[data-header-user-menu]");
@@ -14,7 +25,8 @@ export async function initAuthHeader() {
   const avatarImg = document.querySelector<HTMLImageElement>("[data-auth-avatar]");
   const avatarInitial = document.querySelector<HTMLElement>("[data-user-menu-initial]");
   const publicFooterPricing = document.querySelector<HTMLAnchorElement>("[data-public-footer-pricing]");
-  const adminHeaderLink = document.querySelector<HTMLAnchorElement>("[data-admin-header-link]");
+  const adminMenuLink = document.querySelector<HTMLAnchorElement>("[data-user-menu-admin]");
+  const adminMenuDivider = document.querySelector<HTMLElement>("[data-user-menu-admin-divider]");
   const authNavLinks = document.querySelectorAll<HTMLElement>("[data-auth-nav]");
   const footerAuthNavLinks = document.querySelectorAll<HTMLElement>("[data-auth-footer-nav]");
   const homeLink = document.querySelector<HTMLAnchorElement>("[data-home-link]");
@@ -22,7 +34,6 @@ export async function initAuthHeader() {
   const homePopover = document.querySelector<HTMLElement>("[data-home-popover]");
   if (
     !userMenuWrap &&
-    !adminHeaderLink &&
     authNavLinks.length === 0 &&
     footerAuthNavLinks.length === 0 &&
     !homeLink
@@ -216,6 +227,30 @@ export async function initAuthHeader() {
     });
   }
 
+  const renderToolsPopoverFavorites = () => {
+    const slot = document.querySelector<HTMLElement>("[data-tools-favorites-slot]");
+    if (!slot) return;
+    const fav = normalizeFavoriteToolIds(loadPrefs().favoriteToolIds) ?? [];
+    if (fav.length === 0) {
+      slot.innerHTML = "";
+      slot.classList.add("hidden");
+      return;
+    }
+    slot.classList.remove("hidden");
+    const kicker = escHtml(tt("tools.popoverFavoritesKicker", "Favoritas"));
+    const chips = fav
+      .map((id) => {
+        const href = toolHubHref(id);
+        const key = toolHubTitleKey(id);
+        const label = key ? tt(key, id) : id;
+        return `<a href="${escHtml(href)}" class="mt-1 flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-indigo-900 dark:text-indigo-100 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 no-underline">${escHtml(label)}<span class="text-xs text-indigo-600/80 dark:text-indigo-300/80 shrink-0">★</span></a>`;
+      })
+      .join("");
+    slot.innerHTML = `<p class="m-0 px-2 pt-1 text-[11px] font-semibold uppercase tracking-wide text-indigo-700/90 dark:text-indigo-300/90">${kicker}</p>${chips}`;
+  };
+  renderToolsPopoverFavorites();
+  window.addEventListener("skillatlas:prefs-updated", renderToolsPopoverFavorites);
+
   if (!(window as unknown as { __skillatlasHomeOutsideDoc?: boolean }).__skillatlasHomeOutsideDoc) {
     (window as unknown as { __skillatlasHomeOutsideDoc?: boolean }).__skillatlasHomeOutsideDoc = true;
     document.addEventListener("click", (e) => {
@@ -291,9 +326,12 @@ export async function initAuthHeader() {
       publicFooterPricing.classList.toggle("hidden", !isAuthed);
     }
 
-    if (adminHeaderLink) {
-      adminHeaderLink.classList.add("hidden");
-      adminHeaderLink.classList.remove("inline-flex");
+    if (adminMenuLink) {
+      adminMenuLink.classList.add("hidden");
+      adminMenuLink.classList.remove("flex");
+    }
+    if (adminMenuDivider) {
+      adminMenuDivider.classList.add("hidden");
     }
     footerAuthNavLinks.forEach((el) => {
       el.classList.toggle("hidden", !isAuthed);
@@ -340,13 +378,17 @@ export async function initAuthHeader() {
     setVisibility(Boolean(user));
     updateLandingCtas(Boolean(user));
 
-    if (adminHeaderLink && supabase && user) {
+    if (adminMenuLink && supabase && user) {
       const ok = await isSkillAtlasAdmin(supabase, user.id);
-      adminHeaderLink.classList.toggle("hidden", !ok);
-      adminHeaderLink.classList.toggle("inline-flex", ok);
-    } else if (adminHeaderLink) {
-      adminHeaderLink.classList.add("hidden");
-      adminHeaderLink.classList.remove("inline-flex");
+      adminMenuLink.classList.toggle("hidden", !ok);
+      adminMenuLink.classList.toggle("flex", ok);
+      if (adminMenuDivider) {
+        adminMenuDivider.classList.toggle("hidden", !ok);
+      }
+    } else if (adminMenuLink) {
+      adminMenuLink.classList.add("hidden");
+      adminMenuLink.classList.remove("flex");
+      adminMenuDivider?.classList.add("hidden");
     }
     const oauthAvatar = oauthPictureFromUser(user);
 
@@ -374,6 +416,7 @@ export async function initAuthHeader() {
 
     const email = typeof user?.email === "string" ? user.email : null;
     setAvatar(portfolioAvatar ?? oauthAvatar, email);
+    syncHeaderNavActive();
   };
 
   window.skillatlas = window.skillatlas ?? {};

@@ -17,6 +17,8 @@ export interface Props {
   description?: string;
   ogImage?: string;
   noindex?: boolean;
+  /** Sin cabecera, pie, FAB ni paleta (p. ej. CV incrustado en /cv/studio). */
+  minimalChrome?: boolean;
 }
 
 const {
@@ -24,6 +26,7 @@ const {
   description = SITE_DEFAULT_DESCRIPTION,
   ogImage,
   noindex = false,
+  minimalChrome = false,
 } = Astro.props;
 
 const documentTitle = title.includes(SITE_NAME) ? title : `${title} · ${SITE_NAME}`;
@@ -31,7 +34,7 @@ const pathname = Astro.url.pathname;
 const pathNorm = pathname.replace(/\/$/, "") || "/";
 /** En estas rutas se muestra la app completa también en móvil (formularios). */
 const mobileFullSitePaths = new Set(["/login", "/request-access"]);
-const showMobileLandingGate = !mobileFullSitePaths.has(pathNorm);
+const showMobileLandingGate = !minimalChrome && !mobileFullSitePaths.has(pathNorm);
 ---
 
 <!doctype html>
@@ -59,21 +62,31 @@ const showMobileLandingGate = !mobileFullSitePaths.has(pathNorm);
     {showMobileLandingGate && <MobileLandingScreen />}
 
     <div
-      class:list={[showMobileLandingGate ? "hidden md:flex" : "flex", "flex-col flex-1 w-full min-h-svh"]}
+      class:list={[
+        minimalChrome ? "flex" : showMobileLandingGate ? "hidden md:flex" : "flex",
+        "flex-col flex-1 w-full min-h-svh",
+      ]}
       data-app-desktop-chrome
     >
-      <AppHeader pathname={pathname} />
+      {!minimalChrome && <AppHeader pathname={pathname} />}
 
       <main
-        class="app-main-shell max-w-screen-2xl mx-auto flex-1 w-full"
+        class:list={[
+          "flex-1 w-full",
+          minimalChrome ? "app-main-shell app-main-shell--embed max-w-none mx-0" : "app-main-shell max-w-screen-2xl mx-auto",
+        ]}
         data-app-main
       >
         <slot />
       </main>
 
-      <AppFooter />
-      <AppCommandPalette />
-      <AppFabShell />
+      {!minimalChrome && (
+        <>
+          <AppFooter />
+          <AppCommandPalette />
+          <AppFabShell />
+        </>
+      )}
     </div>
 
     <script src="../scripts/client.ts"></script>

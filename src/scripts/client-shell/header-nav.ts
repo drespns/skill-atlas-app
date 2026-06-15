@@ -6,7 +6,7 @@ export function syncHeaderNavActive() {
     const active = href === "/" ? raw === "/" : raw === href || raw.startsWith(`${href}/`);
     a.dataset.navActive = active ? "true" : "false";
   });
-  document.querySelectorAll<HTMLAnchorElement>("[data-admin-header-link]").forEach((a) => {
+  document.querySelectorAll<HTMLAnchorElement>("[data-user-menu-admin]").forEach((a) => {
     const href = (a.getAttribute("href") ?? "").replace(/\/$/, "") || "/";
     const active = raw === href || raw.startsWith(`${href}/`);
     a.dataset.navActive = active ? "true" : "false";
