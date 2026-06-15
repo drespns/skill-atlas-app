@@ -6,12 +6,15 @@ import { getSupabaseBrowserClient } from "@scripts/core/client-supabase";
 import {
   buildCvSocialChipsHtml,
   migrateCvLinksToSlots,
+  normalizeCvLinkSlotsArray,
   type CvSocialLinkDisplay,
 } from "@lib/cv-contact-html";
 import { clampCvPrintMaxPages, cvPrintTypographicScale } from "@lib/cv-print-scale";
+import { countFilledCvDocumentSections } from "@lib/cv-section-fill";
 import { applyCvDocumentSectionOrder } from "@lib/cv-document-section-order";
 import { formatCvDateRange } from "@lib/cv-display-format";
 import { CV_TEMPLATE_BODY_CLASSES, normalizeCvTemplateId } from "@lib/cv-templates";
+import { educationBulletLines, educationProseDetails, linesToBullets } from "@lib/cv-bullets";
 
 function tt(key: string, fallback: string): string {
   const v = i18next.t(key);
@@ -47,14 +50,6 @@ function cvTelHref(raw: string): string {
   if (d.startsWith("00")) return `tel:+${d.slice(2)}`;
   if (d.startsWith("+")) return `tel:${d}`;
   return `tel:${d}`;
-}
-
-function linesToBullets(raw: string): string[] {
-  return (raw ?? "")
-    .split(/\r?\n/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((s) => s.replace(/^-+\s*/, ""));
 }
 
 function initPrintThemeLock() {
@@ -118,6 +113,16 @@ type RpcCvProfile = {
     location?: string;
     start?: string;
     end?: string;
+    bullets?: string;
+    details?: string;
+  }[];
+  complementaryEducation?: {
+    school?: string;
+    degree?: string;
+    location?: string;
+    start?: string;
+    end?: string;
+    bullets?: string;
     details?: string;
   }[];
   certifications?: { name?: string; issuer?: string; year?: string; url?: string }[];
@@ -162,6 +167,10 @@ async function run() {
   const docExperience = document.querySelector<HTMLElement>("[data-public-cv-doc-experience]");
   const docEducationSection = document.querySelector<HTMLElement>("[data-public-cv-doc-education-section]");
   const docEducation = document.querySelector<HTMLElement>("[data-public-cv-doc-education]");
+  const docComplEducationSection = document.querySelector<HTMLElement>(
+    "[data-public-cv-doc-complementary-education-section]",
+  );
+  const docComplEducation = document.querySelector<HTMLElement>("[data-public-cv-doc-complementary-education]");
   const docCertSection = document.querySelector<HTMLElement>("[data-public-cv-doc-certifications-section]");
   const docCert = document.querySelector<HTMLElement>("[data-public-cv-doc-certifications]");
   const docLangSection = document.querySelector<HTMLElement>("[data-public-cv-doc-languages-section]");
@@ -226,10 +235,12 @@ async function run() {
     tt("cv.linkLabel3", "Portfolio"),
     tt("cv.linkLabel4", "X / Twitter"),
     tt("cv.linkLabel5", "Web / other"),
+    tt("cv.linkLabel6", "ORCID"),
+    tt("cv.linkLabel7", "Google Scholar"),
   ];
   const getCvLinkSlots = (): string[] => {
-    if (Array.isArray(cvProfile.cvLinkSlots) && cvProfile.cvLinkSlots.length === 5) {
-      return cvProfile.cvLinkSlots.map((x) => (typeof x === "string" ? x : ""));
+    if (Array.isArray(cvProfile.cvLinkSlots) && cvProfile.cvLinkSlots.length > 0) {
+      return normalizeCvLinkSlotsArray(cvProfile.cvLinkSlots);
     }
     return migrateCvLinksToSlots(cvProfile.links);
   };
@@ -288,8 +299,8 @@ async function run() {
           .map((k) => {
             const it = getHelpStackItem(k);
             if (!it) return "";
-            return `<span class="inline-flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 px-3 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200">
-              <img src="${esc(it.icon)}" alt="" class="h-4 w-4" loading="lazy" decoding="async" />
+            return `<span class="inline-flex items-center gap-1 rounded-md border border-gray-200/70 dark:border-gray-800/80 bg-gray-50/80 dark:bg-gray-900/50 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:text-gray-400 print:text-[9px]">
+              <img src="${esc(it.icon)}" alt="" class="h-3 w-3 opacity-80" loading="lazy" decoding="async" />
               ${esc(it.label)}
             </span>`;
           })
@@ -427,7 +438,7 @@ async function run() {
             if (expShowLoc && loc) subParts.push(loc);
             const subLine = subParts.filter(Boolean).join(" · ");
             return `<section class="cv-doc-project">
-              <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <div class="cv-doc-entry-head cv-doc-entry-head--row flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                 <div class="min-w-0">
                   <p class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100">${esc(role || company || tt("cv.untitled", "—"))}</p>
                   <p class="m-0 text-sm text-gray-600 dark:text-gray-400">${esc(subLine)}</p>
@@ -458,18 +469,58 @@ async function run() {
             const start = (x.start ?? "").trim();
             const end = (x.end ?? "").trim();
             const when = formatCvDateRange(start, end, eduDateMode);
-            const details = linesToBullets(x.details ?? "");
+            const listItems = educationBulletLines(x);
+            const prose = educationProseDetails(x);
             const detailsHtml =
-              eduShowDetails && details.length > 0
-                ? `<ul class="mt-2 space-y-1 pl-5 text-sm text-gray-700 dark:text-gray-300">${details
-                    .map((b) => `<li>${esc(b)}</li>`)
-                    .join("")}</ul>`
+              eduShowDetails && (listItems.length > 0 || prose)
+                ? `${listItems.length > 0 ? `<ul class="mt-2 space-y-1 pl-5 text-sm text-gray-700 dark:text-gray-300">${listItems.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>` : ""}${prose ? `<p class="mt-2 whitespace-pre-line text-sm text-gray-700 dark:text-gray-300">${esc(prose)}</p>` : ""}`
                 : "";
             const subParts = [school];
             if (eduShowLoc && loc) subParts.push(loc);
             const subLine = subParts.filter(Boolean).join(" · ");
             return `<section class="cv-doc-project">
-              <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <div class="cv-doc-entry-head cv-doc-entry-head--row flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <div class="min-w-0">
+                  <p class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100">${esc(degree || school || tt("cv.untitled", "—"))}</p>
+                  <p class="m-0 text-sm text-gray-600 dark:text-gray-400">${esc(subLine)}</p>
+                </div>
+                <p class="m-0 text-xs font-semibold text-gray-500 dark:text-gray-400">${esc(when)}</p>
+              </div>
+              ${detailsHtml}
+            </section>`;
+          })
+          .join("")
+      : "";
+  }
+
+  // Complementary education
+  if (docComplEducationSection && docComplEducation) {
+    const edu = Array.isArray(cvProfile.complementaryEducation) ? cvProfile.complementaryEducation : [];
+    const show = edu.length > 0 && showBlock("complementaryEducation");
+    docComplEducationSection.classList.toggle("hidden", !show);
+    const eduDateMode = cvProfile.cvDateDisplayEducation === "year" ? "year" : "full";
+    const eduShowLoc = cvProfile.cvShowEducationLocation !== false;
+    const eduShowDetails = cvProfile.cvShowEducationDetails !== false;
+    docComplEducation.innerHTML = show
+      ? edu
+          .map((x) => {
+            const school = (x.school ?? "").trim();
+            const degree = (x.degree ?? "").trim();
+            const loc = (x.location ?? "").trim();
+            const start = (x.start ?? "").trim();
+            const end = (x.end ?? "").trim();
+            const when = formatCvDateRange(start, end, eduDateMode);
+            const listItems = educationBulletLines(x);
+            const prose = educationProseDetails(x);
+            const detailsHtml =
+              eduShowDetails && (listItems.length > 0 || prose)
+                ? `${listItems.length > 0 ? `<ul class="mt-2 space-y-1 pl-5 text-sm text-gray-700 dark:text-gray-300">${listItems.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>` : ""}${prose ? `<p class="mt-2 whitespace-pre-line text-sm text-gray-700 dark:text-gray-300">${esc(prose)}</p>` : ""}`
+                : "";
+            const subParts = [school];
+            if (eduShowLoc && loc) subParts.push(loc);
+            const subLine = subParts.filter(Boolean).join(" · ");
+            return `<section class="cv-doc-project">
+              <div class="cv-doc-entry-head cv-doc-entry-head--row flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                 <div class="min-w-0">
                   <p class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100">${esc(degree || school || tt("cv.untitled", "—"))}</p>
                   <p class="m-0 text-sm text-gray-600 dark:text-gray-400">${esc(subLine)}</p>
@@ -501,8 +552,10 @@ async function run() {
               ? ` <a class="text-sm font-medium no-underline hover:underline" href="${esc(url)}" target="_blank" rel="noreferrer">${esc(tt("cv.certLink", "Enlace"))}</a>`
               : "";
             return `<section class="cv-doc-project">
-              <p class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100">${esc(title)}</p>
-              ${sub ? `<p class="m-0 mt-1 text-sm text-gray-600 dark:text-gray-400">${esc(sub)}</p>` : ""}
+              <div class="cv-doc-entry-head cv-doc-entry-head--stack">
+                <p class="m-0 text-base font-semibold text-gray-900 dark:text-gray-100">${esc(title)}</p>
+                ${sub ? `<p class="m-0 mt-1 text-sm text-gray-600 dark:text-gray-400">${esc(sub)}</p>` : ""}
+              </div>
               ${link}
             </section>`;
           })
@@ -556,7 +609,11 @@ async function run() {
   docEl.classList.add(`cv-template-${normalizeCvTemplateId(cvProfile.cvTemplate)}`);
 
   const maxP = clampCvPrintMaxPages(cvProfile.cvPrintMaxPages);
-  docEl.style.setProperty("--cv-print-scale", String(cvPrintTypographicScale(maxP)));
+  const densityFilled = countFilledCvDocumentSections(cvProfile, {
+    selectedProjectCount: projects.length,
+    technologyGroupCount: 0,
+  });
+  docEl.style.setProperty("--cv-print-scale", String(cvPrintTypographicScale(maxP, { densityFilledSections: densityFilled })));
   docEl.dataset.cvPrintMaxPages = String(maxP);
 
   docEl.classList.remove("hidden");

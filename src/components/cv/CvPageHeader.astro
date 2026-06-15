@@ -70,10 +70,29 @@ const { title } = Astro.props;
       <p class="m-0 max-w-2xl text-sm text-gray-600 dark:text-gray-400" data-i18n="cv.intro">
         Vista previa local de tu CV. Nadie puede ver esta página sin tu sesión.
       </p>
+      <p class="m-0 max-w-2xl text-sm">
+        <a
+          href="/cv/canva"
+          class="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+          data-i18n="cv.studioHubLink"
+        >
+          Estudio de maquetación (beta)
+        </a>
+        <span class="text-gray-500 dark:text-gray-500"> — </span>
+        <span class="text-gray-600 dark:text-gray-400" data-i18n="cv.studioHubTeaser">Roadmap layout, ATS y próximos pasos.</span>
+      </p>
     </div>
 
     <div class="flex shrink-0 flex-col items-stretch gap-2 sm:items-end lg:min-w-[12rem]">
       <div class="flex flex-wrap gap-2 sm:justify-end">
+        <a
+          href="/cv/canva"
+          class="inline-flex items-center justify-center rounded-lg border border-indigo-300/90 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-900 shadow-sm hover:bg-indigo-100 dark:border-indigo-700/70 dark:bg-indigo-950/50 dark:text-indigo-100 dark:hover:bg-indigo-950/80"
+          data-i18n="cv.canvasOpenTitle"
+          data-i18n-attr="title"
+        >
+          <span data-i18n="cv.canvasOpenBtn">Canvas</span>
+        </a>
         <button
           type="button"
           data-cv-preview-open

@@ -1,4 +1,10 @@
 ---
+/**
+ * SSR por query: `?doc=1&embed=1` activa `AppShell minimalChrome` para el lienzo del estudio.
+ * Si se prerenderiza a estático, esos params no existen en build y el iframe mostraría toda la app.
+ */
+export const prerender = false;
+
 import AppShell from "../layouts/AppShell.astro";
 import CvPageHeader from "../components/cv/CvPageHeader.astro";
 import CvBrowserTabs from "../components/cv/CvBrowserTabs.astro";
@@ -7,7 +13,8 @@ import CvEditorPanel from "../components/cv/CvEditorPanel.astro";
 import CvDocumentHost from "../components/cv/CvDocumentHost.astro";
 import CvCoverTab from "../components/cv/CvCoverTab.astro";
 import CvJobOffersTab from "../components/cv/CvJobOffersTab.astro";
-import CvDocDockBubble from "../components/cv/CvDocDockBubble.astro";
+// Paused: dock «Ir al documento» + «Consejos» (ver issue UX /cv)
+// import CvDocDockBubble from "../components/cv/CvDocDockBubble.astro";
 import CvPreviewModal from "../components/cv/CvPreviewModal.astro";
 import CvImportModal from "../components/cv/CvImportModal.astro";
 import CvImportConfirmModal from "../components/cv/CvImportConfirmModal.astro";
@@ -16,12 +23,15 @@ import CvDocumentDialogs from "../components/cv/CvDocumentDialogs.astro";
 import CvSettingsModal from "../components/cv/CvSettingsModal.astro";
 
 const title = "CV";
+const minimalChrome =
+  Astro.url.searchParams.get("embed") === "1" && Astro.url.searchParams.get("doc") === "1";
 ---
 
-<AppShell title={title}>
+<AppShell title={title} minimalChrome={minimalChrome}>
   <div data-requires-auth class="hidden"></div>
   <div data-cv-mount class="cv-page-shell print:block">
-    <CvDocDockBubble />
+    <!-- Paused: CvDocDockBubble — Ir al documento + Consejos -->
+    <!-- <CvDocDockBubble /> -->
 
     <div class="cv-page-shell__main min-w-0">
       <CvPageHeader title={title} />
@@ -32,8 +42,36 @@ const title = "CV";
 
       <div data-cv-tab-panels-shell class="cv-tab-panels-shell">
         <div data-cv-tab-panel="cv" class="cv-tab-panel space-y-8 print:space-y-8">
-          <CvStatusLines />
-          <CvEditorPanel />
+          <div
+            data-cv-doc-only-banner
+            class="hidden print:hidden mb-2 sm:flex flex-col gap-3 rounded-xl border border-indigo-200/85 bg-indigo-50/95 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-indigo-900/50 dark:bg-indigo-950/40"
+          >
+            <p class="m-0 text-sm text-indigo-950 dark:text-indigo-100" data-i18n="cv.docOnlyBannerHint">
+              Vista solo documento (útil para el estudio o un iframe). El editor completo sigue en /cv.
+            </p>
+            <div class="flex flex-wrap gap-3 text-sm font-semibold">
+              <a
+                href="/cv"
+                class="text-indigo-800 underline decoration-indigo-400/80 underline-offset-2 hover:text-indigo-950 dark:text-indigo-200 dark:hover:text-white"
+                data-i18n="cv.docOnlyBannerEditFull"
+              >
+                Editor completo
+              </a>
+              <a
+                href="/cv/canva"
+                class="text-indigo-800 underline decoration-indigo-400/80 underline-offset-2 hover:text-indigo-950 dark:text-indigo-200 dark:hover:text-white"
+                data-i18n="cv.docOnlyBannerBackStudio"
+              >
+                Estudio
+              </a>
+            </div>
+          </div>
+          <div data-cv-status-errors class="print:hidden">
+            <CvStatusLines />
+          </div>
+          <div data-cv-editor-chrome class="space-y-8 print:hidden">
+            <CvEditorPanel />
+          </div>
           <CvDocumentHost />
         </div>
 
@@ -42,6 +80,8 @@ const title = "CV";
       </div>
     </div>
 
+    <!-- Paused: rail derecho «Tus CV» (cv-scroll-doc-rail) -->
+    <!--
     <aside
       data-cv-scroll-rail
       class="cv-scroll-rail print:hidden"
@@ -52,6 +92,7 @@ const title = "CV";
       </p>
       <div data-cv-scroll-rail-cards class="mt-2 flex flex-col gap-2"></div>
     </aside>
+    -->
   </div>
 
   <CvSettingsModal />

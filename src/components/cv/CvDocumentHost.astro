@@ -8,7 +8,11 @@
     data-cv-document
     class="cv-template-classic hidden scroll-mt-24 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 p-8 shadow-sm print:border-0 print:shadow-none print:p-0"
   >
-    <div class="border-b border-gray-200/80 dark:border-gray-800 pb-6 print:border-gray-300" data-cv-weight="hero">
+    <div
+      class="border-b border-gray-200/80 dark:border-gray-800 pb-6 print:border-gray-300"
+      data-cv-weight="hero"
+      data-cv-studio-selectable="hero"
+    >
       <div class="flex items-start gap-5">
         <img
           data-cv-doc-photo
@@ -17,12 +21,59 @@
           loading="lazy"
           referrerpolicy="no-referrer"
         />
-        <div class="min-w-0 flex-1">
-          <h2 data-cv-doc-name class="m-0 text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-100"></h2>
-          <p data-cv-doc-headline class="mt-2 mb-0 text-base font-semibold text-gray-700 dark:text-gray-300"></p>
-          <div data-cv-doc-contact class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-300"></div>
-          <p data-cv-doc-bio class="mt-4 mb-0 max-w-3xl text-base leading-relaxed text-gray-600 dark:text-gray-300"></p>
-          <div data-cv-doc-helpstack class="mt-4 hidden flex-wrap gap-2"></div>
+        <div class="min-w-0 flex-1" data-cv-hero-text-column>
+          <div data-cv-hero-resize-wrap="name" class="min-w-0 max-w-full">
+            <div class="cv-hero-resize-inner inline-block max-w-full min-w-0 align-top">
+              <h2
+                data-cv-doc-name
+                data-cv-hero-font-key="displayName"
+                class="m-0 text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-100"
+              >
+              </h2>
+            </div>
+          </div>
+          <div data-cv-hero-resize-wrap="targetRole" class="min-w-0 max-w-full">
+            <div class="cv-hero-resize-inner inline-block max-w-full min-w-0 align-top">
+              <p
+                data-cv-doc-target-role
+                data-cv-hero-font-key="cvTargetRole"
+                class="hidden mt-2 mb-0 text-lg font-semibold tracking-tight text-indigo-700 dark:text-indigo-300"
+              >
+              </p>
+            </div>
+          </div>
+          <div data-cv-hero-resize-wrap="headline" class="min-w-0 max-w-full">
+            <div class="cv-hero-resize-inner inline-block max-w-full min-w-0 align-top">
+              <p data-cv-doc-headline data-cv-hero-font-key="headline" class="mt-2 mb-0 text-base font-semibold text-gray-700 dark:text-gray-300">
+              </p>
+            </div>
+          </div>
+          <div data-cv-hero-resize-wrap="contact" class="min-w-0 max-w-full">
+            <div class="cv-hero-resize-inner inline-block max-w-full min-w-0 align-top">
+              <div data-cv-doc-contact class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-300"></div>
+            </div>
+          </div>
+          <div data-cv-hero-resize-wrap="prefs" class="min-w-0 max-w-full">
+            <div class="cv-hero-resize-inner inline-block max-w-full min-w-0 align-top">
+              <p
+                data-cv-doc-work-prefs
+                data-cv-hero-font-key="workPrefs"
+                class="hidden mt-2 mb-0 max-w-3xl whitespace-pre-line text-sm leading-snug text-gray-600 dark:text-gray-400 print:max-w-none"
+              >
+              </p>
+            </div>
+          </div>
+          <div data-cv-hero-resize-wrap="bio" class="min-w-0 max-w-full">
+            <div class="cv-hero-resize-inner inline-block max-w-full min-w-0 align-top">
+              <p
+                data-cv-doc-bio
+                data-cv-hero-font-key="summary"
+                class="mt-4 mb-0 max-w-3xl text-base leading-relaxed text-gray-600 dark:text-gray-300 print:max-w-none"
+              >
+              </p>
+            </div>
+          </div>
+          <div data-cv-doc-helpstack class="mt-2 hidden flex-wrap gap-1.5 print:mt-1.5"></div>
         </div>
       </div>
     </div>
@@ -39,6 +90,20 @@
       </h3>
       <div data-cv-doc-education class="mt-4 space-y-6"></div>
     </section>
+    <section
+      class="pt-8 hidden"
+      data-cv-doc-complementary-education-section
+      data-cv-section="complementaryEducation"
+      data-cv-weight="support"
+    >
+      <h3
+        class="m-0 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+        data-i18n="cv.docComplementaryEducationHeading"
+      >
+        Formación complementaria
+      </h3>
+      <div data-cv-doc-complementary-education class="mt-4 space-y-6"></div>
+    </section>
     <section class="pt-8 hidden" data-cv-doc-certifications-section data-cv-section="certifications" data-cv-weight="support">
       <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.docCertificationsHeading">
         Certificaciones
@@ -51,6 +116,25 @@
       </h3>
       <div data-cv-doc-languages class="mt-4 space-y-3"></div>
     </section>
+    <section class="pt-8 hidden" data-cv-doc-technologies-section data-cv-section="technologies" data-cv-weight="support">
+      <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.docTechnologiesHeading">
+        Tecnologías
+      </h3>
+      <div data-cv-doc-technologies class="mt-4"></div>
+    </section>
+    <div
+      data-cv-doc-tech-featured-band
+      class="cv-doc-tech-featured-band hidden pt-8 print:pt-6"
+      aria-hidden="true"
+      data-cv-studio-selectable="techFeaturedBand"
+    >
+      <div
+        class="grid grid-cols-1 gap-4 sm:grid-cols-2 print:grid print:grid-cols-2 print:gap-3 print:items-start"
+      >
+        <div data-cv-doc-tech-featured-band-tech class="min-w-0"></div>
+        <div data-cv-doc-tech-featured-band-project class="min-w-0"></div>
+      </div>
+    </div>
     <section class="pt-6" data-cv-doc-projects-section data-cv-section="projects" data-cv-weight="core">
       <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.docProjectsHeading">
         Proyectos
@@ -65,6 +149,30 @@
         Logros
       </h3>
       <ul data-cv-doc-highlights class="mt-4 space-y-2 pl-5 text-sm text-gray-700 dark:text-gray-300"></ul>
+    </section>
+    <section class="pt-8 hidden" data-cv-doc-publications-section data-cv-section="publications" data-cv-weight="support">
+      <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.docPublicationsHeading">
+        Publicaciones
+      </h3>
+      <div data-cv-doc-publications class="mt-4 space-y-5"></div>
+    </section>
+    <section class="pt-8 hidden" data-cv-doc-awards-section data-cv-section="awards" data-cv-weight="support">
+      <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.docAwardsHeading">
+        Premios y distinciones
+      </h3>
+      <div data-cv-doc-awards class="mt-4 space-y-5"></div>
+    </section>
+    <section class="pt-8 hidden" data-cv-doc-volunteering-section data-cv-section="volunteering" data-cv-weight="support">
+      <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.docVolunteeringHeading">
+        Voluntariado
+      </h3>
+      <div data-cv-doc-volunteering class="mt-4 space-y-7"></div>
+    </section>
+    <section class="pt-8 hidden" data-cv-doc-interests-section data-cv-section="interests" data-cv-weight="support">
+      <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.docInterestsHeading">
+        Intereses
+      </h3>
+      <ul data-cv-doc-interests class="mt-4 space-y-2 pl-5 text-sm text-gray-700 dark:text-gray-300"></ul>
     </section>
     <section class="pt-8 hidden" data-cv-doc-cover-section data-cv-section="coverLetters" data-cv-weight="support">
       <h3 class="m-0 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="cv.docCoverHeading">

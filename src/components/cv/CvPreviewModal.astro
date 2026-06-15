@@ -58,6 +58,13 @@
       <div class="flex flex-wrap items-center justify-end gap-2 shrink-0">
         <button
           type="button"
+          data-cv-preview-copy-plain
+          class="inline-flex items-center justify-center rounded-lg border border-emerald-200/90 dark:border-emerald-800/80 bg-emerald-50/80 dark:bg-emerald-950/40 px-2.5 py-1.5 text-xs font-semibold text-emerald-950 dark:text-emerald-100 hover:bg-emerald-100/90 dark:hover:bg-emerald-950/70"
+        >
+          <span data-i18n="cv.previewCopyPlainBtn">Copiar texto</span>
+        </button>
+        <button
+          type="button"
           data-cv-preview-ats
           class="inline-flex items-center justify-center rounded-lg border border-amber-200/90 dark:border-amber-800/80 bg-amber-50/80 dark:bg-amber-950/40 px-2.5 py-1.5 text-xs font-semibold text-amber-950 dark:text-amber-100 hover:bg-amber-100/90 dark:hover:bg-amber-950/70"
         >
@@ -124,10 +131,10 @@
         <span data-i18n="cv.previewAtsHide">Ocultar</span>
       </button>
     </div>
-    <div class="flex min-h-0 flex-1 flex-col md:flex-row">
+    <div class="flex min-h-0 flex-1 flex-col items-start md:flex-row">
       <div
         data-cv-preview-body
-        class="min-h-0 min-w-0 flex-1 overflow-auto overflow-x-hidden p-4 max-h-[calc(90vh-3.25rem)] md:max-h-[calc(90vh-3.25rem)]"
+        class="min-h-0 min-w-0 w-full max-w-full flex-none overflow-y-auto overflow-x-hidden p-4 max-h-[min(calc(90vh-8rem),85vh)] md:flex-1 md:max-h-[min(calc(90vh-5.5rem),85vh)]"
       ></div>
       <aside
         data-cv-preview-section-rail

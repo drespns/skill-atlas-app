@@ -3,10 +3,16 @@
 export const CV_DOCUMENT_SECTION_IDS = [
   "experience",
   "education",
+  "complementaryEducation",
   "certifications",
   "languages",
+  "technologies",
   "projects",
   "highlights",
+  "publications",
+  "awards",
+  "volunteering",
+  "interests",
   "coverLetters",
 ] as const;
 

@@ -17,7 +17,7 @@ export type CvManualAssignment = {
 };
 
 const EXP_FIELDS = new Set(["role", "company", "location", "start", "end", "bullets"]);
-const EDU_FIELDS = new Set(["degree", "school", "location", "start", "end", "details"]);
+const EDU_FIELDS = new Set(["degree", "school", "location", "start", "end", "details", "bullets"]);
 
 export function escHtml(s: string): string {
   return s
@@ -114,7 +114,7 @@ export function manualTargetMarkClass(target: string): string {
     return `${pool[field] ?? "bg-slate-400/40 dark:bg-slate-500/30"} ${ti}${ring}`;
   }
 
-  const eduM = t.match(/^edu:(exist|new):(\d+):(degree|school|location|start|end|details)$/);
+  const eduM = t.match(/^edu:(exist|new):(\d+):(degree|school|location|start|end|details|bullets)$/);
   if (eduM) {
     const field = eduM[3]!;
     const pool: Record<string, string> = {
@@ -124,6 +124,7 @@ export function manualTargetMarkClass(target: string): string {
       start: "bg-red-400/40 dark:bg-red-500/32",
       end: "bg-orange-400/40 dark:bg-orange-600/30",
       details: "bg-rose-300/40 dark:bg-rose-600/28",
+      bullets: "bg-lime-400/42 dark:bg-lime-500/30",
     };
     const ring =
       eduM[1] === "new"
@@ -272,7 +273,7 @@ export function parseExpTarget(
 export function parseEduTarget(
   key: string,
 ): { mode: "exist" | "new"; index: number; field: keyof CvEducationV1 } | null {
-  const m = /^edu:(exist|new):(\d+):(degree|school|location|start|end|details)$/.exec(key);
+  const m = /^edu:(exist|new):(\d+):(degree|school|location|start|end|details|bullets)$/.exec(key);
   if (!m || !m[1] || !m[2] || !m[3]) return null;
   const field = m[3] as keyof CvEducationV1;
   if (!EDU_FIELDS.has(field)) return null;

@@ -3,13 +3,62 @@
 const h2 = "cv-section-heading m-0 text-lg md:text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100 border-b border-gray-200/90 dark:border-gray-800 pb-2";
 ---
 
-<div data-cv-editor class="hidden space-y-6 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 p-5 shadow-sm print:hidden">
+<div
+  data-cv-editor
+  class="hidden space-y-6 rounded-2xl border border-indigo-200/40 dark:border-indigo-900/35 bg-linear-to-br from-white via-indigo-50/25 to-violet-50/20 dark:from-gray-950 dark:via-indigo-950/20 dark:to-violet-950/15 p-5 shadow-sm print:hidden"
+>
   <div class="rounded-xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 p-4 text-sm text-indigo-900 dark:text-indigo-100">
     <span data-i18n="cv.publicShareMovedNote">El enlace público del CV se gestiona en Ajustes → “Portfolio público”.</span>
     <a href="/settings#prefs" class="ml-1 font-semibold underline underline-offset-2 hover:opacity-90" data-i18n="cv.goToSettings">
       Ir a Ajustes
     </a>
   </div>
+
+  <details
+    class="group rounded-xl border border-amber-200/70 dark:border-amber-900/35 bg-amber-50/40 dark:bg-amber-950/15 p-4 open:shadow-sm"
+  >
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
+      <span class="text-sm font-semibold text-amber-950 dark:text-amber-100" data-i18n="cv.submissionTemplateTitle">Plantilla de envío</span>
+      <span class="text-xs text-amber-800/80 dark:text-amber-200/80 group-open:hidden" data-i18n="cv.foldHintExpand">Pulsa para editar</span>
+    </summary>
+    <p class="m-0 mt-2 text-[11px] text-amber-950/90 dark:text-amber-100/85" data-i18n="cv.submissionTemplateHint">
+      Marca lo que quieres revisar o incluir en este CV antes de enviarlo. No oculta secciones; es solo una guía por documento.
+    </p>
+    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm" data-cv-submission-checklist="">
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" data-cv-submission-chk="targetRole" class="rounded border-gray-300 dark:border-gray-600" />
+        <span data-i18n="cv.submissionChk.targetRole">Puesto objetivo</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" data-cv-submission-chk="summary" class="rounded border-gray-300 dark:border-gray-600" />
+        <span data-i18n="cv.submissionChk.summary">Resumen / bio</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" data-cv-submission-chk="experience" class="rounded border-gray-300 dark:border-gray-600" />
+        <span data-i18n="cv.submissionChk.experience">Experiencia</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" data-cv-submission-chk="projects" class="rounded border-gray-300 dark:border-gray-600" />
+        <span data-i18n="cv.submissionChk.projects">Proyectos</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" data-cv-submission-chk="education" class="rounded border-gray-300 dark:border-gray-600" />
+        <span data-i18n="cv.submissionChk.education">Educación formal</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" data-cv-submission-chk="complementaryEducation" class="rounded border-gray-300 dark:border-gray-600" />
+        <span data-i18n="cv.submissionChk.complementaryEducation">Formación complementaria</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" data-cv-submission-chk="technologies" class="rounded border-gray-300 dark:border-gray-600" />
+        <span data-i18n="cv.submissionChk.technologies">Tecnologías</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" data-cv-submission-chk="certifications" class="rounded border-gray-300 dark:border-gray-600" />
+        <span data-i18n="cv.submissionChk.certifications">Certificaciones</span>
+      </label>
+    </div>
+  </details>
 
   <div class="space-y-3">
     <h2 class={h2}>
@@ -57,15 +106,26 @@ const h2 = "cv-section-heading m-0 text-lg md:text-xl font-bold tracking-tight t
           </label>
         </div>
       </label>
-      <label class="space-y-1 md:col-span-2">
-        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.publicBioLabel">Bio (Ajustes)</span>
-        <textarea
-          rows={3}
-          data-cv-public-bio
-          placeholder="Bio breve (se comparte con portfolio)."
-          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
-        ></textarea>
-      </label>
+    </div>
+    <div class="mt-3 space-y-2">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+        <label class="min-w-0 flex-1 space-y-1">
+          <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.publicBioLabel">Resumen / bio</span>
+          <textarea
+            rows={4}
+            data-cv-public-bio
+            data-i18n-placeholder="cv.unifiedBioPlaceholder"
+            placeholder="Un solo texto para el CV y tu bio en Ajustes…"
+            class="min-h-30 w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+          ></textarea>
+        </label>
+        <label
+          class="flex cursor-pointer items-start gap-2 rounded-lg border border-gray-200/70 bg-gray-50/50 px-2.5 py-2 dark:border-gray-800/80 dark:bg-gray-950/40 sm:max-w-46 sm:shrink-0 sm:self-start"
+        >
+          <input type="checkbox" data-cv-show-helpstack class="mt-0.5 rounded border-gray-300 dark:border-gray-600" />
+          <span class="text-[11px] leading-snug text-gray-600 dark:text-gray-400" data-i18n="cv.showHelpStackLabel">Mostrar stack de ayuda</span>
+        </label>
+      </div>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
       <label class="space-y-1">
@@ -114,9 +174,49 @@ const h2 = "cv-section-heading m-0 text-lg md:text-xl font-bold tracking-tight t
         />
       </label>
     </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <label class="space-y-1 md:col-span-2">
+        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.targetRoleLabel">Puesto objetivo</span>
+        <input
+          type="text"
+          data-cv-target-role
+          placeholder="p. ej. Senior Backend Engineer"
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+        />
+        <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-i18n="cv.targetRoleHint">
+          Opcional: alinea palabras clave con la oferta (tailoring / ATS).
+        </p>
+      </label>
+      <label class="space-y-1">
+        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.workArrangementLabel">Modalidad / ubicación laboral</span>
+        <input
+          type="text"
+          data-cv-work-arrangement
+          list="cv-work-arrangement-datalist"
+          placeholder="Remoto · Híbrido · Madrid"
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+        />
+      </label>
+      <label class="space-y-1">
+        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.workAuthorizationLabel">Autorización de trabajo</span>
+        <input
+          type="text"
+          data-cv-work-authorization
+          placeholder="p. ej. Ciudadanía UE · NIE · Green Card"
+          class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+        />
+      </label>
+    </div>
+    <datalist id="cv-work-arrangement-datalist">
+      <option value="Remoto"></option>
+      <option value="Híbrido"></option>
+      <option value="Presencial"></option>
+      <option value="Remoto (UE)"></option>
+      <option value="Relocación abierta"></option>
+    </datalist>
     <div class="space-y-3">
       <p class="m-0 text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.linksLabel">Enlaces</p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <label class="space-y-1">
           <span class="text-[11px] text-gray-600 dark:text-gray-400" data-i18n="cv.linkLabel1">LinkedIn</span>
           <input
@@ -162,6 +262,24 @@ const h2 = "cv-section-heading m-0 text-lg md:text-xl font-bold tracking-tight t
             class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
           />
         </label>
+        <label class="space-y-1">
+          <span class="text-[11px] text-gray-600 dark:text-gray-400" data-i18n="cv.linkLabel6">ORCID</span>
+          <input
+            type="url"
+            data-cv-link-url="5"
+            placeholder="https://orcid.org/…"
+            class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+          />
+        </label>
+        <label class="space-y-1">
+          <span class="text-[11px] text-gray-600 dark:text-gray-400" data-i18n="cv.linkLabel7">Google Scholar</span>
+          <input
+            type="url"
+            data-cv-link-url="6"
+            placeholder="https://scholar.google.com/…"
+            class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+          />
+        </label>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <label class="space-y-1">
@@ -199,19 +317,6 @@ const h2 = "cv-section-heading m-0 text-lg md:text-xl font-bold tracking-tight t
       </p>
     </div>
     <label class="space-y-1">
-      <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.summaryLabel">Resumen</span>
-      <textarea
-        rows={4}
-        data-cv-summary
-        placeholder="Resumen breve: foco, impacto, tecnologías y tipo de rol que buscas…"
-        class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
-      ></textarea>
-    </label>
-    <label class="flex items-start gap-2 cursor-pointer">
-      <input type="checkbox" data-cv-show-helpstack class="rounded border-gray-300 dark:border-gray-600 mt-0.5" />
-      <span class="text-sm text-gray-800 dark:text-gray-200" data-i18n="cv.showHelpStackLabel">Mostrar stack de ayuda</span>
-    </label>
-    <label class="space-y-1">
       <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.highlightsLabel">Experiencia / logros</span>
       <textarea
         rows={5}
@@ -223,7 +328,73 @@ const h2 = "cv-section-heading m-0 text-lg md:text-xl font-bold tracking-tight t
         Una línea por punto. Se imprimirá como bullets.
       </p>
     </label>
+    <label class="space-y-1">
+      <span class="text-xs font-semibold text-gray-700 dark:text-gray-300" data-i18n="cv.interestsLabel">Intereses</span>
+      <textarea
+        rows={4}
+        data-cv-interests
+        placeholder={`- Fotografía\n- Voluntariado\n- Lectura`}
+        class="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 font-mono/90"
+      ></textarea>
+      <p class="m-0 text-xs text-gray-500 dark:text-gray-400" data-i18n="cv.interestsHint">
+        Opcional; una línea por punto (hobbies, causas, comunidades).
+      </p>
+    </label>
   </div>
+
+  <details class="group rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/40 dark:bg-gray-950/30 p-4 open:shadow-sm">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
+      <h2 class="m-0 text-base font-bold text-gray-900 dark:text-gray-100" data-i18n="cv.experienceTitle">Experiencia</h2>
+      <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.foldHintExpand">Pulsa para editar</span>
+    </summary>
+    <div class="mt-4 space-y-3">
+      <div class="flex justify-end">
+        <button type="button" data-cv-exp-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline shrink-0">
+          <span data-i18n="cv.addExperience">Añadir</span>
+        </button>
+      </div>
+      <div data-cv-exp-list class="space-y-3"></div>
+    </div>
+  </details>
+
+  <details class="group rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/40 dark:bg-gray-950/30 p-4 open:shadow-sm">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
+      <h2 class="m-0 text-base font-bold text-gray-900 dark:text-gray-100" data-i18n="cv.educationTitle">Educación</h2>
+      <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.foldHintExpand">Pulsa para editar</span>
+    </summary>
+    <div class="mt-4 space-y-3">
+      <div class="flex justify-end">
+        <button type="button" data-cv-edu-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline shrink-0">
+          <span data-i18n="cv.addEducation">Añadir</span>
+        </button>
+      </div>
+      <div data-cv-edu-list class="space-y-3"></div>
+    </div>
+  </details>
+
+  <details class="group rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/40 dark:bg-gray-950/30 p-4 open:shadow-sm">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
+      <h2 class="m-0 text-base font-bold text-gray-900 dark:text-gray-100" data-i18n="cv.complementaryEducationTitle">
+        Formación complementaria
+      </h2>
+      <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.foldHintExpand">Pulsa para editar</span>
+    </summary>
+    <div class="mt-4 space-y-3">
+      <p class="m-0 max-w-xl text-[11px] text-gray-500 dark:text-gray-400" data-i18n="cv.complementaryEducationHint">
+        Bootcamps, MOOCs o cursos sin mezclarlos con la titulación formal.
+      </p>
+      <div class="flex justify-end">
+        <button
+          type="button"
+          data-cv-educompl-add
+          class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline shrink-0"
+        >
+          <span data-i18n="cv.addComplementaryEducation">Añadir</span>
+        </button>
+      </div>
+      <div data-cv-educompl-list class="space-y-3"></div>
+    </div>
+  </details>
 
   <details class="group rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/40 dark:bg-gray-950/30 p-4 open:shadow-sm">
     <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
@@ -262,37 +433,83 @@ const h2 = "cv-section-heading m-0 text-lg md:text-xl font-bold tracking-tight t
           </button>
         </div>
       </div>
+      <label class="flex cursor-pointer items-start gap-2 rounded-lg border border-gray-200/70 bg-gray-50/50 px-2.5 py-2 dark:border-gray-800/60 dark:bg-gray-950/30">
+        <input type="checkbox" data-cv-print-tech-featured-band class="mt-0.5 rounded border-gray-300 dark:border-gray-600" />
+        <span class="min-w-0 space-y-0.5">
+          <span class="block text-[11px] font-medium text-gray-700 dark:text-gray-300" data-i18n="cv.printTechFeaturedBandLabel">
+            Impresión: tecnologías y proyecto destacado en dos columnas
+          </span>
+          <span class="block text-[10px] leading-snug text-gray-500 dark:text-gray-400" data-i18n="cv.printTechFeaturedBandHint">
+            Ahorra altura en PDF; requiere proyecto destacado y bloque de tecnologías visibles. El orden de secciones del documento sigue siendo el de Ajustes.
+          </span>
+        </span>
+      </label>
       <ul data-cv-project-list class="m-0 list-none space-y-1.5 p-0"></ul>
     </div>
   </details>
 
   <details class="group rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/40 dark:bg-gray-950/30 p-4 open:shadow-sm">
     <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
-      <h2 class="m-0 text-base font-bold text-gray-900 dark:text-gray-100" data-i18n="cv.experienceTitle">Experiencia</h2>
+      <h2 class="m-0 text-base font-bold text-gray-900 dark:text-gray-100">
+        <span data-i18n="cv.technologiesSectionTitle">Tecnologías en el CV</span>
+      </h2>
       <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.foldHintExpand">Pulsa para editar</span>
     </summary>
-    <div class="mt-4 space-y-3">
-      <div class="flex justify-end">
-        <button type="button" data-cv-exp-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline shrink-0">
-          <span data-i18n="cv.addExperience">Añadir</span>
+    <div class="mt-4 space-y-4">
+      <p class="m-0 max-w-xl text-[11px] text-gray-500 dark:text-gray-400" data-i18n="cv.technologiesSectionHint"></p>
+      <fieldset class="space-y-2 rounded-lg border border-gray-200/70 dark:border-gray-800/70 p-3">
+        <legend class="sr-only" data-i18n="cv.techModeLabel">Origen de la lista</legend>
+        <label class="flex cursor-pointer items-start gap-2 text-sm">
+          <input type="radio" name="cv-tech-origin" value="manual" data-cv-tech-mode class="mt-1 shrink-0 border-gray-300 dark:border-gray-600" />
+          <span><span data-i18n="cv.techModeManual">Catálogo (elige)</span></span>
+        </label>
+        <label class="flex cursor-pointer items-start gap-2 text-sm">
+          <input type="radio" name="cv-tech-origin" value="fromCvProjects" data-cv-tech-mode class="mt-1 shrink-0 border-gray-300 dark:border-gray-600" />
+          <span><span data-i18n="cv.techModeFromProjects">Proyectos incluidos en el CV</span></span>
+        </label>
+        <label class="flex cursor-pointer items-start gap-2 text-sm">
+          <input type="radio" name="cv-tech-origin" value="helpStack" data-cv-tech-mode class="mt-1 shrink-0 border-gray-300 dark:border-gray-600" />
+          <span><span data-i18n="cv.techModeHelpStack">Stack de ayuda (Ajustes · portfolio)</span></span>
+        </label>
+        <label class="flex cursor-pointer items-start gap-2 text-sm">
+          <input type="radio" name="cv-tech-origin" value="roleGroups" data-cv-tech-mode class="mt-1 shrink-0 border-gray-300 dark:border-gray-600" />
+          <span><span data-i18n="cv.techModeRoleGroups">Por rol / bloques (título libre)</span></span>
+        </label>
+      </fieldset>
+      <div data-cv-tech-role-groups-wrap class="hidden space-y-3 rounded-lg border border-indigo-200/60 bg-indigo-50/30 p-3 dark:border-indigo-900/50 dark:bg-indigo-950/20">
+        <p class="m-0 text-[11px] leading-relaxed text-gray-600 dark:text-gray-400" data-i18n="cv.techRoleGroupsIntro"></p>
+        <div data-cv-tech-role-groups-list class="space-y-3"></div>
+        <button
+          type="button"
+          data-cv-tech-role-group-add
+          class="inline-flex items-center justify-center rounded-lg border border-indigo-300 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-900 hover:bg-indigo-50 dark:border-indigo-800 dark:bg-gray-950 dark:text-indigo-100 dark:hover:bg-indigo-950/40"
+        >
+          <span data-i18n="cv.techRoleGroupAdd">Añadir bloque</span>
         </button>
       </div>
-      <div data-cv-exp-list class="space-y-3"></div>
-    </div>
-  </details>
-
-  <details class="group rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/40 dark:bg-gray-950/30 p-4 open:shadow-sm">
-    <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
-      <h2 class="m-0 text-base font-bold text-gray-900 dark:text-gray-100" data-i18n="cv.educationTitle">Educación</h2>
-      <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.foldHintExpand">Pulsa para editar</span>
-    </summary>
-    <div class="mt-4 space-y-3">
-      <div class="flex justify-end">
-        <button type="button" data-cv-edu-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline shrink-0">
-          <span data-i18n="cv.addEducation">Añadir</span>
-        </button>
+      <div data-cv-tech-manual-wrap class="space-y-2">
+        <label class="block space-y-1">
+          <span class="text-[11px] font-medium text-gray-600 dark:text-gray-400" data-i18n="cv.techPickerScopeLabel">Catálogo</span>
+          <select
+            data-cv-tech-picker-scope
+            class="w-full max-w-md rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+          >
+            <option value="all" data-i18n="cv.techPickerScopeAll">Todas mis tecnologías</option>
+            <option value="cvProjects" data-i18n="cv.techPickerScopeCv">Solo las de proyectos del CV</option>
+          </select>
+        </label>
+        <input
+          type="search"
+          data-cv-tech-picker-search
+          data-i18n-placeholder="cv.techPickerSearchPh"
+          placeholder="Buscar…"
+          class="w-full max-w-md rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+        />
+        <div
+          data-cv-tech-picker-list
+          class="max-h-52 overflow-y-auto rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-2"
+        ></div>
       </div>
-      <div data-cv-edu-list class="space-y-3"></div>
     </div>
   </details>
 
@@ -303,9 +520,16 @@ const h2 = "cv-section-heading m-0 text-lg md:text-xl font-bold tracking-tight t
       </h2>
       <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.foldHintExpand">Pulsa para editar</span>
     </summary>
-    <div class="mt-4 space-y-3">
-      <div class="flex justify-end">
-        <button type="button" data-cv-cert-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
+      <div class="mt-4 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <p class="m-0 max-w-xl flex-1 text-[11px] leading-snug text-gray-500 dark:text-gray-400" data-i18n="cv.certLangEditorHint">
+          Arrastra el asa de la izquierda para reordenar.
+        </p>
+        <button
+          type="button"
+          data-cv-cert-add
+          class="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-gray-200/90 dark:border-gray-700 bg-white/90 dark:bg-gray-900/80 px-3 py-1.5 text-xs font-semibold text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 motion-reduce:transition-none transition-colors"
+        >
           <span data-i18n="cv.addCertification">Añadir</span>
         </button>
       </div>
@@ -320,13 +544,71 @@ const h2 = "cv-section-heading m-0 text-lg md:text-xl font-bold tracking-tight t
       </h2>
       <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.foldHintExpand">Pulsa para editar</span>
     </summary>
-    <div class="mt-4 space-y-3">
-      <div class="flex justify-end">
-        <button type="button" data-cv-lang-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
+      <div class="mt-4 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <p class="m-0 max-w-xl flex-1 text-[11px] leading-snug text-gray-500 dark:text-gray-400" data-i18n="cv.certLangEditorHint">
+          Arrastra el asa de la izquierda para reordenar.
+        </p>
+        <button
+          type="button"
+          data-cv-lang-add
+          class="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-gray-200/90 dark:border-gray-700 bg-white/90 dark:bg-gray-900/80 px-3 py-1.5 text-xs font-semibold text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 motion-reduce:transition-none transition-colors"
+        >
           <span data-i18n="cv.addLanguage">Añadir</span>
         </button>
       </div>
       <div data-cv-lang-list class="space-y-3"></div>
+    </div>
+  </details>
+
+  <details class="group rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/40 dark:bg-gray-950/30 p-4 open:shadow-sm">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
+      <h2 class="m-0 text-base font-bold text-gray-900 dark:text-gray-100">
+        <span data-i18n="cv.publicationsTitle">Publicaciones</span>
+      </h2>
+      <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.foldHintExpand">Pulsa para editar</span>
+    </summary>
+    <div class="mt-4 space-y-3">
+      <div class="flex justify-end">
+        <button type="button" data-cv-pub-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
+          <span data-i18n="cv.addPublication">Añadir</span>
+        </button>
+      </div>
+      <div data-cv-pub-list class="space-y-3"></div>
+    </div>
+  </details>
+
+  <details class="group rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/40 dark:bg-gray-950/30 p-4 open:shadow-sm">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
+      <h2 class="m-0 text-base font-bold text-gray-900 dark:text-gray-100">
+        <span data-i18n="cv.awardsTitle">Premios y distinciones</span>
+      </h2>
+      <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.foldHintExpand">Pulsa para editar</span>
+    </summary>
+    <div class="mt-4 space-y-3">
+      <div class="flex justify-end">
+        <button type="button" data-cv-award-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
+          <span data-i18n="cv.addAward">Añadir</span>
+        </button>
+      </div>
+      <div data-cv-award-list class="space-y-3"></div>
+    </div>
+  </details>
+
+  <details class="group rounded-xl border border-gray-200/70 dark:border-gray-800/80 bg-white/40 dark:bg-gray-950/30 p-4 open:shadow-sm">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
+      <h2 class="m-0 text-base font-bold text-gray-900 dark:text-gray-100">
+        <span data-i18n="cv.volunteeringTitle">Voluntariado</span>
+      </h2>
+      <span class="text-xs text-gray-500 dark:text-gray-400 group-open:hidden" data-i18n="cv.foldHintExpand">Pulsa para editar</span>
+    </summary>
+    <div class="mt-4 space-y-3">
+      <div class="flex justify-end">
+        <button type="button" data-cv-vol-add class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
+          <span data-i18n="cv.addVolunteering">Añadir</span>
+        </button>
+      </div>
+      <div data-cv-vol-list class="space-y-3"></div>
     </div>
   </details>
 

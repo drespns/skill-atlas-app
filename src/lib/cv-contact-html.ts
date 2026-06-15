@@ -1,10 +1,12 @@
 /** Huecos fijos de enlaces en el editor del CV (orden editorial). */
-export const CV_LINK_SLOT_COUNT = 5;
+export const CV_LINK_SLOT_COUNT = 7;
 
 export const CV_LINK_SLOT_ICON_PATHS = [
   "/icons/login/linkedin-icon.svg",
   "/icons/technologies/GitHub.svg",
   "/favicon.svg",
+  "/icons/link-external.svg",
+  "/icons/link-external.svg",
   "/icons/link-external.svg",
   "/icons/link-external.svg",
 ] as const;
@@ -33,10 +35,22 @@ export function migrateCvLinksToSlots(legacy: { label: string; url: string }[] |
     else if (lab.includes("portfolio") || /skillatlas\.app/i.test(url)) out[2] = url;
     else if (lab.includes("twitter") || lab.includes("x.com") || /(^|\.)x\.com\//i.test(url) || /twitter\.com/i.test(url))
       out[3] = url;
+    else if (lab.includes("orcid") || /orcid\.org/i.test(url)) out[5] = url;
+    else if (lab.includes("scholar") || /scholar\.google/i.test(url)) out[6] = url;
     else {
       const i = out.findIndex((s) => !s);
       if (i >= 0) out[i] = url;
     }
+  }
+  return out;
+}
+
+/** Acepta arrays guardados con 5 o 7 huecos (migración). */
+export function normalizeCvLinkSlotsArray(raw: unknown): string[] {
+  const out = Array.from({ length: CV_LINK_SLOT_COUNT }, () => "");
+  if (!Array.isArray(raw)) return out;
+  for (let i = 0; i < Math.min(raw.length, CV_LINK_SLOT_COUNT); i++) {
+    out[i] = typeof raw[i] === "string" ? raw[i]!.trim() : "";
   }
   return out;
 }
