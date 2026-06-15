@@ -86,6 +86,10 @@ export type WealthAccount = {
   isDefaultExpense?: boolean;
   /** Ingresos confirmados y cobros suman aquí por defecto. */
   isDefaultIncome?: boolean;
+  /** Efectivo disponible para comprar activos (Trade Republic, etc.). */
+  isDefaultInvestment?: boolean;
+  /** Saldo en la fecha de inicio del registro (punto de partida). */
+  openingBalance?: number;
 };
 
 /** Traspaso interno entre cuentas de patrimonio (no es gasto ni ingreso). */
@@ -234,6 +238,8 @@ export type ExpenseTrackerState = {
   wealthTransfers?: WealthTransfer[];
   /** Si true, patrimonio = efectivo + capital invertido (sin P/L). Si false, incluye valor de mercado estimado. */
   patrimonioRealMode?: boolean;
+  /** Solo se contabilizan movimientos en KPIs/gráficos desde esta fecha (YYYY-MM-DD). */
+  trackingStartDate?: string;
 };
 
 export const EXPENSE_TRACKER_CLIENT_SCOPE = "tools_expense_tracker" as const;
@@ -248,6 +254,8 @@ export const DEFAULT_EXPENSE_CATEGORIES: ExpenseCategory[] = [
   { id: "cat_entertainment", name: "Ocio", color: "#f97316", parentId: null },
   { id: "cat_health", name: "Salud", color: "#ec4899", parentId: null },
   { id: "cat_services", name: "Servicios", color: "#eab308", parentId: null },
+  { id: "cat_transfer", name: "Traspaso", color: "#475569", parentId: null },
+  { id: "cat_bizum", name: "Bizum", color: "#06b6d4", parentId: null },
   { id: "cat_other", name: "Otros", color: "#64748b", parentId: null },
 ];
 
@@ -351,6 +359,11 @@ function parseWealthAccounts(raw: unknown): WealthAccount[] {
         ibanPrefix: prefix || undefined,
         isDefaultExpense: Boolean(r?.isDefaultExpense),
         isDefaultIncome: Boolean(r?.isDefaultIncome),
+        isDefaultInvestment: Boolean(r?.isDefaultInvestment),
+        openingBalance:
+          r?.openingBalance != null && Number.isFinite(Number(r.openingBalance))
+            ? Math.round(Number(r.openingBalance) * 100) / 100
+            : undefined,
       };
     })
     .filter((a: WealthAccount) => a.id)
@@ -364,13 +377,25 @@ export function formatIbanDisplay(prefix?: string): string {
 }
 
 /** Importes en EUR con locale es-ES (miles con punto, decimales con coma). */
+export function roundMoney(amount: number): number {
+  return Math.round(amount * 100) / 100;
+}
+
 export function formatEurEs(amount: number, compact = false): string {
   return new Intl.NumberFormat("es-ES", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: compact ? 0 : 2,
     maximumFractionDigits: compact ? 0 : 2,
-  }).format(amount);
+  }).format(roundMoney(amount));
+}
+
+/** Número es-ES para ejes/tooltips de gráficos (2 decimales, miles con punto). */
+export function formatChartNumberEs(amount: number): string {
+  return new Intl.NumberFormat("es-ES", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(roundMoney(amount));
 }
 
 function parseWealthTransfers(raw: unknown): WealthTransfer[] {
@@ -399,10 +424,33 @@ export function parseCardColor(raw: unknown): string | undefined {
 
 export function defaultWealthAccountId(
   accounts: WealthAccount[],
-  role: "expense" | "income",
+  role: "expense" | "income" | "investment",
 ): string | undefined {
-  const flag = role === "expense" ? "isDefaultExpense" : "isDefaultIncome";
-  return accounts.find((a) => a[flag])?.id ?? accounts[0]?.id;
+  const flag =
+    role === "expense" ? "isDefaultExpense" : role === "income" ? "isDefaultIncome" : "isDefaultInvestment";
+  return accounts.find((a) => a[flag])?.id ?? (role === "investment" ? undefined : accounts[0]?.id);
+}
+
+export function trackingStartIso(state: Pick<ExpenseTrackerState, "trackingStartDate">): string | null {
+  const t = state.trackingStartDate?.trim().slice(0, 10);
+  return t && t.length === 10 ? t : null;
+}
+
+/** Combina inicio de período con fecha de registro (la más reciente gana). */
+export function effectivePeriodStart(state: ExpenseTrackerState, filter: PeriodFilter): string | null {
+  const p = periodStartIso(filter);
+  const t = trackingStartIso(state);
+  if (p && t) return p > t ? p : t;
+  return p ?? t;
+}
+
+export function mergeDefaultCategories(categories: ExpenseCategory[]): ExpenseCategory[] {
+  const ids = new Set(categories.map((c) => c.id));
+  const merged = [...categories];
+  for (const d of DEFAULT_EXPENSE_CATEGORIES) {
+    if (!ids.has(d.id)) merged.push({ ...d });
+  }
+  return validateCategoryTree(merged);
 }
 
 export type PatrimonioSnapshot = {
@@ -498,7 +546,7 @@ export function monthsForRecurringRange(validFrom?: string, validUntil?: string,
 }
 
 export function totalIncomeInPeriod(state: ExpenseTrackerState, filter: PeriodFilter): number {
-  const start = periodStartIso(filter);
+  const start = effectivePeriodStart(state, filter);
   const fx = state.eurPerUsd;
   let total = 0;
   for (const row of state.incomeAdhoc ?? []) {
@@ -556,7 +604,7 @@ function monthOverlapFraction(monthKey: string, periodStart: string | null, peri
 
 /** Gastos del período: confirmados + suscripciones (prorrateadas) + previstos con cobro en rango. */
 export function totalExpensesInPeriod(state: ExpenseTrackerState, filter: PeriodFilter): number {
-  const start = periodStartIso(filter);
+  const start = effectivePeriodStart(state, filter);
   const fx = state.eurPerUsd;
   const today = new Date().toISOString().slice(0, 10);
   let total = 0;
@@ -909,11 +957,13 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
   if (o.v === 1) return upgradeV1ToV2(o);
   if (o.v !== 2) return base;
 
-  const categories: ExpenseCategory[] = Array.isArray(o.categories)
-    ? validateCategoryTree(
-        o.categories.map((c: any) => parseCategory(c)).filter((c: ExpenseCategory) => c.id),
-      )
-    : base.categories;
+  const categories: ExpenseCategory[] = mergeDefaultCategories(
+    Array.isArray(o.categories)
+      ? validateCategoryTree(
+          o.categories.map((c: any) => parseCategory(c)).filter((c: ExpenseCategory) => c.id),
+        )
+      : base.categories,
+  );
   if (!categories.length) return { ...base, categories: base.categories };
   const fallbackCat = categories[0]!.id;
 
@@ -1145,6 +1195,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
     wealthAccounts,
     wealthTransfers,
     patrimonioRealMode: Boolean(o.patrimonioRealMode),
+    trackingStartDate: String(o.trackingStartDate ?? "").slice(0, 10) || undefined,
   };
 }
 
@@ -1341,8 +1392,14 @@ export function periodStartIso(filter: PeriodFilter): string | null {
   return d.toISOString().slice(0, 10);
 }
 
-export function filterExpensesByPeriod(expenses: ExpenseRow[], filter: PeriodFilter): ExpenseRow[] {
-  const start = periodStartIso(filter);
+export function filterExpensesByPeriod(
+  expenses: ExpenseRow[],
+  filter: PeriodFilter,
+  trackingStart?: string,
+): ExpenseRow[] {
+  const p = periodStartIso(filter);
+  const t = trackingStart?.trim().slice(0, 10);
+  const start = p && t && t.length === 10 ? (p > t ? p : t) : p ?? (t && t.length === 10 ? t : null);
   if (!start) return [...expenses];
   return expenses.filter((e) => e.date >= start);
 }

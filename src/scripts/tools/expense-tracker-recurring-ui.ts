@@ -176,11 +176,11 @@ export function renderInvestmentSection(root: HTMLElement, deps: RecurringUiDeps
   grid.innerHTML = "";
   const holdings = deps.state.investments ?? [];
   const totals = investmentPortfolioTotals(holdings);
-  if (elInv) elInv.textContent = deps.fmtEurCompact(totals.invested);
-  if (elCur) elCur.textContent = deps.fmtEurCompact(totals.current);
+  if (elInv) elInv.textContent = deps.fmtEur(totals.invested);
+  if (elCur) elCur.textContent = deps.fmtEur(totals.current);
   if (elPnl) {
     const sign = totals.gainLoss >= 0 ? "+" : "";
-    elPnl.textContent = `${sign}${deps.fmtEurCompact(totals.gainLoss)}`;
+    elPnl.textContent = `${sign}${deps.fmtEur(totals.gainLoss)}`;
     elPnl.classList.toggle("text-emerald-600", totals.gainLoss >= 0);
     elPnl.classList.toggle("dark:text-emerald-400", totals.gainLoss >= 0);
     elPnl.classList.toggle("text-rose-600", totals.gainLoss < 0);
@@ -211,7 +211,7 @@ export function renderInvestmentSection(root: HTMLElement, deps: RecurringUiDeps
     name.className = "m-0 text-base font-semibold text-gray-900 dark:text-gray-50";
     name.textContent = h.name;
     const val = document.createElement("p");
-    val.className = "m-0 text-lg font-bold font-mono text-gray-800 dark:text-gray-100";
+    val.className = "m-0 text-lg font-bold et-amount text-gray-800 dark:text-gray-100";
     val.textContent = deps.fmtEur(investmentCurrentValue(h));
     const sub = document.createElement("p");
     sub.className = "m-0 text-[11px] text-gray-500 dark:text-gray-400";

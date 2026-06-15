@@ -207,7 +207,25 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
           <span class="text-xs font-normal text-gray-500 dark:text-gray-400 shrink-0 hidden group-open:inline">Ocultar</span>
         </summary>
         <div class="px-4 sm:px-5 pb-4 pt-0 space-y-3 border-t border-amber-200/40 dark:border-amber-900/35">
-          <div class="flex flex-wrap gap-2 justify-end pt-3">
+          <div
+            class="rounded-xl border border-amber-200/60 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/20 p-3 space-y-2"
+            data-et-tracking-baseline
+          >
+            <p class="m-0 text-xs font-semibold text-amber-900 dark:text-amber-100">Punto de partida</p>
+            <p class="m-0 text-[11px] text-gray-600 dark:text-gray-400 leading-snug">
+              Indica desde qué fecha registras movimientos y el saldo que tenías entonces en cada cuenta (p. ej. 1 jun 2026).
+            </p>
+            <div class="flex flex-wrap items-end gap-2">
+              <label class="space-y-1 min-w-[10rem]">
+                <span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Registro desde</span>
+                <input type="date" data-et-tracking-start class="et-field et-date w-full text-sm py-2" />
+              </label>
+              <button type="button" data-et-tracking-apply class="et-btn-accent text-sm py-2">
+                Fijar saldos iniciales
+              </button>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2 justify-end pt-1">
             <button type="button" data-et-wealth-transfer class="et-btn-accent text-sm">Traspaso entre cuentas</button>
             <button type="button" data-et-wealth-add class="et-btn-secondary text-sm shrink-0">Añadir cuenta</button>
           </div>
@@ -676,7 +694,7 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
           </label>
           <label class="block space-y-1">
             <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Desde (primer cargo / inicio)</span>
-            <input type="date" data-et-sub-billing-start class="et-field w-full text-sm py-2" />
+            <input type="date" data-et-sub-billing-start class="et-field et-date w-full text-sm py-2" />
           </label>
           <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-et-sub-next-hint>
             Con la fecha de inicio y el ciclo se calcula el próximo cobro (p. ej. mensual → mes siguiente).
@@ -998,6 +1016,28 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
           <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Color de tarjeta</span>
           <input type="color" data-et-inv-color class="et-field h-10 w-full cursor-pointer py-1" value="#8b5cf6" />
         </label>
+        <details class="rounded-xl border border-violet-200/70 dark:border-violet-800/50 bg-violet-50/50 dark:bg-violet-950/20 px-3 py-2.5">
+          <summary class="cursor-pointer text-xs font-semibold text-violet-800 dark:text-violet-200 select-none">
+            Compra / venta (cuenta de inversiones)
+          </summary>
+          <p class="m-0 mt-2 mb-2 text-[11px] text-gray-500 dark:text-gray-400 leading-snug">
+            Ajusta el efectivo de la cuenta marcada como «Cuenta de inversiones» al comprar o vender.
+          </p>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block space-y-1">
+              <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Cantidad</span>
+              <input type="number" step="any" min="0" data-et-inv-trade-qty class="et-field w-full text-sm py-2 et-amount" />
+            </label>
+            <label class="block space-y-1">
+              <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Precio unitario (€)</span>
+              <input type="number" step="0.0001" min="0" data-et-inv-trade-price class="et-field w-full text-sm py-2 et-amount" />
+            </label>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <button type="button" data-et-inv-buy class="et-btn-accent text-sm py-2">Registrar compra</button>
+            <button type="button" data-et-inv-sell class="et-btn-secondary text-sm py-2">Registrar venta</button>
+          </div>
+        </details>
         <div class="flex justify-between gap-2 pt-1">
           <button type="button" class="text-sm font-semibold text-red-600 dark:text-red-400 hover:underline" data-et-inv-delete>Eliminar</button>
           <div class="flex gap-2">
@@ -1221,6 +1261,9 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
       border-color: rgb(75 85 99);
       background: rgb(17 24 39);
       color: rgb(209 213 219);
+    }
+    [data-tools-expense-page] .et-chart-host canvas {
+      font-family: inherit;
     }
     [data-tools-expense-page] input[type="date"].et-field,
     [data-tools-expense-page] input[type="month"].et-field {

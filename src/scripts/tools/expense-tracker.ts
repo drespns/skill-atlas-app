@@ -43,6 +43,8 @@ import {
   totalExpensesInPeriod,
   formatIbanDisplay,
   formatEurEs,
+  formatChartNumberEs,
+  roundMoney,
   defaultWealthAccountId,
   parseCardColor,
   effectivePaycheckAmount,
@@ -64,7 +66,7 @@ import {
   type WealthAccount,
   type WealthTransfer,
 } from "@lib/tools-expense-tracker";
-import { initExpenseDatePickers } from "./expense-tracker-dates";
+import { initExpenseDatePickers, readDateFieldValue, refreshExpenseDatePicker } from "./expense-tracker-dates";
 import { layoutTreemap } from "@lib/treemap-layout";
 import { isExpenseEncryptedEnvelope, openExpenseEnvelope, sealExpenseState } from "@lib/tools-expense-tracker-crypto";
 import type { EncryptedExpenseEnvelope } from "@lib/tools-expense-tracker-crypto";
@@ -121,7 +123,30 @@ function fmtEurCompact(n: number) {
 }
 
 function fmtNumEs(n: number) {
-  return new Intl.NumberFormat("es-ES", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
+  return formatChartNumberEs(n);
+}
+
+const CHART_FONT = "inherit, system-ui, -apple-system, sans-serif";
+
+function chartAxisTooltip(params: unknown): string {
+  const rows = Array.isArray(params) ? params : [params];
+  if (!rows.length) return "";
+  const ax = (rows[0] as { axisValue?: string }).axisValue ?? "";
+  const lines = [`<span style="font-weight:600;font-family:${CHART_FONT}">${ax}</span>`];
+  for (const r of rows as { seriesName?: string; value?: number; marker?: string }[]) {
+    const v = Number(r.value);
+    lines.push(
+      `${r.marker ?? ""} ${r.seriesName ?? ""}: ${Number.isFinite(v) ? fmtEur(v) : "—"}`,
+    );
+  }
+  return lines.join("<br/>");
+}
+
+function chartPieTooltip(params: unknown): string {
+  const p = params as { name?: string; value?: number; percent?: number; marker?: string };
+  const val = Number(p.value);
+  const pct = Number(p.percent);
+  return `${p.marker ?? ""} ${p.name ?? ""}: ${Number.isFinite(val) ? fmtEur(val) : "—"} (${Number.isFinite(pct) ? pct.toFixed(1) : "0"}%)`;
 }
 
 function amountInEur(amount: number, currency: "EUR" | "USD", fx: number) {
@@ -168,7 +193,11 @@ function disposeCharts() {
 function pushChart(el: HTMLElement | null, opt: echarts.EChartsCoreOption) {
   if (!el) return;
   const inst = echarts.init(el, undefined, { renderer: "canvas" });
-  inst.setOption(opt);
+  const merged: echarts.EChartsCoreOption = {
+    textStyle: { fontFamily: CHART_FONT },
+    ...opt,
+  };
+  inst.setOption(merged);
   chartInstances.push(inst);
   return inst;
 }
@@ -612,6 +641,155 @@ function renderPatrimonioKpi(root: HTMLElement) {
   }
 }
 
+function renderTrackingBaseline(root: HTMLElement) {
+  const el = root.querySelector<HTMLInputElement>("[data-et-tracking-start]");
+  if (el) el.value = (state.trackingStartDate ?? "").slice(0, 10);
+}
+
+function applyTrackingBaseline(root: HTMLElement) {
+  const el = root.querySelector<HTMLInputElement>("[data-et-tracking-start]");
+  const raw = readDateFieldValue(el);
+  if (raw.length !== 10) {
+    void showAlertDialog(root, "Indica la fecha desde la que empiezas a registrar (p. ej. 2026-06-01).");
+    return;
+  }
+  state.trackingStartDate = raw;
+  state.wealthAccounts = (state.wealthAccounts ?? []).map((a) => {
+    const tracked = Boolean(a.isDefaultExpense || a.isDefaultIncome || a.isDefaultInvestment);
+    if (!tracked) return a;
+    const input = root.querySelector<HTMLInputElement>(`[data-wealth-opening-balance="${a.id}"]`);
+    const fromInput = input?.value != null && input.value !== "" ? Number(input.value) : NaN;
+    const opening =
+      Number.isFinite(fromInput) && fromInput >= 0
+        ? roundMoney(fromInput)
+        : a.openingBalance != null
+          ? a.openingBalance
+          : a.balance;
+    return { ...a, openingBalance: opening, balance: opening };
+  });
+  persist();
+  renderWealthAccounts(root);
+  renderTrackingBaseline(root);
+  renderPatrimonioKpi(root);
+  renderKpis(root);
+  renderCharts(root);
+}
+
+function investmentCashAccountId(): string | undefined {
+  return defaultWealthAccountId(state.wealthAccounts ?? [], "investment");
+}
+
+function applyInvestmentBuy(root: HTMLElement) {
+  const qty = Number(root.querySelector<HTMLInputElement>("[data-et-inv-trade-qty]")?.value);
+  const price = Number(root.querySelector<HTMLInputElement>("[data-et-inv-trade-price]")?.value);
+  if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(price) || price < 0) {
+    void showAlertDialog(root, "Indica cantidad y precio unitario válidos.");
+    return;
+  }
+  const cashId = investmentCashAccountId();
+  if (!cashId) {
+    void showAlertDialog(root, "Marca una cuenta como «Cuenta de inversiones» en Patrimonio.");
+    return;
+  }
+  const total = roundMoney(qty * price);
+  const idEl = root.querySelector<HTMLInputElement>("[data-et-inv-id]");
+  const name = root.querySelector<HTMLInputElement>("[data-et-inv-name]")?.value?.trim() ?? "";
+  if (!name) {
+    void showAlertDialog(root, "Indica el nombre del activo antes de registrar la compra.");
+    return;
+  }
+  const list = [...(state.investments ?? [])];
+  const id = idEl?.value || makeId();
+  const idx = list.findIndex((x) => x.id === id);
+  const prev = idx >= 0 ? list[idx]! : null;
+  const typeRaw = root.querySelector<HTMLSelectElement>("[data-et-inv-type]")?.value ?? "other";
+  const platform = root.querySelector<HTMLInputElement>("[data-et-inv-platform]")?.value?.trim() || "—";
+  const pnl = Number(root.querySelector<HTMLInputElement>("[data-et-inv-pnl]")?.value);
+  const notes = root.querySelector<HTMLTextAreaElement>("[data-et-inv-notes]")?.value?.trim() ?? "";
+  const cardColor = parseCardColor(root.querySelector<HTMLInputElement>("[data-et-inv-color]")?.value);
+  let avgBuyPrice = price;
+  if (prev && prev.quantity > 0) {
+    const newQty = (prev.quantity ?? 0) + qty;
+    avgBuyPrice = roundMoney((prev.avgBuyPrice * prev.quantity + price * qty) / newQty);
+  }
+  const newQuantity = (prev?.quantity ?? 0) + qty;
+  const row: InvestmentHolding = {
+    id,
+    name,
+    type: (["stocks", "ipo", "etf", "metals", "crypto", "bonds", "other"] as const).includes(typeRaw as any)
+      ? (typeRaw as InvestmentHolding["type"])
+      : prev?.type ?? "other",
+    platform: platform !== "—" ? platform : (prev?.platform ?? "—"),
+    avgBuyPrice,
+    quantity: newQuantity,
+    totalInvested: computeInvestmentTotalInvested(avgBuyPrice, newQuantity),
+    gainLossPct: Number.isFinite(pnl) ? pnl : (prev?.gainLossPct ?? 0),
+    notes: notes || prev?.notes,
+    cardColor: cardColor ?? prev?.cardColor,
+  };
+  if (idx >= 0) list[idx] = row;
+  else list.push(row);
+  state.investments = list.slice(0, 48);
+  adjustWealthBalance(cashId, -total);
+  if (idEl) idEl.value = row.id;
+  (root.querySelector("[data-et-inv-avg]") as HTMLInputElement).value = String(row.avgBuyPrice);
+  (root.querySelector("[data-et-inv-qty]") as HTMLInputElement).value = String(row.quantity);
+  updateInvTotalDisplay(root);
+  persist();
+  renderPatrimonioKpi(root);
+  updateWealthBalanceDisplays(root);
+  renderInvestments(root);
+}
+
+function applyInvestmentSell(root: HTMLElement) {
+  const qty = Number(root.querySelector<HTMLInputElement>("[data-et-inv-trade-qty]")?.value);
+  const price = Number(root.querySelector<HTMLInputElement>("[data-et-inv-trade-price]")?.value);
+  if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(price) || price < 0) {
+    void showAlertDialog(root, "Indica cantidad y precio unitario válidos.");
+    return;
+  }
+  const cashId = investmentCashAccountId();
+  if (!cashId) {
+    void showAlertDialog(root, "Marca una cuenta como «Cuenta de inversiones» en Patrimonio.");
+    return;
+  }
+  const idEl = root.querySelector<HTMLInputElement>("[data-et-inv-id]");
+  const id = idEl?.value;
+  if (!id) {
+    void showAlertDialog(root, "Guarda o edita una posición antes de registrar una venta.");
+    return;
+  }
+  const list = [...(state.investments ?? [])];
+  const idx = list.findIndex((x) => x.id === id);
+  if (idx < 0) return;
+  const prev = list[idx]!;
+  if (qty > prev.quantity) {
+    void showAlertDialog(root, `No puedes vender más de ${prev.quantity} unidades.`);
+    return;
+  }
+  const total = roundMoney(qty * price);
+  const newQty = prev.quantity - qty;
+  if (newQty <= 0) {
+    list.splice(idx, 1);
+    root.querySelector<HTMLDialogElement>("[data-et-dlg-investment]")?.close();
+  } else {
+    const row: InvestmentHolding = {
+      ...prev,
+      quantity: newQty,
+      totalInvested: computeInvestmentTotalInvested(prev.avgBuyPrice, newQty),
+    };
+    list[idx] = row;
+    (root.querySelector("[data-et-inv-qty]") as HTMLInputElement).value = String(row.quantity);
+    updateInvTotalDisplay(root);
+  }
+  state.investments = list.slice(0, 48);
+  adjustWealthBalance(cashId, total);
+  persist();
+  renderPatrimonioKpi(root);
+  updateWealthBalanceDisplays(root);
+  renderInvestments(root);
+}
+
 function updateWealthBalanceDisplays(root: HTMLElement) {
   for (const a of state.wealthAccounts ?? []) {
     const el = root.querySelector<HTMLElement>(`[data-wealth-balance-display="${a.id}"]`);
@@ -633,7 +811,7 @@ function renderWealthAccounts(root: HTMLElement) {
   list.innerHTML = "";
   if (empty) empty.classList.toggle("hidden", accounts.length > 0);
   for (const a of accounts) {
-    const tracked = Boolean(a.isDefaultExpense || a.isDefaultIncome);
+    const tracked = Boolean(a.isDefaultExpense || a.isDefaultIncome || a.isDefaultInvestment);
     const row = document.createElement("div");
     row.className =
       "rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 p-3 space-y-2";
@@ -693,6 +871,14 @@ function renderWealthAccounts(root: HTMLElement) {
     incCb.checked = Boolean(a.isDefaultIncome);
     incCb.dataset.wealthDefaultIncome = a.id;
     incLab.append(incCb, document.createTextNode("Cuenta de ingresos"));
+    const invLab = document.createElement("label");
+    invLab.className = "inline-flex items-center gap-1.5 cursor-pointer";
+    const invCb = document.createElement("input");
+    invCb.type = "radio";
+    invCb.name = "et-wealth-default-investment";
+    invCb.checked = Boolean(a.isDefaultInvestment);
+    invCb.dataset.wealthDefaultInvestment = a.id;
+    invLab.append(invCb, document.createTextNode("Cuenta de inversiones"));
 
     const balRow = document.createElement("div");
     balRow.className = "flex flex-wrap items-end gap-2";
@@ -711,6 +897,20 @@ function renderWealthAccounts(root: HTMLElement) {
       recon.className = "et-btn-secondary text-xs py-2";
       recon.textContent = "Reconciliar saldo";
       balRow.append(disp, recon);
+      if (state.trackingStartDate) {
+        const openLab = document.createElement("label");
+        openLab.className = "flex-1 min-w-[10rem] space-y-1";
+        const ts = state.trackingStartDate.slice(0, 10);
+        openLab.innerHTML = `<span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Saldo al ${ts.split("-").reverse().join("/")}</span>`;
+        const openIn = document.createElement("input");
+        openIn.type = "number";
+        openIn.step = "0.01";
+        openIn.value = String(a.openingBalance ?? a.balance);
+        openIn.dataset.wealthOpeningBalance = a.id;
+        openIn.className = "et-field w-full text-sm py-2 et-amount";
+        openLab.appendChild(openIn);
+        balRow.appendChild(openLab);
+      }
     } else {
       const balLab = document.createElement("label");
       balLab.className = "flex-1 min-w-[10rem] space-y-1";
@@ -725,7 +925,7 @@ function renderWealthAccounts(root: HTMLElement) {
       balRow.appendChild(balLab);
     }
 
-    roles.append(expLab, incLab);
+    roles.append(expLab, incLab, invLab);
     row.append(top, mask, roles, balRow);
     list.appendChild(row);
   }
@@ -774,7 +974,12 @@ function renderKpis(root: HTMLElement) {
   if (elIncPeriod) elIncPeriod.textContent = fmtEurCompact(totalIncomeInPeriod(state, state.period));
 
   const curMonth = today.slice(0, 7);
-  const exM = state.expenses.filter((e) => e.date.startsWith(curMonth) && e.confirmed !== false);
+  const ts = state.trackingStartDate?.slice(0, 10);
+  const exM = state.expenses.filter((e) => {
+    if (!e.date.startsWith(curMonth) || e.confirmed === false) return false;
+    if (ts && ts.length === 10 && e.date < ts) return false;
+    return true;
+  });
   let expMEur = 0;
   for (const e of exM) {
     expMEur += amountInEur(Math.max(0, e.amount), e.currency, fx);
@@ -2278,9 +2483,14 @@ function saveInvestmentFromDialog(root: HTMLElement) {
   };
   const list = [...(state.investments ?? [])];
   const idx = list.findIndex((x) => x.id === row.id);
+  const isNew = idx < 0;
   if (idx >= 0) list[idx] = row;
   else list.push(row);
   state.investments = list.slice(0, 48);
+  if (isNew) {
+    const cashId = investmentCashAccountId();
+    if (cashId && row.totalInvested > 0) adjustWealthBalance(cashId, -row.totalInvested);
+  }
   root.querySelector<HTMLDialogElement>("[data-et-dlg-investment]")?.close();
   persist();
   renderAll(root);
@@ -2290,6 +2500,9 @@ function deleteInvestmentFromDialog(root: HTMLElement) {
   void (async () => {
     if (!editingInvId) return;
     if (!(await showConfirmDialog(root, "¿Eliminar esta posición?", "Eliminar"))) return;
+    const h = (state.investments ?? []).find((x) => x.id === editingInvId);
+    const cashId = investmentCashAccountId();
+    if (cashId && h && h.totalInvested > 0) adjustWealthBalance(cashId, h.totalInvested);
     state.investments = (state.investments ?? []).filter((x) => x.id !== editingInvId);
     root.querySelector<HTMLDialogElement>("[data-et-dlg-investment]")?.close();
     persist();
@@ -2541,7 +2754,7 @@ function chartTimelineMonthKeys(): string[] {
     const startKey = startIso.slice(0, 7);
     for (const k of monthKeysRange(startKey, endKey)) keys.add(k);
   }
-  const ex = filterExpensesByPeriod(state.expenses, state.period);
+  const ex = filterExpensesByPeriod(state.expenses, state.period, state.trackingStartDate);
   for (const e of ex) keys.add(e.date.slice(0, 7));
   for (const row of state.incomeAdhoc ?? []) {
     if (row.confirmed === false) continue;
@@ -2608,7 +2821,7 @@ function renderCharts(root: HTMLElement) {
   const rowPies = root.querySelector<HTMLElement>("[data-et-chart-pies-row]");
   if (!elLine || !elBar || !elPieEur || !elPieUsd) return;
 
-  const ex = filterExpensesByPeriod(state.expenses, state.period);
+  const ex = filterExpensesByPeriod(state.expenses, state.period, state.trackingStartDate);
   const chartFid = state.chartFilterCategoryId?.trim() || "";
   const exBooked = (e: ExpenseRow) => e.confirmed !== false;
   const exChart = chartFid
@@ -2671,7 +2884,7 @@ function renderCharts(root: HTMLElement) {
       top: 4,
       textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
     },
-    tooltip: { trigger: "axis" },
+    tooltip: { trigger: "axis", formatter: chartAxisTooltip },
     legend: { bottom: 0, textStyle: { color: textMuted() } },
     grid: { left: 48, right: 16, top: 44, bottom: 48 },
     xAxis: {
@@ -2744,7 +2957,7 @@ function renderCharts(root: HTMLElement) {
           top: 4,
           textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
         },
-        tooltip: { trigger: "axis" },
+        tooltip: { trigger: "axis", formatter: chartAxisTooltip },
         legend: { bottom: 0, textStyle: { color: textMuted() } },
         grid: { left: 48, right: 16, top: 44, bottom: 40 },
         xAxis: {
@@ -2858,7 +3071,7 @@ function renderCharts(root: HTMLElement) {
         top: 4,
         textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
       },
-      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, formatter: chartAxisTooltip },
       legend: { bottom: 0, textStyle: { color: textMuted() } },
       grid: { left: 120, right: 24, top: 44, bottom: 40 },
       xAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), formatter: (v: number) => fmtNumEs(v) } },
@@ -2879,7 +3092,7 @@ function renderCharts(root: HTMLElement) {
         top: 4,
         textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
       },
-      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, formatter: chartAxisTooltip },
       grid: { left: 120, right: 24, top: 44, bottom: 16 },
       xAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), formatter: (v: number) => fmtNumEs(v) } },
       yAxis: { type: "category", data: catNames, axisLabel: { color: textMuted() } },
@@ -2899,7 +3112,7 @@ function renderCharts(root: HTMLElement) {
     const sum = data.reduce((a, b) => a + b.value, 0);
     const opt: echarts.EChartsCoreOption = {
       title: { text: title, left: "center", top: 6, textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() } },
-      tooltip: { trigger: "item", formatter: "{b}: {c} ({d}%)" },
+      tooltip: { trigger: "item", formatter: chartPieTooltip },
       series: [
         {
           type: "pie",
@@ -2962,7 +3175,7 @@ function renderCharts(root: HTMLElement) {
         top: 4,
         textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
       },
-      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, formatter: chartAxisTooltip },
       grid: { left: 8, right: 16, top: 44, bottom: 8, containLabel: true },
       xAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), formatter: (v: number) => fmtNumEs(v) } },
       yAxis: {
@@ -3008,7 +3221,7 @@ function renderCharts(root: HTMLElement) {
           top: 4,
           textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
         },
-        tooltip: { trigger: "axis" },
+        tooltip: { trigger: "axis", formatter: chartAxisTooltip },
         legend: { bottom: 0, textStyle: { color: textMuted() } },
         grid: { left: 36, right: 12, top: 44, bottom: 40 },
         xAxis: { type: "category", data: dlabels, axisLabel: { color: textMuted() } },
@@ -3028,7 +3241,7 @@ function renderCharts(root: HTMLElement) {
           top: 4,
           textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
         },
-        tooltip: { trigger: "axis" },
+        tooltip: { trigger: "axis", formatter: chartAxisTooltip },
         grid: { left: 36, right: 12, top: 44, bottom: 8 },
         xAxis: { type: "category", data: dlabels, axisLabel: { color: textMuted() } },
         yAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), formatter: (v: number) => fmtNumEs(v) } },
@@ -3070,7 +3283,7 @@ function renderCharts(root: HTMLElement) {
           top: 4,
           textStyle: { fontSize: 12, fontWeight: 600, color: textPrimary() },
         },
-        tooltip: { trigger: "axis" },
+        tooltip: { trigger: "axis", formatter: chartAxisTooltip },
         legend: { bottom: 0, textStyle: { color: textMuted() } },
         grid: { left: 48, right: 16, top: 48, bottom: 48 },
         xAxis: { type: "category", data: monthLabels, axisLabel: { color: textMuted() } },
@@ -3104,7 +3317,7 @@ function renderCharts(root: HTMLElement) {
           top: 4,
           textStyle: { fontSize: 12, fontWeight: 600, color: textPrimary() },
         },
-        tooltip: { trigger: "axis" },
+        tooltip: { trigger: "axis", formatter: chartAxisTooltip },
         legend: { bottom: 0, textStyle: { color: textMuted() } },
         grid: { left: 48, right: 16, top: 48, bottom: 48 },
         xAxis: { type: "category", data: monthLabels, axisLabel: { color: textMuted() } },
@@ -3178,6 +3391,7 @@ function openSubDialog(root: HTMLElement, sub: SubscriptionRow | null) {
   if (colorEl) colorEl.value = parseCardColor(sub?.cardColor) ?? "#6366f1";
   delBtn.classList.toggle("invisible", !sub);
   dlg.showModal();
+  refreshExpenseDatePicker(billEl, billEl.value);
   requestAnimationFrame(() => window.dispatchEvent(new Event("skillatlas:select-popovers-refresh")));
 }
 
@@ -3203,7 +3417,7 @@ function saveSubFromDialog(root: HTMLElement) {
   const tags = parseTags(tagsEl.value);
   pushTagBankFrom(tags);
   const cardColor = parseCardColor(root.querySelector<HTMLInputElement>("[data-et-sub-color]")?.value);
-  const billingRaw = billEl.value.slice(0, 10);
+  const billingRaw = readDateFieldValue(billEl);
   const billingStartDate = billingRaw.length === 10 ? billingRaw : undefined;
   const row: SubscriptionRow = {
     id: idEl.value || makeId(),
@@ -3421,6 +3635,7 @@ function renderAll(root: HTMLElement) {
 
   renderKpis(root);
   renderWealthAccounts(root);
+  renderTrackingBaseline(root);
   renderSubs(root);
   renderInvestments(root);
   renderPlannedExpenses(root);
@@ -3500,6 +3715,18 @@ function wire(root: HTMLElement) {
     setSync((e.target as HTMLInputElement).checked);
   });
 
+  root.querySelector<HTMLButtonElement>("[data-et-tracking-apply]")?.addEventListener("click", () =>
+    applyTrackingBaseline(root),
+  );
+  root.querySelector<HTMLInputElement>("[data-et-tracking-start]")?.addEventListener("change", (e) => {
+    const v = readDateFieldValue(e.target as HTMLInputElement);
+    if (v.length === 10) {
+      state.trackingStartDate = v;
+      persist();
+      renderWealthAccounts(root);
+    }
+  });
+
   root.querySelector<HTMLButtonElement>("[data-et-wealth-transfer]")?.addEventListener("click", () =>
     openTransferDialog(root),
   );
@@ -3521,7 +3748,7 @@ function wire(root: HTMLElement) {
 
   root.querySelector<HTMLElement>("[data-et-wealth-list]")?.addEventListener("input", (e) => {
     const t = e.target as HTMLElement;
-    const id = t.dataset.wealthName || t.dataset.wealthBalance || t.dataset.wealthIban;
+    const id = t.dataset.wealthName || t.dataset.wealthBalance || t.dataset.wealthIban || t.dataset.wealthOpeningBalance;
     if (!id) return;
     const idx = (state.wealthAccounts ?? []).findIndex((a) => a.id === id);
     if (idx < 0) return;
@@ -3530,6 +3757,13 @@ function wire(root: HTMLElement) {
     if (t instanceof HTMLInputElement && t.dataset.wealthBalance) {
       const n = Number(t.value);
       row.balance = Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : 0;
+    }
+    if (t instanceof HTMLInputElement && t.dataset.wealthOpeningBalance) {
+      const n = Number(t.value);
+      row.openingBalance = Number.isFinite(n) && n >= 0 ? roundMoney(n) : undefined;
+      state.wealthAccounts![idx] = row;
+      persist();
+      return;
     }
     if (t instanceof HTMLInputElement && t.dataset.wealthIban) {
       row.ibanPrefix = t.value.trim().toUpperCase().slice(0, 4) || undefined;
@@ -3561,6 +3795,16 @@ function wire(root: HTMLElement) {
       state.wealthAccounts = (state.wealthAccounts ?? []).map((a) => ({
         ...a,
         isDefaultIncome: a.id === id,
+      }));
+      persist();
+      renderWealthAccounts(root);
+      return;
+    }
+    if (t.dataset.wealthDefaultInvestment) {
+      const id = t.dataset.wealthDefaultInvestment;
+      state.wealthAccounts = (state.wealthAccounts ?? []).map((a) => ({
+        ...a,
+        isDefaultInvestment: a.id === id,
       }));
       persist();
       renderWealthAccounts(root);
@@ -3697,6 +3941,12 @@ function wire(root: HTMLElement) {
   );
   root.querySelector<HTMLButtonElement>("[data-et-inv-delete]")?.addEventListener("click", () =>
     deleteInvestmentFromDialog(root),
+  );
+  root.querySelector<HTMLButtonElement>("[data-et-inv-buy]")?.addEventListener("click", () =>
+    applyInvestmentBuy(root),
+  );
+  root.querySelector<HTMLButtonElement>("[data-et-inv-sell]")?.addEventListener("click", () =>
+    applyInvestmentSell(root),
   );
 
   root.querySelector<HTMLButtonElement>("[data-et-export-csv]")?.addEventListener("click", () => {
