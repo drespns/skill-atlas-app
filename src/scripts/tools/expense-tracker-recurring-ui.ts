@@ -188,7 +188,7 @@ export function renderInvestmentSection(root: HTMLElement, deps: RecurringUiDeps
   if (!holdings.length) {
     const empty = document.createElement("p");
     empty.className = "text-sm text-gray-600 dark:text-gray-400 col-span-full py-2";
-    empty.textContent = "Aún no hay posiciones. Añade activos con su entidad y P/L manual.";
+    empty.textContent = "Aún no hay posiciones. Añade activos con cantidad y rendimiento % manual.";
     grid.appendChild(empty);
     return;
   }
@@ -213,8 +213,8 @@ export function renderInvestmentSection(root: HTMLElement, deps: RecurringUiDeps
     sub.className = "m-0 text-[11px] text-gray-500 dark:text-gray-400";
     const pnl = investmentGainLossAmount(h);
     const sign = pnl >= 0 ? "+" : "";
-    const qty = h.quantity != null ? ` · ${h.quantity} u.` : "";
-    sub.textContent = `Invertido ${deps.fmtEur(h.totalInvested)}${qty} · P/L ${sign}${h.gainLossPct.toFixed(1)}% (${sign}${deps.fmtEur(pnl)})`;
+    const qty = ` · ${h.quantity} u.`;
+    sub.textContent = `Invertido ${deps.fmtEur(h.totalInvested)}${qty} · Rend. ${sign}${h.gainLossPct.toFixed(1)}% (${sign}${deps.fmtEur(pnl)})`;
     card.append(type, name, val, sub);
     card.addEventListener("click", () => deps.openInvestmentDialog(root, h));
     grid.appendChild(card);

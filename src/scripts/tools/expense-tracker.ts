@@ -34,15 +34,25 @@ import {
   subscriptionCountsInTotals,
   scheduleSubscriptionCancel,
   validateCategoryTree,
+  computePatrimonioSnapshot,
+  computeInvestmentTotalInvested,
+  monthsForRecurringRange,
+  investmentPortfolioTotals,
+  investmentCurrentValue,
+  investmentGainLossAmount,
   type ExpenseAttachment,
   type ExpenseRow,
   type ExpenseTrackerState,
   type IncomeAdhocRow,
+  type IncomeMonthOverride,
   type PaycheckEntry,
   type PlannedExpenseEntry,
+  type PlannedExpenseMonthOverride,
   type SubscriptionRow,
   type InvestmentHolding,
+  type WealthAccount,
 } from "@lib/tools-expense-tracker";
+import { layoutTreemap } from "@lib/treemap-layout";
 import { isExpenseEncryptedEnvelope, openExpenseEnvelope, sealExpenseState } from "@lib/tools-expense-tracker-crypto";
 import type { EncryptedExpenseEnvelope } from "@lib/tools-expense-tracker-crypto";
 import { loadClientState, scheduleSaveClientState } from "@scripts/core/user-client-state";
@@ -468,6 +478,91 @@ function pushTagBankFrom(tags: string[]) {
   state.tagBank = [...set].slice(0, 80);
 }
 
+let subsTreemapRo: ResizeObserver | null = null;
+
+function formatMonthLabel(mk: string) {
+  const [y, m] = mk.split("-").map(Number);
+  if (!y || !m) return mk;
+  const d = new Date(y, m - 1, 1);
+  return d.toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+}
+
+function renderPatrimonioKpi(root: HTMLElement) {
+  const elTotal = root.querySelector<HTMLElement>("[data-et-kpi-patrimonio-total]");
+  const elBreak = root.querySelector<HTMLElement>("[data-et-kpi-patrimonio-breakdown]");
+  if (!elTotal || !elBreak) return;
+  const snap = computePatrimonioSnapshot(state);
+  elTotal.textContent = fmtEurCompact(snap.total);
+  elBreak.innerHTML = "";
+  for (const a of snap.accounts) {
+    const row = document.createElement("div");
+    row.className = "flex justify-between gap-2 text-gray-700 dark:text-gray-300";
+    const name = document.createElement("span");
+    name.className = "truncate";
+    name.textContent = a.name;
+    const val = document.createElement("span");
+    val.className = "font-mono font-semibold shrink-0";
+    val.textContent = fmtEurCompact(a.balance);
+    row.append(name, val);
+    elBreak.appendChild(row);
+  }
+  if (snap.investmentsCurrent > 0) {
+    const row = document.createElement("div");
+    row.className = "flex justify-between gap-2 text-violet-800 dark:text-violet-200 font-medium";
+    row.innerHTML = `<span>Inversiones (valor est.)</span><span class="font-mono font-semibold shrink-0">${fmtEurCompact(snap.investmentsCurrent)}</span>`;
+    elBreak.appendChild(row);
+  }
+  if (!snap.accounts.length && snap.investmentsCurrent <= 0) {
+    const hint = document.createElement("p");
+    hint.className = "m-0 text-xs text-gray-500 dark:text-gray-400";
+    hint.textContent = "Configura cuentas arriba o añade inversiones.";
+    elBreak.appendChild(hint);
+  }
+}
+
+function renderWealthAccounts(root: HTMLElement) {
+  const list = root.querySelector<HTMLElement>("[data-et-wealth-list]");
+  const empty = root.querySelector<HTMLElement>("[data-et-wealth-empty]");
+  if (!list) return;
+  const accounts = state.wealthAccounts ?? [];
+  list.innerHTML = "";
+  if (empty) empty.classList.toggle("hidden", accounts.length > 0);
+  for (const a of accounts) {
+    const row = document.createElement("div");
+    row.className = "flex flex-wrap items-end gap-2 sm:gap-3";
+    row.dataset.wealthId = a.id;
+    const nameLab = document.createElement("label");
+    nameLab.className = "flex-1 min-w-[10rem] space-y-1";
+    nameLab.innerHTML = `<span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Cuenta</span>`;
+    const nameIn = document.createElement("input");
+    nameIn.type = "text";
+    nameIn.value = a.name;
+    nameIn.dataset.wealthName = a.id;
+    nameIn.className = "et-field w-full text-sm py-2";
+    nameIn.placeholder = "Banco, broker…";
+    nameLab.appendChild(nameIn);
+    const balLab = document.createElement("label");
+    balLab.className = "w-full sm:w-36 space-y-1";
+    balLab.innerHTML = `<span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Saldo (€)</span>`;
+    const balIn = document.createElement("input");
+    balIn.type = "number";
+    balIn.step = "0.01";
+    balIn.min = "0";
+    balIn.value = String(a.balance);
+    balIn.dataset.wealthBalance = a.id;
+    balIn.className = "et-field w-full text-sm py-2 font-mono";
+    balLab.appendChild(balIn);
+    const del = document.createElement("button");
+    del.type = "button";
+    del.dataset.wealthDelete = a.id;
+    del.className = "et-btn-secondary text-xs py-2 px-2.5 text-red-600 dark:text-red-400";
+    del.textContent = "Quitar";
+    row.append(nameLab, balLab, del);
+    list.appendChild(row);
+  }
+  renderPatrimonioKpi(root);
+}
+
 function renderKpis(root: HTMLElement) {
   const elSubs = root.querySelector<HTMLElement>("[data-et-kpi-subs]");
   const elExp = root.querySelector<HTMLElement>("[data-et-kpi-expenses]");
@@ -506,6 +601,7 @@ function renderKpis(root: HTMLElement) {
   const incEur = incS.seriesUnified[0] ?? 0;
   if (elInc) elInc.textContent = fmtEurCompact(incEur);
   if (elBal) elBal.textContent = fmtEurCompact(incEur - outMEur);
+  renderPatrimonioKpi(root);
 
   const elYi = root.querySelector<HTMLElement>("[data-et-kpi-year-income]");
   const elYo = root.querySelector<HTMLElement>("[data-et-kpi-year-out]");
@@ -522,99 +618,136 @@ function renderKpis(root: HTMLElement) {
   }
 }
 
-function renderSubs(root: HTMLElement) {
-  const strip = root.querySelector<HTMLElement>("[data-et-subs-strip]");
-  if (!strip) return;
-  strip.innerHTML = "";
+function buildSubTreemapCard(
+  s: SubscriptionRow,
+  fx: number,
+  today: string,
+  w: number,
+): HTMLElement {
+  const counts = subscriptionCountsInTotals(s, today);
+  const scheduled = Boolean(s.cancelEffectiveDate?.trim());
+  const faded = !counts || !s.active || scheduled;
+
+  const wrap = document.createElement("div");
+  wrap.className = "et-sub-treemap-card";
+  wrap.dataset.subTileId = s.id;
+
+  const card = document.createElement("article");
+  card.dataset.subId = s.id;
+  card.className =
+    "relative text-left rounded-xl border border-gray-200/90 dark:border-gray-800 bg-gradient-to-br from-white to-gray-50/90 dark:from-gray-950 dark:to-gray-900/70 p-2.5 sm:p-3 shadow-sm h-full flex flex-col overflow-hidden" +
+    (faded ? " et-sub-bento-card--faded opacity-75" : "");
+
+  const cycleLabel =
+    s.cycle === "weekly"
+      ? "Semanal"
+      : s.cycle === "monthly"
+        ? "Mensual"
+        : s.cycle === "quarterly"
+          ? "Trimestral"
+          : "Anual";
+  const monthly = subscriptionToMonthlyAmount(s);
+  const monthlyEur = amountInEur(monthly, s.currency, fx);
+  const nextIso = subscriptionNextChargeIso(s);
+
+  const head = document.createElement("div");
+  head.className = "flex items-start justify-between gap-1 mb-1 min-h-0";
+  const status = document.createElement("p");
+  status.className = "m-0 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 line-clamp-2";
+  if (!s.active) status.textContent = "Pausada";
+  else if (scheduled && counts) status.textContent = `Cancela ${s.cancelEffectiveDate?.slice(0, 10) ?? ""}`;
+  else if (scheduled) status.textContent = "Cancelada";
+  else status.textContent = cycleLabel;
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.type = "button";
+  cancelBtn.dataset.subCancel = s.id;
+  cancelBtn.className =
+    "shrink-0 text-[9px] font-semibold rounded-md border border-gray-200 dark:border-gray-700 px-1.5 py-0.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer z-10";
+  if (!s.active) cancelBtn.textContent = "On";
+  else if (scheduled) cancelBtn.textContent = "↩";
+  else cancelBtn.textContent = "×";
+  head.append(status, cancelBtn);
+
+  const name = document.createElement("p");
+  name.className =
+    "m-0 font-semibold tracking-tight text-gray-900 dark:text-gray-50 truncate " +
+    (w > 0.22 ? "text-sm sm:text-base" : "text-xs sm:text-sm");
+  name.textContent = s.name;
+
+  const price = document.createElement("p");
+  price.className =
+    "m-0 mt-auto pt-1 font-bold text-gray-800 dark:text-gray-100 font-mono truncate " +
+    (w > 0.18 ? "text-sm sm:text-base" : "text-xs");
+  price.textContent = `${fmtEur(monthlyEur)}/mes`;
+
+  const meta = document.createElement("p");
+  meta.className = "m-0 text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-400 truncate";
+  const from = s.billingStartDate?.trim();
+  if (from && nextIso && counts) meta.textContent = `Próx. ${nextIso}`;
+  else if (from) meta.textContent = `Desde ${from.slice(0, 10)}`;
+  else meta.textContent = "Sin fecha inicio";
+
+  const editHit = document.createElement("button");
+  editHit.type = "button";
+  editHit.dataset.subId = s.id;
+  editHit.className = "absolute inset-0 rounded-xl cursor-pointer";
+  editHit.setAttribute("aria-label", `Editar ${s.name}`);
+
+  card.append(head, name, price, meta, editHit);
+  wrap.appendChild(card);
+  return wrap;
+}
+
+function layoutSubsTreemap(strip: HTMLElement) {
   const fx = state.eurPerUsd;
   const subs = [...state.subscriptions];
+  const gap = 6;
+  const width = Math.max(strip.clientWidth, 320);
+  const height = Math.max(280, Math.min(420, width * 0.42));
+
+  strip.style.height = `${height}px`;
+  strip.innerHTML = "";
+
   if (!subs.length) {
+    strip.style.height = "auto";
+    strip.style.minHeight = "6rem";
     const empty = document.createElement("p");
-    empty.className = "text-sm text-gray-500 dark:text-gray-400 px-1 py-6 col-span-full";
+    empty.className = "text-sm text-gray-500 dark:text-gray-400 px-4 py-8 text-center";
     empty.textContent = "Aún no hay suscripciones. Usa «Nueva suscripción» para empezar.";
     strip.appendChild(empty);
     return;
   }
 
+  const today = todayIso();
   const weights = subs.map((s) => {
     const m = subscriptionToMonthlyAmount(s);
     return amountInEur(m, s.currency, fx) || 0.01;
   });
-  const totalW = weights.reduce((a, b) => a + b, 0) || 1;
-  const today = todayIso();
+  const items = subs.map((s, i) => ({ id: s.id, value: weights[i]! }));
+  const rects = layoutTreemap(items, width, height);
 
-  for (let i = 0; i < subs.length; i++) {
-    const s = subs[i]!;
-    const w = weights[i]!;
-    const span = Math.max(1, Math.min(3, Math.round((w / totalW) * 6) || 1));
-    const counts = subscriptionCountsInTotals(s, today);
-    const scheduled = Boolean(s.cancelEffectiveDate?.trim());
-    const faded = !counts || !s.active || scheduled;
-
-    const card = document.createElement("article");
-    card.dataset.subId = s.id;
-    card.style.gridColumn = `span ${span}`;
-    card.className =
-      "et-sub-bento-card relative text-left rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gradient-to-br from-white to-gray-50/90 dark:from-gray-950 dark:to-gray-900/70 p-4 shadow-sm min-h-[7.5rem] flex flex-col" +
-      (faded ? " et-sub-bento-card--faded" : "");
-
-    const cycleLabel =
-      s.cycle === "weekly"
-        ? "Semanal"
-        : s.cycle === "monthly"
-          ? "Mensual"
-          : s.cycle === "quarterly"
-            ? "Trimestral"
-            : "Anual";
-    const monthly = subscriptionToMonthlyAmount(s);
-    const monthlyEur = amountInEur(monthly, s.currency, fx);
-    const nextIso = subscriptionNextChargeIso(s);
-
-    const head = document.createElement("div");
-    head.className = "flex items-start justify-between gap-2 mb-2";
-    const status = document.createElement("p");
-    status.className = "m-0 text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400";
-    if (!s.active) status.textContent = "Pausada";
-    else if (scheduled && counts) status.textContent = `Cancela el ${s.cancelEffectiveDate}`;
-    else if (scheduled) status.textContent = "Cancelada";
-    else status.textContent = `Activa · ${cycleLabel}`;
-
-    const cancelBtn = document.createElement("button");
-    cancelBtn.type = "button";
-    cancelBtn.dataset.subCancel = s.id;
-    cancelBtn.className =
-      "shrink-0 text-[10px] font-semibold rounded-lg border border-gray-200 dark:border-gray-700 px-2 py-0.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer";
-    if (!s.active) cancelBtn.textContent = "Reactivar";
-    else if (scheduled) cancelBtn.textContent = "Deshacer";
-    else cancelBtn.textContent = "Cancelar";
-    head.append(status, cancelBtn);
-
-    const name = document.createElement("p");
-    name.className = "m-0 text-base font-semibold tracking-tight text-gray-900 dark:text-gray-50 truncate";
-    name.textContent = s.name;
-
-    const price = document.createElement("p");
-    price.className = "m-0 mt-1 text-lg font-bold text-gray-800 dark:text-gray-100 font-mono";
-    price.textContent = `${fmtEur(amountInEur(s.amount, s.currency, fx))} · ${fmtEur(monthlyEur)}/mes`;
-
-    const meta = document.createElement("p");
-    meta.className = "m-0 mt-auto pt-2 text-[11px] text-gray-500 dark:text-gray-400 line-clamp-2";
-    const from = s.billingStartDate?.trim();
-    const parts: string[] = [];
-    if (from) parts.push(`Desde ${from.slice(0, 10)}`);
-    if (nextIso && counts) parts.push(`Próximo: ${nextIso}`);
-    if (!parts.length) parts.push("Indica fecha de inicio");
-    meta.textContent = parts.join(" · ");
-
-    const editHit = document.createElement("button");
-    editHit.type = "button";
-    editHit.dataset.subId = s.id;
-    editHit.className = "absolute inset-0 rounded-2xl cursor-pointer";
-    editHit.setAttribute("aria-label", `Editar ${s.name}`);
-
-    card.append(head, name, price, meta, editHit);
-    strip.appendChild(card);
+  for (const rect of rects) {
+    const s = subs.find((x) => x.id === rect.id);
+    if (!s) continue;
+    const el = buildSubTreemapCard(s, fx, today, rect.w / width);
+    el.style.left = `${rect.x + gap / 2}px`;
+    el.style.top = `${rect.y + gap / 2}px`;
+    el.style.width = `${Math.max(0, rect.w - gap)}px`;
+    el.style.height = `${Math.max(0, rect.h - gap)}px`;
+    strip.appendChild(el);
   }
+}
+
+function renderSubs(root: HTMLElement) {
+  const strip = root.querySelector<HTMLElement>("[data-et-subs-strip]");
+  if (!strip) return;
+
+  if (!subsTreemapRo) {
+    subsTreemapRo = new ResizeObserver(() => layoutSubsTreemap(strip));
+    subsTreemapRo.observe(strip);
+  }
+  layoutSubsTreemap(strip);
 }
 
 function fillCategorySelect(sel: HTMLSelectElement) {
@@ -1538,6 +1671,119 @@ function recurringUiDeps(_root: HTMLElement) {
   };
 }
 
+function renderMonthOverrideList(
+  root: HTMLElement,
+  kind: "paycheck" | "planned",
+  entryId: string | null,
+  validFrom: string,
+  validUntil: string,
+  typicalAmount?: number,
+) {
+  const sel =
+    kind === "paycheck" ? "[data-et-paycheck-month-list]" : "[data-et-planned-month-list]";
+  const list = root.querySelector<HTMLElement>(sel);
+  if (!list) return;
+  list.innerHTML = "";
+  if (!entryId) {
+    const hint = document.createElement("p");
+    hint.className = "m-0 text-[11px] text-gray-500 dark:text-gray-400";
+    hint.textContent = "Guarda primero el registro para fijar ajustes por mes.";
+    list.appendChild(hint);
+    return;
+  }
+  const months = monthsForRecurringRange(validFrom, validUntil || undefined);
+  if (!months.length) return;
+  const overrides =
+    kind === "paycheck"
+      ? (state.incomeMonthOverrides ?? []).filter((o) => o.paycheckId === entryId)
+      : (state.plannedExpenseMonthOverrides ?? []).filter((o) => o.plannedExpenseId === entryId);
+  const byMonth = new Map(overrides.map((o) => [o.month, o]));
+  const base = typicalAmount != null && typicalAmount > 0 ? typicalAmount : undefined;
+
+  for (const mk of months) {
+    const row = document.createElement("div");
+    row.className = "flex items-center gap-2";
+    const lab = document.createElement("span");
+    lab.className = "text-[11px] text-gray-600 dark:text-gray-400 w-[8.5rem] shrink-0 capitalize";
+    lab.textContent = formatMonthLabel(mk);
+    const inp = document.createElement("input");
+    inp.type = "number";
+    inp.step = "0.01";
+    inp.min = "0";
+    inp.dataset.monthOverride = mk;
+    inp.className = "et-field flex-1 text-sm py-1.5 font-mono";
+    const ov = byMonth.get(mk);
+    if (ov) inp.value = String(ov.amount);
+    else if (base != null) inp.placeholder = String(base);
+    row.append(lab, inp);
+    list.appendChild(row);
+  }
+}
+
+function collectMonthOverridesFromDialog(
+  root: HTMLElement,
+  kind: "paycheck" | "planned",
+  entryId: string,
+): IncomeMonthOverride[] | PlannedExpenseMonthOverride[] {
+  const sel =
+    kind === "paycheck" ? "[data-et-paycheck-month-list]" : "[data-et-planned-month-list]";
+  const list = root.querySelector<HTMLElement>(sel);
+  if (!list) return [];
+  const out: Array<IncomeMonthOverride | PlannedExpenseMonthOverride> = [];
+  list.querySelectorAll<HTMLInputElement>("input[data-month-override]").forEach((inp) => {
+    const month = inp.dataset.monthOverride ?? "";
+    const raw = inp.value.trim();
+    if (!month || !raw) return;
+    const amount = Number(raw);
+    if (!Number.isFinite(amount) || amount < 0) return;
+    if (kind === "paycheck") {
+      out.push({
+        id: makeId(),
+        paycheckId: entryId,
+        month,
+        amount,
+        currency: "EUR",
+      });
+    } else {
+      out.push({
+        id: makeId(),
+        plannedExpenseId: entryId,
+        month,
+        amount,
+        currency: "EUR",
+      });
+    }
+  });
+  return out as IncomeMonthOverride[] | PlannedExpenseMonthOverride[];
+}
+
+function bindMonthOverrideRefresh(root: HTMLElement, kind: "paycheck" | "planned", entryId: string | null) {
+  const fromSel = kind === "paycheck" ? "[data-et-paycheck-from]" : "[data-et-planned-from]";
+  const untilSel = kind === "paycheck" ? "[data-et-paycheck-until]" : "[data-et-planned-until]";
+  const amtSel = kind === "paycheck" ? "[data-et-paycheck-amount]" : "[data-et-planned-amount]";
+  const refresh = () => {
+    const from = (root.querySelector<HTMLInputElement>(fromSel)?.value ?? "").slice(0, 10);
+    const until = (root.querySelector<HTMLInputElement>(untilSel)?.value ?? "").slice(0, 10);
+    const amt = Number(root.querySelector<HTMLInputElement>(amtSel)?.value);
+    renderMonthOverrideList(root, kind, entryId, from, until, Number.isFinite(amt) ? amt : undefined);
+  };
+  root.querySelector<HTMLInputElement>(fromSel)?.addEventListener("change", refresh);
+  root.querySelector<HTMLInputElement>(untilSel)?.addEventListener("change", refresh);
+  root.querySelector<HTMLInputElement>(amtSel)?.addEventListener("input", refresh);
+}
+
+function updateInvTotalDisplay(root: HTMLElement) {
+  const el = root.querySelector<HTMLElement>("[data-et-inv-total-display]");
+  if (!el) return;
+  const avg = Number(root.querySelector<HTMLInputElement>("[data-et-inv-avg]")?.value);
+  const qty = Number(root.querySelector<HTMLInputElement>("[data-et-inv-qty]")?.value);
+  if (!Number.isFinite(avg) || !Number.isFinite(qty) || qty <= 0) {
+    el.textContent = "—";
+    return;
+  }
+  el.textContent = fmtEur(computeInvestmentTotalInvested(avg, qty));
+}
+
 function openPaycheckDialog(root: HTMLElement, p?: PaycheckEntry | null) {
   const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-paycheck]");
   const title = root.querySelector<HTMLElement>("[data-et-paycheck-dialog-title]");
@@ -1545,7 +1791,9 @@ function openPaycheckDialog(root: HTMLElement, p?: PaycheckEntry | null) {
   if (!dlg || !title || !idEl) return;
   editingPaycheckId = p?.id ?? null;
   title.textContent = p ? "Editar ingreso previsto" : "Nuevo ingreso previsto";
-  idEl.value = p?.id ?? "";
+  if (!p?.id && !idEl.value) idEl.value = makeId();
+  const entryId = p?.id ?? idEl.value;
+  idEl.value = entryId;
   (root.querySelector("[data-et-paycheck-title]") as HTMLInputElement).value = p?.title ?? "";
   (root.querySelector("[data-et-paycheck-amount]") as HTMLInputElement).value =
     p?.typicalAmount != null ? String(p.typicalAmount) : "";
@@ -1560,6 +1808,10 @@ function openPaycheckDialog(root: HTMLElement, p?: PaycheckEntry | null) {
   (root.querySelector("[data-et-paycheck-until]") as HTMLInputElement).value = (p?.validUntil ?? "").slice(0, 10);
   (root.querySelector("[data-et-paycheck-note]") as HTMLInputElement).value = p?.note ?? "";
   root.querySelector("[data-et-paycheck-delete]")?.classList.toggle("invisible", !p);
+  const from = (p?.validFrom ?? "").slice(0, 10);
+  const until = (p?.validUntil ?? "").slice(0, 10);
+  renderMonthOverrideList(root, "paycheck", entryId, from, until, p?.typicalAmount);
+  bindMonthOverrideRefresh(root, "paycheck", entryId);
   dlg.showModal();
 }
 
@@ -1599,6 +1851,11 @@ function savePaycheckFromDialog(root: HTMLElement) {
   const idx = (state.paychecks ?? []).findIndex((x) => x.id === row.id);
   if (idx >= 0) state.paychecks![idx] = row;
   else state.paychecks = [...(state.paychecks ?? []), row].slice(0, 24);
+  const newOverrides = collectMonthOverridesFromDialog(root, "paycheck", row.id) as IncomeMonthOverride[];
+  state.incomeMonthOverrides = [
+    ...(state.incomeMonthOverrides ?? []).filter((o) => o.paycheckId !== row.id),
+    ...newOverrides,
+  ];
   root.querySelector<HTMLDialogElement>("[data-et-dlg-paycheck]")?.close();
   persist();
   renderAll(root);
@@ -1624,7 +1881,9 @@ function openPlannedDialog(root: HTMLElement, p?: PlannedExpenseEntry | null) {
   if (!dlg || !title || !idEl || !catEl) return;
   editingPlannedId = p?.id ?? null;
   title.textContent = p ? "Editar gasto previsto" : "Nuevo gasto previsto";
-  idEl.value = p?.id ?? "";
+  if (!p?.id && !idEl.value) idEl.value = makeId();
+  const entryId = p?.id ?? idEl.value;
+  idEl.value = entryId;
   fillCategorySelect(catEl);
   (root.querySelector("[data-et-planned-title]") as HTMLInputElement).value = p?.title ?? "";
   (root.querySelector("[data-et-planned-amount]") as HTMLInputElement).value =
@@ -1641,6 +1900,10 @@ function openPlannedDialog(root: HTMLElement, p?: PlannedExpenseEntry | null) {
   (root.querySelector("[data-et-planned-until]") as HTMLInputElement).value = (p?.validUntil ?? "").slice(0, 10);
   (root.querySelector("[data-et-planned-note]") as HTMLInputElement).value = p?.note ?? "";
   root.querySelector("[data-et-planned-delete]")?.classList.toggle("invisible", !p);
+  const from = (p?.validFrom ?? "").slice(0, 10);
+  const until = (p?.validUntil ?? "").slice(0, 10);
+  renderMonthOverrideList(root, "planned", entryId, from, until, p?.typicalAmount);
+  bindMonthOverrideRefresh(root, "planned", entryId);
   dlg.showModal();
 }
 
@@ -1682,6 +1945,11 @@ function savePlannedFromDialog(root: HTMLElement) {
   const idx = (state.plannedExpenses ?? []).findIndex((x) => x.id === row.id);
   if (idx >= 0) state.plannedExpenses![idx] = row;
   else state.plannedExpenses = [...(state.plannedExpenses ?? []), row].slice(0, 24);
+  const newOverrides = collectMonthOverridesFromDialog(root, "planned", row.id) as PlannedExpenseMonthOverride[];
+  state.plannedExpenseMonthOverrides = [
+    ...(state.plannedExpenseMonthOverrides ?? []).filter((o) => o.plannedExpenseId !== row.id),
+    ...newOverrides,
+  ];
   root.querySelector<HTMLDialogElement>("[data-et-dlg-planned]")?.close();
   persist();
   renderAll(root);
@@ -1717,11 +1985,17 @@ function openInvestmentDialog(root: HTMLElement, h?: InvestmentHolding | null) {
     h?.avgBuyPrice != null ? String(h.avgBuyPrice) : "";
   (root.querySelector("[data-et-inv-qty]") as HTMLInputElement).value =
     h?.quantity != null ? String(h.quantity) : "";
-  (root.querySelector("[data-et-inv-total]") as HTMLInputElement).value =
-    h?.totalInvested != null ? String(h.totalInvested) : "";
   (root.querySelector("[data-et-inv-pnl]") as HTMLInputElement).value = h != null ? String(h.gainLossPct) : "";
   (root.querySelector("[data-et-inv-notes]") as HTMLTextAreaElement).value = h?.notes ?? "";
   root.querySelector("[data-et-inv-delete]")?.classList.toggle("invisible", !h);
+  updateInvTotalDisplay(root);
+  const avgEl = root.querySelector<HTMLInputElement>("[data-et-inv-avg]");
+  const qtyEl = root.querySelector<HTMLInputElement>("[data-et-inv-qty]");
+  const onInvCalc = () => updateInvTotalDisplay(root);
+  avgEl?.removeEventListener("input", onInvCalc);
+  qtyEl?.removeEventListener("input", onInvCalc);
+  avgEl?.addEventListener("input", onInvCalc);
+  qtyEl?.addEventListener("input", onInvCalc);
   dlg.showModal();
 }
 
@@ -1732,12 +2006,13 @@ function saveInvestmentFromDialog(root: HTMLElement) {
   const platform = root.querySelector<HTMLInputElement>("[data-et-inv-platform]")?.value?.trim() || "—";
   const avg = Number(root.querySelector<HTMLInputElement>("[data-et-inv-avg]")?.value);
   const qtyRaw = root.querySelector<HTMLInputElement>("[data-et-inv-qty]")?.value;
-  const total = Number(root.querySelector<HTMLInputElement>("[data-et-inv-total]")?.value);
   const pnl = Number(root.querySelector<HTMLInputElement>("[data-et-inv-pnl]")?.value);
   const notes = root.querySelector<HTMLTextAreaElement>("[data-et-inv-notes]")?.value?.trim() ?? "";
   if (!name) return;
-  const qty =
-    qtyRaw != null && qtyRaw !== "" && Number.isFinite(Number(qtyRaw)) ? Math.max(0, Number(qtyRaw)) : undefined;
+  const quantity =
+    qtyRaw != null && qtyRaw !== "" && Number.isFinite(Number(qtyRaw)) ? Math.max(0, Number(qtyRaw)) : 0;
+  if (quantity <= 0) return;
+  const avgBuyPrice = Number.isFinite(avg) && avg >= 0 ? avg : 0;
   const row: InvestmentHolding = {
     id: idEl?.value || makeId(),
     name,
@@ -1745,9 +2020,9 @@ function saveInvestmentFromDialog(root: HTMLElement) {
       ? (typeRaw as InvestmentHolding["type"])
       : "other",
     platform,
-    avgBuyPrice: Number.isFinite(avg) && avg >= 0 ? avg : 0,
-    quantity: qty,
-    totalInvested: Number.isFinite(total) && total >= 0 ? total : 0,
+    avgBuyPrice,
+    quantity,
+    totalInvested: computeInvestmentTotalInvested(avgBuyPrice, quantity),
     gainLossPct: Number.isFinite(pnl) ? pnl : 0,
     notes: notes || undefined,
   };
@@ -2645,14 +2920,41 @@ function updateE2eUnlockBanner(root: HTMLElement) {
 
 function updateSyncPopoverChrome(root: HTMLElement) {
   const dot = root.querySelector<HTMLElement>("[data-et-sync-status-dot]");
-  if (!dot) return;
-  const active = state.syncToAccount || state.cloudE2E || pendingEncryptedRemote != null;
-  const urgent = pendingEncryptedRemote != null;
-  const color = urgent
-    ? "bg-amber-500 ring-2 ring-amber-300/80 dark:bg-amber-400"
-    : "bg-indigo-400 dark:bg-indigo-500";
-  const vis = active ? "opacity-100" : "opacity-0";
-  dot.className = `relative inline-flex h-2 w-2 shrink-0 rounded-full ${color} ${vis}`;
+  if (dot) {
+    const active = state.syncToAccount || state.cloudE2E || pendingEncryptedRemote != null;
+    const urgent = pendingEncryptedRemote != null;
+    const color = urgent
+      ? "bg-amber-500 ring-2 ring-amber-300/80 dark:bg-amber-400"
+      : state.syncToAccount
+        ? "bg-emerald-500 ring-2 ring-emerald-300/70 dark:bg-emerald-400"
+        : "bg-amber-400 dark:bg-amber-500";
+    const vis = active || !state.syncToAccount ? "opacity-100" : "opacity-0";
+    dot.className = `relative inline-flex h-2 w-2 shrink-0 rounded-full ${color} ${vis}`;
+  }
+  const syncLabel = root.querySelector<HTMLElement>("[data-et-sync-label]");
+  syncLabel?.setAttribute("data-sync-on", state.syncToAccount ? "true" : "false");
+  updateSyncStripChrome(root);
+}
+
+function updateSyncStripChrome(root: HTMLElement) {
+  const strip = root.querySelector<HTMLElement>("[data-et-sync-strip]");
+  const stripToggle = root.querySelector<HTMLInputElement>("[data-et-sync-strip-toggle]");
+  const hint = root.querySelector<HTMLElement>("[data-et-sync-strip-hint]");
+  const title = root.querySelector<HTMLElement>("[data-et-sync-strip-title]");
+  if (stripToggle) stripToggle.checked = state.syncToAccount;
+  if (!strip) return;
+  strip.setAttribute("data-sync-on", state.syncToAccount ? "true" : "false");
+  strip.setAttribute("data-sync-off", state.syncToAccount ? "false" : "true");
+  if (title) {
+    title.textContent = state.syncToAccount
+      ? "Copia en Supabase activa"
+      : "Solo en este navegador (sin copia en la nube)";
+  }
+  if (hint) {
+    hint.textContent = state.syncToAccount
+      ? "Los cambios se guardan en tu cuenta. Borrados y altas se sincronizan al recargar en otro dispositivo con la misma sesión."
+      : "Los datos solo viven aquí. Si borras gastos pero tenías una copia antigua en Supabase, pueden reaparecer al activar la sincronización.";
+  }
 }
 
 function closeSyncPopoverPanel(root: HTMLElement) {
@@ -2722,9 +3024,11 @@ function updateE2ePassphraseHint(root: HTMLElement) {
 function renderAll(root: HTMLElement) {
   state.chartMoneyMode = "unify_eur";
   const sync = root.querySelector<HTMLInputElement>("[data-et-sync]");
+  const syncStrip = root.querySelector<HTMLInputElement>("[data-et-sync-strip-toggle]");
   const cloudE2e = root.querySelector<HTMLInputElement>("[data-et-cloud-e2e]");
   const period = root.querySelector<HTMLSelectElement>("[data-et-period]");
   if (sync) sync.checked = state.syncToAccount;
+  if (syncStrip) syncStrip.checked = state.syncToAccount;
   if (cloudE2e) cloudE2e.checked = state.cloudE2E;
   if (period) period.value = state.period;
   if (syncChartCategoryFilterSelect(root)) persist();
@@ -2739,6 +3043,7 @@ function renderAll(root: HTMLElement) {
   if (paycheckSortBtn) paycheckSortBtn.textContent = paycheckSortDesc ? "Orden: importe ↓" : "Orden: importe ↑";
 
   renderKpis(root);
+  renderWealthAccounts(root);
   renderSubs(root);
   renderInvestments(root);
   renderPlannedExpenses(root);
@@ -2801,10 +3106,54 @@ function wire(root: HTMLElement) {
   }
   if (root.dataset.etBound === "1") return;
 
-  root.querySelector<HTMLInputElement>("[data-et-sync]")?.addEventListener("change", (e) => {
-    state.syncToAccount = (e.target as HTMLInputElement).checked;
+  const setSync = (on: boolean) => {
+    state.syncToAccount = on;
     persist();
     renderAll(root);
+  };
+
+  root.querySelector<HTMLInputElement>("[data-et-sync]")?.addEventListener("change", (e) => {
+    setSync((e.target as HTMLInputElement).checked);
+  });
+
+  root.querySelector<HTMLInputElement>("[data-et-sync-strip-toggle]")?.addEventListener("change", (e) => {
+    setSync((e.target as HTMLInputElement).checked);
+  });
+
+  root.querySelector<HTMLButtonElement>("[data-et-wealth-add]")?.addEventListener("click", () => {
+    state.wealthAccounts = [
+      ...(state.wealthAccounts ?? []),
+      { id: makeId(), name: "Cuenta", balance: 0 },
+    ].slice(0, 24);
+    persist();
+    renderWealthAccounts(root);
+  });
+
+  root.querySelector<HTMLElement>("[data-et-wealth-list]")?.addEventListener("input", (e) => {
+    const t = e.target as HTMLElement;
+    const id = t.dataset.wealthName || t.dataset.wealthBalance;
+    if (!id) return;
+    const idx = (state.wealthAccounts ?? []).findIndex((a) => a.id === id);
+    if (idx < 0) return;
+    const row = { ...state.wealthAccounts![idx]! };
+    if (t instanceof HTMLInputElement && t.dataset.wealthName) row.name = t.value.trim() || "Cuenta";
+    if (t instanceof HTMLInputElement && t.dataset.wealthBalance) {
+      const n = Number(t.value);
+      row.balance = Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : 0;
+    }
+    state.wealthAccounts![idx] = row;
+    persist();
+    renderPatrimonioKpi(root);
+  });
+
+  root.querySelector<HTMLElement>("[data-et-wealth-list]")?.addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-wealth-delete]");
+    if (!btn) return;
+    const id = btn.dataset.wealthDelete;
+    if (!id) return;
+    state.wealthAccounts = (state.wealthAccounts ?? []).filter((a) => a.id !== id);
+    persist();
+    renderWealthAccounts(root);
   });
 
   root.querySelector<HTMLInputElement>("[data-et-cloud-e2e]")?.addEventListener("change", async (e) => {
