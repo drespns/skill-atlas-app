@@ -70,7 +70,15 @@ export type InvestmentAssetType =
   | "bonds"
   | "other";
 
-/** Posición manual (sin precio en tiempo real; % P/L actualizado a mano). */
+/** Cuenta de liquidez (banco, broker cash…) para el bloque Patrimonio. */
+export type WealthAccount = {
+  id: string;
+  name: string;
+  /** Saldo en EUR (efectivo / cuenta corriente). */
+  balance: number;
+};
+
+/** Posición manual (sin precio en tiempo real; rendimiento % actualizado a mano). */
 export type InvestmentHolding = {
   id: string;
   /** Nombre del activo (p. ej. XRP, Apple). */
@@ -80,11 +88,11 @@ export type InvestmentHolding = {
   platform: string;
   /** Precio medio de compra por unidad (EUR). */
   avgBuyPrice: number;
-  /** Cantidad de unidades (opcional si solo usas total invertido). */
-  quantity?: number;
-  /** Capital desembolsado total (EUR). */
+  /** Cantidad de unidades (acciones, monedas…). */
+  quantity: number;
+  /** Capital desembolsado (EUR); se deriva de precio × cantidad al guardar. */
   totalInvested: number;
-  /** Variación % respecto al total invertido (negativo = pérdida). */
+  /** Rendimiento % respecto al total invertido (negativo = pérdida). */
   gainLossPct: number;
   notes?: string;
 };
@@ -197,6 +205,8 @@ export type ExpenseTrackerState = {
   plannedExpenses: PlannedExpenseEntry[];
   plannedExpenseMonthOverrides: PlannedExpenseMonthOverride[];
   investments: InvestmentHolding[];
+  /** Cuentas de liquidez (patrimonio en efectivo). */
+  wealthAccounts: WealthAccount[];
 };
 
 export const EXPENSE_TRACKER_CLIENT_SCOPE = "tools_expense_tracker" as const;
@@ -234,6 +244,7 @@ export function defaultExpenseTrackerState(): ExpenseTrackerState {
     plannedExpenses: [],
     plannedExpenseMonthOverrides: [],
     investments: [],
+    wealthAccounts: [],
   };
 }
 
@@ -292,6 +303,77 @@ export function investmentPortfolioTotals(holdings: InvestmentHolding[]): {
   };
 }
 
+/** Total invertido = precio medio × cantidad. */
+export function computeInvestmentTotalInvested(avgBuyPrice: number, quantity: number): number {
+  if (!Number.isFinite(avgBuyPrice) || !Number.isFinite(quantity)) return 0;
+  return Math.round(Math.max(0, avgBuyPrice) * Math.max(0, quantity) * 100) / 100;
+}
+
+function parseWealthAccounts(raw: unknown): WealthAccount[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((r: any) => {
+      const bal = Number(r?.balance);
+      return {
+        id: String(r?.id || "").trim(),
+        name: String(r?.name || "").trim() || "Cuenta",
+        balance: Number.isFinite(bal) && bal >= 0 ? Math.round(bal * 100) / 100 : 0,
+      };
+    })
+    .filter((a: WealthAccount) => a.id)
+    .slice(0, 24);
+}
+
+export type PatrimonioSnapshot = {
+  accountsTotal: number;
+  investmentsCurrent: number;
+  total: number;
+  accounts: WealthAccount[];
+};
+
+export function computePatrimonioSnapshot(state: Pick<ExpenseTrackerState, "wealthAccounts" | "investments">): PatrimonioSnapshot {
+  const accounts = state.wealthAccounts ?? [];
+  const accountsTotal = Math.round(accounts.reduce((s, a) => s + Math.max(0, a.balance), 0) * 100) / 100;
+  const inv = investmentPortfolioTotals(state.investments ?? []);
+  return {
+    accountsTotal,
+    investmentsCurrent: inv.current,
+    total: Math.round((accountsTotal + inv.current) * 100) / 100,
+    accounts,
+  };
+}
+
+/** Meses YYYY-MM entre from/until (inclusive). Sin until: 24 meses hacia adelante desde hoy. */
+export function monthsForRecurringRange(validFrom?: string, validUntil?: string, maxMonths = 36): string[] {
+  const today = new Date().toISOString().slice(0, 10);
+  let start = (validFrom?.trim().slice(0, 7) || today.slice(0, 7)).slice(0, 7);
+  let end: string;
+  if (validUntil?.trim().slice(0, 7)) {
+    end = validUntil.trim().slice(0, 7);
+  } else {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 24);
+    end = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }
+  if (!/^\d{4}-\d{2}$/.test(start)) start = today.slice(0, 7);
+  if (!/^\d{4}-\d{2}$/.test(end)) end = start;
+  if (start > end) return [start];
+  const out: string[] = [];
+  let y = Number(start.slice(0, 4));
+  let m = Number(start.slice(5, 7));
+  const ty = Number(end.slice(0, 4));
+  const tm = Number(end.slice(5, 7));
+  while ((y < ty || (y === ty && m <= tm)) && out.length < maxMonths) {
+    out.push(`${y}-${String(m).padStart(2, "0")}`);
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+  }
+  return out;
+}
+
 /** ¿La suscripción cuenta en KPIs y gráficos en la fecha de referencia? */
 export function subscriptionCountsInTotals(s: SubscriptionRow, refDate?: string): boolean {
   if (!s.active) return false;
@@ -314,18 +396,27 @@ function parseInvestmentHoldings(raw: unknown): InvestmentHolding[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .map((r: any) => {
-      const qty = Number(r?.quantity);
+      const qtyRaw = Number(r?.quantity);
       const avg = Number(r?.avgBuyPrice);
       const inv = Number(r?.totalInvested);
       const pct = Number(r?.gainLossPct);
+      let quantity = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 0;
+      const avgBuyPrice = Number.isFinite(avg) && avg >= 0 ? avg : 0;
+      if (quantity <= 0 && inv > 0 && avgBuyPrice > 0) quantity = inv / avgBuyPrice;
+      const totalInvested =
+        quantity > 0 && avgBuyPrice >= 0
+          ? computeInvestmentTotalInvested(avgBuyPrice, quantity)
+          : Number.isFinite(inv) && inv >= 0
+            ? inv
+            : 0;
       return {
         id: String(r?.id || "").trim(),
         name: String(r?.name || "").trim() || "Activo",
         type: parseInvestmentType(r?.type),
         platform: String(r?.platform || "").trim() || "—",
-        avgBuyPrice: Number.isFinite(avg) && avg >= 0 ? avg : 0,
-        quantity: Number.isFinite(qty) && qty > 0 ? qty : undefined,
-        totalInvested: Number.isFinite(inv) && inv >= 0 ? inv : 0,
+        avgBuyPrice,
+        quantity: quantity > 0 ? quantity : 1,
+        totalInvested,
         gainLossPct: Number.isFinite(pct) ? pct : 0,
         notes: String(r?.notes ?? "").trim() || undefined,
       };
@@ -784,6 +875,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
   const planIds = new Set(plannedExpenses.map((p) => p.id));
   const plannedOverridesClean = plannedExpenseMonthOverrides.filter((r) => planIds.has(r.plannedExpenseId));
   const investments = parseInvestmentHoldings(o.investments);
+  const wealthAccounts = parseWealthAccounts(o.wealthAccounts);
 
   return {
     v: 2,
@@ -804,6 +896,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
     plannedExpenses,
     plannedExpenseMonthOverrides: plannedOverridesClean,
     investments,
+    wealthAccounts,
   };
 }
 
@@ -893,6 +986,7 @@ export function mergeExpenseTrackerRemoteLocal(remote: ExpenseTrackerState, loca
       local.plannedExpenseMonthOverrides ?? [],
     ),
     investments: mergeRows(remote.investments ?? [], local.investments ?? []),
+    wealthAccounts: mergeRows(remote.wealthAccounts ?? [], local.wealthAccounts ?? []),
   });
 }
 
@@ -917,6 +1011,7 @@ export function applyExpenseImportReplace(current: ExpenseTrackerState, imported
     plannedExpenses: imported.plannedExpenses ?? [],
     plannedExpenseMonthOverrides: imported.plannedExpenseMonthOverrides ?? [],
     investments: imported.investments ?? [],
+    wealthAccounts: imported.wealthAccounts ?? [],
   });
 }
 
