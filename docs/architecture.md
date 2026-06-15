@@ -132,7 +132,7 @@ En **build estatico**, las lecturas usan el cliente server-side de Supabase (sin
 | Detalle tecnologia | `/technologies/[techId]` (`techId` = slug) | `/technologies/view?tech=<slug>` + `technology-view-bootstrap.ts` |
 | Login | `/login` | `/login` (email/password + OAuth en cliente) |
 | Ajustes | `/settings` | `/settings` (sesión, preferencias UI, perfil público + stack de ayuda; sync `portfolio_profiles` en Supabase; auth en `/login`) |
-| CV (privado) | — | `/cv` — sesión obligatoria; editor + documento; selección y orden de proyectos (`cvProjectSlugs`), perfil del CV (`cvProfile`), experiencia/educación; **preview modal**; impresión en claro (`body.cv-print-mode`, `beforeprint`) |
+| CV (privado) | — | `/cv` — sesión obligatoria; editor + documento; selección y orden de proyectos (`cvProjectSlugs`), perfil del CV (`cvProfile`), experiencia/educación; bloque **Tecnologías** (`cvTechnologiesMode`, `cvTechnologyIds`) enlazado al catálogo Supabase del usuario y a proyectos del CV; **preview modal**; impresión en claro (`body.cv-print-mode`, `beforeprint`) |
 | CV (público por token) | — | `/cv/p/<token>` — **SSR/on-demand** (`prerender = false`): anon llama RPC `skillatlas_cv_by_share_token`; se activa/regenera desde `/cv` (migración **saas-012**) |
 | Portfolio público (slug) | — | `/portfolio/<slug>` — **SSR/on-demand** (`prerender = false`): anon llama RPC `skillatlas_portfolio_by_public_slug`; Ajustes → **Enlaces públicos** (`#portfolio-links`): **saas-011**–**014** |
 | Portfolio público (token) | — | `/p/<token>` — **SSR/on-demand** (`prerender = false`): anon llama RPC `skillatlas_portfolio_by_share_token` (misma forma JSON que slug); token en Ajustes (requiere `share_enabled`) |

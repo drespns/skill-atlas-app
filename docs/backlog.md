@@ -10,7 +10,65 @@ Documento orientado al **historial** de lo implementado y a **ideas** sin orden 
 
 ## Registro de versiones (historial de producto)
 
-### v0.140.0 (actual)
+### v0.150.0 (actual)
+
+**Numeración:** nueva minor centrada en **`/tools` v2** y en refinamientos de **CV** (“corto plazo”): favoritos persistidos en **prefs** (y sync `user_prefs` con merge que respeta el local), **hub** con estética refinada, **cinta de favoritas** y **command palette** (sección «Favoritas» antes de admin), **menú Herramientas** de cabecera con bloque de favoritas; en paralelo, campos de mercado laboral en el CV, **copiar como texto plano** para ATS y chequeo ATS ampliado. Base para cron/playground, boost herramienta a herramienta y **diferenciación CV a medio plazo** (ver subsección más abajo).
+
+- **Prefs (`prefs.ts`):** campo opcional `favoriteToolIds` (ids del hub), normalización y merge remoto alineado con prefs de alta frecuencia (se conserva el local).
+- **Hub `/tools`:** tarjetas con estrella, carril de chips favoritos, copy e i18n (`tools.hub*`); script `tools-hub.ts`.
+- **Command palette:** entradas de herramientas deduplicadas respecto a favoritas; sección `common.paletteSectionFavorites`.
+- **Cabecera:** slot `data-tools-favorites-slot` en el popover de herramientas (`auth-header-bootstrap.ts`).
+- **Lib:** `src/lib/tools-favorites.ts` (metadatos de herramientas del hub + normalización).
+- **Herramientas — Cron (`/tools/cron`):** `cron-parser` + `cronstrue` (i18n ES/EN), próximas ejecuciones con zona IANA local, presets, ejemplo aleatorio, copiar expresión/descripción, referencia rápida; lib `src/lib/tools-cron.ts`, script `cron-page.ts`.
+- **Herramientas — QR (`/tools/qr-generator`):** plantillas URL / Wi‑Fi / vCard, textarea, tamaño y margen, nivel de corrección, módulos claros para fondos oscuros, vista previa en vivo (debounce), aviso de payload largo, copiar PNG al portapapeles y descarga.
+- **CV (`/cv`) — corto plazo (mercado laboral + ATS):**
+  - **Prefs:** `cvTargetRole`, `cvWorkArrangement`, `cvWorkAuthorization` opcionales en `cvProfile` (`prefs.ts`); normalización con recorte de longitud.
+  - **Documento:** bloques en hero para puesto objetivo y líneas de modalidad/autorización (`CvDocumentHost.astro`); inputs en editor + **datalist** de sugerencias para modalidad (`CvEditorPanel.astro`).
+  - **Vista previa:** botón **Copiar texto** para pegar en formularios ATS (`CvPreviewModal.astro` → `cv-page.ts`).
+  - **Libs:** `src/lib/cv-plain-text.ts` (documento texto plano), `src/lib/cv-bullets.ts` (`linesToBullets`); orden de secciones alineado con `normalizeCvDocumentSectionOrder`.
+  - **ATS:** `analyzeCvForAts` ampliado en `src/lib/cv-ats-check.ts` (nuevos campos y reglas, p. ej. tecnologías visibles pero vacías); tests `cv-plain-text.test.ts`, `cv-ats-check.test.ts`.
+  - **CV — Estudio (beta):** ruta **`/cv/studio`** (`src/pages/cv/studio.astro`), enlace en cabecera del CV (`CvPageHeader.astro`) y entrada en command palette; roadmap Canvas-lite en tabla **`docs/backlog.md`** (sección *CV — Estudio de maquetación*).
+  - **i18n (ES/EN):** etiquetas de formulario, toasts de copiado y claves `cv.ats.*` nuevas.
+
+#### Plan v0.150.x (en curso / siguiente entrega)
+
+- Boost visual y de contenido **herramienta a herramienta** (excepto expense-tracker salvo ajustes puntuales).
+- **Playground** HTML/CSS/JS (MVP con CSP acotado).
+- Mejoras **diff** y cola de ideas dev del bloque histórico v0.150 planificado.
+- **Sprint 1 ATS Pro (avance):** `analyzeCvForAts` amplía calidad de contenido con reglas sobre resumen excesivamente largo, viñetas repetidas, ausencia de métricas, orientación a resultados (tareas vs impacto) y alineación de keywords respecto a `cvTargetRole`; incluye i18n ES/EN y tests.
+- **Prioridades CV inmediatas (resueltas en curso):**
+  - Objetivo de extensión en impresión: el flujo de PDF vuelve a respetar `cvPrintMaxPages` también en iframe de impresión.
+  - Header imprimible con enlaces sociales: en impresión se conservan iconos y se muestra la URL real (`href`) en texto (no solo “Portfolio” / “LinkedIn”).
+  - Tecnologías por subsecciones: el bloque de tecnologías en el documento se agrupa por `kind` (tecnología / framework / librería / paquete / otros).
+- **Pendiente documentado (cuando se retome tras prioridades):** Sprint 1.2 ATS con feedback más accionable por sección (cantidad de viñetas sin impacto, sugerencias por bloque y ranking de acciones recomendadas antes de enviar).
+
+#### CV — Estudio de maquetación (Canvas-lite; roadmap)
+
+Objetivo: dar **más control de layout** (rejilla, bloques lado a lado, densidad) sin sustituir el PDF por un canvas raster ni romper el flujo **HTML + CSS imprimible** ni la lectura **ATS** (orden DOM coherente, secciones reconocibles).
+
+**Plan por fases (tipo Canva, superficie única, bloques, ATS):** **`docs/cv-studio-canva-roadmap.md`**. Ejecución acordada fase a fase tras OK de producto.
+
+| Estado | Entrega |
+|--------|--------|
+| **Hecho (base)** | Spike de modelo de bloques en **`docs/cv-blocks-spike.md`**. Opción de impresión **`cvPrintTechFeaturedBand`**: banda de dos columnas «Tecnologías \| proyecto destacado» en preview/PDF (`CvDocumentHost`, `cv-page.ts`). |
+| **Primera toma (hub)** | Ruta **`/cv/studio`** (sesión requerida): página hub con roadmap, límites ATS y enlaces al editor y al spike; entrada desde cabecera del CV y command palette. |
+| **Siguiente** | Seguir fases del roadmap **`docs/cv-studio-canva-roadmap.md`**: Fase 1 superficie única (documento en DOM del estudio sin iframe de app completa); luego Fase 2 mesa de trabajo; Fase 3 bloques + plantillas acotadas (`cv-blocks-spike` como contrato); Fase 4 avisos ATS; Fase 5 pulido. |
+| **Más adelante** | Tamaños/tipografía por bloque con tope y presets; duplicar layout en CV público por token si aplica. |
+
+#### CV — medio plazo (diferenciación; **primera entrega implementada** en v0.150.0)
+
+Orden sugerido para priorizar sin bloquear el hub de herramientas:
+
+| Prioridad | Alcance |
+|-----------|--------|
+| **A** | **Variantes / plantilla de envío:** ya existían **slots** con botón de duplicar; ahora cada slot puede guardar **checklist por envío** (`submissionChecklist`) como recordatorio de qué revisar/incluir antes de enviar. Queda para siguiente iteración añadir UX más “asistente” (autocompletado por tipo de oferta o plantillas predefinidas). |
+| **B** | **Bullets STAR en el editor:** implementada ayuda contextual en experiencia (`cv.starBulletHelp`) como guía no intrusiva (Situación, Tarea, Acción, Resultado), **sin IA obligatoria**. |
+| **C** | **Formación complementaria vs educación formal:** implementada separación con `complementaryEducation` (modelo, editor, documento, CV público por token, texto plano y visibilidad por bloque). |
+| **D** | **Enlaces académicos:** implementados huecos **ORCID** y **Google Scholar** junto a LinkedIn/GitHub/Portfolio/X/Web, con migración compatible de slots legacy. |
+
+**Estado de cierre actual:** primera entrega completada en esta versión. Pendiente de iteración posterior: mejoras UX de “plantilla de envío” (p. ej. presets por tipo de empresa/rol, checklist sugerido automático y validaciones previas de envío).
+
+### v0.140.0
 
 **Numeración:** salto de minor por cierre transversal: **landing** renovada (métricas, herramientas, FAQ, CTAs), **retirada** de rutas públicas **`/demo`** y **`/prep`**, **CV** ampliado (tabs, portada, ofertas, ajustes, ATS/plantillas), herramienta **Expense tracker** en **`/tools`**, refinamiento de **shell/prefs/estilos** y documentación al día.
 
@@ -317,6 +375,7 @@ Lista **explícita** — no implica prioridad; **no eliminar** entradas por ahor
 15. **CV — import enriquecido:** subida **PDF/DOCX**, extracción de texto en servidor, opcional **IA** para mapear a `experiences` / `education` con fechas en formatos heterogéneos (mes/año, rangos, etc.); complementa el import por pegado en **v0.100.0**.
 16. **`/tools` — ampliar utilidades y modo Pro:** el hub y la primera tanda de herramientas cliente ya están en **v0.130.0**; pendiente priorizar **PDF→Word**, **PNG→ICO**, edición PDF, conversiones server-side/WASM pesado, etc., inspirado en Convertio pero embebido en SkillAtlas.
 17. **Alta de tecnología/librería por URL o identificador de registro** — *parcial:* npm/PyPI rellena nombre/slug/descripción vía API; **pendiente:** sugerir/asignar **icono** automáticamente y ampliar a otros registros o GitHub package.
+18. **CV — medio plazo (diferenciación):** plantillas de envío por slot, ayuda STAR en editor sin IA obligatoria, separar formación complementaria vs educación formal, enlaces ORCID/Google Scholar — detalle en **v0.150.0** → *CV — medio plazo*.
 
 ---
 
