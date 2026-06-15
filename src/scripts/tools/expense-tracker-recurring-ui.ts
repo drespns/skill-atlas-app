@@ -8,6 +8,7 @@ import {
   investmentGainLossAmount,
   investmentPortfolioTotals,
   investmentTypeLabel,
+  parseCardColor,
   paycheckActiveInMonth,
   plannedExpenseActiveInMonth,
   type ExpenseTrackerState,
@@ -198,8 +199,11 @@ export function renderInvestmentSection(root: HTMLElement, deps: RecurringUiDeps
   for (const h of sorted) {
     const card = document.createElement("button");
     card.type = "button";
+    const c = parseCardColor(h.cardColor) ?? "#8b5cf6";
     card.className =
-      "et-recurring-card text-left rounded-2xl border border-violet-200/70 dark:border-violet-900/50 bg-gradient-to-br from-white to-violet-50/40 dark:from-gray-950 dark:to-violet-950/20 p-4 shadow-sm space-y-2";
+      "et-recurring-card text-left rounded-2xl border shadow-sm p-4 space-y-2 w-full";
+    card.style.borderColor = `${c}55`;
+    card.style.background = `linear-gradient(135deg,${c}28,${c}10,transparent)`;
     const type = document.createElement("p");
     type.className = "m-0 text-[10px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300";
     type.textContent = `${investmentTypeLabel(h.type)} · ${h.platform}`;

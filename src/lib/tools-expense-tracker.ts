@@ -38,6 +38,8 @@ export type ExpenseRow = {
    * Ausente o true = confirmado (comportamiento histórico).
    */
   confirmed?: boolean;
+  /** Cuenta de patrimonio a la que imputar el movimiento (resta al confirmar). */
+  wealthAccountId?: string;
 };
 
 export type SubscriptionRow = {
@@ -59,6 +61,8 @@ export type SubscriptionRow = {
   cancelEffectiveDate?: string;
   notes: string;
   tags: string[];
+  /** Color de tarjeta (#RRGGBB). */
+  cardColor?: string;
 };
 
 export type InvestmentAssetType =
@@ -76,6 +80,12 @@ export type WealthAccount = {
   name: string;
   /** Saldo en EUR (efectivo / cuenta corriente). */
   balance: number;
+  /** Primeros dígitos visibles (p. ej. ES79). */
+  ibanPrefix?: string;
+  /** Gastos confirmados restan de esta cuenta por defecto. */
+  isDefaultExpense?: boolean;
+  /** Ingresos confirmados y cobros suman aquí por defecto. */
+  isDefaultIncome?: boolean;
 };
 
 /** Posición manual (sin precio en tiempo real; rendimiento % actualizado a mano). */
@@ -95,6 +105,8 @@ export type InvestmentHolding = {
   /** Rendimiento % respecto al total invertido (negativo = pérdida). */
   gainLossPct: number;
   notes?: string;
+  /** Color de tarjeta (#RRGGBB). */
+  cardColor?: string;
 };
 
 /** Cobro recurrente esperado (p. ej. nómina): día del mes y nota opcional. */
@@ -140,6 +152,7 @@ export type IncomeAdhocRow = {
   attachments: ExpenseAttachment[];
   /** false = borrador (no cuenta en KPIs/gráficos hasta confirmar). */
   confirmed?: boolean;
+  wealthAccountId?: string;
 };
 
 /** Gasto recurrente previsto (alquiler, cuota fija…): misma forma que cobro pero con categoría. */
@@ -207,6 +220,8 @@ export type ExpenseTrackerState = {
   investments: InvestmentHolding[];
   /** Cuentas de liquidez (patrimonio en efectivo). */
   wealthAccounts: WealthAccount[];
+  /** Si true, patrimonio = efectivo + capital invertido (sin P/L). Si false, incluye valor de mercado estimado. */
+  patrimonioRealMode?: boolean;
 };
 
 export const EXPENSE_TRACKER_CLIENT_SCOPE = "tools_expense_tracker" as const;
@@ -245,6 +260,7 @@ export function defaultExpenseTrackerState(): ExpenseTrackerState {
     plannedExpenseMonthOverrides: [],
     investments: [],
     wealthAccounts: [],
+    patrimonioRealMode: false,
   };
 }
 
@@ -314,57 +330,117 @@ function parseWealthAccounts(raw: unknown): WealthAccount[] {
   return raw
     .map((r: any) => {
       const bal = Number(r?.balance);
+      const prefix = String(r?.ibanPrefix ?? "").trim().toUpperCase().slice(0, 4);
       return {
         id: String(r?.id || "").trim(),
         name: String(r?.name || "").trim() || "Cuenta",
-        balance: Number.isFinite(bal) && bal >= 0 ? Math.round(bal * 100) / 100 : 0,
+        balance: Number.isFinite(bal) ? Math.round(bal * 100) / 100 : 0,
+        ibanPrefix: prefix || undefined,
+        isDefaultExpense: Boolean(r?.isDefaultExpense),
+        isDefaultIncome: Boolean(r?.isDefaultIncome),
       };
     })
     .filter((a: WealthAccount) => a.id)
     .slice(0, 24);
 }
 
+export function formatIbanDisplay(prefix?: string): string {
+  const p = String(prefix ?? "").trim().toUpperCase().slice(0, 4);
+  if (!p) return "**** **** **** ****";
+  return `${p} **** **** **** ****`;
+}
+
+export function parseCardColor(raw: unknown): string | undefined {
+  const s = String(raw ?? "").trim();
+  return /^#[0-9a-fA-F]{6}$/.test(s) ? s : undefined;
+}
+
+export function defaultWealthAccountId(
+  accounts: WealthAccount[],
+  role: "expense" | "income",
+): string | undefined {
+  const flag = role === "expense" ? "isDefaultExpense" : "isDefaultIncome";
+  return accounts.find((a) => a[flag])?.id ?? accounts[0]?.id;
+}
+
 export type PatrimonioSnapshot = {
   accountsTotal: number;
-  investmentsCurrent: number;
+  investmentsPart: number;
   total: number;
   accounts: WealthAccount[];
+  realMode: boolean;
 };
 
-export function computePatrimonioSnapshot(state: Pick<ExpenseTrackerState, "wealthAccounts" | "investments">): PatrimonioSnapshot {
+export function computePatrimonioSnapshot(
+  state: Pick<ExpenseTrackerState, "wealthAccounts" | "investments" | "patrimonioRealMode">,
+): PatrimonioSnapshot {
   const accounts = state.wealthAccounts ?? [];
-  const accountsTotal = Math.round(accounts.reduce((s, a) => s + Math.max(0, a.balance), 0) * 100) / 100;
+  const accountsTotal = Math.round(accounts.reduce((s, a) => s + a.balance, 0) * 100) / 100;
   const inv = investmentPortfolioTotals(state.investments ?? []);
+  const realMode = Boolean(state.patrimonioRealMode);
+  const investmentsPart = realMode ? inv.invested : inv.current;
   return {
     accountsTotal,
-    investmentsCurrent: inv.current,
-    total: Math.round((accountsTotal + inv.current) * 100) / 100,
+    investmentsPart,
+    total: Math.round((accountsTotal + investmentsPart) * 100) / 100,
     accounts,
+    realMode,
   };
 }
 
-/** Meses YYYY-MM entre from/until (inclusive). Sin until: 24 meses hacia adelante desde hoy. */
-export function monthsForRecurringRange(validFrom?: string, validUntil?: string, maxMonths = 36): string[] {
+export function daysInMonthKey(monthKey: string): number {
+  const y = Number(monthKey.slice(0, 4));
+  const m = Number(monthKey.slice(5, 7));
+  if (!y || !m) return 31;
+  return new Date(y, m, 0).getDate();
+}
+
+export type RecurringDateRange = {
+  dayOfMonth: number;
+  validFrom?: string;
+  validUntil?: string;
+};
+
+/** Fecha ISO del cobro/gasto previsto en ese mes (respeta día del mes). */
+export function recurringChargeDate(dayOfMonth: number, monthKey: string): string {
+  const dim = daysInMonthKey(monthKey);
+  const d = Math.min(Math.max(1, Math.floor(dayOfMonth) || 1), dim);
+  return `${monthKey}-${String(d).padStart(2, "0")}`;
+}
+
+/** ¿El cobro/gasto previsto cae dentro del rango de fechas en ese mes? */
+export function recurringActiveInMonth(entry: RecurringDateRange, monthKey: string): boolean {
+  const charge = recurringChargeDate(entry.dayOfMonth, monthKey);
+  const from = entry.validFrom?.trim().slice(0, 10);
+  const until = entry.validUntil?.trim().slice(0, 10);
+  if (from && charge < from) return false;
+  if (until && charge > until) return false;
+  return true;
+}
+
+/** Meses YYYY-MM con al menos un cobro/gasto previsto activo. */
+export function monthsForRecurringEntry(entry: RecurringDateRange, maxMonths = 36): string[] {
   const today = new Date().toISOString().slice(0, 10);
-  let start = (validFrom?.trim().slice(0, 7) || today.slice(0, 7)).slice(0, 7);
-  let end: string;
-  if (validUntil?.trim().slice(0, 7)) {
-    end = validUntil.trim().slice(0, 7);
+  let startMk = entry.validFrom?.trim().slice(0, 7) || today.slice(0, 7);
+  let endMk: string;
+  if (entry.validUntil?.trim().slice(0, 7)) {
+    endMk = entry.validUntil.trim().slice(0, 7);
   } else {
     const d = new Date();
     d.setMonth(d.getMonth() + 24);
-    end = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    endMk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   }
-  if (!/^\d{4}-\d{2}$/.test(start)) start = today.slice(0, 7);
-  if (!/^\d{4}-\d{2}$/.test(end)) end = start;
-  if (start > end) return [start];
+  if (!/^\d{4}-\d{2}$/.test(startMk)) startMk = today.slice(0, 7);
+  if (!/^\d{4}-\d{2}$/.test(endMk)) endMk = startMk;
+  if (startMk > endMk) return recurringActiveInMonth(entry, startMk) ? [startMk] : [];
   const out: string[] = [];
-  let y = Number(start.slice(0, 4));
-  let m = Number(start.slice(5, 7));
-  const ty = Number(end.slice(0, 4));
-  const tm = Number(end.slice(5, 7));
+  let y = Number(startMk.slice(0, 4));
+  let m = Number(startMk.slice(5, 7));
+  const ty = Number(endMk.slice(0, 4));
+  const tm = Number(endMk.slice(5, 7));
   while ((y < ty || (y === ty && m <= tm)) && out.length < maxMonths) {
-    out.push(`${y}-${String(m).padStart(2, "0")}`);
+    const mk = `${y}-${String(m).padStart(2, "0")}`;
+    if (recurringActiveInMonth(entry, mk)) out.push(mk);
     m += 1;
     if (m > 12) {
       m = 1;
@@ -372,6 +448,47 @@ export function monthsForRecurringRange(validFrom?: string, validUntil?: string,
     }
   }
   return out;
+}
+
+/** @deprecated Usar monthsForRecurringEntry con dayOfMonth. */
+export function monthsForRecurringRange(validFrom?: string, validUntil?: string, maxMonths = 36): string[] {
+  return monthsForRecurringEntry({ dayOfMonth: 1, validFrom, validUntil }, maxMonths);
+}
+
+export function totalIncomeInPeriod(state: ExpenseTrackerState, filter: PeriodFilter): number {
+  const start = periodStartIso(filter);
+  const fx = state.eurPerUsd;
+  let total = 0;
+  for (const row of state.incomeAdhoc ?? []) {
+    if (row.confirmed === false) continue;
+    if (start && row.date < start) continue;
+    total += convertAmount(Math.max(0, row.amount), row.currency, "EUR", fx);
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const endMk = today.slice(0, 7);
+  let startMk = start ? start.slice(0, 7) : "1970-01";
+  let y = Number(startMk.slice(0, 4));
+  let m = Number(startMk.slice(5, 7));
+  const ty = Number(endMk.slice(0, 4));
+  const tm = Number(endMk.slice(5, 7));
+  const overrides = state.incomeMonthOverrides ?? [];
+  while (y < ty || (y === ty && m <= tm)) {
+    const mk = `${y}-${String(m).padStart(2, "0")}`;
+    for (const p of state.paychecks ?? []) {
+      if (!paycheckActiveInMonth(p, mk)) continue;
+      const charge = recurringChargeDate(p.dayOfMonth, mk);
+      if (start && charge < start) continue;
+      if (charge > today) continue;
+      const { amount, currency } = effectivePaycheckAmount(p, mk, overrides);
+      if (amount > 0) total += convertAmount(amount, currency, "EUR", fx);
+    }
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+  }
+  return Math.round(total * 100) / 100;
 }
 
 /** ¿La suscripción cuenta en KPIs y gráficos en la fecha de referencia? */
@@ -419,6 +536,7 @@ function parseInvestmentHoldings(raw: unknown): InvestmentHolding[] {
         totalInvested,
         gainLossPct: Number.isFinite(pct) ? pct : 0,
         notes: String(r?.notes ?? "").trim() || undefined,
+        cardColor: parseCardColor(r?.cardColor),
       };
     })
     .filter((h: InvestmentHolding) => h.id)
@@ -595,6 +713,7 @@ function upgradeV1ToV2(o: any): ExpenseTrackerState {
             tags: parseTags(e?.tags),
             attachments: parseAttachments(e?.attachments),
             confirmed: e?.confirmed === false ? false : true,
+            wealthAccountId: e?.wealthAccountId ? String(e.wealthAccountId).trim() : undefined,
           };
         })
         .filter((e: ExpenseRow) => e.id && e.date)
@@ -618,6 +737,7 @@ function upgradeV1ToV2(o: any): ExpenseTrackerState {
             cancelEffectiveDate: String(s?.cancelEffectiveDate ?? "").slice(0, 10) || undefined,
             notes: String(s?.notes ?? ""),
             tags: parseTags(s?.tags),
+            cardColor: parseCardColor(s?.cardColor),
           };
         })
         .filter((s: SubscriptionRow) => s.id)
@@ -690,6 +810,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
             tags: parseTags(e?.tags),
             attachments: parseAttachments(e?.attachments),
             confirmed: e?.confirmed === false ? false : true,
+            wealthAccountId: e?.wealthAccountId ? String(e.wealthAccountId).trim() : undefined,
           };
         })
         .filter((e: ExpenseRow) => e.id && e.date)
@@ -713,6 +834,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
             cancelEffectiveDate: String(s?.cancelEffectiveDate ?? "").slice(0, 10) || undefined,
             notes: String(s?.notes ?? ""),
             tags: parseTags(s?.tags),
+            cardColor: parseCardColor(s?.cardColor),
           };
         })
         .filter((s: SubscriptionRow) => s.id)
@@ -814,6 +936,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
             tags: parseTags(r?.tags),
             attachments: parseAttachments(r?.attachments),
             confirmed: r?.confirmed === false ? false : true,
+            wealthAccountId: r?.wealthAccountId ? String(r.wealthAccountId).trim() : undefined,
           };
         })
         .filter((r: IncomeAdhocRow) => r.id && r.date)
@@ -897,6 +1020,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
     plannedExpenseMonthOverrides: plannedOverridesClean,
     investments,
     wealthAccounts,
+    patrimonioRealMode: Boolean(o.patrimonioRealMode),
   };
 }
 
@@ -987,6 +1111,7 @@ export function mergeExpenseTrackerRemoteLocal(remote: ExpenseTrackerState, loca
     ),
     investments: mergeRows(remote.investments ?? [], local.investments ?? []),
     wealthAccounts: mergeRows(remote.wealthAccounts ?? [], local.wealthAccounts ?? []),
+    patrimonioRealMode: local.patrimonioRealMode,
   });
 }
 
@@ -1177,13 +1302,9 @@ export function monthlyExpenseSeries(
   return { months, seriesEur, seriesUsd, seriesUnified };
 }
 
-/** Cobro recurrente activo en el mes calendario `YYYY-MM` (límites por mes del ISO). */
+/** Cobro recurrente activo en el mes calendario `YYYY-MM` (respeta día del mes y validUntil). */
 export function paycheckActiveInMonth(p: PaycheckEntry, monthKey: string): boolean {
-  const fromM = p.validFrom?.slice(0, 7) ?? "";
-  const untilM = p.validUntil?.slice(0, 7) ?? "";
-  if (fromM && monthKey < fromM) return false;
-  if (untilM && monthKey > untilM) return false;
-  return true;
+  return recurringActiveInMonth(p, monthKey);
 }
 
 export function effectivePaycheckAmount(

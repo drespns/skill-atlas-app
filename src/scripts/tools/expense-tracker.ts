@@ -36,7 +36,15 @@ import {
   validateCategoryTree,
   computePatrimonioSnapshot,
   computeInvestmentTotalInvested,
+  monthsForRecurringEntry,
   monthsForRecurringRange,
+  totalIncomeInPeriod,
+  formatIbanDisplay,
+  defaultWealthAccountId,
+  parseCardColor,
+  effectivePaycheckAmount,
+  paycheckActiveInMonth,
+  recurringChargeDate,
   investmentPortfolioTotals,
   investmentCurrentValue,
   investmentGainLossAmount,
@@ -480,6 +488,77 @@ function pushTagBankFrom(tags: string[]) {
 
 let subsTreemapRo: ResizeObserver | null = null;
 
+function cardGradientStyle(color?: string): { className: string; style: string } {
+  const c = parseCardColor(color) ?? "#6366f1";
+  return {
+    className: "border shadow-sm",
+    style: `border-color:${c}55;background:linear-gradient(135deg,${c}28,${c}10,transparent)`,
+  };
+}
+
+function eurDelta(amount: number, currency: ExpenseCurrency): number {
+  return convertAmount(Math.max(0, amount), currency, "EUR", state.eurPerUsd);
+}
+
+function adjustWealthBalance(accountId: string | undefined, deltaEur: number) {
+  if (!accountId || !Number.isFinite(deltaEur) || deltaEur === 0) return;
+  const idx = (state.wealthAccounts ?? []).findIndex((a) => a.id === accountId);
+  if (idx < 0) return;
+  const row = { ...state.wealthAccounts![idx]! };
+  row.balance = Math.round((row.balance + deltaEur) * 100) / 100;
+  state.wealthAccounts![idx] = row;
+}
+
+function expenseAccountEffect(row: ExpenseRow | null, sign: 1 | -1) {
+  if (!row || row.confirmed === false || row.amount <= 0) return;
+  const id = row.wealthAccountId ?? defaultWealthAccountId(state.wealthAccounts ?? [], "expense");
+  adjustWealthBalance(id, sign * -eurDelta(row.amount, row.currency));
+}
+
+function incomeAccountEffect(row: IncomeAdhocRow | null, sign: 1 | -1) {
+  if (!row || row.confirmed === false || row.amount <= 0) return;
+  const id = row.wealthAccountId ?? defaultWealthAccountId(state.wealthAccounts ?? [], "income");
+  adjustWealthBalance(id, sign * eurDelta(row.amount, row.currency));
+}
+
+function syncExpenseAccounts(prev: ExpenseRow | null, next: ExpenseRow | null) {
+  expenseAccountEffect(prev, -1);
+  expenseAccountEffect(next, 1);
+}
+
+function syncIncomeAccounts(prev: IncomeAdhocRow | null, next: IncomeAdhocRow | null) {
+  incomeAccountEffect(prev, -1);
+  incomeAccountEffect(next, 1);
+}
+
+function fillWealthAccountSelect(
+  sel: HTMLSelectElement,
+  selectedId?: string,
+  role: "expense" | "income" = "expense",
+) {
+  sel.innerHTML = "";
+  const accounts = state.wealthAccounts ?? [];
+  if (!accounts.length) {
+    const o = document.createElement("option");
+    o.value = "";
+    o.textContent = "Sin cuentas";
+    sel.appendChild(o);
+    return;
+  }
+  for (const a of accounts) {
+    const o = document.createElement("option");
+    o.value = a.id;
+    const mask = a.ibanPrefix ? ` · ${formatIbanDisplay(a.ibanPrefix).slice(0, 7)}…` : "";
+    o.textContent = `${a.name}${mask}`;
+    sel.appendChild(o);
+  }
+  if (selectedId && accounts.some((a) => a.id === selectedId)) sel.value = selectedId;
+  else {
+    const def = defaultWealthAccountId(accounts, role);
+    if (def) sel.value = def;
+  }
+}
+
 function formatMonthLabel(mk: string) {
   const [y, m] = mk.split("-").map(Number);
   if (!y || !m) return mk;
@@ -494,30 +573,45 @@ function renderPatrimonioKpi(root: HTMLElement) {
   const snap = computePatrimonioSnapshot(state);
   elTotal.textContent = fmtEurCompact(snap.total);
   elBreak.innerHTML = "";
+  const invLabel = snap.realMode ? "Inversiones (capital)" : "Inversiones (valor est.)";
   for (const a of snap.accounts) {
     const row = document.createElement("div");
     row.className = "flex justify-between gap-2 text-gray-700 dark:text-gray-300";
     const name = document.createElement("span");
     name.className = "truncate";
-    name.textContent = a.name;
+    const mask = a.ibanPrefix ? ` ${formatIbanDisplay(a.ibanPrefix)}` : "";
+    name.textContent = `${a.name}${mask}`;
     const val = document.createElement("span");
     val.className = "font-mono font-semibold shrink-0";
     val.textContent = fmtEurCompact(a.balance);
     row.append(name, val);
     elBreak.appendChild(row);
   }
-  if (snap.investmentsCurrent > 0) {
+  if (snap.investmentsPart > 0) {
     const row = document.createElement("div");
     row.className = "flex justify-between gap-2 text-violet-800 dark:text-violet-200 font-medium";
-    row.innerHTML = `<span>Inversiones (valor est.)</span><span class="font-mono font-semibold shrink-0">${fmtEurCompact(snap.investmentsCurrent)}</span>`;
+    row.innerHTML = `<span>${invLabel}</span><span class="font-mono font-semibold shrink-0">${fmtEurCompact(snap.investmentsPart)}</span>`;
     elBreak.appendChild(row);
   }
-  if (!snap.accounts.length && snap.investmentsCurrent <= 0) {
+  if (!snap.accounts.length && snap.investmentsPart <= 0) {
     const hint = document.createElement("p");
     hint.className = "m-0 text-xs text-gray-500 dark:text-gray-400";
     hint.textContent = "Configura cuentas arriba o añade inversiones.";
     elBreak.appendChild(hint);
   }
+}
+
+function updateWealthBalanceDisplays(root: HTMLElement) {
+  for (const a of state.wealthAccounts ?? []) {
+    const el = root.querySelector<HTMLElement>(`[data-wealth-balance-display="${a.id}"]`);
+    if (el) el.textContent = fmtEur(a.balance);
+  }
+  renderPatrimonioKpi(root);
+}
+
+function updatePatrimonioModeLabel(root: HTMLElement) {
+  const lab = root.querySelector<HTMLElement>("[data-et-patrimonio-mode-label]");
+  if (lab) lab.textContent = state.patrimonioRealMode ? "Real" : "Valor estimado";
 }
 
 function renderWealthAccounts(root: HTMLElement) {
@@ -528,36 +622,99 @@ function renderWealthAccounts(root: HTMLElement) {
   list.innerHTML = "";
   if (empty) empty.classList.toggle("hidden", accounts.length > 0);
   for (const a of accounts) {
+    const tracked = Boolean(a.isDefaultExpense || a.isDefaultIncome);
     const row = document.createElement("div");
-    row.className = "flex flex-wrap items-end gap-2 sm:gap-3";
+    row.className =
+      "rounded-xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 p-3 space-y-2";
     row.dataset.wealthId = a.id;
+
+    const top = document.createElement("div");
+    top.className = "flex flex-wrap items-end gap-2 sm:gap-3";
     const nameLab = document.createElement("label");
-    nameLab.className = "flex-1 min-w-[10rem] space-y-1";
-    nameLab.innerHTML = `<span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Cuenta</span>`;
+    nameLab.className = "flex-1 min-w-[8rem] space-y-1";
+    nameLab.innerHTML = `<span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Nombre</span>`;
     const nameIn = document.createElement("input");
     nameIn.type = "text";
     nameIn.value = a.name;
     nameIn.dataset.wealthName = a.id;
     nameIn.className = "et-field w-full text-sm py-2";
-    nameIn.placeholder = "Banco, broker…";
     nameLab.appendChild(nameIn);
-    const balLab = document.createElement("label");
-    balLab.className = "w-full sm:w-36 space-y-1";
-    balLab.innerHTML = `<span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Saldo (€)</span>`;
-    const balIn = document.createElement("input");
-    balIn.type = "number";
-    balIn.step = "0.01";
-    balIn.min = "0";
-    balIn.value = String(a.balance);
-    balIn.dataset.wealthBalance = a.id;
-    balIn.className = "et-field w-full text-sm py-2 font-mono";
-    balLab.appendChild(balIn);
+
+    const ibanLab = document.createElement("label");
+    ibanLab.className = "w-20 space-y-1";
+    ibanLab.innerHTML = `<span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400">IBAN</span>`;
+    const ibanIn = document.createElement("input");
+    ibanIn.type = "text";
+    ibanIn.maxLength = 4;
+    ibanIn.value = a.ibanPrefix ?? "";
+    ibanIn.placeholder = "ES79";
+    ibanIn.dataset.wealthIban = a.id;
+    ibanIn.className = "et-field w-full text-sm py-2 font-mono uppercase";
+    ibanLab.appendChild(ibanIn);
+
     const del = document.createElement("button");
     del.type = "button";
     del.dataset.wealthDelete = a.id;
     del.className = "et-btn-secondary text-xs py-2 px-2.5 text-red-600 dark:text-red-400";
     del.textContent = "Quitar";
-    row.append(nameLab, balLab, del);
+    top.append(nameLab, ibanLab, del);
+
+    const mask = document.createElement("p");
+    mask.className = "m-0 text-xs font-mono tracking-wider text-gray-500 dark:text-gray-400";
+    mask.textContent = formatIbanDisplay(a.ibanPrefix);
+
+    const roles = document.createElement("div");
+    roles.className = "flex flex-wrap gap-3 text-xs";
+    const expLab = document.createElement("label");
+    expLab.className = "inline-flex items-center gap-1.5 cursor-pointer";
+    const expCb = document.createElement("input");
+    expCb.type = "radio";
+    expCb.name = "et-wealth-default-expense";
+    expCb.checked = Boolean(a.isDefaultExpense);
+    expCb.dataset.wealthDefaultExpense = a.id;
+    expLab.append(expCb, document.createTextNode("Cuenta de gastos"));
+    const incLab = document.createElement("label");
+    incLab.className = "inline-flex items-center gap-1.5 cursor-pointer";
+    const incCb = document.createElement("input");
+    incCb.type = "radio";
+    incCb.name = "et-wealth-default-income";
+    incCb.checked = Boolean(a.isDefaultIncome);
+    incCb.dataset.wealthDefaultIncome = a.id;
+    incLab.append(incCb, document.createTextNode("Cuenta de ingresos"));
+
+    const balRow = document.createElement("div");
+    balRow.className = "flex flex-wrap items-end gap-2";
+    if (tracked) {
+      const disp = document.createElement("div");
+      disp.className = "flex-1 min-w-[10rem]";
+      disp.innerHTML = `<span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Saldo actual (auto)</span>`;
+      const val = document.createElement("p");
+      val.className = "m-0 mt-1 text-lg font-bold font-mono text-gray-900 dark:text-gray-50";
+      val.dataset.wealthBalanceDisplay = a.id;
+      val.textContent = fmtEur(a.balance);
+      disp.appendChild(val);
+      const recon = document.createElement("button");
+      recon.type = "button";
+      recon.dataset.wealthReconcile = a.id;
+      recon.className = "et-btn-secondary text-xs py-2";
+      recon.textContent = "Reconciliar saldo";
+      balRow.append(disp, recon);
+    } else {
+      const balLab = document.createElement("label");
+      balLab.className = "flex-1 min-w-[10rem] space-y-1";
+      balLab.innerHTML = `<span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Saldo (€)</span>`;
+      const balIn = document.createElement("input");
+      balIn.type = "number";
+      balIn.step = "0.01";
+      balIn.value = String(a.balance);
+      balIn.dataset.wealthBalance = a.id;
+      balIn.className = "et-field w-full text-sm py-2 font-mono";
+      balLab.appendChild(balIn);
+      balRow.appendChild(balLab);
+    }
+
+    roles.append(expLab, incLab);
+    row.append(top, mask, roles, balRow);
     list.appendChild(row);
   }
   renderPatrimonioKpi(root);
@@ -566,10 +723,10 @@ function renderWealthAccounts(root: HTMLElement) {
 function renderKpis(root: HTMLElement) {
   const elSubs = root.querySelector<HTMLElement>("[data-et-kpi-subs]");
   const elExp = root.querySelector<HTMLElement>("[data-et-kpi-expenses]");
-  const elBlend = root.querySelector<HTMLElement>("[data-et-kpi-blend]");
+  const elIncPeriod = root.querySelector<HTMLElement>("[data-et-kpi-income-period]");
   const elInc = root.querySelector<HTMLElement>("[data-et-kpi-income]");
   const elBal = root.querySelector<HTMLElement>("[data-et-kpi-balance]");
-  if (!elSubs || !elExp || !elBlend) return;
+  if (!elSubs || !elExp) return;
 
   const fx = state.eurPerUsd;
   let subEur = 0;
@@ -586,7 +743,7 @@ function renderKpis(root: HTMLElement) {
 
   elSubs.textContent = `${fmtEurCompact(subEur)} / mes equiv.`;
   elExp.textContent = fmtEurCompact(expEur);
-  elBlend.textContent = `≈ ${fmtEurCompact(subEur + expEur)} (subs mensual + gastos del período)`;
+  if (elIncPeriod) elIncPeriod.textContent = fmtEurCompact(totalIncomeInPeriod(state, state.period));
 
   const curMonth = new Date().toISOString().slice(0, 7);
   const exM = state.expenses.filter((e) => e.date.startsWith(curMonth) && e.confirmed !== false);
@@ -634,9 +791,11 @@ function buildSubTreemapCard(
 
   const card = document.createElement("article");
   card.dataset.subId = s.id;
+  const grad = cardGradientStyle(s.cardColor);
   card.className =
-    "relative text-left rounded-xl border border-gray-200/90 dark:border-gray-800 bg-gradient-to-br from-white to-gray-50/90 dark:from-gray-950 dark:to-gray-900/70 p-2.5 sm:p-3 shadow-sm h-full flex flex-col overflow-hidden" +
+    `relative text-left rounded-xl p-2.5 sm:p-3 h-full flex flex-col overflow-hidden ${grad.className}` +
     (faded ? " et-sub-bento-card--faded opacity-75" : "");
+  card.style.cssText = grad.style;
 
   const cycleLabel =
     s.cycle === "weekly"
@@ -828,6 +987,7 @@ function restoreExpenseFocusSnap(root: HTMLElement, snap: ExpenseFocusSnap) {
 function refreshExpenseTableAndMoney(root: HTMLElement) {
   renderExpenseTable(root);
   refreshMoneyViews(root);
+  updateWealthBalanceDisplays(root);
 }
 
 function defaultFilterMonthValue(): string {
@@ -937,6 +1097,17 @@ function renderExpenseTable(root: HTMLElement) {
     selCat.value = row.categoryId;
     selCat.addEventListener("change", () => patchExpense(row.id, { categoryId: selCat.value }, "category"));
 
+    const tdAcct = document.createElement("td");
+    tdAcct.className = "px-2 py-1.5";
+    const selAcct = document.createElement("select");
+    selAcct.className = `${ET_FIELD} min-w-[7rem] py-1.5`;
+    selAcct.dataset.etExpId = row.id;
+    selAcct.dataset.etExpField = "wealthAccount";
+    fillWealthAccountSelect(selAcct, row.wealthAccountId, "expense");
+    selAcct.addEventListener("change", () =>
+      patchExpense(row.id, { wealthAccountId: selAcct.value || undefined }, "wealthAccount"),
+    );
+
     const tdTags = document.createElement("td");
     tdTags.className = "px-2 py-1.5";
     const inTags = document.createElement("input");
@@ -1037,8 +1208,9 @@ function renderExpenseTable(root: HTMLElement) {
     });
 
     tdCat.appendChild(selCat);
+    tdAcct.appendChild(selAcct);
     tdDel.appendChild(del);
-    tr.append(tdDate, tdLabel, tdAmt, tdCat, tdTags, tdAtt, tdNotes, tdState, tdDel);
+    tr.append(tdDate, tdLabel, tdAmt, tdCat, tdAcct, tdTags, tdAtt, tdNotes, tdState, tdDel);
     body.appendChild(tr);
   }
 }
@@ -1081,6 +1253,7 @@ function restoreIncomeFocusSnap(root: HTMLElement, snap: IncomeFocusSnap) {
 function refreshIncomeTableAndMoney(root: HTMLElement) {
   renderIncomeTable(root);
   refreshMoneyViews(root);
+  updateWealthBalanceDisplays(root);
 }
 
 function renderIncomeTable(root: HTMLElement) {
@@ -1144,6 +1317,17 @@ function renderIncomeTable(root: HTMLElement) {
     fillCategorySelect(selCat);
     selCat.value = row.categoryId;
     selCat.addEventListener("change", () => patchIncome(row.id, { categoryId: selCat.value }, "category"));
+
+    const tdAcct = document.createElement("td");
+    tdAcct.className = "px-2 py-1.5";
+    const selAcct = document.createElement("select");
+    selAcct.className = `${ET_FIELD} min-w-[7rem] py-1.5`;
+    selAcct.dataset.etIncId = row.id;
+    selAcct.dataset.etIncField = "wealthAccount";
+    fillWealthAccountSelect(selAcct, row.wealthAccountId, "income");
+    selAcct.addEventListener("change", () =>
+      patchIncome(row.id, { wealthAccountId: selAcct.value || undefined }, "wealthAccount"),
+    );
 
     const tags = row.tags ?? [];
     const tdTags = document.createElement("td");
@@ -1247,8 +1431,9 @@ function renderIncomeTable(root: HTMLElement) {
     });
 
     tdCat.appendChild(selCat);
+    tdAcct.appendChild(selAcct);
     tdDel.appendChild(del);
-    tr.append(tdDate, tdLabel, tdAmt, tdCat, tdTags, tdAtt, tdNotes, tdState, tdDel);
+    tr.append(tdDate, tdLabel, tdAmt, tdCat, tdAcct, tdTags, tdAtt, tdNotes, tdState, tdDel);
     body.appendChild(tr);
   }
 }
@@ -1258,12 +1443,14 @@ function patchIncome(id: string, patch: Partial<IncomeAdhocRow>, refocusField?: 
   const idx = list.findIndex((e) => e.id === id);
   if (idx < 0) return;
   const prev = list[idx]!;
-  list[idx] = {
+  const next: IncomeAdhocRow = {
     ...prev,
     ...patch,
     tags: patch.tags ?? prev.tags ?? [],
     attachments: patch.attachments ?? prev.attachments ?? [],
   };
+  syncIncomeAccounts(prev, next);
+  list[idx] = next;
   state.incomeAdhoc = list;
   if (patch.tags) pushTagBankFrom(patch.tags);
   const root = document.querySelector<HTMLElement>("[data-tools-expense-page]");
@@ -1280,6 +1467,8 @@ function patchIncome(id: string, patch: Partial<IncomeAdhocRow>, refocusField?: 
 }
 
 function removeIncome(id: string) {
+  const row = (state.incomeAdhoc ?? []).find((e) => e.id === id);
+  if (row) incomeAccountEffect(row, -1);
   state.incomeAdhoc = (state.incomeAdhoc ?? []).filter((e) => e.id !== id);
   persist();
   const root = document.querySelector<HTMLElement>("[data-tools-expense-page]");
@@ -1301,6 +1490,7 @@ function addIncome() {
     tags: [],
     attachments: [],
     confirmed: false,
+    wealthAccountId: defaultWealthAccountId(state.wealthAccounts ?? [], "income"),
   };
   state.incomeAdhoc = [...(state.incomeAdhoc ?? []), row].slice(0, 500);
   if (!root) {
@@ -1320,12 +1510,14 @@ function patchExpense(id: string, patch: Partial<ExpenseRow>, refocusField?: str
   const idx = state.expenses.findIndex((e) => e.id === id);
   if (idx < 0) return;
   const prev = state.expenses[idx]!;
-  state.expenses[idx] = {
+  const next: ExpenseRow = {
     ...prev,
     ...patch,
     tags: patch.tags ?? prev.tags ?? [],
     attachments: patch.attachments ?? prev.attachments ?? [],
   };
+  syncExpenseAccounts(prev, next);
+  state.expenses[idx] = next;
   if (patch.tags) pushTagBankFrom(patch.tags);
   const root = document.querySelector<HTMLElement>("[data-tools-expense-page]");
   if (!root) {
@@ -1341,6 +1533,8 @@ function patchExpense(id: string, patch: Partial<ExpenseRow>, refocusField?: str
 }
 
 function removeExpense(id: string) {
+  const row = state.expenses.find((e) => e.id === id);
+  if (row) expenseAccountEffect(row, -1);
   state.expenses = state.expenses.filter((e) => e.id !== id);
   persist();
   renderAll(document.querySelector<HTMLElement>("[data-tools-expense-page]")!);
@@ -1361,6 +1555,7 @@ function addExpense() {
     tags: [],
     attachments: [],
     confirmed: false,
+    wealthAccountId: defaultWealthAccountId(state.wealthAccounts ?? [], "expense"),
   });
   if (!root) {
     persist();
@@ -1677,6 +1872,7 @@ function renderMonthOverrideList(
   entryId: string | null,
   validFrom: string,
   validUntil: string,
+  dayOfMonth: number,
   typicalAmount?: number,
 ) {
   const sel =
@@ -1691,8 +1887,14 @@ function renderMonthOverrideList(
     list.appendChild(hint);
     return;
   }
-  const months = monthsForRecurringRange(validFrom, validUntil || undefined);
-  if (!months.length) return;
+  const months = monthsForRecurringEntry({ dayOfMonth, validFrom, validUntil });
+  if (!months.length) {
+    const hint = document.createElement("p");
+    hint.className = "m-0 text-[11px] text-gray-500 dark:text-gray-400";
+    hint.textContent = "Ningún mes coincide con el rango y el día del mes.";
+    list.appendChild(hint);
+    return;
+  }
   const overrides =
     kind === "paycheck"
       ? (state.incomeMonthOverrides ?? []).filter((o) => o.paycheckId === entryId)
@@ -1765,11 +1967,23 @@ function bindMonthOverrideRefresh(root: HTMLElement, kind: "paycheck" | "planned
     const from = (root.querySelector<HTMLInputElement>(fromSel)?.value ?? "").slice(0, 10);
     const until = (root.querySelector<HTMLInputElement>(untilSel)?.value ?? "").slice(0, 10);
     const amt = Number(root.querySelector<HTMLInputElement>(amtSel)?.value);
-    renderMonthOverrideList(root, kind, entryId, from, until, Number.isFinite(amt) ? amt : undefined);
+    const dayRaw = Number(root.querySelector<HTMLInputElement>(daySel)?.value);
+    const dayOfMonth = Number.isFinite(dayRaw) ? Math.min(31, Math.max(1, Math.floor(dayRaw))) : 1;
+    renderMonthOverrideList(
+      root,
+      kind,
+      entryId,
+      from,
+      until,
+      dayOfMonth,
+      Number.isFinite(amt) ? amt : undefined,
+    );
   };
+  const daySel = kind === "paycheck" ? "[data-et-paycheck-day]" : "[data-et-planned-day]";
   root.querySelector<HTMLInputElement>(fromSel)?.addEventListener("change", refresh);
   root.querySelector<HTMLInputElement>(untilSel)?.addEventListener("change", refresh);
   root.querySelector<HTMLInputElement>(amtSel)?.addEventListener("input", refresh);
+  root.querySelector<HTMLInputElement>(daySel)?.addEventListener("change", refresh);
 }
 
 function updateInvTotalDisplay(root: HTMLElement) {
@@ -1810,7 +2024,8 @@ function openPaycheckDialog(root: HTMLElement, p?: PaycheckEntry | null) {
   root.querySelector("[data-et-paycheck-delete]")?.classList.toggle("invisible", !p);
   const from = (p?.validFrom ?? "").slice(0, 10);
   const until = (p?.validUntil ?? "").slice(0, 10);
-  renderMonthOverrideList(root, "paycheck", entryId, from, until, p?.typicalAmount);
+  const dayOfMonth = p?.dayOfMonth ?? 1;
+  renderMonthOverrideList(root, "paycheck", entryId, from, until, dayOfMonth, p?.typicalAmount);
   bindMonthOverrideRefresh(root, "paycheck", entryId);
   dlg.showModal();
 }
@@ -1902,7 +2117,8 @@ function openPlannedDialog(root: HTMLElement, p?: PlannedExpenseEntry | null) {
   root.querySelector("[data-et-planned-delete]")?.classList.toggle("invisible", !p);
   const from = (p?.validFrom ?? "").slice(0, 10);
   const until = (p?.validUntil ?? "").slice(0, 10);
-  renderMonthOverrideList(root, "planned", entryId, from, until, p?.typicalAmount);
+  const dayOfMonth = p?.dayOfMonth ?? 1;
+  renderMonthOverrideList(root, "planned", entryId, from, until, dayOfMonth, p?.typicalAmount);
   bindMonthOverrideRefresh(root, "planned", entryId);
   dlg.showModal();
 }
@@ -1987,6 +2203,8 @@ function openInvestmentDialog(root: HTMLElement, h?: InvestmentHolding | null) {
     h?.quantity != null ? String(h.quantity) : "";
   (root.querySelector("[data-et-inv-pnl]") as HTMLInputElement).value = h != null ? String(h.gainLossPct) : "";
   (root.querySelector("[data-et-inv-notes]") as HTMLTextAreaElement).value = h?.notes ?? "";
+  const colorEl = root.querySelector<HTMLInputElement>("[data-et-inv-color]");
+  if (colorEl) colorEl.value = parseCardColor(h?.cardColor) ?? "#8b5cf6";
   root.querySelector("[data-et-inv-delete]")?.classList.toggle("invisible", !h);
   updateInvTotalDisplay(root);
   const avgEl = root.querySelector<HTMLInputElement>("[data-et-inv-avg]");
@@ -2008,6 +2226,7 @@ function saveInvestmentFromDialog(root: HTMLElement) {
   const qtyRaw = root.querySelector<HTMLInputElement>("[data-et-inv-qty]")?.value;
   const pnl = Number(root.querySelector<HTMLInputElement>("[data-et-inv-pnl]")?.value);
   const notes = root.querySelector<HTMLTextAreaElement>("[data-et-inv-notes]")?.value?.trim() ?? "";
+  const cardColor = parseCardColor(root.querySelector<HTMLInputElement>("[data-et-inv-color]")?.value);
   if (!name) return;
   const quantity =
     qtyRaw != null && qtyRaw !== "" && Number.isFinite(Number(qtyRaw)) ? Math.max(0, Number(qtyRaw)) : 0;
@@ -2025,6 +2244,7 @@ function saveInvestmentFromDialog(root: HTMLElement) {
     totalInvested: computeInvestmentTotalInvested(avgBuyPrice, quantity),
     gainLossPct: Number.isFinite(pnl) ? pnl : 0,
     notes: notes || undefined,
+    cardColor,
   };
   const list = [...(state.investments ?? [])];
   const idx = list.findIndex((x) => x.id === row.id);
@@ -2045,6 +2265,45 @@ function deleteInvestmentFromDialog(root: HTMLElement) {
     persist();
     renderAll(root);
   })();
+}
+
+async function receivePaycheckToday(root: HTMLElement) {
+  const today = todayIso();
+  const mk = today.slice(0, 7);
+  const paychecks = (state.paychecks ?? []).filter((p) => paycheckActiveInMonth(p, mk));
+  if (!paychecks.length) {
+    await showAlertDialog(
+      root,
+      "No hay nóminas activas este mes. Configúrala en la sección de ingresos previstos.",
+    );
+    return;
+  }
+  const paycheck =
+    paychecks.length === 1
+      ? paychecks[0]!
+      : [...paychecks].sort((a, b) => (b.typicalAmount ?? 0) - (a.typicalAmount ?? 0))[0]!;
+  const { amount, currency } = effectivePaycheckAmount(paycheck, mk, state.incomeMonthOverrides ?? []);
+  if (amount <= 0) {
+    await showAlertDialog(root, "El importe de la nómina este mes es 0 €.");
+    return;
+  }
+  const row: IncomeAdhocRow = {
+    id: makeId(),
+    date: today,
+    label: paycheck.title?.trim() || "Nómina",
+    amount,
+    currency,
+    categoryId: state.categories[0]?.id ?? "cat_other",
+    notes: paycheck.note?.trim() || undefined,
+    tags: ["nómina"],
+    attachments: [],
+    confirmed: true,
+    wealthAccountId: defaultWealthAccountId(state.wealthAccounts ?? [], "income"),
+  };
+  incomeAccountEffect(row, 1);
+  state.incomeAdhoc = [...(state.incomeAdhoc ?? []), row].slice(0, 500);
+  persist();
+  renderAll(root);
 }
 
 function tagTotalsForChart(
@@ -2809,6 +3068,8 @@ function openSubDialog(root: HTMLElement, sub: SubscriptionRow | null) {
   activeEl.checked = sub?.active !== false;
   tagsEl.value = (sub?.tags ?? []).join(", ");
   notesEl.value = sub?.notes ?? "";
+  const colorEl = root.querySelector<HTMLInputElement>("[data-et-sub-color]");
+  if (colorEl) colorEl.value = parseCardColor(sub?.cardColor) ?? "#6366f1";
   delBtn.classList.toggle("invisible", !sub);
   dlg.showModal();
   requestAnimationFrame(() => window.dispatchEvent(new Event("skillatlas:select-popovers-refresh")));
@@ -2835,6 +3096,7 @@ function saveSubFromDialog(root: HTMLElement) {
     : "monthly";
   const tags = parseTags(tagsEl.value);
   pushTagBankFrom(tags);
+  const cardColor = parseCardColor(root.querySelector<HTMLInputElement>("[data-et-sub-color]")?.value);
   const billingRaw = billEl.value.slice(0, 10);
   const billingStartDate = billingRaw.length === 10 ? billingRaw : undefined;
   const row: SubscriptionRow = {
@@ -2850,6 +3112,7 @@ function saveSubFromDialog(root: HTMLElement) {
     cancelEffectiveDate: activeEl.checked ? prev?.cancelEffectiveDate : undefined,
     notes: notesEl.value.trim(),
     tags,
+    cardColor,
   };
   row.nextBilling = subscriptionNextChargeIso(row);
   const idx = state.subscriptions.findIndex((s) => s.id === row.id);
@@ -3031,6 +3294,9 @@ function renderAll(root: HTMLElement) {
   if (syncStrip) syncStrip.checked = state.syncToAccount;
   if (cloudE2e) cloudE2e.checked = state.cloudE2E;
   if (period) period.value = state.period;
+  const patReal = root.querySelector<HTMLInputElement>("[data-et-patrimonio-real]");
+  if (patReal) patReal.checked = Boolean(state.patrimonioRealMode);
+  updatePatrimonioModeLabel(root);
   if (syncChartCategoryFilterSelect(root)) persist();
   updateE2eUnlockBanner(root);
   updateE2ePassphraseHint(root);
@@ -3131,7 +3397,7 @@ function wire(root: HTMLElement) {
 
   root.querySelector<HTMLElement>("[data-et-wealth-list]")?.addEventListener("input", (e) => {
     const t = e.target as HTMLElement;
-    const id = t.dataset.wealthName || t.dataset.wealthBalance;
+    const id = t.dataset.wealthName || t.dataset.wealthBalance || t.dataset.wealthIban;
     if (!id) return;
     const idx = (state.wealthAccounts ?? []).findIndex((a) => a.id === id);
     if (idx < 0) return;
@@ -3141,9 +3407,56 @@ function wire(root: HTMLElement) {
       const n = Number(t.value);
       row.balance = Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : 0;
     }
+    if (t instanceof HTMLInputElement && t.dataset.wealthIban) {
+      row.ibanPrefix = t.value.trim().toUpperCase().slice(0, 4) || undefined;
+    }
     state.wealthAccounts![idx] = row;
     persist();
-    renderPatrimonioKpi(root);
+    if (t.dataset.wealthIban) renderWealthAccounts(root);
+    else renderPatrimonioKpi(root);
+  });
+
+  root.querySelector<HTMLElement>("[data-et-wealth-list]")?.addEventListener("change", (e) => {
+    const t = e.target as HTMLInputElement;
+    if (t.dataset.wealthDefaultExpense) {
+      const id = t.dataset.wealthDefaultExpense;
+      state.wealthAccounts = (state.wealthAccounts ?? []).map((a) => ({
+        ...a,
+        isDefaultExpense: a.id === id,
+      }));
+      persist();
+      renderWealthAccounts(root);
+      return;
+    }
+    if (t.dataset.wealthDefaultIncome) {
+      const id = t.dataset.wealthDefaultIncome;
+      state.wealthAccounts = (state.wealthAccounts ?? []).map((a) => ({
+        ...a,
+        isDefaultIncome: a.id === id,
+      }));
+      persist();
+      renderWealthAccounts(root);
+    }
+  });
+
+  root.querySelector<HTMLElement>("[data-et-wealth-list]")?.addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-wealth-delete]");
+    if (btn) return;
+    const recon = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-wealth-reconcile]");
+    if (!recon) return;
+    const id = recon.dataset.wealthReconcile;
+    if (!id) return;
+    const acc = (state.wealthAccounts ?? []).find((a) => a.id === id);
+    if (!acc) return;
+    const raw = window.prompt(`Saldo real en «${acc.name}» (€):`, String(acc.balance));
+    if (raw == null) return;
+    const n = Number(raw.replace(",", "."));
+    if (!Number.isFinite(n)) return;
+    const idx = state.wealthAccounts!.findIndex((a) => a.id === id);
+    if (idx < 0) return;
+    state.wealthAccounts![idx] = { ...state.wealthAccounts![idx]!, balance: Math.round(n * 100) / 100 };
+    persist();
+    renderWealthAccounts(root);
   });
 
   root.querySelector<HTMLElement>("[data-et-wealth-list]")?.addEventListener("click", (e) => {
@@ -3193,6 +3506,17 @@ function wire(root: HTMLElement) {
     state.period = (e.target as HTMLSelectElement).value as ExpenseTrackerState["period"];
     persist();
     renderAll(root);
+  });
+
+  root.querySelector<HTMLInputElement>("[data-et-patrimonio-real]")?.addEventListener("change", (e) => {
+    state.patrimonioRealMode = (e.target as HTMLInputElement).checked;
+    persist();
+    updatePatrimonioModeLabel(root);
+    renderPatrimonioKpi(root);
+  });
+
+  root.querySelector<HTMLButtonElement>("[data-et-paycheck-received]")?.addEventListener("click", () => {
+    void receivePaycheckToday(root);
   });
 
   root.querySelector<HTMLSelectElement>("[data-et-chart-cat-filter]")?.addEventListener("change", (e) => {
