@@ -31,6 +31,8 @@ import {
   subscriptionMonthlyBurnByCurrency,
   subscriptionNextChargeIso,
   subscriptionToMonthlyAmount,
+  subscriptionCountsInTotals,
+  scheduleSubscriptionCancel,
   validateCategoryTree,
   type ExpenseAttachment,
   type ExpenseRow,
@@ -39,10 +41,16 @@ import {
   type PaycheckEntry,
   type PlannedExpenseEntry,
   type SubscriptionRow,
+  type InvestmentHolding,
 } from "@lib/tools-expense-tracker";
 import { isExpenseEncryptedEnvelope, openExpenseEnvelope, sealExpenseState } from "@lib/tools-expense-tracker-crypto";
 import type { EncryptedExpenseEnvelope } from "@lib/tools-expense-tracker-crypto";
 import { loadClientState, scheduleSaveClientState } from "@scripts/core/user-client-state";
+import {
+  renderInvestmentSection,
+  renderPaycheckCards,
+  renderPlannedCards,
+} from "./expense-tracker-recurring-ui";
 
 echarts.use([BarChart, LineChart, PieChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer]);
 
@@ -78,6 +86,24 @@ function fmtMoney(n: number, currency: "EUR" | "USD") {
 function fmtCompact(n: number, currency: "EUR" | "USD") {
   return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(n);
 }
+
+function fmtEur(n: number) {
+  return fmtMoney(n, "EUR");
+}
+
+function fmtEurCompact(n: number) {
+  return fmtCompact(n, "EUR");
+}
+
+function amountInEur(amount: number, currency: "EUR" | "USD", fx: number) {
+  return currency === "EUR" ? amount : convertAmount(amount, "USD", "EUR", fx);
+}
+
+let plannedSortDesc = true;
+let paycheckSortDesc = true;
+let editingPlannedId: string | null = null;
+let editingPaycheckId: string | null = null;
+let editingInvId: string | null = null;
 
 let state: ExpenseTrackerState = defaultExpenseTrackerState();
 const chartInstances: echarts.ECharts[] = [];
@@ -450,81 +476,36 @@ function renderKpis(root: HTMLElement) {
   const elBal = root.querySelector<HTMLElement>("[data-et-kpi-balance]");
   if (!elSubs || !elExp || !elBlend) return;
 
+  const fx = state.eurPerUsd;
   let subEur = 0;
-  let subUsd = 0;
   for (const s of state.subscriptions) {
-    if (!s.active) continue;
     const m = subscriptionToMonthlyAmount(s);
-    if (s.currency === "EUR") subEur += m;
-    else subUsd += m;
+    subEur += amountInEur(m, s.currency, fx);
   }
 
   const ex = filterExpensesByPeriod(state.expenses, state.period).filter((e) => e.confirmed !== false);
   let expEur = 0;
-  let expUsd = 0;
   for (const e of ex) {
-    if (e.currency === "EUR") expEur += Math.max(0, e.amount);
-    else expUsd += Math.max(0, e.amount);
+    expEur += amountInEur(Math.max(0, e.amount), e.currency, fx);
   }
 
-  const mode = state.chartMoneyMode;
-  const fx = state.eurPerUsd;
-
-  const blendLine = () => {
-    if (mode === "unify_eur") {
-      const t = expEur + convertAmount(expUsd, "USD", "EUR", fx) + subEur + convertAmount(subUsd, "USD", "EUR", fx);
-      return `≈ ${fmtCompact(t, "EUR")} / mes ref. (subs mensual + gastos período unificados)`;
-    }
-    if (mode === "unify_usd") {
-      const t = expUsd + convertAmount(expEur, "EUR", "USD", fx) + subUsd + convertAmount(subEur, "EUR", "USD", fx);
-      return `≈ ${fmtCompact(t, "USD")} / mes ref.`;
-    }
-    return `${fmtCompact(subEur, "EUR")} + ${fmtCompact(subUsd, "USD")} suscripciones · ${fmtCompact(expEur, "EUR")} + ${fmtCompact(expUsd, "USD")} gastos`;
-  };
-
-  if (mode === "mixed") {
-    elSubs.textContent = `${fmtCompact(subEur, "EUR")} + ${fmtCompact(subUsd, "USD")} / mes equiv.`;
-    elExp.textContent = `${fmtCompact(expEur, "EUR")} + ${fmtCompact(expUsd, "USD")}`;
-  } else if (mode === "unify_eur") {
-    elSubs.textContent = fmtCompact(subEur + convertAmount(subUsd, "USD", "EUR", fx), "EUR");
-    elExp.textContent = fmtCompact(expEur + convertAmount(expUsd, "USD", "EUR", fx), "EUR");
-  } else {
-    elSubs.textContent = fmtCompact(subUsd + convertAmount(subEur, "EUR", "USD", fx), "USD");
-    elExp.textContent = fmtCompact(expUsd + convertAmount(expEur, "EUR", "USD", fx), "USD");
-  }
-  elBlend.textContent = blendLine();
+  elSubs.textContent = `${fmtEurCompact(subEur)} / mes equiv.`;
+  elExp.textContent = fmtEurCompact(expEur);
+  elBlend.textContent = `≈ ${fmtEurCompact(subEur + expEur)} (subs mensual + gastos del período)`;
 
   const curMonth = new Date().toISOString().slice(0, 7);
   const exM = state.expenses.filter((e) => e.date.startsWith(curMonth) && e.confirmed !== false);
   let expMEur = 0;
-  let expMUsd = 0;
   for (const e of exM) {
-    if (e.currency === "EUR") expMEur += Math.max(0, e.amount);
-    else expMUsd += Math.max(0, e.amount);
+    expMEur += amountInEur(Math.max(0, e.amount), e.currency, fx);
   }
   const burn = subscriptionMonthlyBurnByCurrency(state);
-  const planM = monthlyPlannedOutflowSeries(state, [curMonth], mode, fx);
-  const outMEur = expMEur + burn.eur + (planM.seriesEur[0] ?? 0);
-  const outMUsd = expMUsd + burn.usd + (planM.seriesUsd[0] ?? 0);
-  const incS = monthlyIncomeSeries(state, [curMonth], mode, fx);
-  const incEur = incS.seriesEur[0] ?? 0;
-  const incUsd = incS.seriesUsd[0] ?? 0;
-  if (elInc) {
-    if (mode === "mixed") elInc.textContent = `${fmtCompact(incEur, "EUR")} + ${fmtCompact(incUsd, "USD")}`;
-    else if (mode === "unify_eur") elInc.textContent = fmtCompact(incS.seriesUnified[0] ?? 0, "EUR");
-    else elInc.textContent = fmtCompact(incS.seriesUnified[0] ?? 0, "USD");
-  }
-  if (elBal) {
-    if (mode === "mixed") {
-      elBal.textContent = `${fmtCompact(incEur - outMEur, "EUR")} / ${fmtCompact(incUsd - outMUsd, "USD")}`;
-    } else if (mode === "unify_eur") {
-      const outT = outMEur + convertAmount(outMUsd, "USD", "EUR", fx);
-      elBal.textContent = fmtCompact((incS.seriesUnified[0] ?? 0) - outT, "EUR");
-    } else {
-      const outT = outMUsd + convertAmount(outMEur, "EUR", "USD", fx);
-      elBal.textContent = fmtCompact((incS.seriesUnified[0] ?? 0) - outT, "USD");
-    }
-  }
+  const planM = monthlyPlannedOutflowSeries(state, [curMonth], "unify_eur", fx);
+  const outMEur = expMEur + amountInEur(burn.eur, "EUR", fx) + amountInEur(burn.usd, "USD", fx) + (planM.seriesUnified[0] ?? 0);
+  const incS = monthlyIncomeSeries(state, [curMonth], "unify_eur", fx);
+  const incEur = incS.seriesUnified[0] ?? 0;
+  if (elInc) elInc.textContent = fmtEurCompact(incEur);
+  if (elBal) elBal.textContent = fmtEurCompact(incEur - outMEur);
 
   const elYi = root.querySelector<HTMLElement>("[data-et-kpi-year-income]");
   const elYo = root.querySelector<HTMLElement>("[data-et-kpi-year-out]");
@@ -533,25 +514,11 @@ function renderKpis(root: HTMLElement) {
     const year = new Date().getFullYear();
     const ys = buildNaturalYearOutInSeries(year);
     const sum = (arr: number[]) => arr.reduce((a, b) => a + (Number.isFinite(b) ? b : 0), 0);
-    const incE = sum(ys.incEur);
-    const incU = sum(ys.incUsd);
-    const outE = sum(ys.outEur);
-    const outU = sum(ys.outUsd);
     const incUni = sum(ys.incUni);
     const outUni = sum(ys.outUni);
-    if (mode === "mixed") {
-      elYi.textContent = `${fmtCompact(incE, "EUR")} + ${fmtCompact(incU, "USD")}`;
-      elYo.textContent = `${fmtCompact(outE, "EUR")} + ${fmtCompact(outU, "USD")}`;
-      elYn.textContent = `${fmtCompact(incE - outE, "EUR")} / ${fmtCompact(incU - outU, "USD")}`;
-    } else if (mode === "unify_eur") {
-      elYi.textContent = fmtCompact(incUni, "EUR");
-      elYo.textContent = fmtCompact(outUni, "EUR");
-      elYn.textContent = fmtCompact(incUni - outUni, "EUR");
-    } else {
-      elYi.textContent = fmtCompact(incUni, "USD");
-      elYo.textContent = fmtCompact(outUni, "USD");
-      elYn.textContent = fmtCompact(incUni - outUni, "USD");
-    }
+    elYi.textContent = fmtEurCompact(incUni);
+    elYo.textContent = fmtEurCompact(outUni);
+    elYn.textContent = fmtEurCompact(incUni - outUni);
   }
 }
 
@@ -559,23 +526,38 @@ function renderSubs(root: HTMLElement) {
   const strip = root.querySelector<HTMLElement>("[data-et-subs-strip]");
   if (!strip) return;
   strip.innerHTML = "";
-  const subs = state.subscriptions;
+  const fx = state.eurPerUsd;
+  const subs = [...state.subscriptions];
   if (!subs.length) {
     const empty = document.createElement("p");
-    empty.className = "text-sm text-gray-500 dark:text-gray-400 px-1 py-6";
-    empty.textContent = "Aún no hay suscripciones. Usa «Nueva suscripción» o toca aquí después de crearlas.";
+    empty.className = "text-sm text-gray-500 dark:text-gray-400 px-1 py-6 col-span-full";
+    empty.textContent = "Aún no hay suscripciones. Usa «Nueva suscripción» para empezar.";
     strip.appendChild(empty);
     return;
   }
-  for (const s of subs) {
-    const card = document.createElement("button");
-    card.type = "button";
+
+  const weights = subs.map((s) => {
+    const m = subscriptionToMonthlyAmount(s);
+    return amountInEur(m, s.currency, fx) || 0.01;
+  });
+  const totalW = weights.reduce((a, b) => a + b, 0) || 1;
+  const today = todayIso();
+
+  for (let i = 0; i < subs.length; i++) {
+    const s = subs[i]!;
+    const w = weights[i]!;
+    const span = Math.max(1, Math.min(3, Math.round((w / totalW) * 6) || 1));
+    const counts = subscriptionCountsInTotals(s, today);
+    const scheduled = Boolean(s.cancelEffectiveDate?.trim());
+    const faded = !counts || !s.active || scheduled;
+
+    const card = document.createElement("article");
     card.dataset.subId = s.id;
+    card.style.gridColumn = `span ${span}`;
     card.className =
-      "snap-start shrink-0 w-[min(100vw-2rem,17rem)] text-left rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-950 dark:to-gray-900/60 p-4 shadow-sm hover:border-indigo-300 dark:hover:border-indigo-800 hover:shadow-md transition-all";
-    const cat = state.categories.find((c) => c.id === s.categoryId);
-    const stripe = cat?.color ?? "#6366f1";
-    const monthly = subscriptionToMonthlyAmount(s);
+      "et-sub-bento-card relative text-left rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gradient-to-br from-white to-gray-50/90 dark:from-gray-950 dark:to-gray-900/70 p-4 shadow-sm min-h-[7.5rem] flex flex-col" +
+      (faded ? " et-sub-bento-card--faded" : "");
+
     const cycleLabel =
       s.cycle === "weekly"
         ? "Semanal"
@@ -584,42 +566,53 @@ function renderSubs(root: HTMLElement) {
           : s.cycle === "quarterly"
             ? "Trimestral"
             : "Anual";
-
-    const wrap = document.createElement("div");
-    wrap.className = "flex items-start gap-3";
-    const bar = document.createElement("span");
-    bar.className = "mt-0.5 h-10 w-1.5 rounded-full shrink-0";
-    bar.style.background = stripe;
-    const col = document.createElement("div");
-    col.className = "min-w-0 flex-1 space-y-1";
-    const p0 = document.createElement("p");
-    p0.className = "m-0 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400";
-    p0.textContent = `${s.active ? "Activa" : "Pausada"} · ${cycleLabel}`;
-    const p1 = document.createElement("p");
-    p1.className = "m-0 text-base font-semibold tracking-tight text-gray-900 dark:text-gray-50 truncate";
-    p1.textContent = s.name;
-    const p2 = document.createElement("p");
-    p2.className = "m-0 text-lg font-bold text-indigo-700 dark:text-indigo-300 font-mono";
-    p2.textContent = `${fmtMoney(s.amount, s.currency)} · ≈ ${fmtMoney(monthly, s.currency)}/mes`;
-    const p3 = document.createElement("p");
-    p3.className = "m-0 text-xs text-gray-500 dark:text-gray-400 line-clamp-2";
+    const monthly = subscriptionToMonthlyAmount(s);
+    const monthlyEur = amountInEur(monthly, s.currency, fx);
     const nextIso = subscriptionNextChargeIso(s);
+
+    const head = document.createElement("div");
+    head.className = "flex items-start justify-between gap-2 mb-2";
+    const status = document.createElement("p");
+    status.className = "m-0 text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400";
+    if (!s.active) status.textContent = "Pausada";
+    else if (scheduled && counts) status.textContent = `Cancela el ${s.cancelEffectiveDate}`;
+    else if (scheduled) status.textContent = "Cancelada";
+    else status.textContent = `Activa · ${cycleLabel}`;
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.dataset.subCancel = s.id;
+    cancelBtn.className =
+      "shrink-0 text-[10px] font-semibold rounded-lg border border-gray-200 dark:border-gray-700 px-2 py-0.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer";
+    if (!s.active) cancelBtn.textContent = "Reactivar";
+    else if (scheduled) cancelBtn.textContent = "Deshacer";
+    else cancelBtn.textContent = "Cancelar";
+    head.append(status, cancelBtn);
+
+    const name = document.createElement("p");
+    name.className = "m-0 text-base font-semibold tracking-tight text-gray-900 dark:text-gray-50 truncate";
+    name.textContent = s.name;
+
+    const price = document.createElement("p");
+    price.className = "m-0 mt-1 text-lg font-bold text-gray-800 dark:text-gray-100 font-mono";
+    price.textContent = `${fmtEur(amountInEur(s.amount, s.currency, fx))} · ${fmtEur(monthlyEur)}/mes`;
+
+    const meta = document.createElement("p");
+    meta.className = "m-0 mt-auto pt-2 text-[11px] text-gray-500 dark:text-gray-400 line-clamp-2";
     const from = s.billingStartDate?.trim();
     const parts: string[] = [];
     if (from) parts.push(`Desde ${from.slice(0, 10)}`);
-    if (nextIso) parts.push(`Próximo cobro: ${nextIso}`);
-    if (!parts.length) parts.push("Indica la fecha de inicio para calcular el próximo cobro");
-    p3.textContent = parts.join(" · ");
-    col.append(p0, p1, p2, p3);
-    if (s.tags?.length) {
-      const p4 = document.createElement("p");
-      p4.className = "m-0 text-[11px] text-gray-500 dark:text-gray-400 truncate";
-      p4.textContent = s.tags.slice(0, 6).join(" · ");
-      col.appendChild(p4);
-    }
-    wrap.append(bar, col);
-    card.appendChild(wrap);
-    if (!s.active) card.classList.add("opacity-60");
+    if (nextIso && counts) parts.push(`Próximo: ${nextIso}`);
+    if (!parts.length) parts.push("Indica fecha de inicio");
+    meta.textContent = parts.join(" · ");
+
+    const editHit = document.createElement("button");
+    editHit.type = "button";
+    editHit.dataset.subId = s.id;
+    editHit.className = "absolute inset-0 rounded-2xl cursor-pointer";
+    editHit.setAttribute("aria-label", `Editar ${s.name}`);
+
+    card.append(head, name, price, meta, editHit);
     strip.appendChild(card);
   }
 }
@@ -801,21 +794,6 @@ function renderExpenseTable(root: HTMLElement) {
     inAmt.addEventListener("change", () => patchExpense(row.id, { amount: Number(inAmt.value) || 0 }, "amount"));
     tdAmt.appendChild(inAmt);
 
-    const tdCur = document.createElement("td");
-    tdCur.className = "px-2 py-1.5";
-    const selCur = document.createElement("select");
-    selCur.className = `${ET_FIELD_MONO} py-1.5`;
-    selCur.dataset.etExpId = row.id;
-    selCur.dataset.etExpField = "currency";
-    for (const c of ["EUR", "USD"] as const) {
-      const o = document.createElement("option");
-      o.value = c;
-      o.textContent = c;
-      if (row.currency === c) o.selected = true;
-      selCur.appendChild(o);
-    }
-    selCur.addEventListener("change", () => patchExpense(row.id, { currency: selCur.value as "EUR" | "USD" }, "currency"));
-
     const tdCat = document.createElement("td");
     tdCat.className = "px-2 py-1.5";
     const selCat = document.createElement("select");
@@ -925,10 +903,9 @@ function renderExpenseTable(root: HTMLElement) {
       removeExpense(row.id);
     });
 
-    tdCur.appendChild(selCur);
     tdCat.appendChild(selCat);
     tdDel.appendChild(del);
-    tr.append(tdDate, tdLabel, tdAmt, tdCur, tdCat, tdTags, tdAtt, tdNotes, tdState, tdDel);
+    tr.append(tdDate, tdLabel, tdAmt, tdCat, tdTags, tdAtt, tdNotes, tdState, tdDel);
     body.appendChild(tr);
   }
 }
@@ -1024,21 +1001,6 @@ function renderIncomeTable(root: HTMLElement) {
     inAmt.dataset.etIncField = "amount";
     inAmt.addEventListener("change", () => patchIncome(row.id, { amount: Number(inAmt.value) || 0 }, "amount"));
     tdAmt.appendChild(inAmt);
-
-    const tdCur = document.createElement("td");
-    tdCur.className = "px-2 py-1.5";
-    const selCur = document.createElement("select");
-    selCur.className = `${ET_FIELD_MONO} py-1.5`;
-    selCur.dataset.etIncId = row.id;
-    selCur.dataset.etIncField = "currency";
-    for (const c of ["EUR", "USD"] as const) {
-      const o = document.createElement("option");
-      o.value = c;
-      o.textContent = c;
-      if (row.currency === c) o.selected = true;
-      selCur.appendChild(o);
-    }
-    selCur.addEventListener("change", () => patchIncome(row.id, { currency: selCur.value as "EUR" | "USD" }, "currency"));
 
     const tdCat = document.createElement("td");
     tdCat.className = "px-2 py-1.5";
@@ -1151,10 +1113,9 @@ function renderIncomeTable(root: HTMLElement) {
       removeIncome(row.id);
     });
 
-    tdCur.appendChild(selCur);
     tdCat.appendChild(selCat);
     tdDel.appendChild(del);
-    tr.append(tdDate, tdLabel, tdAmt, tdCur, tdCat, tdTags, tdAtt, tdNotes, tdState, tdDel);
+    tr.append(tdDate, tdLabel, tdAmt, tdCat, tdTags, tdAtt, tdNotes, tdState, tdDel);
     body.appendChild(tr);
   }
 }
@@ -1552,207 +1513,63 @@ function bindPlannedInlineEditors(root: HTMLElement) {
 }
 
 function renderPaychecks(root: HTMLElement) {
-  const wrap = root.querySelector<HTMLElement>("[data-et-paychecks-list]");
-  if (!wrap) return;
-  wrap.innerHTML = "";
-  const list = state.paychecks ?? [];
-  const curMonth = new Date().toISOString().slice(0, 7);
-  const monthChoices = rollingMonthKeys(24);
-  if (!list.length) {
-    const empty = document.createElement("p");
-    empty.className = "text-sm text-gray-600 dark:text-gray-400 py-2 col-span-full";
-    empty.textContent = "Aún no hay cobros previstos. Rellena el formulario y pulsa Añadir.";
-    wrap.appendChild(empty);
-    return;
-  }
-  for (const p of list) {
-    const card = document.createElement("article");
-    card.className =
-      "rounded-xl border border-teal-200/70 dark:border-teal-900/50 bg-white/90 dark:bg-gray-950/70 p-2.5 sm:p-3 shadow-sm space-y-2 min-w-0 w-full";
-    const head = document.createElement("div");
-    head.className = "flex items-center justify-between gap-2 flex-wrap";
-    const titleInp = document.createElement("input");
-    titleInp.type = "text";
-    titleInp.value = p.title;
-    titleInp.className = `${ET_FIELD} text-sm font-semibold text-gray-900 dark:text-gray-50`;
-    titleInp.dataset.etPcField = "title";
-    titleInp.dataset.etPcId = p.id;
-    const del = document.createElement("button");
-    del.type = "button";
-    del.textContent = "Quitar";
-    del.className =
-      "text-xs font-semibold text-red-600 dark:text-red-400 hover:underline shrink-0 cursor-pointer";
-    del.addEventListener("click", async () => {
-      if (!(await showConfirmDialog(root, "¿Seguro? Se eliminará el cobro previsto y sus ajustes por mes.", "Quitar")))
-        return;
-      state.paychecks = (state.paychecks ?? []).filter((x) => x.id !== p.id);
-      state.incomeMonthOverrides = (state.incomeMonthOverrides ?? []).filter((o) => o.paycheckId !== p.id);
-      persist();
-      renderAll(root);
-    });
-    head.append(titleInp, del);
-
-    const grid = document.createElement("div");
-    grid.className =
-      "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-2 gap-y-1.5 text-[11px] leading-tight";
-
-    const addNum = (label: string, field: keyof PaycheckEntry, val: number | undefined, step: string) => {
-      const lab = document.createElement("label");
-      lab.className = "space-y-0.5 min-w-0";
-      const sp = document.createElement("span");
-      sp.className = "font-semibold text-gray-500 dark:text-gray-400 text-[11px]";
-      sp.textContent = label;
-      const inp = document.createElement("input");
-      inp.type = "number";
-      inp.step = step;
-      inp.min = "0";
-      inp.value = val != null && Number.isFinite(val) ? String(val) : "";
-      inp.className = `${ET_FIELD_MONO} text-xs py-1`;
-      inp.dataset.etPcField = String(field);
-      inp.dataset.etPcId = p.id;
-      lab.append(sp, inp);
-      grid.appendChild(lab);
-    };
-
-    addNum("Importe habitual", "typicalAmount", p.typicalAmount, "0.01");
-    const labCur = document.createElement("label");
-    labCur.className = "space-y-0.5";
-    const labCurSpan = document.createElement("span");
-    labCurSpan.className = "font-semibold text-gray-500 dark:text-gray-400 text-[11px]";
-    labCurSpan.textContent = "Moneda";
-    const sel = document.createElement("select");
-    sel.className = `${ET_FIELD} text-xs py-1`;
-    sel.dataset.etPcSel = "currency";
-    sel.dataset.etPcId = p.id;
-    for (const c of ["EUR", "USD"] as const) {
-      const o = document.createElement("option");
-      o.value = c;
-      o.textContent = c;
-      if ((p.currency ?? "EUR") === c) o.selected = true;
-      sel.appendChild(o);
-    }
-    labCur.append(labCurSpan, sel);
-
-    addNum("Mín.", "amountMin", p.amountMin, "0.01");
-    addNum("Máx.", "amountMax", p.amountMax, "0.01");
-
-    const labDay = document.createElement("label");
-    labDay.className = "space-y-0.5";
-    labDay.innerHTML = `<span class="font-semibold text-gray-500 dark:text-gray-400">Día mes</span>`;
-    const inDay = document.createElement("input");
-    inDay.type = "number";
-    inDay.min = "1";
-    inDay.max = "31";
-    inDay.value = String(p.dayOfMonth);
-    inDay.className = `${ET_FIELD_MONO} text-xs py-1`;
-    inDay.dataset.etPcField = "dayOfMonth";
-    inDay.dataset.etPcId = p.id;
-    labDay.appendChild(inDay);
-
-    const labWin = document.createElement("label");
-    labWin.className = "space-y-0.5";
-    labWin.innerHTML = `<span class="font-semibold text-gray-500 dark:text-gray-400">Ventana</span>`;
-    const inWin = document.createElement("input");
-    inWin.type = "number";
-    inWin.min = "0";
-    inWin.max = "15";
-    inWin.value = p.windowBefore != null ? String(p.windowBefore) : "";
-    inWin.className = `${ET_FIELD_MONO} text-xs py-1`;
-    inWin.dataset.etPcField = "windowBefore";
-    inWin.dataset.etPcId = p.id;
-    labWin.appendChild(inWin);
-
-    const labFrom = document.createElement("label");
-    labFrom.className = "space-y-0.5 col-span-2 sm:col-span-1";
-    labFrom.innerHTML = `<span class="font-semibold text-gray-500 dark:text-gray-400">Desde</span>`;
-    const inFrom = document.createElement("input");
-    inFrom.type = "date";
-    inFrom.value = (p.validFrom || "").slice(0, 10);
-    inFrom.className = `${ET_FIELD_MONO} text-xs py-1`;
-    inFrom.dataset.etPcField = "validFrom";
-    inFrom.dataset.etPcId = p.id;
-    labFrom.appendChild(inFrom);
-
-    const labUntil = document.createElement("label");
-    labUntil.className = "space-y-0.5 col-span-2 sm:col-span-1";
-    labUntil.innerHTML = `<span class="font-semibold text-gray-500 dark:text-gray-400">Hasta</span>`;
-    const inUntil = document.createElement("input");
-    inUntil.type = "date";
-    inUntil.value = (p.validUntil || "").slice(0, 10);
-    inUntil.className = `${ET_FIELD_MONO} text-xs py-1`;
-    inUntil.dataset.etPcField = "validUntil";
-    inUntil.dataset.etPcId = p.id;
-    labUntil.appendChild(inUntil);
-
-    grid.append(labCur, labDay, labWin, labFrom, labUntil);
-
-    const noteLab = document.createElement("label");
-    noteLab.className = "block space-y-0.5 col-span-full";
-    noteLab.innerHTML = `<span class="font-semibold text-gray-500 dark:text-gray-400 text-xs">Nota</span>`;
-    const noteIn = document.createElement("input");
-    noteIn.type = "text";
-    noteIn.value = p.note ?? "";
-    noteIn.className = `${ET_FIELD} py-1 text-xs`;
-    noteIn.dataset.etPcField = "note";
-    noteIn.dataset.etPcId = p.id;
-    noteLab.appendChild(noteIn);
-
-    const ovLab = document.createElement("div");
-    ovLab.className =
-      "flex flex-wrap items-end gap-2 rounded-lg border border-dashed border-teal-300/80 dark:border-teal-800/60 px-2 py-1.5 bg-teal-50/50 dark:bg-teal-950/20";
-    const selM = document.createElement("select");
-    selM.className = `${ET_FIELD} text-xs py-1 min-w-[8rem]`;
-    selM.dataset.etPcOvSel = "1";
-    selM.dataset.etPcId = p.id;
-    for (const mk of monthChoices) {
-      const o = document.createElement("option");
-      o.value = mk;
-      o.textContent = mk;
-      selM.appendChild(o);
-    }
-    selM.value = monthChoices.includes(curMonth) ? curMonth : monthChoices[0]!;
-    const ovIn = document.createElement("input");
-    ovIn.type = "number";
-    ovIn.step = "0.01";
-    ovIn.min = "0";
-    ovIn.placeholder = "Ajuste mes";
-    ovIn.className = `${ET_FIELD_MONO} text-xs py-1 w-24`;
-    ovIn.dataset.etPcOv = "1";
-    ovIn.dataset.etPcId = p.id;
-    const syncOvFromMonth = () => {
-      const mk = selM.value;
-      const hit = state.incomeMonthOverrides?.find((o) => o.paycheckId === p.id && o.month === mk);
-      ovIn.value = hit ? String(hit.amount) : "";
-      ovIn.dataset.etPcCur = hit?.currency ?? p.currency ?? "EUR";
-    };
-    selM.addEventListener("change", syncOvFromMonth);
-    syncOvFromMonth();
-    const ovCap = document.createElement("span");
-    ovCap.className = "text-[10px] font-semibold text-teal-900 dark:text-teal-100 w-full sm:w-auto";
-    ovCap.textContent = "Ajuste por mes";
-    ovLab.append(ovCap, selM, ovIn);
-
-    const hint = document.createElement("p");
-    hint.className = "m-0 text-[10px] text-gray-500 dark:text-gray-400 leading-snug";
-    const rng =
-      p.amountMin != null || p.amountMax != null
-        ? `Rango orientativo: ${p.amountMin ?? "—"} … ${p.amountMax ?? "—"} ${p.currency ?? "EUR"}. `
-        : "";
-    hint.textContent =
-      `${rng}Elige mes e importe; al salir del campo se guarda (vacío = quitar ajuste). Desde/Hasta del cobro limitan en qué meses cuenta.`;
-
-    card.append(head, grid, noteLab, ovLab, hint);
-    wrap.appendChild(card);
-  }
+  renderPaycheckCards(root, recurringUiDeps(root), paycheckSortDesc);
 }
 
-function addPaycheckFromForm(root: HTMLElement) {
+function renderPlannedExpenses(root: HTMLElement) {
+  renderPlannedCards(root, recurringUiDeps(root), plannedSortDesc);
+}
+
+function renderInvestments(root: HTMLElement) {
+  renderInvestmentSection(root, recurringUiDeps(root));
+}
+
+function recurringUiDeps(_root: HTMLElement) {
+  return {
+    state,
+    fmtEur,
+    fmtEurCompact,
+    amountInEur,
+    todayIso,
+    makeId,
+    openPaycheckDialog,
+    openPlannedDialog,
+    openInvestmentDialog,
+  };
+}
+
+function openPaycheckDialog(root: HTMLElement, p?: PaycheckEntry | null) {
+  const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-paycheck]");
+  const title = root.querySelector<HTMLElement>("[data-et-paycheck-dialog-title]");
+  const idEl = root.querySelector<HTMLInputElement>("[data-et-paycheck-id]");
+  if (!dlg || !title || !idEl) return;
+  editingPaycheckId = p?.id ?? null;
+  title.textContent = p ? "Editar ingreso previsto" : "Nuevo ingreso previsto";
+  idEl.value = p?.id ?? "";
+  (root.querySelector("[data-et-paycheck-title]") as HTMLInputElement).value = p?.title ?? "";
+  (root.querySelector("[data-et-paycheck-amount]") as HTMLInputElement).value =
+    p?.typicalAmount != null ? String(p.typicalAmount) : "";
+  (root.querySelector("[data-et-paycheck-min]") as HTMLInputElement).value =
+    p?.amountMin != null ? String(p.amountMin) : "";
+  (root.querySelector("[data-et-paycheck-max]") as HTMLInputElement).value =
+    p?.amountMax != null ? String(p.amountMax) : "";
+  (root.querySelector("[data-et-paycheck-day]") as HTMLInputElement).value = String(p?.dayOfMonth ?? 1);
+  (root.querySelector("[data-et-paycheck-window]") as HTMLInputElement).value =
+    p?.windowBefore != null ? String(p.windowBefore) : "";
+  (root.querySelector("[data-et-paycheck-from]") as HTMLInputElement).value = (p?.validFrom ?? "").slice(0, 10);
+  (root.querySelector("[data-et-paycheck-until]") as HTMLInputElement).value = (p?.validUntil ?? "").slice(0, 10);
+  (root.querySelector("[data-et-paycheck-note]") as HTMLInputElement).value = p?.note ?? "";
+  root.querySelector("[data-et-paycheck-delete]")?.classList.toggle("invisible", !p);
+  dlg.showModal();
+}
+
+function savePaycheckFromDialog(root: HTMLElement) {
+  const idEl = root.querySelector<HTMLInputElement>("[data-et-paycheck-id]");
   const title = root.querySelector<HTMLInputElement>("[data-et-paycheck-title]")?.value?.trim() ?? "";
   const dayRaw = Number(root.querySelector<HTMLInputElement>("[data-et-paycheck-day]")?.value);
   const winRaw = root.querySelector<HTMLInputElement>("[data-et-paycheck-window]")?.value;
   const note = root.querySelector<HTMLInputElement>("[data-et-paycheck-note]")?.value?.trim() ?? "";
   const amt = Number(root.querySelector<HTMLInputElement>("[data-et-paycheck-amount]")?.value);
-  const curRaw = root.querySelector<HTMLSelectElement>("[data-et-paycheck-currency]")?.value;
   const minV = root.querySelector<HTMLInputElement>("[data-et-paycheck-min]")?.value;
   const maxV = root.querySelector<HTMLInputElement>("[data-et-paycheck-max]")?.value;
   const from = root.querySelector<HTMLInputElement>("[data-et-paycheck-from]")?.value?.slice(0, 10) ?? "";
@@ -1765,13 +1582,13 @@ function addPaycheckFromForm(root: HTMLElement) {
     if (Number.isFinite(w)) windowBefore = Math.min(15, Math.max(0, Math.floor(w)));
   }
   const row: PaycheckEntry = {
-    id: makeId(),
+    id: idEl?.value || makeId(),
     title,
     dayOfMonth,
     windowBefore,
     note: note || undefined,
     typicalAmount: Number.isFinite(amt) && amt > 0 ? amt : undefined,
-    currency: curRaw === "USD" ? "USD" : "EUR",
+    currency: "EUR",
     amountMin:
       minV != null && minV !== "" && Number.isFinite(Number(minV)) ? Math.max(0, Number(minV)) : undefined,
     amountMax:
@@ -1779,238 +1596,61 @@ function addPaycheckFromForm(root: HTMLElement) {
     validFrom: from.length === 10 ? from : undefined,
     validUntil: until.length === 10 ? until : undefined,
   };
-  state.paychecks = [...(state.paychecks ?? []), row].slice(0, 24);
+  const idx = (state.paychecks ?? []).findIndex((x) => x.id === row.id);
+  if (idx >= 0) state.paychecks![idx] = row;
+  else state.paychecks = [...(state.paychecks ?? []), row].slice(0, 24);
+  root.querySelector<HTMLDialogElement>("[data-et-dlg-paycheck]")?.close();
   persist();
-  root.querySelector<HTMLInputElement>("[data-et-paycheck-title]")!.value = "";
-  root.querySelector<HTMLInputElement>("[data-et-paycheck-note]")!.value = "";
-  root.querySelector<HTMLInputElement>("[data-et-paycheck-amount]")!.value = "";
-  root.querySelector<HTMLInputElement>("[data-et-paycheck-min]")!.value = "";
-  root.querySelector<HTMLInputElement>("[data-et-paycheck-max]")!.value = "";
-  root.querySelector<HTMLInputElement>("[data-et-paycheck-from]")!.value = "";
-  root.querySelector<HTMLInputElement>("[data-et-paycheck-until]")!.value = "";
   renderAll(root);
 }
 
-function renderPlannedExpenses(root: HTMLElement) {
-  const wrap = root.querySelector<HTMLElement>("[data-et-planned-list]");
-  if (!wrap) return;
-  wrap.innerHTML = "";
-  const list = state.plannedExpenses ?? [];
-  const curMonth = new Date().toISOString().slice(0, 7);
-  const monthChoices = rollingMonthKeys(24);
-  if (!list.length) {
-    const empty = document.createElement("p");
-    empty.className = "text-sm text-gray-600 dark:text-gray-400 py-2 col-span-full";
-    empty.textContent = "Aún no hay gastos previstos. Rellena el formulario y pulsa Añadir.";
-    wrap.appendChild(empty);
-    return;
-  }
-  for (const p of list) {
-    const card = document.createElement("article");
-    card.className =
-      "rounded-xl border border-rose-200/70 dark:border-rose-900/50 bg-white/90 dark:bg-gray-950/70 p-2.5 sm:p-3 shadow-sm space-y-2 min-w-0 w-full";
-    const head = document.createElement("div");
-    head.className = "flex items-center justify-between gap-2 flex-wrap";
-    const titleInp = document.createElement("input");
-    titleInp.type = "text";
-    titleInp.value = p.title;
-    titleInp.className = `${ET_FIELD} text-sm font-semibold text-gray-900 dark:text-gray-50`;
-    titleInp.dataset.etPrField = "title";
-    titleInp.dataset.etPrId = p.id;
-    const del = document.createElement("button");
-    del.type = "button";
-    del.textContent = "Quitar";
-    del.className =
-      "text-xs font-semibold text-red-600 dark:text-red-400 hover:underline shrink-0 cursor-pointer";
-    del.addEventListener("click", async () => {
-      if (
-        !(await showConfirmDialog(root, "¿Seguro? Se eliminará el gasto previsto y sus ajustes por mes.", "Quitar"))
-      )
-        return;
-      state.plannedExpenses = (state.plannedExpenses ?? []).filter((x) => x.id !== p.id);
-      state.plannedExpenseMonthOverrides = (state.plannedExpenseMonthOverrides ?? []).filter(
-        (o) => o.plannedExpenseId !== p.id,
-      );
-      persist();
-      renderAll(root);
-    });
-    head.append(titleInp, del);
-
-    const grid = document.createElement("div");
-    grid.className =
-      "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-2 gap-y-1.5 text-[11px] leading-tight";
-
-    const addNum = (label: string, field: keyof PlannedExpenseEntry, val: number | undefined, step: string) => {
-      if (field === "categoryId") return;
-      const lab = document.createElement("label");
-      lab.className = "space-y-0.5 min-w-0";
-      const sp = document.createElement("span");
-      sp.className = "font-semibold text-gray-500 dark:text-gray-400 text-[11px]";
-      sp.textContent = label;
-      const inp = document.createElement("input");
-      inp.type = "number";
-      inp.step = step;
-      inp.min = "0";
-      inp.value = val != null && Number.isFinite(val) ? String(val) : "";
-      inp.className = `${ET_FIELD_MONO} text-xs py-1`;
-      inp.dataset.etPrField = String(field);
-      inp.dataset.etPrId = p.id;
-      lab.append(sp, inp);
-      grid.appendChild(lab);
-    };
-
-    addNum("Importe habitual", "typicalAmount", p.typicalAmount, "0.01");
-    const labCur = document.createElement("label");
-    labCur.className = "space-y-0.5";
-    const labCurSpan = document.createElement("span");
-    labCurSpan.className = "font-semibold text-gray-500 dark:text-gray-400 text-[11px]";
-    labCurSpan.textContent = "Moneda";
-    const sel = document.createElement("select");
-    sel.className = `${ET_FIELD} text-xs py-1`;
-    sel.dataset.etPrSel = "currency";
-    sel.dataset.etPrId = p.id;
-    for (const c of ["EUR", "USD"] as const) {
-      const o = document.createElement("option");
-      o.value = c;
-      o.textContent = c;
-      if ((p.currency ?? "EUR") === c) o.selected = true;
-      sel.appendChild(o);
-    }
-    labCur.append(labCurSpan, sel);
-
-    const labCat = document.createElement("label");
-    labCat.className = "space-y-0.5 col-span-full sm:col-span-2 lg:col-span-3";
-    const labCatSp = document.createElement("span");
-    labCatSp.className = "font-semibold text-gray-500 dark:text-gray-400 text-[11px]";
-    labCatSp.textContent = "Categoría";
-    const selCat = document.createElement("select");
-    selCat.className = `${ET_FIELD} text-xs py-1`;
-    selCat.dataset.etPrSel = "category";
-    selCat.dataset.etPrId = p.id;
-    fillCategorySelect(selCat);
-    selCat.value = p.categoryId;
-    labCat.append(labCatSp, selCat);
-
-    addNum("Mín.", "amountMin", p.amountMin, "0.01");
-    addNum("Máx.", "amountMax", p.amountMax, "0.01");
-
-    const labDay = document.createElement("label");
-    labDay.className = "space-y-0.5";
-    labDay.innerHTML = `<span class="font-semibold text-gray-500 dark:text-gray-400">Día mes</span>`;
-    const inDay = document.createElement("input");
-    inDay.type = "number";
-    inDay.min = "1";
-    inDay.max = "31";
-    inDay.value = String(p.dayOfMonth);
-    inDay.className = `${ET_FIELD_MONO} text-xs py-1`;
-    inDay.dataset.etPrField = "dayOfMonth";
-    inDay.dataset.etPrId = p.id;
-    labDay.appendChild(inDay);
-
-    const labWin = document.createElement("label");
-    labWin.className = "space-y-0.5";
-    labWin.innerHTML = `<span class="font-semibold text-gray-500 dark:text-gray-400">Ventana</span>`;
-    const inWin = document.createElement("input");
-    inWin.type = "number";
-    inWin.min = "0";
-    inWin.max = "15";
-    inWin.value = p.windowBefore != null ? String(p.windowBefore) : "";
-    inWin.className = `${ET_FIELD_MONO} text-xs py-1`;
-    inWin.dataset.etPrField = "windowBefore";
-    inWin.dataset.etPrId = p.id;
-    labWin.appendChild(inWin);
-
-    const labFrom = document.createElement("label");
-    labFrom.className = "space-y-0.5 col-span-2 sm:col-span-1";
-    labFrom.innerHTML = `<span class="font-semibold text-gray-500 dark:text-gray-400">Desde</span>`;
-    const inFrom = document.createElement("input");
-    inFrom.type = "date";
-    inFrom.value = (p.validFrom || "").slice(0, 10);
-    inFrom.className = `${ET_FIELD_MONO} text-xs py-1`;
-    inFrom.dataset.etPrField = "validFrom";
-    inFrom.dataset.etPrId = p.id;
-    labFrom.appendChild(inFrom);
-
-    const labUntil = document.createElement("label");
-    labUntil.className = "space-y-0.5 col-span-2 sm:col-span-1";
-    labUntil.innerHTML = `<span class="font-semibold text-gray-500 dark:text-gray-400">Hasta</span>`;
-    const inUntil = document.createElement("input");
-    inUntil.type = "date";
-    inUntil.value = (p.validUntil || "").slice(0, 10);
-    inUntil.className = `${ET_FIELD_MONO} text-xs py-1`;
-    inUntil.dataset.etPrField = "validUntil";
-    inUntil.dataset.etPrId = p.id;
-    labUntil.appendChild(inUntil);
-
-    grid.append(labCur, labCat, labDay, labWin, labFrom, labUntil);
-
-    const noteLab = document.createElement("label");
-    noteLab.className = "block space-y-0.5 col-span-full";
-    noteLab.innerHTML = `<span class="font-semibold text-gray-500 dark:text-gray-400 text-xs">Nota</span>`;
-    const noteIn = document.createElement("input");
-    noteIn.type = "text";
-    noteIn.value = p.note ?? "";
-    noteIn.className = `${ET_FIELD} py-1 text-xs`;
-    noteIn.dataset.etPrField = "note";
-    noteIn.dataset.etPrId = p.id;
-    noteLab.appendChild(noteIn);
-
-    const ovLab = document.createElement("div");
-    ovLab.className =
-      "flex flex-wrap items-end gap-2 rounded-lg border border-dashed border-rose-300/80 dark:border-rose-800/60 px-2 py-1.5 bg-rose-50/50 dark:bg-rose-950/20";
-    const selM = document.createElement("select");
-    selM.className = `${ET_FIELD} text-xs py-1 min-w-[8rem]`;
-    selM.dataset.etPrOvSel = "1";
-    selM.dataset.etPrId = p.id;
-    for (const mk of monthChoices) {
-      const o = document.createElement("option");
-      o.value = mk;
-      o.textContent = mk;
-      selM.appendChild(o);
-    }
-    selM.value = monthChoices.includes(curMonth) ? curMonth : monthChoices[0]!;
-    const ovIn = document.createElement("input");
-    ovIn.type = "number";
-    ovIn.step = "0.01";
-    ovIn.min = "0";
-    ovIn.placeholder = "Ajuste mes";
-    ovIn.className = `${ET_FIELD_MONO} text-xs py-1 w-24`;
-    ovIn.dataset.etPrOv = "1";
-    ovIn.dataset.etPrId = p.id;
-    const syncPrOv = () => {
-      const mk = selM.value;
-      const hit = state.plannedExpenseMonthOverrides?.find((o) => o.plannedExpenseId === p.id && o.month === mk);
-      ovIn.value = hit ? String(hit.amount) : "";
-      ovIn.dataset.etPrCur = hit?.currency ?? p.currency ?? "EUR";
-    };
-    selM.addEventListener("change", syncPrOv);
-    syncPrOv();
-    const ovCap = document.createElement("span");
-    ovCap.className = "text-[10px] font-semibold text-rose-900 dark:text-rose-100 w-full sm:w-auto";
-    ovCap.textContent = "Ajuste por mes";
-    ovLab.append(ovCap, selM, ovIn);
-
-    const hint = document.createElement("p");
-    hint.className = "m-0 text-[10px] text-gray-500 dark:text-gray-400 leading-snug";
-    const rng =
-      p.amountMin != null || p.amountMax != null
-        ? `Rango orientativo: ${p.amountMin ?? "—"} … ${p.amountMax ?? "—"} ${p.currency ?? "EUR"}. `
-        : "";
-    hint.textContent =
-      `${rng}Elige mes e importe; al salir del campo se guarda (vacío = quitar ajuste). Desde/Hasta del previsto limitan en qué meses cuenta.`;
-
-    card.append(head, grid, noteLab, ovLab, hint);
-    wrap.appendChild(card);
-  }
+function deletePaycheckFromDialog(root: HTMLElement) {
+  void (async () => {
+    if (!editingPaycheckId) return;
+    if (!(await showConfirmDialog(root, "¿Eliminar este ingreso previsto?", "Eliminar"))) return;
+    state.paychecks = (state.paychecks ?? []).filter((x) => x.id !== editingPaycheckId);
+    state.incomeMonthOverrides = (state.incomeMonthOverrides ?? []).filter((o) => o.paycheckId !== editingPaycheckId);
+    root.querySelector<HTMLDialogElement>("[data-et-dlg-paycheck]")?.close();
+    persist();
+    renderAll(root);
+  })();
 }
 
-function addPlannedFromForm(root: HTMLElement) {
+function openPlannedDialog(root: HTMLElement, p?: PlannedExpenseEntry | null) {
+  const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-planned]");
+  const title = root.querySelector<HTMLElement>("[data-et-planned-dialog-title]");
+  const idEl = root.querySelector<HTMLInputElement>("[data-et-planned-id]");
+  const catEl = root.querySelector<HTMLSelectElement>("[data-et-planned-category]");
+  if (!dlg || !title || !idEl || !catEl) return;
+  editingPlannedId = p?.id ?? null;
+  title.textContent = p ? "Editar gasto previsto" : "Nuevo gasto previsto";
+  idEl.value = p?.id ?? "";
+  fillCategorySelect(catEl);
+  (root.querySelector("[data-et-planned-title]") as HTMLInputElement).value = p?.title ?? "";
+  (root.querySelector("[data-et-planned-amount]") as HTMLInputElement).value =
+    p?.typicalAmount != null ? String(p.typicalAmount) : "";
+  catEl.value = p?.categoryId ?? state.categories[0]!.id;
+  (root.querySelector("[data-et-planned-min]") as HTMLInputElement).value =
+    p?.amountMin != null ? String(p.amountMin) : "";
+  (root.querySelector("[data-et-planned-max]") as HTMLInputElement).value =
+    p?.amountMax != null ? String(p.amountMax) : "";
+  (root.querySelector("[data-et-planned-day]") as HTMLInputElement).value = String(p?.dayOfMonth ?? 1);
+  (root.querySelector("[data-et-planned-window]") as HTMLInputElement).value =
+    p?.windowBefore != null ? String(p.windowBefore) : "";
+  (root.querySelector("[data-et-planned-from]") as HTMLInputElement).value = (p?.validFrom ?? "").slice(0, 10);
+  (root.querySelector("[data-et-planned-until]") as HTMLInputElement).value = (p?.validUntil ?? "").slice(0, 10);
+  (root.querySelector("[data-et-planned-note]") as HTMLInputElement).value = p?.note ?? "";
+  root.querySelector("[data-et-planned-delete]")?.classList.toggle("invisible", !p);
+  dlg.showModal();
+}
+
+function savePlannedFromDialog(root: HTMLElement) {
+  const idEl = root.querySelector<HTMLInputElement>("[data-et-planned-id]");
   const title = root.querySelector<HTMLInputElement>("[data-et-planned-title]")?.value?.trim() ?? "";
   const dayRaw = Number(root.querySelector<HTMLInputElement>("[data-et-planned-day]")?.value);
   const winRaw = root.querySelector<HTMLInputElement>("[data-et-planned-window]")?.value;
   const note = root.querySelector<HTMLInputElement>("[data-et-planned-note]")?.value?.trim() ?? "";
   const amt = Number(root.querySelector<HTMLInputElement>("[data-et-planned-amount]")?.value);
-  const curRaw = root.querySelector<HTMLSelectElement>("[data-et-planned-currency]")?.value;
   const catId = root.querySelector<HTMLSelectElement>("[data-et-planned-category]")?.value ?? state.categories[0]!.id;
   const minV = root.querySelector<HTMLInputElement>("[data-et-planned-min]")?.value;
   const maxV = root.querySelector<HTMLInputElement>("[data-et-planned-max]")?.value;
@@ -2024,13 +1664,13 @@ function addPlannedFromForm(root: HTMLElement) {
     if (Number.isFinite(w)) windowBefore = Math.min(15, Math.max(0, Math.floor(w)));
   }
   const row: PlannedExpenseEntry = {
-    id: makeId(),
+    id: idEl?.value || makeId(),
     title,
     dayOfMonth,
     windowBefore,
     note: note || undefined,
     typicalAmount: Number.isFinite(amt) && amt > 0 ? amt : undefined,
-    currency: curRaw === "USD" ? "USD" : "EUR",
+    currency: "EUR",
     categoryId: catId,
     amountMin:
       minV != null && minV !== "" && Number.isFinite(Number(minV)) ? Math.max(0, Number(minV)) : undefined,
@@ -2039,16 +1679,97 @@ function addPlannedFromForm(root: HTMLElement) {
     validFrom: from.length === 10 ? from : undefined,
     validUntil: until.length === 10 ? until : undefined,
   };
-  state.plannedExpenses = [...(state.plannedExpenses ?? []), row].slice(0, 24);
+  const idx = (state.plannedExpenses ?? []).findIndex((x) => x.id === row.id);
+  if (idx >= 0) state.plannedExpenses![idx] = row;
+  else state.plannedExpenses = [...(state.plannedExpenses ?? []), row].slice(0, 24);
+  root.querySelector<HTMLDialogElement>("[data-et-dlg-planned]")?.close();
   persist();
-  root.querySelector<HTMLInputElement>("[data-et-planned-title]")!.value = "";
-  root.querySelector<HTMLInputElement>("[data-et-planned-note]")!.value = "";
-  root.querySelector<HTMLInputElement>("[data-et-planned-amount]")!.value = "";
-  root.querySelector<HTMLInputElement>("[data-et-planned-min]")!.value = "";
-  root.querySelector<HTMLInputElement>("[data-et-planned-max]")!.value = "";
-  root.querySelector<HTMLInputElement>("[data-et-planned-from]")!.value = "";
-  root.querySelector<HTMLInputElement>("[data-et-planned-until]")!.value = "";
   renderAll(root);
+}
+
+function deletePlannedFromDialog(root: HTMLElement) {
+  void (async () => {
+    if (!editingPlannedId) return;
+    if (!(await showConfirmDialog(root, "¿Eliminar este gasto previsto?", "Eliminar"))) return;
+    state.plannedExpenses = (state.plannedExpenses ?? []).filter((x) => x.id !== editingPlannedId);
+    state.plannedExpenseMonthOverrides = (state.plannedExpenseMonthOverrides ?? []).filter(
+      (o) => o.plannedExpenseId !== editingPlannedId,
+    );
+    root.querySelector<HTMLDialogElement>("[data-et-dlg-planned]")?.close();
+    persist();
+    renderAll(root);
+  })();
+}
+
+function openInvestmentDialog(root: HTMLElement, h?: InvestmentHolding | null) {
+  const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-investment]");
+  const title = root.querySelector<HTMLElement>("[data-et-inv-dialog-title]");
+  const idEl = root.querySelector<HTMLInputElement>("[data-et-inv-id]");
+  if (!dlg || !title || !idEl) return;
+  editingInvId = h?.id ?? null;
+  title.textContent = h ? "Editar posición" : "Nueva posición";
+  idEl.value = h?.id ?? "";
+  (root.querySelector("[data-et-inv-name]") as HTMLInputElement).value = h?.name ?? "";
+  (root.querySelector("[data-et-inv-type]") as HTMLSelectElement).value = h?.type ?? "stocks";
+  (root.querySelector("[data-et-inv-platform]") as HTMLInputElement).value =
+    h?.platform === "—" ? "" : (h?.platform ?? "");
+  (root.querySelector("[data-et-inv-avg]") as HTMLInputElement).value =
+    h?.avgBuyPrice != null ? String(h.avgBuyPrice) : "";
+  (root.querySelector("[data-et-inv-qty]") as HTMLInputElement).value =
+    h?.quantity != null ? String(h.quantity) : "";
+  (root.querySelector("[data-et-inv-total]") as HTMLInputElement).value =
+    h?.totalInvested != null ? String(h.totalInvested) : "";
+  (root.querySelector("[data-et-inv-pnl]") as HTMLInputElement).value = h != null ? String(h.gainLossPct) : "";
+  (root.querySelector("[data-et-inv-notes]") as HTMLTextAreaElement).value = h?.notes ?? "";
+  root.querySelector("[data-et-inv-delete]")?.classList.toggle("invisible", !h);
+  dlg.showModal();
+}
+
+function saveInvestmentFromDialog(root: HTMLElement) {
+  const idEl = root.querySelector<HTMLInputElement>("[data-et-inv-id]");
+  const name = root.querySelector<HTMLInputElement>("[data-et-inv-name]")?.value?.trim() ?? "";
+  const typeRaw = root.querySelector<HTMLSelectElement>("[data-et-inv-type]")?.value ?? "other";
+  const platform = root.querySelector<HTMLInputElement>("[data-et-inv-platform]")?.value?.trim() || "—";
+  const avg = Number(root.querySelector<HTMLInputElement>("[data-et-inv-avg]")?.value);
+  const qtyRaw = root.querySelector<HTMLInputElement>("[data-et-inv-qty]")?.value;
+  const total = Number(root.querySelector<HTMLInputElement>("[data-et-inv-total]")?.value);
+  const pnl = Number(root.querySelector<HTMLInputElement>("[data-et-inv-pnl]")?.value);
+  const notes = root.querySelector<HTMLTextAreaElement>("[data-et-inv-notes]")?.value?.trim() ?? "";
+  if (!name) return;
+  const qty =
+    qtyRaw != null && qtyRaw !== "" && Number.isFinite(Number(qtyRaw)) ? Math.max(0, Number(qtyRaw)) : undefined;
+  const row: InvestmentHolding = {
+    id: idEl?.value || makeId(),
+    name,
+    type: (["stocks", "ipo", "etf", "metals", "crypto", "bonds", "other"] as const).includes(typeRaw as any)
+      ? (typeRaw as InvestmentHolding["type"])
+      : "other",
+    platform,
+    avgBuyPrice: Number.isFinite(avg) && avg >= 0 ? avg : 0,
+    quantity: qty,
+    totalInvested: Number.isFinite(total) && total >= 0 ? total : 0,
+    gainLossPct: Number.isFinite(pnl) ? pnl : 0,
+    notes: notes || undefined,
+  };
+  const list = [...(state.investments ?? [])];
+  const idx = list.findIndex((x) => x.id === row.id);
+  if (idx >= 0) list[idx] = row;
+  else list.push(row);
+  state.investments = list.slice(0, 48);
+  root.querySelector<HTMLDialogElement>("[data-et-dlg-investment]")?.close();
+  persist();
+  renderAll(root);
+}
+
+function deleteInvestmentFromDialog(root: HTMLElement) {
+  void (async () => {
+    if (!editingInvId) return;
+    if (!(await showConfirmDialog(root, "¿Eliminar esta posición?", "Eliminar"))) return;
+    state.investments = (state.investments ?? []).filter((x) => x.id !== editingInvId);
+    root.querySelector<HTMLDialogElement>("[data-et-dlg-investment]")?.close();
+    persist();
+    renderAll(root);
+  })();
 }
 
 function tagTotalsForChart(
@@ -2792,7 +2513,6 @@ function openSubDialog(root: HTMLElement, sub: SubscriptionRow | null) {
   const idEl = root.querySelector<HTMLInputElement>("[data-et-sub-id]");
   const nameEl = root.querySelector<HTMLInputElement>("[data-et-sub-name]");
   const amountEl = root.querySelector<HTMLInputElement>("[data-et-sub-amount]");
-  const curEl = root.querySelector<HTMLSelectElement>("[data-et-sub-currency]");
   const cycleEl = root.querySelector<HTMLSelectElement>("[data-et-sub-cycle]");
   const catEl = root.querySelector<HTMLSelectElement>("[data-et-sub-category]");
   const billEl = root.querySelector<HTMLInputElement>("[data-et-sub-billing-start]");
@@ -2800,14 +2520,13 @@ function openSubDialog(root: HTMLElement, sub: SubscriptionRow | null) {
   const tagsEl = root.querySelector<HTMLInputElement>("[data-et-sub-tags]");
   const notesEl = root.querySelector<HTMLTextAreaElement>("[data-et-sub-notes]");
   const delBtn = root.querySelector<HTMLButtonElement>("[data-et-sub-delete]");
-  if (!dlg || !title || !idEl || !nameEl || !amountEl || !curEl || !cycleEl || !catEl || !billEl || !activeEl || !tagsEl || !notesEl || !delBtn) return;
+  if (!dlg || !title || !idEl || !nameEl || !amountEl || !cycleEl || !catEl || !billEl || !activeEl || !tagsEl || !notesEl || !delBtn) return;
 
   editingSubId = sub?.id ?? null;
   title.textContent = sub ? "Editar suscripción" : "Nueva suscripción";
   idEl.value = sub?.id ?? "";
   nameEl.value = sub?.name ?? "";
   amountEl.value = String(sub?.amount ?? "");
-  curEl.value = sub?.currency ?? "EUR";
   cycleEl.value = sub?.cycle ?? "monthly";
   fillCategorySelect(catEl);
   catEl.value = sub?.categoryId ?? state.categories[0]!.id;
@@ -2824,17 +2543,17 @@ function saveSubFromDialog(root: HTMLElement) {
   const idEl = root.querySelector<HTMLInputElement>("[data-et-sub-id]");
   const nameEl = root.querySelector<HTMLInputElement>("[data-et-sub-name]");
   const amountEl = root.querySelector<HTMLInputElement>("[data-et-sub-amount]");
-  const curEl = root.querySelector<HTMLSelectElement>("[data-et-sub-currency]");
   const cycleEl = root.querySelector<HTMLSelectElement>("[data-et-sub-cycle]");
   const catEl = root.querySelector<HTMLSelectElement>("[data-et-sub-category]");
   const billEl = root.querySelector<HTMLInputElement>("[data-et-sub-billing-start]");
   const activeEl = root.querySelector<HTMLInputElement>("[data-et-sub-active]");
   const tagsEl = root.querySelector<HTMLInputElement>("[data-et-sub-tags]");
   const notesEl = root.querySelector<HTMLTextAreaElement>("[data-et-sub-notes]");
-  if (!idEl || !nameEl || !amountEl || !curEl || !cycleEl || !catEl || !billEl || !activeEl || !tagsEl || !notesEl) return;
+  if (!idEl || !nameEl || !amountEl || !cycleEl || !catEl || !billEl || !activeEl || !tagsEl || !notesEl) return;
   const name = nameEl.value.trim();
   const amount = Number(amountEl.value);
   if (!name || !Number.isFinite(amount)) return;
+  const prev = state.subscriptions.find((s) => s.id === idEl.value);
   const cycRaw = cycleEl.value;
   const cycle = (["weekly", "monthly", "quarterly", "yearly"] as const).includes(cycRaw as any)
     ? (cycRaw as SubscriptionRow["cycle"])
@@ -2847,12 +2566,13 @@ function saveSubFromDialog(root: HTMLElement) {
     id: idEl.value || makeId(),
     name,
     amount,
-    currency: curEl.value === "USD" ? "USD" : "EUR",
+    currency: "EUR",
     cycle,
     categoryId: catEl.value,
     billingStartDate,
     nextBilling: "",
     active: activeEl.checked,
+    cancelEffectiveDate: activeEl.checked ? prev?.cancelEffectiveDate : undefined,
     notes: notesEl.value.trim(),
     tags,
   };
@@ -3000,39 +2720,33 @@ function updateE2ePassphraseHint(root: HTMLElement) {
 }
 
 function renderAll(root: HTMLElement) {
-  bindPaycheckInlineEditors(root);
-  bindPlannedInlineEditors(root);
+  state.chartMoneyMode = "unify_eur";
   const sync = root.querySelector<HTMLInputElement>("[data-et-sync]");
   const cloudE2e = root.querySelector<HTMLInputElement>("[data-et-cloud-e2e]");
-  const fx = root.querySelector<HTMLInputElement>("[data-et-fx]");
-  const mode = root.querySelector<HTMLSelectElement>("[data-et-chart-mode]");
   const period = root.querySelector<HTMLSelectElement>("[data-et-period]");
   if (sync) sync.checked = state.syncToAccount;
   if (cloudE2e) cloudE2e.checked = state.cloudE2E;
-  if (fx) fx.value = String(state.eurPerUsd);
-  if (mode) mode.value = state.chartMoneyMode;
   if (period) period.value = state.period;
   if (syncChartCategoryFilterSelect(root)) persist();
-  const plannedCat = root.querySelector<HTMLSelectElement>("[data-et-planned-category]");
-  if (plannedCat) {
-    const prev = plannedCat.value;
-    fillCategorySelect(plannedCat);
-    plannedCat.value = state.categories.some((c) => c.id === prev) ? prev : (state.categories[0]?.id ?? prev);
-  }
-  updateFxHint(root);
   updateE2eUnlockBanner(root);
   updateE2ePassphraseHint(root);
   updateSyncPopoverChrome(root);
   ensureMonthFilterInputs(root);
 
+  const plannedSortBtn = root.querySelector<HTMLButtonElement>("[data-et-planned-sort]");
+  if (plannedSortBtn) plannedSortBtn.textContent = plannedSortDesc ? "Orden: importe ↓" : "Orden: importe ↑";
+  const paycheckSortBtn = root.querySelector<HTMLButtonElement>("[data-et-paycheck-sort]");
+  if (paycheckSortBtn) paycheckSortBtn.textContent = paycheckSortDesc ? "Orden: importe ↓" : "Orden: importe ↑";
+
   renderKpis(root);
   renderSubs(root);
+  renderInvestments(root);
+  renderPlannedExpenses(root);
+  renderPaychecks(root);
   renderExpenseTable(root);
   renderIncomeTable(root);
   renderReminders(root);
   renderReminderBanner(root);
-  renderPaychecks(root);
-  renderPlannedExpenses(root);
   renderCharts(root);
   flashBrowserReminders(root);
   requestAnimationFrame(() => window.dispatchEvent(new Event("skillatlas:select-popovers-refresh")));
@@ -3043,6 +2757,25 @@ function bindStripClicks(root: HTMLElement) {
   if (!strip || strip.dataset.stripBound === "1") return;
   strip.dataset.stripBound = "1";
   strip.addEventListener("click", (e) => {
+    const cancelBtn = (e.target as HTMLElement).closest("button[data-sub-cancel]");
+    if (cancelBtn) {
+      e.stopPropagation();
+      e.preventDefault();
+      const id = cancelBtn.getAttribute("data-sub-cancel");
+      const idx = state.subscriptions.findIndex((x) => x.id === id);
+      if (idx < 0) return;
+      const s = state.subscriptions[idx]!;
+      if (!s.active) {
+        state.subscriptions[idx] = { ...s, active: true, cancelEffectiveDate: undefined };
+      } else if (s.cancelEffectiveDate) {
+        state.subscriptions[idx] = { ...s, cancelEffectiveDate: undefined };
+      } else {
+        state.subscriptions[idx] = scheduleSubscriptionCancel(s);
+      }
+      persist();
+      renderAll(root);
+      return;
+    }
     const btn = (e.target as HTMLElement).closest("button[data-sub-id]");
     if (!btn) return;
     const id = btn.getAttribute("data-sub-id");
@@ -3107,18 +2840,6 @@ function wire(root: HTMLElement) {
     await tryApplyDecryptedRemote(root, pendingEncryptedRemote, pass);
   });
 
-  root.querySelector<HTMLInputElement>("[data-et-fx]")?.addEventListener("change", (e) => {
-    state.eurPerUsd = Number((e.target as HTMLInputElement).value) || state.eurPerUsd;
-    persist();
-    renderAll(root);
-  });
-
-  root.querySelector<HTMLSelectElement>("[data-et-chart-mode]")?.addEventListener("change", (e) => {
-    state.chartMoneyMode = (e.target as HTMLSelectElement).value as ExpenseTrackerState["chartMoneyMode"];
-    persist();
-    renderAll(root);
-  });
-
   root.querySelector<HTMLSelectElement>("[data-et-period]")?.addEventListener("change", (e) => {
     state.period = (e.target as HTMLSelectElement).value as ExpenseTrackerState["period"];
     persist();
@@ -3131,8 +2852,51 @@ function wire(root: HTMLElement) {
     renderAll(root);
   });
 
-  root.querySelector<HTMLButtonElement>("[data-et-paycheck-add]")?.addEventListener("click", () => addPaycheckFromForm(root));
-  root.querySelector<HTMLButtonElement>("[data-et-planned-add]")?.addEventListener("click", () => addPlannedFromForm(root));
+  root.querySelector<HTMLButtonElement>("[data-et-open-paycheck-modal]")?.addEventListener("click", () =>
+    openPaycheckDialog(root, null),
+  );
+  root.querySelector<HTMLButtonElement>("[data-et-open-planned-modal]")?.addEventListener("click", () =>
+    openPlannedDialog(root, null),
+  );
+  root.querySelector<HTMLButtonElement>("[data-et-open-inv-modal]")?.addEventListener("click", () =>
+    openInvestmentDialog(root, null),
+  );
+  root.querySelector<HTMLButtonElement>("[data-et-paycheck-sort]")?.addEventListener("click", () => {
+    paycheckSortDesc = !paycheckSortDesc;
+    renderPaychecks(root);
+  });
+  root.querySelector<HTMLButtonElement>("[data-et-planned-sort]")?.addEventListener("click", () => {
+    plannedSortDesc = !plannedSortDesc;
+    renderPlannedExpenses(root);
+  });
+
+  root.querySelector<HTMLButtonElement>("[data-et-paycheck-save]")?.addEventListener("click", () =>
+    savePaycheckFromDialog(root),
+  );
+  root.querySelector<HTMLButtonElement>("[data-et-paycheck-cancel]")?.addEventListener("click", () =>
+    root.querySelector<HTMLDialogElement>("[data-et-dlg-paycheck]")?.close(),
+  );
+  root.querySelector<HTMLButtonElement>("[data-et-paycheck-delete]")?.addEventListener("click", () =>
+    deletePaycheckFromDialog(root),
+  );
+  root.querySelector<HTMLButtonElement>("[data-et-planned-save]")?.addEventListener("click", () =>
+    savePlannedFromDialog(root),
+  );
+  root.querySelector<HTMLButtonElement>("[data-et-planned-cancel]")?.addEventListener("click", () =>
+    root.querySelector<HTMLDialogElement>("[data-et-dlg-planned]")?.close(),
+  );
+  root.querySelector<HTMLButtonElement>("[data-et-planned-delete]")?.addEventListener("click", () =>
+    deletePlannedFromDialog(root),
+  );
+  root.querySelector<HTMLButtonElement>("[data-et-inv-save]")?.addEventListener("click", () =>
+    saveInvestmentFromDialog(root),
+  );
+  root.querySelector<HTMLButtonElement>("[data-et-inv-cancel]")?.addEventListener("click", () =>
+    root.querySelector<HTMLDialogElement>("[data-et-dlg-investment]")?.close(),
+  );
+  root.querySelector<HTMLButtonElement>("[data-et-inv-delete]")?.addEventListener("click", () =>
+    deleteInvestmentFromDialog(root),
+  );
 
   root.querySelector<HTMLButtonElement>("[data-et-export-csv]")?.addEventListener("click", () => {
     const csv = expenseTrackerToCsv(state);

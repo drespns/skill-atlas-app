@@ -52,8 +52,41 @@ export type SubscriptionRow = {
   /** YYYY-MM-DD desde cuándo / 1.er cargo; si existe, se calcula el próximo cobro por ciclo. */
   billingStartDate?: string;
   active: boolean;
+  /**
+   * YYYY-MM-DD: deja de contar en totales/gráficos desde esta fecha (p. ej. día de cobro al cancelar).
+   * La tarjeta sigue visible; hasta esa fecha aún cuenta como activa.
+   */
+  cancelEffectiveDate?: string;
   notes: string;
   tags: string[];
+};
+
+export type InvestmentAssetType =
+  | "stocks"
+  | "ipo"
+  | "etf"
+  | "metals"
+  | "crypto"
+  | "bonds"
+  | "other";
+
+/** Posición manual (sin precio en tiempo real; % P/L actualizado a mano). */
+export type InvestmentHolding = {
+  id: string;
+  /** Nombre del activo (p. ej. XRP, Apple). */
+  name: string;
+  type: InvestmentAssetType;
+  /** Entidad / broker (p. ej. Trade Republic). */
+  platform: string;
+  /** Precio medio de compra por unidad (EUR). */
+  avgBuyPrice: number;
+  /** Cantidad de unidades (opcional si solo usas total invertido). */
+  quantity?: number;
+  /** Capital desembolsado total (EUR). */
+  totalInvested: number;
+  /** Variación % respecto al total invertido (negativo = pérdida). */
+  gainLossPct: number;
+  notes?: string;
 };
 
 /** Cobro recurrente esperado (p. ej. nómina): día del mes y nota opcional. */
@@ -163,6 +196,7 @@ export type ExpenseTrackerState = {
   incomeAdhoc: IncomeAdhocRow[];
   plannedExpenses: PlannedExpenseEntry[];
   plannedExpenseMonthOverrides: PlannedExpenseMonthOverride[];
+  investments: InvestmentHolding[];
 };
 
 export const EXPENSE_TRACKER_CLIENT_SCOPE = "tools_expense_tracker" as const;
@@ -190,7 +224,7 @@ export function defaultExpenseTrackerState(): ExpenseTrackerState {
     tagBank: [],
     syncToAccount: false,
     cloudE2E: false,
-    chartMoneyMode: "mixed",
+    chartMoneyMode: "unify_eur",
     eurPerUsd: DEFAULT_EUR_PER_USD,
     period: "12m",
     chartFilterCategoryId: "",
@@ -199,7 +233,105 @@ export function defaultExpenseTrackerState(): ExpenseTrackerState {
     incomeAdhoc: [],
     plannedExpenses: [],
     plannedExpenseMonthOverrides: [],
+    investments: [],
   };
+}
+
+const INVESTMENT_TYPES: InvestmentAssetType[] = ["stocks", "ipo", "etf", "metals", "crypto", "bonds", "other"];
+
+export function parseInvestmentType(raw: unknown): InvestmentAssetType {
+  const t = String(raw ?? "").trim() as InvestmentAssetType;
+  return INVESTMENT_TYPES.includes(t) ? t : "other";
+}
+
+export function investmentTypeLabel(type: InvestmentAssetType): string {
+  switch (type) {
+    case "stocks":
+      return "Acciones";
+    case "ipo":
+      return "OPV";
+    case "etf":
+      return "ETF";
+    case "metals":
+      return "Metales";
+    case "crypto":
+      return "Cripto";
+    case "bonds":
+      return "Bonos";
+    default:
+      return "Otros";
+  }
+}
+
+/** Valor actual estimado a partir del total invertido y el % P/L manual. */
+export function investmentCurrentValue(h: InvestmentHolding): number {
+  const base = Math.max(0, h.totalInvested);
+  const pct = Number.isFinite(h.gainLossPct) ? h.gainLossPct : 0;
+  return Math.round(base * (1 + pct / 100) * 100) / 100;
+}
+
+export function investmentGainLossAmount(h: InvestmentHolding): number {
+  return Math.round((investmentCurrentValue(h) - Math.max(0, h.totalInvested)) * 100) / 100;
+}
+
+export function investmentPortfolioTotals(holdings: InvestmentHolding[]): {
+  invested: number;
+  current: number;
+  gainLoss: number;
+} {
+  let invested = 0;
+  let current = 0;
+  for (const h of holdings) {
+    invested += Math.max(0, h.totalInvested);
+    current += investmentCurrentValue(h);
+  }
+  return {
+    invested: Math.round(invested * 100) / 100,
+    current: Math.round(current * 100) / 100,
+    gainLoss: Math.round((current - invested) * 100) / 100,
+  };
+}
+
+/** ¿La suscripción cuenta en KPIs y gráficos en la fecha de referencia? */
+export function subscriptionCountsInTotals(s: SubscriptionRow, refDate?: string): boolean {
+  if (!s.active) return false;
+  const today = (refDate ?? new Date().toISOString().slice(0, 10)).slice(0, 10);
+  const cancel = s.cancelEffectiveDate?.trim().slice(0, 10);
+  if (cancel && cancel.length === 10 && today >= cancel) return false;
+  return true;
+}
+
+/** Programa cancelación: deja de contar desde el próximo día de cobro. */
+export function scheduleSubscriptionCancel(s: SubscriptionRow): SubscriptionRow {
+  const next = subscriptionNextChargeIso(s);
+  return {
+    ...s,
+    cancelEffectiveDate: next.length === 10 ? next : new Date().toISOString().slice(0, 10),
+  };
+}
+
+function parseInvestmentHoldings(raw: unknown): InvestmentHolding[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((r: any) => {
+      const qty = Number(r?.quantity);
+      const avg = Number(r?.avgBuyPrice);
+      const inv = Number(r?.totalInvested);
+      const pct = Number(r?.gainLossPct);
+      return {
+        id: String(r?.id || "").trim(),
+        name: String(r?.name || "").trim() || "Activo",
+        type: parseInvestmentType(r?.type),
+        platform: String(r?.platform || "").trim() || "—",
+        avgBuyPrice: Number.isFinite(avg) && avg >= 0 ? avg : 0,
+        quantity: Number.isFinite(qty) && qty > 0 ? qty : undefined,
+        totalInvested: Number.isFinite(inv) && inv >= 0 ? inv : 0,
+        gainLossPct: Number.isFinite(pct) ? pct : 0,
+        notes: String(r?.notes ?? "").trim() || undefined,
+      };
+    })
+    .filter((h: InvestmentHolding) => h.id)
+    .slice(0, 48);
 }
 
 function safeParse(raw: string | null): unknown {
@@ -392,6 +524,7 @@ function upgradeV1ToV2(o: any): ExpenseTrackerState {
             nextBilling: String(s?.nextBilling || "").slice(0, 10),
             billingStartDate: billingStart.length === 10 ? billingStart : undefined,
             active: Boolean(s?.active),
+            cancelEffectiveDate: String(s?.cancelEffectiveDate ?? "").slice(0, 10) || undefined,
             notes: String(s?.notes ?? ""),
             tags: parseTags(s?.tags),
           };
@@ -486,6 +619,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
             nextBilling: String(s?.nextBilling || "").slice(0, 10),
             billingStartDate: billingStart.length === 10 ? billingStart : undefined,
             active: Boolean(s?.active),
+            cancelEffectiveDate: String(s?.cancelEffectiveDate ?? "").slice(0, 10) || undefined,
             notes: String(s?.notes ?? ""),
             tags: parseTags(s?.tags),
           };
@@ -649,6 +783,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
   const incomeOverridesClean = incomeMonthOverrides.filter((r) => pcIds.has(r.paycheckId));
   const planIds = new Set(plannedExpenses.map((p) => p.id));
   const plannedOverridesClean = plannedExpenseMonthOverrides.filter((r) => planIds.has(r.plannedExpenseId));
+  const investments = parseInvestmentHoldings(o.investments);
 
   return {
     v: 2,
@@ -659,7 +794,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
     tagBank,
     syncToAccount: Boolean(o.syncToAccount),
     cloudE2E: Boolean(o.cloudE2E),
-    chartMoneyMode,
+    chartMoneyMode: "unify_eur",
     eurPerUsd: clampEurPerUsd(Number(o.eurPerUsd)),
     period,
     chartFilterCategoryId,
@@ -668,6 +803,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
     incomeAdhoc,
     plannedExpenses,
     plannedExpenseMonthOverrides: plannedOverridesClean,
+    investments,
   };
 }
 
@@ -724,6 +860,7 @@ export function mergeExpenseTrackerRemoteLocal(remote: ExpenseTrackerState, loca
     ...s,
     categoryId: categories.some((c) => c.id === s.categoryId) ? s.categoryId : fallbackCat,
     tags: Array.isArray(s.tags) ? s.tags : [],
+    cancelEffectiveDate: s.cancelEffectiveDate?.slice(0, 10) || undefined,
   }));
   const reminders = mergeRows(remote.reminders, local.reminders);
   const tagBank = mergeTagBanks(remote.tagBank ?? [], local.tagBank ?? []);
@@ -755,6 +892,7 @@ export function mergeExpenseTrackerRemoteLocal(remote: ExpenseTrackerState, loca
       remote.plannedExpenseMonthOverrides ?? [],
       local.plannedExpenseMonthOverrides ?? [],
     ),
+    investments: mergeRows(remote.investments ?? [], local.investments ?? []),
   });
 }
 
@@ -778,6 +916,7 @@ export function applyExpenseImportReplace(current: ExpenseTrackerState, imported
     incomeAdhoc: imported.incomeAdhoc ?? [],
     plannedExpenses: imported.plannedExpenses ?? [],
     plannedExpenseMonthOverrides: imported.plannedExpenseMonthOverrides ?? [],
+    investments: imported.investments ?? [],
   });
 }
 
@@ -825,8 +964,8 @@ export function subscriptionNextChargeIso(s: SubscriptionRow): string {
   return (s.nextBilling || "").slice(0, 10);
 }
 
-export function subscriptionToMonthlyAmount(s: SubscriptionRow): number {
-  if (!s.active || s.amount <= 0) return 0;
+export function subscriptionToMonthlyAmount(s: SubscriptionRow, refDate?: string): number {
+  if (!subscriptionCountsInTotals(s, refDate) || s.amount <= 0) return 0;
   switch (s.cycle) {
     case "weekly":
       return (s.amount * 52) / 12;
@@ -1005,12 +1144,12 @@ export function monthlyIncomeSeries(
 }
 
 /** Equiv. mensual de suscripciones activas (para KPI y series mensuales). */
-export function subscriptionMonthlyBurnByCurrency(state: ExpenseTrackerState): { eur: number; usd: number } {
+export function subscriptionMonthlyBurnByCurrency(state: ExpenseTrackerState, refDate?: string): { eur: number; usd: number } {
   let eur = 0;
   let usd = 0;
   for (const s of state.subscriptions) {
-    if (!s.active) continue;
-    const m = subscriptionToMonthlyAmount(s);
+    if (!subscriptionCountsInTotals(s, refDate)) continue;
+    const m = subscriptionToMonthlyAmount(s, refDate);
     if (m <= 0) continue;
     if (s.currency === "EUR") eur += m;
     else usd += m;
