@@ -35,8 +35,15 @@ import {
   subscriptionCountsInTotals,
   scheduleSubscriptionCancel,
   validateCategoryTree,
+  countCategoryUsage,
+  reassignCategoryReferences,
+  computeBizumTotalsForPeriod,
+  effectivePeriodStart,
+  categorySubtreeIds,
   computePatrimonioSnapshot,
   computeCashAvailableTotal,
+  computeBalanceFromOpening,
+  resolveTransferDefaultAccounts,
   computeInvestmentTotalInvested,
   monthsForRecurringEntry,
   monthsForRecurringRange,
@@ -68,6 +75,7 @@ import {
   type WealthTransfer,
   type WealthBizum,
   type WealthBizumDirection,
+  type ExpenseCategory,
 } from "@lib/tools-expense-tracker";
 import { initExpenseDatePickers, readDateFieldValue, readMonthFieldValue, refreshExpenseDatePicker } from "./expense-tracker-dates";
 import { layoutTreemap } from "@lib/treemap-layout";
@@ -180,7 +188,14 @@ let alertResolver: (() => void) | null = null;
 let confirmResolver: ((ok: boolean) => void) | null = null;
 let importModeResolver: ((mode: ImportMode | null) => void) | null = null;
 let linkResolver: ((v: { title: string; url: string } | null) => void) | null = null;
-let catResolver: ((v: { name: string; parentId: string | null } | null) => void) | null = null;
+let catResolver: ((v: CategoryDialogResult) => void) | null = null;
+
+type CategoryDialogResult = {
+  editId?: string;
+  name: string;
+  parentId: string | null;
+  color: string;
+} | null;
 let e2eSetResolver: ((ok: boolean) => void) | null = null;
 let e2eUnlockResolver: ((pass: string | null) => void) | null = null;
 
@@ -319,9 +334,12 @@ function bindExpenseDialogs(root: HTMLElement) {
       const name = dlgCat.querySelector<HTMLInputElement>("[data-et-dlg-cat-name]")?.value?.trim() ?? "";
       const parentSel = dlgCat.querySelector<HTMLSelectElement>("[data-et-dlg-cat-parent]");
       const parentId = parentSel?.value ? parentSel.value : null;
+      const editId = dlgCat.querySelector<HTMLInputElement>("[data-et-dlg-cat-id]")?.value?.trim() || undefined;
+      const colorRaw = dlgCat.querySelector<HTMLInputElement>("[data-et-dlg-cat-color]")?.value ?? "";
+      const color = /^#[0-9a-fA-F]{6}$/.test(colorRaw) ? colorRaw : "#64748b";
       if (!name) return;
       dlgCat.close();
-      catResolver?.({ name, parentId });
+      catResolver?.({ editId, name, parentId, color });
       catResolver = null;
     });
     dlgCat.querySelector("[data-et-dlg-cat-cancel]")?.addEventListener("click", () => {
@@ -440,16 +458,18 @@ function showLinkDialog(root: HTMLElement): Promise<{ title: string; url: string
   });
 }
 
-function fillCategoryParentSelect(sel: HTMLSelectElement) {
+function fillCategoryParentSelect(sel: HTMLSelectElement, excludeRootId?: string) {
   sel.innerHTML = "";
   const o0 = document.createElement("option");
   o0.value = "";
   o0.textContent = "— Raíz (sin padre) —";
   sel.appendChild(o0);
+  const exclude = excludeRootId ? categorySubtreeIds(state, excludeRootId) : null;
   const sorted = [...state.categories].sort((a, b) =>
     formatCategoryPath(state, a.id).localeCompare(formatCategoryPath(state, b.id), "es"),
   );
   for (const c of sorted) {
+    if (exclude?.has(c.id)) continue;
     const o = document.createElement("option");
     o.value = c.id;
     o.textContent = formatCategoryPath(state, c.id);
@@ -457,19 +477,162 @@ function fillCategoryParentSelect(sel: HTMLSelectElement) {
   }
 }
 
-function openNewCategoryDialog(root: HTMLElement): Promise<{ name: string; parentId: string | null } | null> {
+function applyCategoryDialogResult(root: HTMLElement, res: NonNullable<CategoryDialogResult>) {
+  if (res.editId) {
+    const idx = state.categories.findIndex((c) => c.id === res.editId);
+    if (idx < 0) return;
+    state.categories[idx] = {
+      ...state.categories[idx]!,
+      name: res.name.trim(),
+      parentId: res.parentId,
+      color: res.color,
+    };
+  } else {
+    state.categories.push({
+      id: makeId(),
+      name: res.name.trim(),
+      color: res.color,
+      parentId: res.parentId,
+    });
+  }
+  state.categories = validateCategoryTree(state.categories);
+  persist();
+  renderCategoriesManagerList(root);
+  renderAll(root);
+}
+
+function openCategoryDialog(root: HTMLElement, editId?: string): Promise<CategoryDialogResult> {
   const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-category]");
+  const titleEl = dlg?.querySelector<HTMLElement>("[data-et-dlg-cat-title]");
+  const idEl = dlg?.querySelector<HTMLInputElement>("[data-et-dlg-cat-id]");
   const nameEl = dlg?.querySelector<HTMLInputElement>("[data-et-dlg-cat-name]");
+  const colorEl = dlg?.querySelector<HTMLInputElement>("[data-et-dlg-cat-color]");
   const parEl = dlg?.querySelector<HTMLSelectElement>("[data-et-dlg-cat-parent]");
-  if (!dlg || !nameEl || !parEl) return Promise.resolve(null);
-  nameEl.value = "";
-  fillCategoryParentSelect(parEl);
+  const saveBtn = dlg?.querySelector<HTMLButtonElement>("[data-et-dlg-cat-save]");
+  if (!dlg || !nameEl || !parEl || !colorEl || !idEl) return Promise.resolve(null);
+  const editing = editId ? state.categories.find((c) => c.id === editId) : undefined;
+  idEl.value = editing?.id ?? "";
+  nameEl.value = editing?.name ?? "";
+  colorEl.value = editing?.color && /^#[0-9a-fA-F]{6}$/.test(editing.color) ? editing.color : "#6366f1";
+  fillCategoryParentSelect(parEl, editId);
+  parEl.value = editing?.parentId ?? "";
+  if (titleEl) titleEl.textContent = editing ? "Editar categoría" : "Nueva categoría";
+  if (saveBtn) saveBtn.textContent = editing ? "Guardar" : "Crear";
   requestAnimationFrame(() => window.dispatchEvent(new Event("skillatlas:select-popovers-refresh")));
   return new Promise((resolve) => {
     catResolver = resolve;
     dlg.showModal();
     nameEl.focus();
   });
+}
+
+function openNewCategoryDialog(root: HTMLElement): Promise<CategoryDialogResult> {
+  return openCategoryDialog(root);
+}
+
+function renderCategoriesManagerList(root: HTMLElement) {
+  const list = root.querySelector<HTMLElement>("[data-et-categories-manage-list]");
+  if (!list) return;
+  list.innerHTML = "";
+  const roots = state.categories
+    .filter((c) => !c.parentId)
+    .sort((a, b) => a.name.localeCompare(b.name, "es"));
+
+  const renderRow = (cat: ExpenseCategory, depth: number) => {
+    const li = document.createElement("li");
+    li.className =
+      "flex flex-wrap items-center gap-2 rounded-lg border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/50 px-3 py-2";
+    if (depth > 0) li.style.marginLeft = `${Math.min(depth, 4) * 0.75}rem`;
+
+    const swatch = document.createElement("span");
+    swatch.className = "inline-block h-3.5 w-3.5 rounded-full shrink-0 ring-1 ring-black/10";
+    swatch.style.backgroundColor = cat.color;
+
+    const label = document.createElement("span");
+    label.className = "flex-1 min-w-[6rem] text-sm font-medium text-gray-900 dark:text-gray-100";
+    label.textContent = cat.name;
+
+    const usage = countCategoryUsage(state, cat.id);
+    const meta = document.createElement("span");
+    meta.className = "text-[11px] text-gray-500 dark:text-gray-400 shrink-0";
+    meta.textContent = usage ? `${usage} uso${usage === 1 ? "" : "s"}` : "Sin usos";
+
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "et-btn-secondary text-xs py-1 px-2";
+    editBtn.textContent = "Editar";
+    editBtn.addEventListener("click", async () => {
+      const res = await openCategoryDialog(root, cat.id);
+      if (!res?.name?.trim()) return;
+      applyCategoryDialogResult(root, res);
+    });
+
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "et-btn-secondary text-xs py-1 px-2 text-rose-700 dark:text-rose-300 border-rose-200/80 dark:border-rose-900/50";
+    delBtn.textContent = "Eliminar";
+    delBtn.addEventListener("click", () => void deleteCategoryFromManager(root, cat.id));
+
+    li.append(swatch, label, meta, editBtn, delBtn);
+    list.appendChild(li);
+
+    const children = state.categories
+      .filter((c) => c.parentId === cat.id)
+      .sort((a, b) => a.name.localeCompare(b.name, "es"));
+    for (const child of children) renderRow(child, depth + 1);
+  };
+
+  if (!roots.length) {
+    const empty = document.createElement("li");
+    empty.className = "text-sm text-gray-500 dark:text-gray-400 py-2";
+    empty.textContent = "No hay categorías.";
+    list.appendChild(empty);
+    return;
+  }
+  for (const r of roots) renderRow(r, 0);
+}
+
+function openCategoriesManageDialog(root: HTMLElement) {
+  const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-categories-manage]");
+  if (!dlg) return;
+  renderCategoriesManagerList(root);
+  dlg.showModal();
+}
+
+async function deleteCategoryFromManager(root: HTMLElement, categoryId: string) {
+  if (categoryId === "cat_other") {
+    void showAlertDialog(root, "No puedes eliminar la categoría «Otros».");
+    return;
+  }
+  const children = state.categories.filter((c) => c.parentId === categoryId);
+  if (children.length) {
+    void showAlertDialog(
+      root,
+      `Esta categoría tiene subcategorías (${children.map((c) => c.name).join(", ")}). Elimínalas o reasígnalas antes.`,
+    );
+    return;
+  }
+  const usage = countCategoryUsage(state, categoryId);
+  const fallback = state.categories.some((c) => c.id === "cat_other") ? "cat_other" : state.categories[0]?.id;
+  if (!fallback) return;
+  if (usage > 0) {
+    const ok = await showConfirmDialog(
+      root,
+      `Hay ${usage} registro${usage === 1 ? "" : "s"} con esta categoría. Se reasignarán a «Otros». ¿Continuar?`,
+      "Eliminar",
+    );
+    if (!ok) return;
+    reassignCategoryReferences(state, categoryId, fallback);
+  } else {
+    const ok = await showConfirmDialog(root, "¿Eliminar esta categoría?", "Eliminar");
+    if (!ok) return;
+  }
+  if (state.chartFilterCategoryId === categoryId) state.chartFilterCategoryId = "";
+  state.categories = state.categories.filter((c) => c.id !== categoryId);
+  state.categories = validateCategoryTree(state.categories);
+  persist();
+  renderCategoriesManagerList(root);
+  renderAll(root);
 }
 
 function openE2ePassphraseDialog(root: HTMLElement): Promise<boolean> {
@@ -677,7 +840,9 @@ function renderCashAvailableKpi(root: HTMLElement) {
 
 function renderTrackingBaseline(root: HTMLElement) {
   const el = root.querySelector<HTMLInputElement>("[data-et-tracking-start]");
-  if (el) el.value = (state.trackingStartDate ?? "").slice(0, 10);
+  if (!el) return;
+  const iso = (state.trackingStartDate ?? "").slice(0, 10);
+  refreshExpenseDatePicker(el, iso);
 }
 
 function applyTrackingBaseline(root: HTMLElement) {
@@ -699,12 +864,14 @@ function applyTrackingBaseline(root: HTMLElement) {
         : a.openingBalance != null
           ? a.openingBalance
           : a.balance;
-    return { ...a, openingBalance: opening, balance: opening };
+    const balance = computeBalanceFromOpening(state, a.id, opening, raw);
+    return { ...a, openingBalance: opening, balance };
   });
   persist();
   renderWealthAccounts(root);
   renderTrackingBaseline(root);
   renderPatrimonioKpi(root);
+  renderCashAvailableKpi(root);
   renderKpis(root);
   renderCharts(root);
 }
@@ -2689,10 +2856,9 @@ function openTransferDialog(root: HTMLElement) {
   const dateEl = root.querySelector<HTMLInputElement>("[data-et-transfer-date]");
   const noteEl = root.querySelector<HTMLInputElement>("[data-et-transfer-note]");
   if (!dlg || !fromSel || !toSel || !amtEl || !dateEl || !noteEl) return;
-  const incomeId = defaultWealthAccountId(accounts, "income");
-  const expenseId = defaultWealthAccountId(accounts, "expense");
-  fillTransferAccountSelect(fromSel, incomeId ?? accounts[0]?.id);
-  fillTransferAccountSelect(toSel, expenseId ?? accounts[1]?.id ?? accounts[0]?.id);
+  const { fromId, toId } = resolveTransferDefaultAccounts(accounts);
+  fillTransferAccountSelect(fromSel, fromId ?? accounts[0]?.id);
+  fillTransferAccountSelect(toSel, toId ?? accounts[1]?.id ?? accounts[0]?.id);
   amtEl.value = "";
   dateEl.value = todayIso();
   noteEl.value = "";
@@ -2735,9 +2901,14 @@ function saveTransferFromDialog(root: HTMLElement) {
     note: noteEl?.value?.trim() || undefined,
   };
   state.wealthTransfers = [...(state.wealthTransfers ?? []), transfer].slice(0, 500);
-  root.querySelector<HTMLDialogElement>("[data-et-dlg-transfer]")?.close();
   persist();
-  renderAll(root);
+  amtEl.value = "";
+  noteEl.value = "";
+  updateWealthBalanceDisplays(root);
+  updateTransfersHistoryButton(root);
+  renderPatrimonioKpi(root);
+  renderCashAvailableKpi(root);
+  amtEl.focus();
 }
 
 function tagTotalsForChart(
@@ -2924,6 +3095,54 @@ function padExpenseSeriesToMonths(
   return { seriesEur: pick(seriesEur), seriesUsd: pick(seriesUsd), seriesUnified: pick(seriesUnified) };
 }
 
+function renderBizumChart(root: HTMLElement) {
+  const elBizums = root.querySelector<HTMLElement>("[data-et-chart-bizums]");
+  if (!elBizums) return;
+  const from = effectivePeriodStart(state, state.period);
+  const totals = computeBizumTotalsForPeriod(state.wealthBizums ?? [], from);
+  const bizOpt: echarts.EChartsCoreOption = {
+    title: {
+      text: "Bizums enviados vs recibidos",
+      left: 0,
+      top: 4,
+      textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
+    },
+    tooltip: {
+      trigger: "axis",
+      formatter: (params: unknown) => {
+        const rows = Array.isArray(params) ? params : [params];
+        if (!rows.length) return "";
+        const r = rows[0] as { name?: string; value?: number; marker?: string };
+        const v = Number(r.value);
+        return `${r.marker ?? ""} ${r.name ?? ""}: ${Number.isFinite(v) ? fmtEur(v) : "—"}`;
+      },
+    },
+    grid: { left: 48, right: 16, top: 44, bottom: 24 },
+    xAxis: {
+      type: "category",
+      data: ["Enviados", "Recibidos"],
+      axisLabel: { color: textMuted() },
+    },
+    yAxis: {
+      type: "value",
+      splitLine: { lineStyle: { color: borderSubtle() } },
+      axisLabel: { color: textMuted(), formatter: (v: number) => fmtNumEs(v) },
+    },
+    series: [
+      {
+        type: "bar",
+        barWidth: "42%",
+        data: [
+          { value: totals.sent, itemStyle: { color: "#ef4444", borderRadius: [6, 6, 0, 0] } },
+          { value: totals.received, itemStyle: { color: "#22c55e", borderRadius: [6, 6, 0, 0] } },
+        ],
+      },
+    ],
+  };
+  const has = totals.sent > 0 || totals.received > 0;
+  pushChart(elBizums, has ? bizOpt : { ...bizOpt, graphic: emptyGraphic("Sin bizums en el período") });
+}
+
 function renderCharts(root: HTMLElement) {
   disposeCharts();
   const elLine = root.querySelector<HTMLElement>("[data-et-chart-line]");
@@ -2933,8 +3152,18 @@ function renderCharts(root: HTMLElement) {
   const elTags = root.querySelector<HTMLElement>("[data-et-chart-tags]");
   const elDow = root.querySelector<HTMLElement>("[data-et-chart-dow]");
   const elBalance = root.querySelector<HTMLElement>("[data-et-chart-balance]");
+  const elBizums = root.querySelector<HTMLElement>("[data-et-chart-bizums]");
   const rowPies = root.querySelector<HTMLElement>("[data-et-chart-pies-row]");
-  if (!elLine || !elBar || !elPieEur || !elPieUsd) return;
+  if (!elLine || !elBar || !elPieEur || !elPieUsd) {
+    renderBizumChart(root);
+    if (elBizums) {
+      resizeObserver = new ResizeObserver(() => {
+        for (const c of chartInstances) c.resize();
+      });
+      resizeObserver.observe(elBizums);
+    }
+    return;
+  }
 
   const ex = filterExpensesByPeriod(state.expenses, state.period, state.trackingStartDate);
   const chartFid = state.chartFilterCategoryId?.trim() || "";
@@ -3460,10 +3689,14 @@ function renderCharts(root: HTMLElement) {
     pushChart(elYearProj, yearHas ? yearOpt : { ...yearOpt, graphic: emptyGraphic(`Sin datos para ${year}`) });
   }
 
+  renderBizumChart(root);
+
   resizeObserver = new ResizeObserver(() => {
     for (const c of chartInstances) c.resize();
   });
-  [elLine, elBar, elBalance, elPieEur, elPieUsd, elTags, elDow, elYearProj].forEach((el) => el && resizeObserver!.observe(el));
+  [elLine, elBar, elBalance, elPieEur, elPieUsd, elTags, elDow, elYearProj, elBizums].forEach(
+    (el) => el && resizeObserver!.observe(el),
+  );
 }
 
 function emptyGraphic(text: string) {
@@ -3839,6 +4072,7 @@ function wire(root: HTMLElement) {
       state.trackingStartDate = v;
       persist();
       renderWealthAccounts(root);
+      renderTrackingBaseline(root);
     }
   });
 
@@ -4217,20 +4451,23 @@ function wire(root: HTMLElement) {
     root.querySelector<HTMLSelectElement>("[data-et-inc-filter-day]")?.addEventListener("change", onFilter);
   }
 
+  root.querySelector<HTMLButtonElement>("[data-et-manage-categories]")?.addEventListener("click", () =>
+    openCategoriesManageDialog(root),
+  );
+  const closeCategoriesManage = () =>
+    root.querySelector<HTMLDialogElement>("[data-et-dlg-categories-manage]")?.close();
+  root.querySelector<HTMLButtonElement>("[data-et-categories-manage-close]")?.addEventListener("click", closeCategoriesManage);
+  root.querySelector<HTMLButtonElement>("[data-et-categories-manage-close-footer]")?.addEventListener("click", closeCategoriesManage);
+  root.querySelector<HTMLButtonElement>("[data-et-categories-manage-add]")?.addEventListener("click", async () => {
+    const res = await openNewCategoryDialog(root);
+    if (!res?.name?.trim()) return;
+    applyCategoryDialogResult(root, res);
+  });
+
   root.querySelector<HTMLButtonElement>("[data-et-add-category]")?.addEventListener("click", async () => {
     const res = await openNewCategoryDialog(root);
     if (!res?.name?.trim()) return;
-    const colors = ["#6366f1", "#0ea5e9", "#22c55e", "#f97316", "#ec4899", "#eab308", "#a855f7", "#14b8a6"];
-    const color = colors[state.categories.length % colors.length]!;
-    state.categories.push({
-      id: makeId(),
-      name: res.name.trim(),
-      color,
-      parentId: res.parentId,
-    });
-    state.categories = validateCategoryTree(state.categories);
-    persist();
-    renderAll(root);
+    applyCategoryDialogResult(root, res);
   });
 
   root.querySelector<HTMLButtonElement>("[data-et-open-sub-modal]")?.addEventListener("click", () => openSubDialog(root, null));

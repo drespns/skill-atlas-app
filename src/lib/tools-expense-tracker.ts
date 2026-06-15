@@ -269,10 +269,72 @@ export const DEFAULT_EXPENSE_CATEGORIES: ExpenseCategory[] = [
   { id: "cat_entertainment", name: "Ocio", color: "#f97316", parentId: null },
   { id: "cat_health", name: "Salud", color: "#ec4899", parentId: null },
   { id: "cat_services", name: "Servicios", color: "#eab308", parentId: null },
-  { id: "cat_transfer", name: "Traspaso", color: "#475569", parentId: null },
-  { id: "cat_bizum", name: "Bizum", color: "#06b6d4", parentId: null },
   { id: "cat_other", name: "Otros", color: "#64748b", parentId: null },
 ];
+
+/** Categorías legacy retiradas: traspasos y bizums van por cuentas, no por gastos. */
+export const EXCLUDED_WEALTH_CATEGORY_IDS = ["cat_transfer", "cat_bizum"] as const;
+
+const EXCLUDED_WEALTH_CATEGORY_SET = new Set<string>(EXCLUDED_WEALTH_CATEGORY_IDS);
+
+export function sanitizeExpenseCategories(categories: ExpenseCategory[]): ExpenseCategory[] {
+  const filtered = categories.filter((c) => !EXCLUDED_WEALTH_CATEGORY_SET.has(c.id));
+  const validated = validateCategoryTree(filtered);
+  if (validated.length) return validated;
+  return DEFAULT_EXPENSE_CATEGORIES.map((c) => ({ ...c }));
+}
+
+export function migrateExcludedCategoryReferences(
+  data: Pick<ExpenseTrackerState, "expenses" | "subscriptions" | "plannedExpenses" | "incomeAdhoc">,
+): Pick<ExpenseTrackerState, "expenses" | "subscriptions" | "plannedExpenses" | "incomeAdhoc"> {
+  const fallback = "cat_other";
+  const fix = (cid: string) => (EXCLUDED_WEALTH_CATEGORY_SET.has(cid) ? fallback : cid);
+  return {
+    expenses: data.expenses.map((e) => ({ ...e, categoryId: fix(e.categoryId) })),
+    subscriptions: data.subscriptions.map((s) => ({ ...s, categoryId: fix(s.categoryId) })),
+    plannedExpenses: (data.plannedExpenses ?? []).map((p) => ({ ...p, categoryId: fix(p.categoryId) })),
+    incomeAdhoc: (data.incomeAdhoc ?? []).map((r) => ({ ...r, categoryId: fix(r.categoryId) })),
+  };
+}
+
+export function countCategoryUsage(state: ExpenseTrackerState, categoryId: string): number {
+  let n = 0;
+  n += state.expenses.filter((e) => e.categoryId === categoryId).length;
+  n += state.subscriptions.filter((s) => s.categoryId === categoryId).length;
+  n += (state.plannedExpenses ?? []).filter((p) => p.categoryId === categoryId).length;
+  n += (state.incomeAdhoc ?? []).filter((r) => r.categoryId === categoryId).length;
+  return n;
+}
+
+export function reassignCategoryReferences(state: ExpenseTrackerState, fromId: string, toId: string): void {
+  if (fromId === toId) return;
+  state.expenses = state.expenses.map((e) => (e.categoryId === fromId ? { ...e, categoryId: toId } : e));
+  state.subscriptions = state.subscriptions.map((s) => (s.categoryId === fromId ? { ...s, categoryId: toId } : s));
+  state.plannedExpenses = (state.plannedExpenses ?? []).map((p) =>
+    p.categoryId === fromId ? { ...p, categoryId: toId } : p,
+  );
+  state.incomeAdhoc = (state.incomeAdhoc ?? []).map((r) =>
+    r.categoryId === fromId ? { ...r, categoryId: toId } : r,
+  );
+}
+
+/** Totales de bizums enviados (restan) y recibidos (suman) en un rango de fechas. */
+export function computeBizumTotalsForPeriod(
+  bizums: WealthBizum[],
+  fromIso: string | null,
+  untilIso: string = new Date().toISOString().slice(0, 10),
+): { sent: number; received: number } {
+  let sent = 0;
+  let received = 0;
+  for (const b of bizums) {
+    const d = b.date.slice(0, 10);
+    if (fromIso && d < fromIso) continue;
+    if (d > untilIso) continue;
+    if (b.direction === "sent") sent += b.amount;
+    else received += b.amount;
+  }
+  return { sent: roundMoney(sent), received: roundMoney(received) };
+}
 
 export function defaultExpenseTrackerState(): ExpenseTrackerState {
   return {
@@ -484,12 +546,13 @@ export function effectivePeriodStart(state: ExpenseTrackerState, filter: PeriodF
 }
 
 export function mergeDefaultCategories(categories: ExpenseCategory[]): ExpenseCategory[] {
-  const ids = new Set(categories.map((c) => c.id));
-  const merged = [...categories];
+  const clean = sanitizeExpenseCategories(categories);
+  const ids = new Set(clean.map((c) => c.id));
+  const merged = [...clean];
   for (const d of DEFAULT_EXPENSE_CATEGORIES) {
     if (!ids.has(d.id)) merged.push({ ...d });
   }
-  return validateCategoryTree(merged);
+  return sanitizeExpenseCategories(validateCategoryTree(merged));
 }
 
 export type PatrimonioSnapshot = {
@@ -520,6 +583,174 @@ export function computePatrimonioSnapshot(
 /** Suma de saldos en cuentas (sin inversiones). */
 export function computeCashAvailableTotal(accounts: WealthAccount[]): number {
   return Math.round(accounts.reduce((s, a) => s + a.balance, 0) * 100) / 100;
+}
+
+function eachMonthKeyFromTo(startIso: string, endIso: string): string[] {
+  const fromMk = startIso.slice(0, 7);
+  const toMk = endIso.slice(0, 7);
+  if (!/^\d{4}-\d{2}$/.test(fromMk) || !/^\d{4}-\d{2}$/.test(toMk)) return [];
+  const out: string[] = [];
+  let y = Number(fromMk.slice(0, 4));
+  let m = Number(fromMk.slice(5, 7));
+  const ty = Number(toMk.slice(0, 4));
+  const tm = Number(toMk.slice(5, 7));
+  while ((y < ty || (y === ty && m <= tm)) && out.length < 120) {
+    out.push(`${y}-${String(m).padStart(2, "0")}`);
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+  }
+  return out;
+}
+
+function hasConfirmedIncomeOnDate(state: ExpenseTrackerState, date: string): boolean {
+  return (state.incomeAdhoc ?? []).some((r) => r.confirmed !== false && r.date.slice(0, 10) === date);
+}
+
+function hasConfirmedExpenseOnDate(state: ExpenseTrackerState, date: string): boolean {
+  return state.expenses.some((e) => e.confirmed !== false && e.date.slice(0, 10) === date);
+}
+
+/**
+ * Neto EUR que ha entrado/salido de la cuenta desde fromDate (inclusive) hasta untilDate (inclusive):
+ * gastos/ingresos confirmados, traspasos, bizums y previstos activos en rango (sin duplicar día ya confirmado).
+ */
+export function wealthMovementNetForAccount(
+  state: ExpenseTrackerState,
+  accountId: string,
+  fromDate: string,
+  untilDate: string = new Date().toISOString().slice(0, 10),
+): number {
+  const from = fromDate.slice(0, 10);
+  const until = untilDate.slice(0, 10);
+  if (from.length !== 10 || until.length !== 10 || from > until) return 0;
+
+  const fx = state.eurPerUsd;
+  const accounts = state.wealthAccounts ?? [];
+  let net = 0;
+
+  for (const e of state.expenses) {
+    if (e.confirmed === false) continue;
+    const d = e.date.slice(0, 10);
+    if (d < from || d > until) continue;
+    const aid = e.wealthAccountId ?? defaultWealthAccountId(accounts, "expense");
+    if (aid !== accountId) continue;
+    net -= convertAmount(Math.max(0, e.amount), e.currency, "EUR", fx);
+  }
+
+  for (const row of state.incomeAdhoc ?? []) {
+    if (row.confirmed === false) continue;
+    const d = row.date.slice(0, 10);
+    if (d < from || d > until) continue;
+    const aid = row.wealthAccountId ?? defaultWealthAccountId(accounts, "income");
+    if (aid !== accountId) continue;
+    net += convertAmount(Math.max(0, row.amount), row.currency, "EUR", fx);
+  }
+
+  for (const t of state.wealthTransfers ?? []) {
+    const d = t.date.slice(0, 10);
+    if (d < from || d > until) continue;
+    if (t.fromAccountId === accountId) net -= t.amount;
+    if (t.toAccountId === accountId) net += t.amount;
+  }
+
+  for (const b of state.wealthBizums ?? []) {
+    const d = b.date.slice(0, 10);
+    if (d < from || d > until) continue;
+    if (b.accountId !== accountId) continue;
+    net += b.direction === "received" ? b.amount : -b.amount;
+  }
+
+  const incomeDefault = defaultWealthAccountId(accounts, "income");
+  const expenseDefault = defaultWealthAccountId(accounts, "expense");
+  const paycheckOverrides = state.incomeMonthOverrides ?? [];
+  const plannedOverrides = state.plannedExpenseMonthOverrides ?? [];
+
+  for (const mk of eachMonthKeyFromTo(from, until)) {
+    for (const p of state.paychecks ?? []) {
+      if (!paycheckActiveInMonth(p, mk)) continue;
+      const charge = recurringChargeDate(p.dayOfMonth, mk);
+      if (charge < from || charge > until) continue;
+      if (hasConfirmedIncomeOnDate(state, charge)) continue;
+      const target = incomeDefault;
+      if (target !== accountId) continue;
+      const { amount, currency } = effectivePaycheckAmount(p, mk, paycheckOverrides);
+      if (amount > 0) net += convertAmount(amount, currency, "EUR", fx);
+    }
+    for (const p of state.plannedExpenses ?? []) {
+      if (!plannedExpenseActiveInMonth(p, mk)) continue;
+      const charge = recurringChargeDate(p.dayOfMonth, mk);
+      if (charge < from || charge > until) continue;
+      if (hasConfirmedExpenseOnDate(state, charge)) continue;
+      const target = expenseDefault;
+      if (target !== accountId) continue;
+      const { amount, currency } = effectivePlannedExpenseAmount(p, mk, plannedOverrides);
+      if (amount > 0) net -= convertAmount(amount, currency, "EUR", fx);
+    }
+  }
+
+  return roundMoney(net);
+}
+
+/** Saldo actual = saldo inicial en trackingStartDate + movimientos desde esa fecha. */
+export function computeBalanceFromOpening(
+  state: ExpenseTrackerState,
+  accountId: string,
+  openingBalance: number,
+  trackingStartDate: string,
+): number {
+  const net = wealthMovementNetForAccount(state, accountId, trackingStartDate);
+  return roundMoney(openingBalance + net);
+}
+
+/** Por defecto nómina/ingresos → tarjeta/gastos (por flags o nombre). */
+export function resolveTransferDefaultAccounts(accounts: WealthAccount[]): {
+  fromId?: string;
+  toId?: string;
+} {
+  if (!accounts.length) return {};
+  const tarjeta = accounts.find((a) => /tarjeta/i.test(a.name));
+  const nomina =
+    accounts.find((a) => a.isDefaultIncome) ??
+    accounts.find((a) => /n[oó]mina/i.test(a.name)) ??
+    accounts.find((a) => /imagin/i.test(a.name) && !/tarjeta/i.test(a.name));
+  const gastos =
+    accounts.find((a) => a.isDefaultExpense) ??
+    tarjeta ??
+    accounts.find((a) => a.id !== nomina?.id);
+  return {
+    fromId: nomina?.id ?? accounts[0]?.id,
+    toId: gastos?.id ?? accounts.find((a) => a.id !== nomina?.id)?.id ?? accounts[1]?.id,
+  };
+}
+
+function mergeWealthAccounts(remote: WealthAccount[], local: WealthAccount[]): WealthAccount[] {
+  const byId = new Map<string, WealthAccount>();
+  for (const a of remote) {
+    if (a.id) byId.set(a.id, { ...a });
+  }
+  for (const a of local) {
+    if (!a.id) continue;
+    const prev = byId.get(a.id);
+    if (!prev) {
+      byId.set(a.id, { ...a });
+      continue;
+    }
+    byId.set(a.id, {
+      ...prev,
+      ...a,
+      name: a.name.trim() ? a.name : prev.name,
+      balance: a.balance,
+      openingBalance: a.openingBalance ?? prev.openingBalance,
+      ibanPrefix: a.ibanPrefix ?? prev.ibanPrefix,
+      isDefaultExpense: a.isDefaultExpense ?? prev.isDefaultExpense,
+      isDefaultIncome: a.isDefaultIncome ?? prev.isDefaultIncome,
+      isDefaultInvestment: a.isDefaultInvestment ?? prev.isDefaultInvestment,
+    });
+  }
+  return [...byId.values()].slice(0, 24);
 }
 
 export function daysInMonthKey(monthKey: string): number {
@@ -1218,11 +1449,18 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
   const wealthTransfers = parseWealthTransfers(o.wealthTransfers);
   const wealthBizums = parseWealthBizums(o.wealthBizums);
 
+  const migratedRefs = migrateExcludedCategoryReferences({
+    expenses,
+    subscriptions,
+    plannedExpenses,
+    incomeAdhoc,
+  });
+
   return {
     v: 2,
     categories,
-    expenses,
-    subscriptions,
+    expenses: migratedRefs.expenses,
+    subscriptions: migratedRefs.subscriptions,
     reminders,
     tagBank,
     syncToAccount: Boolean(o.syncToAccount),
@@ -1233,8 +1471,8 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
     chartFilterCategoryId,
     paychecks,
     incomeMonthOverrides: incomeOverridesClean,
-    incomeAdhoc,
-    plannedExpenses,
+    incomeAdhoc: migratedRefs.incomeAdhoc,
+    plannedExpenses: migratedRefs.plannedExpenses,
     plannedExpenseMonthOverrides: plannedOverridesClean,
     investments,
     wealthAccounts,
@@ -1331,10 +1569,11 @@ export function mergeExpenseTrackerRemoteLocal(remote: ExpenseTrackerState, loca
       local.plannedExpenseMonthOverrides ?? [],
     ),
     investments: mergeRows(remote.investments ?? [], local.investments ?? []),
-    wealthAccounts: mergeRows(remote.wealthAccounts ?? [], local.wealthAccounts ?? []),
+    wealthAccounts: mergeWealthAccounts(remote.wealthAccounts ?? [], local.wealthAccounts ?? []),
     wealthTransfers: mergeRows(remote.wealthTransfers ?? [], local.wealthTransfers ?? []),
     wealthBizums: mergeRows(remote.wealthBizums ?? [], local.wealthBizums ?? []),
     patrimonioRealMode: local.patrimonioRealMode,
+    trackingStartDate: local.trackingStartDate ?? remote.trackingStartDate,
   });
 }
 
@@ -1362,6 +1601,8 @@ export function applyExpenseImportReplace(current: ExpenseTrackerState, imported
     wealthAccounts: imported.wealthAccounts ?? [],
     wealthTransfers: imported.wealthTransfers ?? [],
     wealthBizums: imported.wealthBizums ?? [],
+    trackingStartDate: imported.trackingStartDate ?? current.trackingStartDate,
+    patrimonioRealMode: imported.patrimonioRealMode ?? current.patrimonioRealMode,
   });
 }
 
