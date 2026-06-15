@@ -1,0 +1,182 @@
+---
+import AppShell from "../../layouts/AppShell.astro";
+import ToolsPageHeader from "../../components/tools/ToolsPageHeader.astro";
+
+const title = "Cron (crontab)";
+---
+
+<AppShell title={title}>
+  <div data-requires-auth class="hidden"></div>
+  <section class="space-y-8 sm:space-y-10 w-full" data-tools-cron-page>
+    <ToolsPageHeader titleI18nKey="tools.cronTitle" title={title}>
+      <div slot="intro" class="space-y-3 sm:space-y-4">
+        <p data-i18n="tools.cronIntroPara1">
+          Interpreta expresiones de tipo crontab en tu navegador: verás una frase en lenguaje cotidiano (vía cRonstrue) y una lista de próximas
+          fechas calculadas con cron-parser, usando tu zona horaria del sistema.
+        </p>
+        <p data-i18n="tools.cronIntroPara2">
+          Es una herramienta de apoyo y depuración: cada programador (systemd, Kubernetes CronJob, GitHub Actions…) puede interpretar matices distintos
+          (UTC vs local, DST, campos opcionales). Úsala para entender y copiar; valida siempre en el entorno real.
+        </p>
+      </div>
+    </ToolsPageHeader>
+
+    <details class="tool-details group rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-900/35 open:shadow-md">
+      <summary
+        class="cursor-pointer px-5 py-4 sm:px-6 sm:py-4 flex items-center justify-between gap-3 font-semibold text-gray-900 dark:text-gray-100 rounded-2xl"
+      >
+        <span class="min-w-0" data-i18n="tools.cronGuideTitle">Cómo funciona esta herramienta</span>
+        <span class="tool-details-toggle shrink-0 select-none">
+          <span class="group-open:hidden" data-i18n="tools.cronGuideOpen">Mostrar guía</span>
+          <span class="hidden group-open:inline" data-i18n="tools.cronGuideClose">Ocultar</span>
+        </span>
+      </summary>
+      <div class="px-5 pb-5 sm:px-6 sm:pb-6 pt-0 space-y-5 border-t border-gray-200/80 dark:border-gray-800">
+        <div class="rounded-xl bg-white/85 dark:bg-gray-950/55 border border-gray-200/70 dark:border-gray-700/80 px-3 py-3 space-y-2">
+          <p class="m-0 text-xs font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-300" data-i18n="tools.cronGuideBlock1Title">
+            Qué hace cada parte
+          </p>
+          <ul class="m-0 pl-4 space-y-2 text-sm text-gray-600 dark:text-gray-400 list-disc marker:text-violet-400 leading-relaxed">
+            <li data-i18n="tools.cronGuideLi1"></li>
+            <li data-i18n="tools.cronGuideLi2"></li>
+            <li data-i18n="tools.cronGuideLi3"></li>
+          </ul>
+        </div>
+        <details class="tool-details group rounded-xl border border-gray-200/90 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 px-4 py-3 sm:px-4 sm:py-3.5">
+          <summary
+            class="cursor-pointer list-none flex items-center justify-between gap-3 text-xs font-semibold text-gray-800 dark:text-gray-200 select-none"
+          >
+            <span class="min-w-0" data-i18n="tools.cronFieldsSummary">Orden de campos (referencia)</span>
+            <span class="tool-details-toggle shrink-0 text-[11px] font-medium">
+              <span class="group-open:hidden" data-i18n="tools.cronFieldsOpen">Abrir</span>
+              <span class="hidden group-open:inline" data-i18n="tools.cronFieldsClose">Cerrar</span>
+            </span>
+          </summary>
+          <div class="mt-4 space-y-2.5 text-xs text-gray-600 dark:text-gray-400 leading-snug border-t border-gray-200/80 dark:border-gray-800 pt-4">
+            <p class="m-0 font-mono text-[11px] text-gray-800 dark:text-gray-200 bg-gray-100/90 dark:bg-gray-900/60 rounded-lg px-2 py-1.5" data-i18n="tools.cronFieldsExample">
+              * * * * *  →  min hora día_mes mes día_semana
+            </p>
+            <p class="m-0" data-i18n="tools.cronFieldsNote">
+              En entornos Linux clásicos a veces no hay campo de segundos; otros (Quartz, algunos clouds) sí. Esta página acepta el formato que entiende cron-parser: si algo falla, prueba simplificar la expresión.
+            </p>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <div
+      class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 shadow-sm p-5 sm:p-6 md:p-7 space-y-6 sm:space-y-7 dark:[color-scheme:dark]"
+      data-cron-surface
+    >
+      <div
+        class="rounded-xl border border-violet-200/60 dark:border-violet-900/40 bg-gradient-to-r from-violet-500/10 via-white/80 to-indigo-500/5 dark:from-violet-950/30 dark:via-gray-950/40 dark:to-indigo-950/20 px-3 py-2.5 sm:px-4 sm:py-3"
+      >
+        <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3">
+          <span class="text-xs font-semibold uppercase tracking-wide text-violet-900/90 dark:text-violet-200/90 shrink-0" data-i18n="tools.cronStripLabel"
+            >Motor local</span
+          >
+          <p class="m-0 text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-snug min-w-0" data-i18n="tools.cronStripBody">
+            Nada se envía al servidor: la expresión solo vive en esta pestaña hasta que recargues o la borres. Los botones de copiar usan el portapapeles del dispositivo.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid gap-7 lg:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+        <div class="space-y-5 min-w-0">
+          <label class="block space-y-2">
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="tools.cronExprLabel">Expresión</span>
+            <input
+              type="text"
+              data-cron-expr
+              spellcheck="false"
+              autocomplete="off"
+              class="et-field font-mono tracking-tight"
+              placeholder="0 9 * * 1-5"
+            />
+          </label>
+          <p class="m-0 text-xs text-gray-500 dark:text-gray-400 font-mono" data-cron-tz></p>
+          <div>
+            <p class="m-0 mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="tools.cronPresetsLabel">
+              Ejemplos rápidos
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" data-cron-preset="0 9 * * 1-5" class="et-btn-secondary text-xs py-1.5 px-2.5" data-i18n="tools.cronPresetWork9">Lun–vie 9:00</button>
+              <button type="button" data-cron-preset="*/15 * * * *" class="et-btn-secondary text-xs py-1.5 px-2.5" data-i18n="tools.cronPreset15">Cada 15 min</button>
+              <button type="button" data-cron-preset="@daily" class="et-btn-secondary text-xs py-1.5 px-2.5" data-i18n="tools.cronPresetDaily">@daily</button>
+              <button type="button" data-cron-preset="@hourly" class="et-btn-secondary text-xs py-1.5 px-2.5" data-i18n="tools.cronPresetHourly">@hourly</button>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" data-cron-random class="et-btn-accent text-sm" data-i18n="tools.cronRandom">Aleatorio</button>
+            <button type="button" data-cron-copy-expr class="et-btn-secondary text-sm" data-i18n="tools.cronCopyExpr">Copiar expresión</button>
+            <button type="button" data-cron-copy-human class="et-btn-secondary text-sm" data-i18n="tools.cronCopyHuman">Copiar descripción</button>
+          </div>
+          <p class="m-0 min-h-[1.25rem] text-sm text-rose-600 dark:text-rose-400" data-cron-err></p>
+          <div
+            class="rounded-xl border border-indigo-200/70 dark:border-indigo-500/30 bg-gradient-to-br from-indigo-50/90 to-white/70 dark:from-indigo-950/35 dark:to-gray-950/40 p-4 space-y-2 shadow-sm"
+          >
+            <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-indigo-800/90 dark:text-indigo-200/90" data-i18n="tools.cronHumanLabel">
+              En lenguaje natural
+            </p>
+            <p class="m-0 text-sm md:text-base font-medium text-gray-900 dark:text-gray-100 leading-relaxed" data-cron-human></p>
+          </div>
+          <div class="space-y-2">
+            <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="tools.cronNextLabel">
+              Próximas ejecuciones
+            </p>
+            <ul
+              class="m-0 max-h-64 list-none space-y-0.5 overflow-y-auto rounded-xl border border-gray-200/80 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/40 p-2 text-sm font-mono text-gray-800 dark:text-gray-200"
+              data-cron-next
+            >
+            </ul>
+          </div>
+        </div>
+
+        <aside class="space-y-5 rounded-xl border border-gray-200/80 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/25 p-5 sm:p-5">
+          <h2 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100" data-i18n="tools.cronRefTitle">Referencia rápida</h2>
+          <p class="m-0 text-xs text-gray-600 dark:text-gray-400 leading-relaxed" data-i18n="tools.cronRefIntro">
+            Formato habitual (segundo opcional). Los alias @daily, @hourly, etc. los expande el motor antes de calcular.
+          </p>
+          <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800 text-xs bg-white/80 dark:bg-gray-950/50">
+            <table class="w-full border-collapse text-left">
+              <thead class="bg-gray-100/90 dark:bg-gray-900/90">
+                <tr>
+                  <th class="border-b border-gray-200 dark:border-gray-800 px-2 py-1.5 font-semibold text-gray-800 dark:text-gray-200" data-i18n="tools.cronRefColSym"
+                    >Símb.</th
+                  >
+                  <th class="border-b border-gray-200 dark:border-gray-800 px-2 py-1.5 font-semibold text-gray-800 dark:text-gray-200" data-i18n="tools.cronRefColMeaning"
+                    >Significado</th
+                  >
+                </tr>
+              </thead>
+              <tbody class="text-gray-700 dark:text-gray-300">
+                <tr
+                  ><td class="border-b border-gray-100 dark:border-gray-800/80 px-2 py-1 font-mono">*</td><td class="border-b border-gray-100 dark:border-gray-800/80 px-2 py-1" data-i18n="tools.cronRefAny">cualquier valor</td></tr
+                >
+                <tr
+                  ><td class="border-b border-gray-100 dark:border-gray-800/80 px-2 py-1 font-mono">,</td><td class="border-b border-gray-100 dark:border-gray-800/80 px-2 py-1" data-i18n="tools.cronRefList">lista</td></tr
+                >
+                <tr
+                  ><td class="border-b border-gray-100 dark:border-gray-800/80 px-2 py-1 font-mono">-</td><td class="border-b border-gray-100 dark:border-gray-800/80 px-2 py-1" data-i18n="tools.cronRefRange">rango</td></tr
+                >
+                <tr
+                  ><td class="border-b border-gray-100 dark:border-gray-800/80 px-2 py-1 font-mono">/</td><td class="border-b border-gray-100 dark:border-gray-800/80 px-2 py-1" data-i18n="tools.cronRefStep">cada n (paso)</td></tr
+                >
+                <tr
+                  ><td class="border-b border-gray-100 dark:border-gray-800/80 px-2 py-1 font-mono">?</td><td class="border-b border-gray-100 dark:border-gray-800/80 px-2 py-1" data-i18n="tools.cronRefQ">alias de * (Quartz)</td></tr
+                >
+                <tr><td class="px-2 py-1 font-mono">L W #</td><td class="px-2 py-1" data-i18n="tools.cronRefAdv">último día, día laborable, enésimo día…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="rounded-lg border border-amber-200/80 dark:border-amber-900/45 bg-amber-50/85 dark:bg-amber-950/25 px-3 py-2.5">
+            <p class="m-0 text-[11px] leading-relaxed text-amber-950 dark:text-amber-100/95" data-i18n="tools.cronDisclaimer">
+              Cálculo en el navegador con cron-parser y tu zona IANA local. Comprueba siempre en tu scheduler real (UTC vs local, DST).
+            </p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+  <script src="../../scripts/tools/cron-page.ts"></script>
+</AppShell>

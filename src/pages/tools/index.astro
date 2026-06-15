@@ -75,6 +75,13 @@ const tools = [
     badge: "Local",
   },
   {
+    id: "playground",
+    title: "Playground (HTML / CSS / JS)",
+    description: "Vista previa con HTML, CSS y JS opcional (iframe con blob; JS solo si lo activas).",
+    href: "/tools/playground",
+    badge: "Local",
+  },
+  {
     id: "json-format",
     title: "JSON: formatear y validar",
     description: "Pretty-print, minificar y validar sin salir del navegador.",
@@ -103,9 +110,16 @@ const tools = [
     badge: "Local",
   },
   {
+    id: "cron",
+    title: "Cron (crontab)",
+    description: "Crontab en el navegador: texto natural, próximas fechas en tu zona y guía plegable (cron-parser + cRonstrue).",
+    href: "/tools/cron",
+    badge: "Local",
+  },
+  {
     id: "qr-generator",
     title: "Código QR",
-    description: "Texto o URL a QR en canvas, descarga PNG.",
+    description: "URL, Wi‑Fi, vCard o texto; vista previa en vivo, margen y corrección de errores; PNG local.",
     href: "/tools/qr-generator",
     badge: "Local",
   },
@@ -114,48 +128,84 @@ const tools = [
 
 <AppShell title={title}>
   <div data-requires-auth class="hidden"></div>
-  <section class="space-y-6">
-    <header class="space-y-2">
-      <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase">Tools</p>
-      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight">{title}</h1>
-      <p class="m-0 text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-2xl">
+  <section class="space-y-6" data-tools-hub>
+    <header class="space-y-3">
+      <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400 uppercase" data-i18n="tools.hubKicker">
+        Tools
+      </p>
+      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight" data-i18n="tools.hubTitle">{title}</h1>
+      <p class="m-0 text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-2xl leading-relaxed" data-i18n="tools.hubIntro">
         Espacio experimental para probar features “de producto final”. La idea es iterar rápido, medir utilidad y luego decidir qué se queda.
       </p>
+      <p class="m-0 text-xs text-gray-500 dark:text-gray-400 max-w-2xl" data-i18n="tools.hubFavoriteHint">
+        Marca estrellas para fijar accesos: aparecen arriba, en la paleta (Ctrl+K) y en el menú Herramientas de la cabecera.
+      </p>
     </header>
+
+    <div
+      data-tools-hub-favorites-rail
+      class="hidden rounded-2xl border border-indigo-200/60 dark:border-indigo-500/25 bg-gradient-to-br from-indigo-50/80 to-white/60 dark:from-indigo-950/40 dark:to-gray-950/40 p-4 shadow-sm"
+    >
+      <p
+        class="m-0 mb-2 text-[11px] font-semibold uppercase tracking-wide text-indigo-800/90 dark:text-indigo-200/90"
+        data-i18n="tools.hubFavoritesHeading"
+      >
+        Favoritas
+      </p>
+      <div data-tools-hub-favorites-chips class="flex flex-wrap gap-2"></div>
+    </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       {
         tools.map((t) => (
-          <a
-            href={t.href}
-            class="group rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 p-5 no-underline hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors"
+          <article
+            class="group relative rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/70 dark:bg-gray-950/50 p-5 pt-12 shadow-sm hover:shadow-md transition-shadow"
+            data-tool-card
+            data-tool-id={t.id}
           >
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
-                <h2 class="m-0 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-100 truncate">
-                  {t.title}
-                </h2>
-                <p class="mt-1 mb-0 text-sm text-gray-600 dark:text-gray-400">{t.description}</p>
-              </div>
-              <span class="shrink-0 rounded-full border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200">
-                {t.badge}
+            <button
+              type="button"
+              data-tool-star
+              data-tool-id={t.id}
+              aria-pressed="false"
+              class="absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200/90 bg-white/95 text-base text-gray-400 shadow-sm transition hover:border-amber-300/80 hover:bg-amber-50/90 dark:border-gray-700 dark:bg-gray-900/95 dark:text-gray-500 dark:hover:border-amber-500/40 dark:hover:bg-gray-800"
+            >
+              <span class="pointer-events-none" aria-hidden="true">
+                ★
               </span>
-            </div>
-            <div class="mt-4 flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-300">
-              <span>Ir</span>
-              <span class="transition-transform group-hover:translate-x-0.5">→</span>
-            </div>
-          </a>
+            </button>
+            <a
+              href={t.href}
+              class="relative z-10 block no-underline rounded-xl outline-offset-2 hover:bg-gray-50/60 dark:hover:bg-gray-900/30 -m-1 p-1"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0 pr-2">
+                  <h2 class="m-0 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-100 truncate">
+                    {t.title}
+                  </h2>
+                  <p class="mt-1 mb-0 text-sm text-gray-600 dark:text-gray-400">{t.description}</p>
+                </div>
+                <span class="pointer-events-none shrink-0 rounded-full border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/60 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200">
+                  {t.badge}
+                </span>
+              </div>
+              <div class="mt-4 flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-300">
+                <span data-i18n="tools.hubCardGo">Ir</span>
+                <span class="transition-transform group-hover:translate-x-0.5">→</span>
+              </div>
+            </a>
+          </article>
         ))
       }
     </div>
 
     <section class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm p-5 space-y-2">
-      <h2 class="m-0 text-base font-semibold">Nota</h2>
-      <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
-        En esta iteración, las herramientas usan <strong>localStorage</strong> y no están “productizadas”. La intención es validar UX y valor.
+      <h2 class="m-0 text-base font-semibold" data-i18n="tools.hubNoteTitle">Nota</h2>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-i18n="tools.hubNoteBody">
+        En esta iteración las herramientas usan localStorage y no están productizadas: la intención es validar UX y valor.
       </p>
     </section>
   </section>
-</AppShell>
 
+  <script src="../../scripts/tools/tools-hub.ts"></script>
+</AppShell>

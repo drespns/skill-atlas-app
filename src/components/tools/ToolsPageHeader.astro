@@ -1,0 +1,35 @@
+---
+/**
+ * Cabecera reutilizable para `/tools`: enlace al hub (hover tipo footer) + título i18n + intro + acciones opcionales a la derecha (slot `actions`).
+ */
+export interface Props {
+  /** Clave i18n del `<h1>` (p. ej. `tools.cronTitle`). */
+  titleI18nKey: string;
+  /** Texto visible antes de hidratar i18n y para accesibilidad. */
+  title: string;
+  href?: string;
+  /** Clave i18n del enlace «volver al hub» (por defecto `tools.pageHeaderBackHub`). */
+  backI18nKey?: string;
+}
+
+const { titleI18nKey, title, href = "/tools", backI18nKey = "tools.pageHeaderBackHub" } = Astro.props;
+---
+
+<header class="tool-page-header">
+  <div class="tool-page-header__toolbar">
+    <a href={href} class="tool-footer-link" data-i18n={backI18nKey}>← Herramientas</a>
+  </div>
+  <div class="tool-page-header__hero">
+    <div class="tool-page-header__lead">
+      <h1 class="tool-page-header__title m-0 text-3xl md:text-4xl font-semibold tracking-tight text-gray-900 dark:text-gray-100" data-i18n={titleI18nKey}>
+        {title}
+      </h1>
+      <div class="tool-page-header__intro">
+        <slot name="intro" />
+      </div>
+    </div>
+    <div class="tool-page-header__actions">
+      <slot name="actions" />
+    </div>
+  </div>
+</header>

@@ -1,0 +1,79 @@
+---
+import AppShell from "../../layouts/AppShell.astro";
+import ToolsPageHeader from "../../components/tools/ToolsPageHeader.astro";
+
+const title = "Playground (HTML / CSS / JS)";
+---
+
+<AppShell title={title}>
+  <div data-requires-auth class="hidden"></div>
+  <section class="space-y-6 w-full" data-tools-playground-page>
+    <ToolsPageHeader titleI18nKey="tools.playgroundTitle" title={title}>
+      <p slot="intro" class="m-0" data-i18n="tools.playgroundIntro">
+        Monta HTML y CSS en vivo; opcionalmente JavaScript si marcas «Permitir JS». Nada se envía al servidor.
+      </p>
+    </ToolsPageHeader>
+
+    <div class="rounded-xl border border-indigo-200/70 dark:border-indigo-900/50 bg-indigo-50/60 dark:bg-indigo-950/25 px-3 py-2.5 space-y-1">
+      <p class="m-0 text-xs font-semibold text-indigo-900 dark:text-indigo-100" data-i18n="tools.playgroundStripLabel">Vista previa local</p>
+      <p class="m-0 text-xs text-indigo-900/90 dark:text-indigo-100/85 leading-snug" data-i18n="tools.playgroundStripBody">
+        Sin JS: sandbox máximo. Con JS y casilla marcada: allow-scripts sobre blob opaco.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 min-h-0">
+      <div class="space-y-3 min-h-0 flex flex-col">
+        <label class="block space-y-1 flex-1 min-h-0 flex flex-col">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400" data-i18n="tools.playgroundHtmlLabel">HTML (cuerpo)</span>
+          <textarea
+            data-pg-html
+            rows="10"
+            class="et-field et-textarea w-full flex-1 min-h-[8rem]"
+            placeholder="<p>Hola</p>"
+          ></textarea>
+        </label>
+        <label class="block space-y-1 flex-1 min-h-0 flex flex-col">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400" data-i18n="tools.playgroundCssLabel">CSS</span>
+          <textarea
+            data-pg-css
+            rows="8"
+            class="et-field et-textarea w-full flex-1 min-h-[6rem]"
+            placeholder="p { color: teal; }"
+          ></textarea>
+        </label>
+        <label class="block space-y-1 flex-1 min-h-0 flex flex-col">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400" data-i18n="tools.playgroundJsLabel">JavaScript</span>
+          <textarea
+            data-pg-js
+            rows="8"
+            class="et-field et-textarea w-full flex-1 min-h-[6rem]"
+            placeholder={'console.log("JS OK");'}
+          ></textarea>
+        </label>
+        <div class="rounded-xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/90 dark:bg-gray-900/40 px-3 py-2.5 space-y-2">
+          <label class="flex items-start gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              data-pg-allow-js
+              class="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <span class="text-sm text-gray-800 dark:text-gray-200 leading-snug">
+              <span class="font-semibold block" data-i18n="tools.playgroundAllowScripts">Permitir JS en la vista previa (sandbox)</span>
+              <span class="block text-xs text-gray-600 dark:text-gray-400 mt-0.5" data-i18n="tools.playgroundJsHint">Sin marcar esta casilla, el JavaScript del panel no se ejecuta.</span>
+            </span>
+          </label>
+        </div>
+      </div>
+      <div class="flex flex-col gap-2 min-h-0">
+        <span class="text-xs font-semibold text-gray-500 dark:text-gray-400" data-i18n="tools.playgroundPreviewLabel">Vista previa</span>
+        <iframe
+          title="Playground preview"
+          data-pg-frame
+          class="w-full flex-1 min-h-[min(24rem,55vh)] rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950"
+          sandbox=""
+        ></iframe>
+      </div>
+    </div>
+  </section>
+  <script src="../../scripts/tools/playground.ts"></script>
+</AppShell>
