@@ -9,17 +9,27 @@ function isDarkTheme() {
   return document.documentElement.classList.contains("dark");
 }
 
-function syncCalendarTheme(inst: flatpickr.Instance) {
-  inst.calendarContainer.classList.toggle("et-fp-dark", isDarkTheme());
-  inst.calendarContainer.style.zIndex = String(FP_Z_INDEX);
+/** Dentro de `<dialog>` el calendario debe colgar del propio modal (top layer), no de body. */
+function flatpickrAppendTarget(input: HTMLInputElement): HTMLElement {
+  return input.closest("dialog") ?? document.body;
 }
 
-function baseOptions(): Partial<flatpickr.Options.Options> {
+function syncCalendarTheme(inst: flatpickr.Instance) {
+  const cal = inst.calendarContainer;
+  cal.classList.add("et-fp-calendar");
+  const dark = isDarkTheme();
+  cal.classList.toggle("et-fp-dark", dark);
+  cal.classList.toggle("et-fp-light", !dark);
+  cal.style.zIndex = String(FP_Z_INDEX);
+}
+
+function baseOptions(input: HTMLInputElement): Partial<flatpickr.Options.Options> {
+  const appendTo = flatpickrAppendTarget(input);
   return {
     locale: Spanish,
     allowInput: true,
     disableMobile: true,
-    appendTo: document.body,
+    appendTo,
     onReady(_d, _s, inst) {
       syncCalendarTheme(inst);
     },
@@ -31,7 +41,7 @@ function baseOptions(): Partial<flatpickr.Options.Options> {
 
 function bindFlatpickr(input: HTMLInputElement, extra?: Partial<flatpickr.Options.Options>) {
   flatpickr(input, {
-    ...baseOptions(),
+    ...baseOptions(input),
     dateFormat: "Y-m-d",
     altInput: true,
     altFormat: "d/m/Y",
@@ -48,7 +58,7 @@ function bindMonthPicker(input: HTMLInputElement) {
     if (v) input.value = v;
   }
   flatpickr(input, {
-    ...baseOptions(),
+    ...baseOptions(input),
     dateFormat: "Y-m",
     altInput: true,
     altFormat: "F \\de Y",
@@ -76,10 +86,15 @@ export function refreshExpenseDatePicker(input: HTMLInputElement | null | undefi
   if (!input) return;
   const val = (iso ?? input.value).slice(0, 10);
   if (val.length === 10) input.value = val;
+  const wantAppend = flatpickrAppendTarget(input);
   const fp = (input as FpInput)._flatpickr;
-  if (fp) {
-    if (val.length === 10) fp.setDate(val, false);
-    syncCalendarTheme(fp);
+  if (fp && fp.calendarContainer.parentElement !== wantAppend) {
+    fp.destroy();
+  }
+  const fpLive = (input as FpInput)._flatpickr;
+  if (fpLive) {
+    if (val.length === 10) fpLive.setDate(val, false);
+    syncCalendarTheme(fpLive);
     return;
   }
   bindFlatpickr(input);

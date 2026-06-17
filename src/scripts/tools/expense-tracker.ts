@@ -49,6 +49,8 @@ import {
   monthsForRecurringRange,
   totalIncomeInPeriod,
   totalExpensesInPeriod,
+  periodMarginSnapshot,
+  periodFixedDiscretionarySplit,
   formatIbanDisplay,
   formatEurEs,
   formatChartNumberEs,
@@ -87,6 +89,7 @@ import {
   renderPaycheckCards,
   renderPlannedCards,
 } from "./expense-tracker-recurring-ui";
+import { bindScenarioUi, renderScenarioSection, type ScenarioUiDeps } from "./expense-tracker-scenarios-ui";
 
 echarts.use([BarChart, LineChart, PieChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer]);
 
@@ -169,6 +172,8 @@ let paycheckSortDesc = true;
 let editingPlannedId: string | null = null;
 let editingPaycheckId: string | null = null;
 let editingInvId: string | null = null;
+let editingTransferId: string | null = null;
+let editingBizumId: string | null = null;
 
 let state: ExpenseTrackerState = defaultExpenseTrackerState();
 const chartInstances: echarts.ECharts[] = [];
@@ -715,6 +720,16 @@ function adjustWealthBalance(accountId: string | undefined, deltaEur: number) {
   state.wealthAccounts![idx] = row;
 }
 
+function applyTransferBalanceEffect(t: WealthTransfer, sign: 1 | -1) {
+  adjustWealthBalance(t.fromAccountId, sign * -t.amount);
+  adjustWealthBalance(t.toAccountId, sign * t.amount);
+}
+
+function applyBizumBalanceEffect(b: WealthBizum, sign: 1 | -1) {
+  const delta = b.direction === "sent" ? -b.amount : b.amount;
+  adjustWealthBalance(b.accountId, sign * delta);
+}
+
 function expenseAccountEffect(row: ExpenseRow | null, sign: 1 | -1) {
   if (!row || row.confirmed === false || row.amount <= 0) return;
   const id = row.wealthAccountId ?? defaultWealthAccountId(state.wealthAccounts ?? [], "expense");
@@ -1198,6 +1213,18 @@ function openTransfersHistoryDialog(root: HTMLElement) {
         note.textContent = t.note;
         card.appendChild(note);
       }
+      const actions = document.createElement("div");
+      actions.className = "flex justify-end pt-1";
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "et-btn-secondary text-xs py-1 px-2.5";
+      editBtn.textContent = "Editar";
+      editBtn.addEventListener("click", () => {
+        dlg.close();
+        openTransferDialog(root, t.id);
+      });
+      actions.appendChild(editBtn);
+      card.appendChild(actions);
       listEl.appendChild(card);
     }
   }
@@ -1217,7 +1244,7 @@ function readBizumDirection(root: HTMLElement): WealthBizumDirection {
   return checked?.value === "received" ? "received" : "sent";
 }
 
-function syncBizumDialogLabels(root: HTMLElement) {
+function syncBizumDialogLabels(root: HTMLElement, opts?: { keepAccountId?: string }) {
   const dir = readBizumDirection(root);
   const lab = root.querySelector<HTMLElement>("[data-et-bizum-account-label]");
   if (lab) {
@@ -1227,6 +1254,11 @@ function syncBizumDialogLabels(root: HTMLElement) {
   const accounts = state.wealthAccounts ?? [];
   const sel = root.querySelector<HTMLSelectElement>("[data-et-bizum-account]");
   if (sel && accounts.length) {
+    const keep = opts?.keepAccountId;
+    if (keep && accounts.some((a) => a.id === keep)) {
+      fillTransferAccountSelect(sel, keep);
+      return;
+    }
     const def =
       dir === "sent"
         ? defaultWealthAccountId(accounts, "expense")
@@ -1235,24 +1267,65 @@ function syncBizumDialogLabels(root: HTMLElement) {
   }
 }
 
-function openBizumDialog(root: HTMLElement) {
+function syncTransferDialogChrome(root: HTMLElement) {
+  const title = root.querySelector<HTMLElement>("[data-et-transfer-title]");
+  const saveBtn = root.querySelector<HTMLButtonElement>("[data-et-transfer-save]");
+  if (title) title.textContent = editingTransferId ? "Editar traspaso" : "Traspaso entre cuentas";
+  if (saveBtn) saveBtn.textContent = editingTransferId ? "Guardar cambios" : "Registrar traspaso";
+}
+
+function syncBizumDialogChrome(root: HTMLElement) {
+  const title = root.querySelector<HTMLElement>("[data-et-bizum-title]");
+  const saveBtn = root.querySelector<HTMLButtonElement>("[data-et-bizum-save]");
+  if (title) title.textContent = editingBizumId ? "Editar bizum" : "Bizum";
+  if (saveBtn) saveBtn.textContent = editingBizumId ? "Guardar cambios" : "Registrar bizum";
+}
+
+function resetTransferDialog(root: HTMLElement) {
+  editingTransferId = null;
+  syncTransferDialogChrome(root);
+  root.querySelector<HTMLDialogElement>("[data-et-dlg-transfer]")?.close();
+}
+
+function resetBizumDialog(root: HTMLElement) {
+  editingBizumId = null;
+  syncBizumDialogChrome(root);
+  root.querySelector<HTMLDialogElement>("[data-et-dlg-bizum]")?.close();
+}
+
+function openBizumDialog(root: HTMLElement, bizumId?: string) {
   const accounts = state.wealthAccounts ?? [];
   if (!accounts.length) {
     void showAlertDialog(root, "Añade al menos una cuenta en Patrimonio.");
     return;
   }
   const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-bizum]");
+  const acctSel = root.querySelector<HTMLSelectElement>("[data-et-bizum-account]");
   const amtEl = root.querySelector<HTMLInputElement>("[data-et-bizum-amount]");
   const dateEl = root.querySelector<HTMLInputElement>("[data-et-bizum-date]");
   const noteEl = root.querySelector<HTMLInputElement>("[data-et-bizum-note]");
-  if (!dlg || !amtEl || !dateEl || !noteEl) return;
-  const sentRadio = root.querySelector<HTMLInputElement>('input[data-et-bizum-direction][value="sent"]');
-  if (sentRadio) sentRadio.checked = true;
-  syncBizumDialogLabels(root);
-  amtEl.value = "";
-  noteEl.value = "";
+  if (!dlg || !acctSel || !amtEl || !dateEl || !noteEl) return;
+  editingBizumId = bizumId ?? null;
+  const existing = bizumId ? (state.wealthBizums ?? []).find((b) => b.id === bizumId) : undefined;
+  if (existing) {
+    const dirRadio = root.querySelector<HTMLInputElement>(
+      `input[data-et-bizum-direction][value="${existing.direction}"]`,
+    );
+    if (dirRadio) dirRadio.checked = true;
+    syncBizumDialogLabels(root, { keepAccountId: existing.accountId });
+    amtEl.value = String(existing.amount);
+    noteEl.value = existing.note ?? "";
+    refreshExpenseDatePicker(dateEl, existing.date.slice(0, 10));
+  } else {
+    const sentRadio = root.querySelector<HTMLInputElement>('input[data-et-bizum-direction][value="sent"]');
+    if (sentRadio) sentRadio.checked = true;
+    syncBizumDialogLabels(root);
+    amtEl.value = "";
+    noteEl.value = "";
+    refreshExpenseDatePicker(dateEl, todayIso());
+  }
+  syncBizumDialogChrome(root);
   dlg.showModal();
-  refreshExpenseDatePicker(dateEl, todayIso());
 }
 
 function saveBizumFromDialog(root: HTMLElement) {
@@ -1278,19 +1351,54 @@ function saveBizumFromDialog(root: HTMLElement) {
     return;
   }
   const rounded = roundMoney(amount);
-  adjustWealthBalance(accountId, direction === "sent" ? -rounded : rounded);
-  const row: WealthBizum = {
-    id: makeId(),
-    date,
-    direction,
-    accountId,
-    amount: rounded,
-    note: noteEl?.value?.trim() || undefined,
-  };
-  state.wealthBizums = [...(state.wealthBizums ?? []), row].slice(0, 500);
-  root.querySelector<HTMLDialogElement>("[data-et-dlg-bizum]")?.close();
+  const note = noteEl?.value?.trim() || undefined;
+
+  if (editingBizumId) {
+    const idx = (state.wealthBizums ?? []).findIndex((b) => b.id === editingBizumId);
+    if (idx < 0) {
+      editingBizumId = null;
+      syncBizumDialogChrome(root);
+      void showAlertDialog(root, "No se encontró el bizum a editar.");
+      return;
+    }
+    const old = state.wealthBizums![idx]!;
+    applyBizumBalanceEffect(old, -1);
+    const updated: WealthBizum = {
+      ...old,
+      date,
+      direction,
+      accountId,
+      amount: rounded,
+      note,
+    };
+    applyBizumBalanceEffect(updated, 1);
+    state.wealthBizums![idx] = updated;
+    editingBizumId = null;
+    syncBizumDialogChrome(root);
+  } else {
+    applyBizumBalanceEffect(
+      { id: "", date, direction, accountId, amount: rounded, note },
+      1,
+    );
+    const row: WealthBizum = {
+      id: makeId(),
+      date,
+      direction,
+      accountId,
+      amount: rounded,
+      note,
+    };
+    state.wealthBizums = [...(state.wealthBizums ?? []), row].slice(0, 500);
+  }
   persist();
-  renderAll(root);
+  amtEl.value = "";
+  noteEl.value = "";
+  updateWealthBalanceDisplays(root);
+  updateBizumsHistoryButton(root);
+  renderPatrimonioKpi(root);
+  renderCashAvailableKpi(root);
+  refreshBizumChart(root);
+  amtEl.focus();
 }
 
 function openBizumsHistoryDialog(root: HTMLElement) {
@@ -1337,6 +1445,18 @@ function openBizumsHistoryDialog(root: HTMLElement) {
         note.textContent = b.note;
         card.appendChild(note);
       }
+      const actions = document.createElement("div");
+      actions.className = "flex justify-end pt-1";
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "et-btn-secondary text-xs py-1 px-2.5";
+      editBtn.textContent = "Editar";
+      editBtn.addEventListener("click", () => {
+        dlg.close();
+        openBizumDialog(root, b.id);
+      });
+      actions.appendChild(editBtn);
+      card.appendChild(actions);
       listEl.appendChild(card);
     }
   }
@@ -2843,7 +2963,7 @@ function fillTransferAccountSelect(sel: HTMLSelectElement, selectedId?: string) 
   if (selectedId && accounts.some((a) => a.id === selectedId)) sel.value = selectedId;
 }
 
-function openTransferDialog(root: HTMLElement) {
+function openTransferDialog(root: HTMLElement, transferId?: string) {
   const accounts = state.wealthAccounts ?? [];
   if (accounts.length < 2) {
     void showAlertDialog(root, "Necesitas al menos dos cuentas para registrar un traspaso.");
@@ -2856,14 +2976,24 @@ function openTransferDialog(root: HTMLElement) {
   const dateEl = root.querySelector<HTMLInputElement>("[data-et-transfer-date]");
   const noteEl = root.querySelector<HTMLInputElement>("[data-et-transfer-note]");
   if (!dlg || !fromSel || !toSel || !amtEl || !dateEl || !noteEl) return;
-  const { fromId, toId } = resolveTransferDefaultAccounts(accounts);
-  fillTransferAccountSelect(fromSel, fromId ?? accounts[0]?.id);
-  fillTransferAccountSelect(toSel, toId ?? accounts[1]?.id ?? accounts[0]?.id);
-  amtEl.value = "";
-  dateEl.value = todayIso();
-  noteEl.value = "";
+  editingTransferId = transferId ?? null;
+  const existing = transferId ? (state.wealthTransfers ?? []).find((t) => t.id === transferId) : undefined;
+  if (existing) {
+    fillTransferAccountSelect(fromSel, existing.fromAccountId);
+    fillTransferAccountSelect(toSel, existing.toAccountId);
+    amtEl.value = String(existing.amount);
+    noteEl.value = existing.note ?? "";
+    refreshExpenseDatePicker(dateEl, existing.date.slice(0, 10));
+  } else {
+    const { fromId, toId } = resolveTransferDefaultAccounts(accounts);
+    fillTransferAccountSelect(fromSel, fromId ?? accounts[0]?.id);
+    fillTransferAccountSelect(toSel, toId ?? accounts[1]?.id ?? accounts[0]?.id);
+    amtEl.value = "";
+    noteEl.value = "";
+    refreshExpenseDatePicker(dateEl, todayIso());
+  }
+  syncTransferDialogChrome(root);
   dlg.showModal();
-  refreshExpenseDatePicker(dateEl, todayIso());
 }
 
 function saveTransferFromDialog(root: HTMLElement) {
@@ -2890,17 +3020,45 @@ function saveTransferFromDialog(root: HTMLElement) {
     return;
   }
   const rounded = Math.round(amount * 100) / 100;
-  adjustWealthBalance(fromId, -rounded);
-  adjustWealthBalance(toId, rounded);
-  const transfer: WealthTransfer = {
-    id: makeId(),
-    date,
-    fromAccountId: fromId,
-    toAccountId: toId,
-    amount: rounded,
-    note: noteEl?.value?.trim() || undefined,
-  };
-  state.wealthTransfers = [...(state.wealthTransfers ?? []), transfer].slice(0, 500);
+  const note = noteEl?.value?.trim() || undefined;
+
+  if (editingTransferId) {
+    const idx = (state.wealthTransfers ?? []).findIndex((t) => t.id === editingTransferId);
+    if (idx < 0) {
+      editingTransferId = null;
+      syncTransferDialogChrome(root);
+      void showAlertDialog(root, "No se encontró el traspaso a editar.");
+      return;
+    }
+    const old = state.wealthTransfers![idx]!;
+    applyTransferBalanceEffect(old, -1);
+    const updated: WealthTransfer = {
+      ...old,
+      date,
+      fromAccountId: fromId,
+      toAccountId: toId,
+      amount: rounded,
+      note,
+    };
+    applyTransferBalanceEffect(updated, 1);
+    state.wealthTransfers![idx] = updated;
+    editingTransferId = null;
+    syncTransferDialogChrome(root);
+  } else {
+    applyTransferBalanceEffect(
+      { id: "", date, fromAccountId: fromId, toAccountId: toId, amount: rounded, note },
+      1,
+    );
+    const transfer: WealthTransfer = {
+      id: makeId(),
+      date,
+      fromAccountId: fromId,
+      toAccountId: toId,
+      amount: rounded,
+      note,
+    };
+    state.wealthTransfers = [...(state.wealthTransfers ?? []), transfer].slice(0, 500);
+  }
   persist();
   amtEl.value = "";
   noteEl.value = "";
@@ -3095,9 +3253,25 @@ function padExpenseSeriesToMonths(
   return { seriesEur: pick(seriesEur), seriesUsd: pick(seriesUsd), seriesUnified: pick(seriesUnified) };
 }
 
+function disposeChartOnEl(el: HTMLElement) {
+  const byDom = echarts.getInstanceByDom(el);
+  if (!byDom) return;
+  byDom.dispose();
+  const idx = chartInstances.indexOf(byDom);
+  if (idx >= 0) chartInstances.splice(idx, 1);
+}
+
+function refreshBizumChart(root: HTMLElement) {
+  const el = root.querySelector<HTMLElement>("[data-et-chart-bizums]");
+  if (!el) return;
+  disposeChartOnEl(el);
+  renderBizumChart(root);
+}
+
 function renderBizumChart(root: HTMLElement) {
   const elBizums = root.querySelector<HTMLElement>("[data-et-chart-bizums]");
   if (!elBizums) return;
+  disposeChartOnEl(elBizums);
   const from = effectivePeriodStart(state, state.period);
   const totals = computeBizumTotalsForPeriod(state.wealthBizums ?? [], from);
   const bizOpt: echarts.EChartsCoreOption = {
@@ -3149,8 +3323,9 @@ function renderCharts(root: HTMLElement) {
   const elBar = root.querySelector<HTMLElement>("[data-et-chart-bar]");
   const elPieEur = root.querySelector<HTMLElement>("[data-et-chart-pie-eur]");
   const elPieUsd = root.querySelector<HTMLElement>("[data-et-chart-pie-usd]");
-  const elTags = root.querySelector<HTMLElement>("[data-et-chart-tags]");
   const elDow = root.querySelector<HTMLElement>("[data-et-chart-dow]");
+  const elPeriodMargin = root.querySelector<HTMLElement>("[data-et-chart-period-margin]");
+  const elFixedSplit = root.querySelector<HTMLElement>("[data-et-chart-fixed-split]");
   const elBalance = root.querySelector<HTMLElement>("[data-et-chart-balance]");
   const elBizums = root.querySelector<HTMLElement>("[data-et-chart-bizums]");
   const rowPies = root.querySelector<HTMLElement>("[data-et-chart-pies-row]");
@@ -3510,35 +3685,6 @@ function renderCharts(root: HTMLElement) {
     elPieEur.innerHTML = "";
   }
 
-  if (elTags) {
-    const tagRows = tagTotalsForChart(exChart, mode, fx);
-    const tagsOpt: echarts.EChartsCoreOption = {
-      title: {
-        text: chartFid ? "Etiquetas (categoría filtrada)" : "Top etiquetas (reparto si hay varias en un gasto)",
-        left: 0,
-        top: 4,
-        textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
-      },
-      tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, formatter: chartAxisTooltip },
-      grid: { left: 8, right: 16, top: 44, bottom: 8, containLabel: true },
-      xAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), formatter: (v: number) => fmtNumEs(v) } },
-      yAxis: {
-        type: "category",
-        data: tagRows.map((r) => r.name),
-        axisLabel: { color: textMuted(), width: 110, overflow: "truncate" },
-        inverse: true,
-      },
-      series: [
-        {
-          type: "bar",
-          data: tagRows.map((r) => r.value),
-          itemStyle: { color: "#818cf8", borderRadius: [0, 4, 4, 0] },
-        },
-      ],
-    };
-    pushChart(elTags, tagRows.length ? tagsOpt : { ...tagsOpt, graphic: emptyGraphic("Sin datos en el período") });
-  }
-
   if (elDow) {
     const dlabels = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
     const eurD = new Array(7).fill(0) as number[];
@@ -3556,40 +3702,67 @@ function renderCharts(root: HTMLElement) {
         uniD[wd] += e.currency === "USD" ? a : convertAmount(a, "EUR", "USD", fx);
       }
     }
+    const toPct = (vals: number[]) => {
+      const sum = vals.reduce((x, y) => x + y, 0);
+      if (sum <= 0) return vals.map(() => 0);
+      return vals.map((v) => Math.round((v / sum) * 1000) / 10);
+    };
+    const eurPct = toPct(eurD);
+    const usdPct = toPct(usdD);
+    const uniPct = toPct(uniD);
+    const dowTooltip = (params: unknown) => {
+      const rows = Array.isArray(params) ? params : [params];
+      if (!rows.length) return "";
+      const r = rows[0] as { name?: string; value?: number; seriesName?: string; marker?: string };
+      const idx = dlabels.indexOf(String(r.name ?? ""));
+      const abs =
+        mode === "mixed"
+          ? `${fmtEur(eurD[idx] ?? 0)} + ${fmtNumEs(usdD[idx] ?? 0)} $`
+          : fmtEur(uniD[idx] ?? 0);
+      return `${r.marker ?? ""} ${r.name ?? ""}: ${Number(r.value ?? 0).toFixed(1)}% (${abs})`;
+    };
     let dowOpt: echarts.EChartsCoreOption;
     if (mode === "mixed") {
       dowOpt = {
         title: {
-          text: chartFid ? "Por día de semana (filtrado)" : "Por día de la semana",
+          text: chartFid ? "Reparto por día (%) · filtrado" : "Reparto por día de la semana (%)",
           left: 0,
           top: 4,
           textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
         },
-        tooltip: { trigger: "axis", formatter: chartAxisTooltip },
+        tooltip: { trigger: "axis", formatter: dowTooltip },
         legend: { bottom: 0, textStyle: { color: textMuted() } },
         grid: { left: 36, right: 12, top: 44, bottom: 40 },
         xAxis: { type: "category", data: dlabels, axisLabel: { color: textMuted() } },
-        yAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), formatter: (v: number) => fmtNumEs(v) } },
+        yAxis: {
+          type: "value",
+          max: 100,
+          splitLine: { lineStyle: { color: borderSubtle() } },
+          axisLabel: { color: textMuted(), formatter: (v: number) => `${v}%` },
+        },
         series: [
-          { name: "EUR", type: "bar", data: eurD, itemStyle: { color: "#34d399" } },
-          { name: "USD", type: "bar", data: usdD, itemStyle: { color: "#60a5fa" } },
+          { name: "EUR", type: "bar", data: eurPct, itemStyle: { color: "#34d399" } },
+          { name: "USD", type: "bar", data: usdPct, itemStyle: { color: "#60a5fa" } },
         ],
       };
     } else {
       dowOpt = {
         title: {
-          text:
-            (chartFid ? "Por día de semana (filtrado) · " : "Por día de la semana · ") +
-            (mode === "unify_eur" ? "€" : "$"),
+          text: chartFid ? "Reparto por día (%) · filtrado" : "Reparto por día de la semana (%)",
           left: 0,
           top: 4,
           textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
         },
-        tooltip: { trigger: "axis", formatter: chartAxisTooltip },
+        tooltip: { trigger: "axis", formatter: dowTooltip },
         grid: { left: 36, right: 12, top: 44, bottom: 8 },
         xAxis: { type: "category", data: dlabels, axisLabel: { color: textMuted() } },
-        yAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), formatter: (v: number) => fmtNumEs(v) } },
-        series: [{ type: "bar", data: uniD, itemStyle: { color: "#6366f1" } }],
+        yAxis: {
+          type: "value",
+          max: 100,
+          splitLine: { lineStyle: { color: borderSubtle() } },
+          axisLabel: { color: textMuted(), formatter: (v: number) => `${v}%` },
+        },
+        series: [{ type: "bar", data: uniPct, itemStyle: { color: "#6366f1" } }],
       };
     }
     const dowSum =
@@ -3597,6 +3770,81 @@ function renderCharts(root: HTMLElement) {
         ? eurD.reduce((x, y) => x + y, 0) + usdD.reduce((x, y) => x + y, 0)
         : uniD.reduce((x, y) => x + y, 0);
     pushChart(elDow, dowSum > 0 ? dowOpt : { ...dowOpt, graphic: emptyGraphic("Sin datos en el período") });
+  }
+
+  if (elPeriodMargin) {
+    const snap = periodMarginSnapshot(state, state.period);
+    const saved = Math.max(0, snap.marginPct);
+    const spent = snap.income > 0 ? Math.max(0, 100 - saved) : 0;
+    const marginOpt: echarts.EChartsCoreOption = {
+      title: {
+        text: "Margen del período",
+        left: 0,
+        top: 4,
+        textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
+      },
+      tooltip: {
+        trigger: "item",
+        formatter: (p: unknown) => {
+          const row = p as { name?: string; value?: number };
+          const v = Number(row.value ?? 0);
+          return `${row.name ?? ""}: ${v.toFixed(1)}%`;
+        },
+      },
+      series: [
+        {
+          type: "pie",
+          radius: ["48%", "72%"],
+          center: ["50%", "56%"],
+          label: {
+            show: true,
+            position: "center",
+            formatter: () => (snap.income > 0 ? `${snap.marginPct.toFixed(1)}%` : "—"),
+            fontSize: 22,
+            fontWeight: 700,
+            color: textPrimary(),
+          },
+          data:
+            snap.income > 0
+              ? [
+                  { name: "Ahorro", value: saved, itemStyle: { color: "#22c55e" } },
+                  { name: "Gastado", value: spent, itemStyle: { color: "#fb923c" } },
+                ]
+              : [{ name: "Sin ingresos", value: 1, itemStyle: { color: "#94a3b8" } }],
+        },
+      ],
+    };
+    pushChart(
+      elPeriodMargin,
+      snap.income > 0 ? marginOpt : { ...marginOpt, graphic: emptyGraphic("Sin ingresos en el período") },
+    );
+  }
+
+  if (elFixedSplit) {
+    const split = periodFixedDiscretionarySplit(state, state.period);
+    const total = split.fixed + split.discretionary;
+    const fixedOpt: echarts.EChartsCoreOption = {
+      title: {
+        text: "Fijos vs discrecional",
+        left: 0,
+        top: 4,
+        textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
+      },
+      tooltip: { trigger: "item", formatter: chartPieTooltip },
+      series: [
+        {
+          type: "pie",
+          radius: ["42%", "68%"],
+          center: ["50%", "54%"],
+          data: [
+            { name: "Fijos (subs + previstos)", value: split.fixed, itemStyle: { color: "#818cf8" } },
+            { name: "Discrecional", value: split.discretionary, itemStyle: { color: "#f472b6" } },
+          ],
+          label: { color: textMuted(), fontSize: 11 },
+        },
+      ],
+    };
+    pushChart(elFixedSplit, total > 0 ? fixedOpt : { ...fixedOpt, graphic: emptyGraphic("Sin gastos en el período") });
   }
 
   const elYearProj = root.querySelector<HTMLElement>("[data-et-chart-year-proj]");
@@ -3694,7 +3942,7 @@ function renderCharts(root: HTMLElement) {
   resizeObserver = new ResizeObserver(() => {
     for (const c of chartInstances) c.resize();
   });
-  [elLine, elBar, elBalance, elPieEur, elPieUsd, elTags, elDow, elYearProj, elBizums].forEach(
+  [elLine, elBar, elBalance, elPieEur, elPieUsd, elDow, elPeriodMargin, elFixedSplit, elYearProj, elBizums].forEach(
     (el) => el && resizeObserver!.observe(el),
   );
 }
@@ -3957,6 +4205,20 @@ function updateE2ePassphraseHint(root: HTMLElement) {
   el.classList.toggle("hidden", !show);
 }
 
+function scenarioUiDeps(): ScenarioUiDeps {
+  return {
+    getState: () => state,
+    setState: (s) => {
+      state = s;
+    },
+    persist,
+    renderAll,
+    showConfirmDialog,
+    fillCategorySelect,
+    makeId,
+  };
+}
+
 function renderAll(root: HTMLElement) {
   state.chartMoneyMode = "unify_eur";
   const sync = root.querySelector<HTMLInputElement>("[data-et-sync]");
@@ -3988,6 +4250,7 @@ function renderAll(root: HTMLElement) {
   renderInvestments(root);
   renderPlannedExpenses(root);
   renderPaychecks(root);
+  renderScenarioSection(root, scenarioUiDeps());
   renderExpenseTable(root);
   renderIncomeTable(root);
   renderReminders(root);
@@ -4102,17 +4365,22 @@ function wire(root: HTMLElement) {
     openBizumDialog(root);
   });
   root.querySelector<HTMLButtonElement>("[data-et-bizum-save]")?.addEventListener("click", () => saveBizumFromDialog(root));
-  root.querySelector<HTMLButtonElement>("[data-et-bizum-cancel]")?.addEventListener("click", () =>
-    root.querySelector<HTMLDialogElement>("[data-et-dlg-bizum]")?.close(),
-  );
+  root.querySelector<HTMLButtonElement>("[data-et-bizum-cancel]")?.addEventListener("click", () => resetBizumDialog(root));
   root.querySelectorAll<HTMLInputElement>("input[data-et-bizum-direction]").forEach((el) => {
-    el.addEventListener("change", () => syncBizumDialogLabels(root));
+    el.addEventListener("change", () => {
+      if (editingBizumId) {
+        const cur = root.querySelector<HTMLSelectElement>("[data-et-bizum-account]")?.value;
+        syncBizumDialogLabels(root, cur ? { keepAccountId: cur } : undefined);
+      } else {
+        syncBizumDialogLabels(root);
+      }
+    });
   });
   root.querySelector<HTMLButtonElement>("[data-et-transfer-save]")?.addEventListener("click", () =>
     saveTransferFromDialog(root),
   );
   root.querySelector<HTMLButtonElement>("[data-et-transfer-cancel]")?.addEventListener("click", () =>
-    root.querySelector<HTMLDialogElement>("[data-et-dlg-transfer]")?.close(),
+    resetTransferDialog(root),
   );
 
   root.querySelector<HTMLButtonElement>("[data-et-wealth-add]")?.addEventListener("click", () => {
@@ -4486,6 +4754,8 @@ function wire(root: HTMLElement) {
     if (typeof Notification === "undefined") return;
     await Notification.requestPermission();
   });
+
+  bindScenarioUi(root, scenarioUiDeps());
 
   root.dataset.etBound = "1";
   state = loadExpenseTrackerFromStorage();
