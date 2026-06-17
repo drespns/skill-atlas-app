@@ -39,12 +39,19 @@ function baseOptions(input: HTMLInputElement): Partial<flatpickr.Options.Options
   };
 }
 
+function fpOnChange(input: HTMLInputElement) {
+  return () => {
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+}
+
 function bindFlatpickr(input: HTMLInputElement, extra?: Partial<flatpickr.Options.Options>) {
   flatpickr(input, {
     ...baseOptions(input),
     dateFormat: "Y-m-d",
     altInput: true,
     altFormat: "d/m/Y",
+    onChange: fpOnChange(input),
     ...extra,
   });
 }
@@ -63,6 +70,7 @@ function bindMonthPicker(input: HTMLInputElement) {
     altInput: true,
     altFormat: "F \\de Y",
     defaultDate: /^\d{4}-\d{2}$/.test(input.value) ? `${input.value}-01` : undefined,
+    onChange: fpOnChange(input),
   });
 }
 

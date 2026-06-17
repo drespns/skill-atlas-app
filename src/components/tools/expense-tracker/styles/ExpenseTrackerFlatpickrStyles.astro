@@ -6,6 +6,36 @@
     box-shadow: 0 10px 40px rgb(15 23 42 / 0.12);
     font-family: inherit;
   }
+  .flatpickr-calendar.et-fp-calendar .flatpickr-months {
+    min-height: 2.75rem;
+    align-items: center;
+  }
+  .flatpickr-calendar.et-fp-calendar .flatpickr-month {
+    height: auto;
+    overflow: visible;
+  }
+  .flatpickr-calendar.et-fp-calendar .flatpickr-current-month {
+    position: relative;
+    left: 0;
+    width: 100%;
+    padding: 0.4rem 0 0.35rem;
+    font-size: 1rem !important;
+    line-height: 1.3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+  }
+  .flatpickr-calendar.et-fp-calendar .flatpickr-current-month .flatpickr-monthDropdown-months,
+  .flatpickr-calendar.et-fp-calendar .flatpickr-current-month .numInputWrapper input.cur-year {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  .flatpickr-calendar.et-fp-calendar .flatpickr-current-month .numInputWrapper {
+    width: 4.25rem;
+  }
   .flatpickr-calendar.et-fp-calendar.et-fp-light {
     background: rgb(255 255 255);
     color: rgb(17 24 39);

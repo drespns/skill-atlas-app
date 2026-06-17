@@ -79,7 +79,7 @@ import {
   type WealthBizumDirection,
   type ExpenseCategory,
 } from "@lib/tools-expense-tracker";
-import { initExpenseDatePickers, readDateFieldValue, readMonthFieldValue, refreshExpenseDatePicker } from "./expense-tracker-dates";
+import { initExpenseDatePickers, initExpenseMonthPickers, readDateFieldValue, readMonthFieldValue, refreshExpenseDatePicker } from "./expense-tracker-dates";
 import { layoutTreemap } from "@lib/treemap-layout";
 import { isExpenseEncryptedEnvelope, openExpenseEnvelope, sealExpenseState } from "@lib/tools-expense-tracker-crypto";
 import type { EncryptedExpenseEnvelope } from "@lib/tools-expense-tracker-crypto";
@@ -1107,12 +1107,7 @@ function renderWealthAccounts(root: HTMLElement) {
       val.dataset.wealthBalanceDisplay = a.id;
       val.textContent = fmtEur(a.balance);
       disp.appendChild(val);
-      const recon = document.createElement("button");
-      recon.type = "button";
-      recon.dataset.wealthReconcile = a.id;
-      recon.className = "et-btn-secondary text-xs py-2";
-      recon.textContent = "Reconciliar saldo";
-      balRow.append(disp, recon);
+      balRow.appendChild(disp);
       if (state.trackingStartDate) {
         const openLab = document.createElement("label");
         openLab.className = "flex-1 min-w-[10rem] space-y-1";
@@ -1167,18 +1162,35 @@ function updateTransfersHistoryButton(root: HTMLElement) {
 
 function openTransfersHistoryDialog(root: HTMLElement) {
   const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-transfers-history]");
+  if (!dlg) return;
+  const monthEl = root.querySelector<HTMLInputElement>("[data-et-transfers-history-month]");
+  if (monthEl && !readMonthFieldValue(monthEl)) {
+    monthEl.value = defaultFilterMonthValue();
+  }
+  initExpenseMonthPickers(root);
+  renderTransfersHistoryList(root);
+  dlg.showModal();
+}
+
+function renderTransfersHistoryList(root: HTMLElement) {
   const listEl = root.querySelector<HTMLElement>("[data-et-transfers-history-list]");
-  if (!dlg || !listEl) return;
+  const countEl = root.querySelector<HTMLElement>("[data-et-transfers-history-count]");
+  if (!listEl) return;
+  const month = readMonthFieldValue(root.querySelector<HTMLInputElement>("[data-et-transfers-history-month]")) || defaultFilterMonthValue();
   const accounts = state.wealthAccounts ?? [];
   const acctName = (id: string) => accounts.find((x) => x.id === id)?.name ?? "Cuenta";
-  const transfers = [...(state.wealthTransfers ?? [])].sort((a, b) =>
-    a.date < b.date ? 1 : a.date > b.date ? -1 : 0,
-  );
+  const transfers = [...(state.wealthTransfers ?? [])]
+    .filter((t) => t.date.slice(0, 7) === month)
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  if (countEl) {
+    countEl.textContent =
+      transfers.length === 1 ? `1 traspaso en ${month}` : `${transfers.length} traspasos en ${month}`;
+  }
   listEl.innerHTML = "";
   if (!transfers.length) {
     const empty = document.createElement("p");
     empty.className = "m-0 text-sm text-gray-500 dark:text-gray-400 text-center py-6";
-    empty.textContent = "Aún no hay traspasos registrados.";
+    empty.textContent = "No hay traspasos en este mes.";
     listEl.appendChild(empty);
   } else {
     for (const t of transfers) {
@@ -1220,7 +1232,7 @@ function openTransfersHistoryDialog(root: HTMLElement) {
       editBtn.className = "et-btn-secondary text-xs py-1 px-2.5";
       editBtn.textContent = "Editar";
       editBtn.addEventListener("click", () => {
-        dlg.close();
+        root.querySelector<HTMLDialogElement>("[data-et-dlg-transfers-history]")?.close();
         openTransferDialog(root, t.id);
       });
       actions.appendChild(editBtn);
@@ -1228,7 +1240,85 @@ function openTransfersHistoryDialog(root: HTMLElement) {
       listEl.appendChild(card);
     }
   }
+}
+
+function openBizumsHistoryDialog(root: HTMLElement) {
+  const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-bizums-history]");
+  if (!dlg) return;
+  const monthEl = root.querySelector<HTMLInputElement>("[data-et-bizums-history-month]");
+  if (monthEl && !readMonthFieldValue(monthEl)) {
+    monthEl.value = defaultFilterMonthValue();
+  }
+  initExpenseMonthPickers(root);
+  renderBizumsHistoryList(root);
   dlg.showModal();
+}
+
+function renderBizumsHistoryList(root: HTMLElement) {
+  const listEl = root.querySelector<HTMLElement>("[data-et-bizums-history-list]");
+  const countEl = root.querySelector<HTMLElement>("[data-et-bizums-history-count]");
+  if (!listEl) return;
+  const month = readMonthFieldValue(root.querySelector<HTMLInputElement>("[data-et-bizums-history-month]")) || defaultFilterMonthValue();
+  const accounts = state.wealthAccounts ?? [];
+  const acctName = (id: string) => accounts.find((x) => x.id === id)?.name ?? "Cuenta";
+  const bizums = [...(state.wealthBizums ?? [])]
+    .filter((b) => b.date.slice(0, 7) === month)
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  if (countEl) {
+    countEl.textContent = bizums.length === 1 ? `1 bizum en ${month}` : `${bizums.length} bizums en ${month}`;
+  }
+  listEl.innerHTML = "";
+  if (!bizums.length) {
+    const empty = document.createElement("p");
+    empty.className = "m-0 text-sm text-gray-500 dark:text-gray-400 text-center py-6";
+    empty.textContent = "No hay bizums en este mes.";
+    listEl.appendChild(empty);
+  } else {
+    for (const b of bizums) {
+      const sent = b.direction === "sent";
+      const card = document.createElement("article");
+      card.className =
+        "rounded-xl border border-cyan-200/70 dark:border-cyan-800/50 bg-gradient-to-br from-cyan-500/12 via-white/95 to-teal-500/8 dark:from-cyan-950/35 dark:via-gray-950/80 dark:to-teal-950/20 p-3.5 shadow-sm space-y-2";
+      const top = document.createElement("div");
+      top.className = "flex flex-wrap items-start justify-between gap-2";
+      const meta = document.createElement("div");
+      meta.className = "space-y-0.5 min-w-0";
+      const date = document.createElement("p");
+      date.className = "m-0 text-[11px] font-semibold uppercase tracking-wide text-cyan-700/90 dark:text-cyan-300/90";
+      date.textContent = formatTransferDate(b.date);
+      const badge = document.createElement("p");
+      badge.className = `m-0 text-xs font-semibold ${sent ? "text-rose-700 dark:text-rose-300" : "text-emerald-700 dark:text-emerald-300"}`;
+      badge.textContent = sent ? "Enviado" : "Recibido";
+      meta.append(date, badge);
+      const amt = document.createElement("p");
+      amt.className = `m-0 text-lg font-bold et-amount shrink-0 ${sent ? "text-rose-800 dark:text-rose-200" : "text-emerald-800 dark:text-emerald-200"}`;
+      amt.textContent = `${sent ? "−" : "+"}${fmtEur(b.amount)}`;
+      top.append(meta, amt);
+      const acct = document.createElement("p");
+      acct.className = "m-0 text-sm font-medium text-gray-800 dark:text-gray-100";
+      acct.textContent = sent ? `Desde: ${acctName(b.accountId)}` : `En: ${acctName(b.accountId)}`;
+      card.append(top, acct);
+      if (b.note) {
+        const note = document.createElement("p");
+        note.className = "m-0 text-xs text-gray-500 dark:text-gray-400";
+        note.textContent = b.note;
+        card.appendChild(note);
+      }
+      const actions = document.createElement("div");
+      actions.className = "flex justify-end pt-1";
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "et-btn-secondary text-xs py-1 px-2.5";
+      editBtn.textContent = "Editar";
+      editBtn.addEventListener("click", () => {
+        root.querySelector<HTMLDialogElement>("[data-et-dlg-bizums-history]")?.close();
+        openBizumDialog(root, b.id);
+      });
+      actions.appendChild(editBtn);
+      card.appendChild(actions);
+      listEl.appendChild(card);
+    }
+  }
 }
 
 function updateBizumsHistoryButton(root: HTMLElement) {
@@ -1399,68 +1489,6 @@ function saveBizumFromDialog(root: HTMLElement) {
   renderCashAvailableKpi(root);
   refreshBizumChart(root);
   amtEl.focus();
-}
-
-function openBizumsHistoryDialog(root: HTMLElement) {
-  const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-bizums-history]");
-  const listEl = root.querySelector<HTMLElement>("[data-et-bizums-history-list]");
-  if (!dlg || !listEl) return;
-  const accounts = state.wealthAccounts ?? [];
-  const acctName = (id: string) => accounts.find((x) => x.id === id)?.name ?? "Cuenta";
-  const bizums = [...(state.wealthBizums ?? [])].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-  listEl.innerHTML = "";
-  if (!bizums.length) {
-    const empty = document.createElement("p");
-    empty.className = "m-0 text-sm text-gray-500 dark:text-gray-400 text-center py-6";
-    empty.textContent = "Aún no hay bizums registrados.";
-    listEl.appendChild(empty);
-  } else {
-    for (const b of bizums) {
-      const sent = b.direction === "sent";
-      const card = document.createElement("article");
-      card.className =
-        "rounded-xl border border-cyan-200/70 dark:border-cyan-800/50 bg-gradient-to-br from-cyan-500/12 via-white/95 to-teal-500/8 dark:from-cyan-950/35 dark:via-gray-950/80 dark:to-teal-950/20 p-3.5 shadow-sm space-y-2";
-      const top = document.createElement("div");
-      top.className = "flex flex-wrap items-start justify-between gap-2";
-      const meta = document.createElement("div");
-      meta.className = "space-y-0.5 min-w-0";
-      const date = document.createElement("p");
-      date.className = "m-0 text-[11px] font-semibold uppercase tracking-wide text-cyan-700/90 dark:text-cyan-300/90";
-      date.textContent = formatTransferDate(b.date);
-      const badge = document.createElement("p");
-      badge.className = `m-0 text-xs font-semibold ${sent ? "text-rose-700 dark:text-rose-300" : "text-emerald-700 dark:text-emerald-300"}`;
-      badge.textContent = sent ? "Enviado" : "Recibido";
-      meta.append(date, badge);
-      const amt = document.createElement("p");
-      amt.className = `m-0 text-lg font-bold et-amount shrink-0 ${sent ? "text-rose-800 dark:text-rose-200" : "text-emerald-800 dark:text-emerald-200"}`;
-      amt.textContent = `${sent ? "−" : "+"}${fmtEur(b.amount)}`;
-      top.append(meta, amt);
-      const acct = document.createElement("p");
-      acct.className = "m-0 text-sm font-medium text-gray-800 dark:text-gray-100";
-      acct.textContent = sent ? `Desde: ${acctName(b.accountId)}` : `En: ${acctName(b.accountId)}`;
-      card.append(top, acct);
-      if (b.note) {
-        const note = document.createElement("p");
-        note.className = "m-0 text-xs text-gray-500 dark:text-gray-400";
-        note.textContent = b.note;
-        card.appendChild(note);
-      }
-      const actions = document.createElement("div");
-      actions.className = "flex justify-end pt-1";
-      const editBtn = document.createElement("button");
-      editBtn.type = "button";
-      editBtn.className = "et-btn-secondary text-xs py-1 px-2.5";
-      editBtn.textContent = "Editar";
-      editBtn.addEventListener("click", () => {
-        dlg.close();
-        openBizumDialog(root, b.id);
-      });
-      actions.appendChild(editBtn);
-      card.appendChild(actions);
-      listEl.appendChild(card);
-    }
-  }
-  dlg.showModal();
 }
 
 function renderKpis(root: HTMLElement) {
@@ -2207,7 +2235,12 @@ function addExpense() {
   });
 }
 
+function remindersBlocked(root: HTMLElement): boolean {
+  return Boolean(root.querySelector("[data-et-reminders-blocked]"));
+}
+
 function renderReminders(root: HTMLElement) {
+  if (remindersBlocked(root)) return;
   const ul = root.querySelector<HTMLElement>("[data-et-reminders-list]");
   if (!ul) return;
   ul.innerHTML = "";
@@ -2241,6 +2274,7 @@ function renderReminders(root: HTMLElement) {
 }
 
 function addReminderFromForm(root: HTMLElement) {
+  if (remindersBlocked(root)) return;
   const d = root.querySelector<HTMLInputElement>("[data-et-reminder-date]")?.value?.slice(0, 10);
   const title = root.querySelector<HTMLInputElement>("[data-et-reminder-title]")?.value?.trim();
   const note = root.querySelector<HTMLInputElement>("[data-et-reminder-note]")?.value?.trim() ?? "";
@@ -2254,6 +2288,7 @@ function addReminderFromForm(root: HTMLElement) {
 }
 
 function renderReminderBanner(root: HTMLElement) {
+  if (remindersBlocked(root)) return;
   const el = root.querySelector<HTMLElement>("[data-et-remind-banner]");
   if (!el) return;
   const due = remindersDueToday(state);
@@ -2272,6 +2307,7 @@ function refreshMoneyViews(root: HTMLElement) {
 }
 
 function flashBrowserReminders(root: HTMLElement) {
+  if (remindersBlocked(root)) return;
   renderReminderBanner(root);
   if (typeof Notification === "undefined") return;
   const due = remindersDueToday(state).filter((r) => r.notifyBrowser);
@@ -4459,26 +4495,6 @@ function wire(root: HTMLElement) {
 
   root.querySelector<HTMLElement>("[data-et-wealth-list]")?.addEventListener("click", (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-wealth-delete]");
-    if (btn) return;
-    const recon = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-wealth-reconcile]");
-    if (!recon) return;
-    const id = recon.dataset.wealthReconcile;
-    if (!id) return;
-    const acc = (state.wealthAccounts ?? []).find((a) => a.id === id);
-    if (!acc) return;
-    const raw = window.prompt(`Saldo real en «${acc.name}» (€):`, String(acc.balance));
-    if (raw == null) return;
-    const n = Number(raw.replace(",", "."));
-    if (!Number.isFinite(n)) return;
-    const idx = state.wealthAccounts!.findIndex((a) => a.id === id);
-    if (idx < 0) return;
-    state.wealthAccounts![idx] = { ...state.wealthAccounts![idx]!, balance: Math.round(n * 100) / 100 };
-    persist();
-    renderWealthAccounts(root);
-  });
-
-  root.querySelector<HTMLElement>("[data-et-wealth-list]")?.addEventListener("click", (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-wealth-delete]");
     if (!btn) return;
     const id = btn.dataset.wealthDelete;
     if (!id) return;
@@ -4750,6 +4766,12 @@ function wire(root: HTMLElement) {
   root.querySelector<HTMLButtonElement>("[data-et-sub-delete]")?.addEventListener("click", () => deleteSubFromDialog(root));
 
   root.querySelector<HTMLButtonElement>("[data-et-reminder-add]")?.addEventListener("click", () => addReminderFromForm(root));
+  root.querySelector<HTMLInputElement>("[data-et-transfers-history-month]")?.addEventListener("change", () =>
+    renderTransfersHistoryList(root),
+  );
+  root.querySelector<HTMLInputElement>("[data-et-bizums-history-month]")?.addEventListener("change", () =>
+    renderBizumsHistoryList(root),
+  );
   root.querySelector<HTMLButtonElement>("[data-et-reminder-notify-perm]")?.addEventListener("click", async () => {
     if (typeof Notification === "undefined") return;
     await Notification.requestPermission();
