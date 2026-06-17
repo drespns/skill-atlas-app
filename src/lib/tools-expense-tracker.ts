@@ -207,6 +207,8 @@ export type PlannedExpenseMonthOverride = {
   currency: ExpenseCurrency;
 };
 
+import type { ExpenseScenario, ScenarioKind, ScenarioStatus, ScenarioPriority, ScenarioBundleItem } from "./tools-expense-scenarios";
+
 export type ExpenseReminder = {
   id: string;
   title: string;
@@ -255,6 +257,8 @@ export type ExpenseTrackerState = {
   patrimonioRealMode?: boolean;
   /** Solo se contabilizan movimientos en KPIs/gráficos desde esta fecha (YYYY-MM-DD). */
   trackingStartDate?: string;
+  /** Simulaciones / deseos (no cuentan en KPIs hasta promover). */
+  scenarios?: ExpenseScenario[];
 };
 
 export const EXPENSE_TRACKER_CLIENT_SCOPE = "tools_expense_tracker" as const;
@@ -360,6 +364,7 @@ export function defaultExpenseTrackerState(): ExpenseTrackerState {
     wealthTransfers: [],
     wealthBizums: [],
     patrimonioRealMode: false,
+    scenarios: [],
   };
 }
 
@@ -936,6 +941,53 @@ export function totalExpensesInPeriod(state: ExpenseTrackerState, filter: Period
   return Math.round(total * 100) / 100;
 }
 
+/** Solo gastos confirmados (sin suscripciones ni previstos) en el período. */
+export function discretionaryExpensesInPeriod(state: ExpenseTrackerState, filter: PeriodFilter): number {
+  const start = effectivePeriodStart(state, filter);
+  const fx = state.eurPerUsd;
+  const today = new Date().toISOString().slice(0, 10);
+  let total = 0;
+  for (const row of state.expenses) {
+    if (row.confirmed === false) continue;
+    if (start && row.date < start) continue;
+    if (row.date > today) continue;
+    total += convertAmount(Math.max(0, row.amount), row.currency, "EUR", fx);
+  }
+  return Math.round(total * 100) / 100;
+}
+
+export type PeriodMarginSnapshot = {
+  income: number;
+  expenses: number;
+  net: number;
+  /** (ingresos − gastos) / ingresos × 100; 0 si no hay ingresos. */
+  marginPct: number;
+};
+
+export function periodMarginSnapshot(state: ExpenseTrackerState, filter: PeriodFilter = state.period): PeriodMarginSnapshot {
+  const income = totalIncomeInPeriod(state, filter);
+  const expenses = totalExpensesInPeriod(state, filter);
+  const net = Math.round((income - expenses) * 100) / 100;
+  const marginPct = income > 0 ? Math.round((net / income) * 1000) / 10 : 0;
+  return { income, expenses, net, marginPct };
+}
+
+export type FixedDiscretionarySplit = {
+  fixed: number;
+  discretionary: number;
+};
+
+/** Fijos = suscripciones prorrateadas + gastos previstos; discrecional = gastos confirmados. */
+export function periodFixedDiscretionarySplit(
+  state: ExpenseTrackerState,
+  filter: PeriodFilter = state.period,
+): FixedDiscretionarySplit {
+  const total = totalExpensesInPeriod(state, filter);
+  const discretionary = discretionaryExpensesInPeriod(state, filter);
+  const fixed = Math.round(Math.max(0, total - discretionary) * 100) / 100;
+  return { fixed, discretionary };
+}
+
 /** ¿La suscripción cuenta en KPIs y gráficos en la fecha de referencia? */
 export function subscriptionCountsInTotals(s: SubscriptionRow, refDate?: string): boolean {
   if (!s.active) return false;
@@ -985,6 +1037,53 @@ function parseInvestmentHoldings(raw: unknown): InvestmentHolding[] {
       };
     })
     .filter((h: InvestmentHolding) => h.id)
+    .slice(0, 48);
+}
+
+function parseScenariosField(raw: unknown): ExpenseScenario[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((r: any) => {
+      const kind: ScenarioKind =
+        r?.kind === "installments" || r?.kind === "bundle" || r?.kind === "one_off" ? r.kind : "one_off";
+      const status: ScenarioStatus =
+        r?.status === "considering" || r?.status === "go" || r?.status === "no_go" ? r.status : "idea";
+      const priority: ScenarioPriority | undefined =
+        r?.priority === "low" || r?.priority === "medium" || r?.priority === "high" ? r.priority : undefined;
+      const items: ScenarioBundleItem[] = Array.isArray(r?.items)
+        ? r.items
+            .map((it: any) => ({
+              id: String(it?.id || "").trim() || `si_${Math.random().toString(36).slice(2, 9)}`,
+              label: String(it?.label || "").trim() || "Partida",
+              amount: Number.isFinite(Number(it?.amount)) ? Math.max(0, Number(it.amount)) : 0,
+            }))
+            .filter((it: ScenarioBundleItem) => it.id)
+        : [];
+      return {
+        id: String(r?.id || "").trim() || `sc_${Math.random().toString(36).slice(2, 9)}`,
+        title: String(r?.title || "").trim() || "Deseo",
+        note: String(r?.note ?? "").trim() || undefined,
+        kind,
+        currency: r?.currency === "USD" ? "USD" : "EUR",
+        categoryId: r?.categoryId ? String(r.categoryId).trim() : undefined,
+        status,
+        priority,
+        amount: r?.amount != null && Number.isFinite(Number(r.amount)) ? Math.max(0, Number(r.amount)) : undefined,
+        targetDate: String(r?.targetDate ?? "").slice(0, 10) || undefined,
+        installmentCount:
+          r?.installmentCount != null && Number.isFinite(Number(r.installmentCount))
+            ? Math.max(1, Math.min(120, Math.floor(Number(r.installmentCount))))
+            : undefined,
+        installmentAmount:
+          r?.installmentAmount != null && Number.isFinite(Number(r.installmentAmount))
+            ? Math.max(0, Number(r.installmentAmount))
+            : undefined,
+        startMonth: String(r?.startMonth ?? "").slice(0, 7) || undefined,
+        items: items.length ? items : undefined,
+        createdAt: String(r?.createdAt ?? "").slice(0, 10) || undefined,
+      } satisfies ExpenseScenario;
+    })
+    .filter((s) => s.id && s.title)
     .slice(0, 48);
 }
 
@@ -1448,6 +1547,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
   const wealthAccounts = parseWealthAccounts(o.wealthAccounts);
   const wealthTransfers = parseWealthTransfers(o.wealthTransfers);
   const wealthBizums = parseWealthBizums(o.wealthBizums);
+  const scenarios = parseScenariosField(o.scenarios);
 
   const migratedRefs = migrateExcludedCategoryReferences({
     expenses,
@@ -1480,6 +1580,7 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
     wealthBizums,
     patrimonioRealMode: Boolean(o.patrimonioRealMode),
     trackingStartDate: String(o.trackingStartDate ?? "").slice(0, 10) || undefined,
+    scenarios,
   };
 }
 
@@ -1574,6 +1675,7 @@ export function mergeExpenseTrackerRemoteLocal(remote: ExpenseTrackerState, loca
     wealthBizums: mergeRows(remote.wealthBizums ?? [], local.wealthBizums ?? []),
     patrimonioRealMode: local.patrimonioRealMode,
     trackingStartDate: local.trackingStartDate ?? remote.trackingStartDate,
+    scenarios: mergeRows(remote.scenarios ?? [], local.scenarios ?? []),
   });
 }
 
@@ -1603,6 +1705,7 @@ export function applyExpenseImportReplace(current: ExpenseTrackerState, imported
     wealthBizums: imported.wealthBizums ?? [],
     trackingStartDate: imported.trackingStartDate ?? current.trackingStartDate,
     patrimonioRealMode: imported.patrimonioRealMode ?? current.patrimonioRealMode,
+    scenarios: imported.scenarios ?? [],
   });
 }
 
@@ -2178,3 +2281,21 @@ export function remindersDueToday(state: ExpenseTrackerState): ExpenseReminder[]
   const t = new Date().toISOString().slice(0, 10);
   return state.reminders.filter((r) => r.date === t && r.notifyBrowser);
 }
+
+export type {
+  ExpenseScenario,
+  ScenarioBundleItem,
+  ScenarioKind,
+  ScenarioPriority,
+  ScenarioStatus,
+  ScenarioTrafficLight,
+  ScenarioViability,
+} from "./tools-expense-scenarios";
+export {
+  compareScenarios,
+  evaluateScenarioViability,
+  parseExpenseScenarios,
+  scenarioMonthlyImpactSeries,
+  scenarioToPlannedExpense,
+  scenarioTotalAmount,
+} from "./tools-expense-scenarios";
