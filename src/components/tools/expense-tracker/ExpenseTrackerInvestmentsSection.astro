@@ -1,0 +1,14 @@
+---
+import ExpenseTrackerSectionShell from "./shared/ExpenseTrackerSectionShell.astro";
+import ExpenseTrackerInvestmentKpiGrid from "./investments/ExpenseTrackerInvestmentKpiGrid.astro";
+---
+
+<ExpenseTrackerSectionShell
+  title="Inversiones"
+  description="Posiciones manuales (sin tiempo real): activo, entidad, precio medio, cantidad y rendimiento % que actualizas cuando quieras."
+  wrapperClass="rounded-2xl border border-violet-200/70 dark:border-violet-900/45 bg-gradient-to-br from-violet-500/8 via-white/90 to-indigo-500/6 dark:from-violet-950/30 dark:via-gray-950/55 dark:to-indigo-950/25 shadow-md p-4 sm:p-5 space-y-4"
+>
+  <button slot="actions" type="button" data-et-open-inv-modal class="et-btn-accent shrink-0">Nueva posición</button>
+  <ExpenseTrackerInvestmentKpiGrid />
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3" data-et-investments-grid></div>
+</ExpenseTrackerSectionShell>

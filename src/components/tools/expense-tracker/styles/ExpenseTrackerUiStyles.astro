@@ -1,0 +1,215 @@
+<style is:global>
+  [data-tools-expense-page] .et-expenses-x-scroll {
+    overflow-y: visible;
+  }
+  [data-tools-expense-page] .et-sub-treemap-card {
+    position: absolute;
+    box-sizing: border-box;
+    padding: 0.35rem;
+  }
+  [data-tools-expense-page] .et-sub-treemap-card > article {
+    height: 100%;
+    min-height: 0;
+  }
+  [data-tools-expense-page] .et-wealth-panel > summary::-webkit-details-marker {
+    display: none;
+  }
+  [data-tools-expense-page] .et-amount {
+    font-variant-numeric: tabular-nums;
+  }
+  [data-tools-expense-page] input.flatpickr-input.et-field {
+    cursor: pointer;
+  }
+  [data-tools-expense-page] .et-header-sync-strip[data-sync-on="true"] {
+    border-color: rgb(52 211 153 / 0.55);
+    background: linear-gradient(135deg, rgb(16 185 129 / 0.08), rgb(255 255 255 / 0.95));
+  }
+  .dark [data-tools-expense-page] .et-header-sync-strip[data-sync-on="true"] {
+    border-color: rgb(16 185 129 / 0.35);
+    background: linear-gradient(135deg, rgb(6 78 59 / 0.35), rgb(3 7 18 / 0.85));
+  }
+  [data-tools-expense-page] .et-header-sync-strip[data-sync-off="true"] {
+    border-color: rgb(251 191 36 / 0.45);
+    background: linear-gradient(135deg, rgb(245 158 11 / 0.07), rgb(255 255 255 / 0.92));
+  }
+  .dark [data-tools-expense-page] .et-header-sync-strip[data-sync-off="true"] {
+    border-color: rgb(245 158 11 / 0.3);
+    background: linear-gradient(135deg, rgb(120 53 15 / 0.25), rgb(3 7 18 / 0.85));
+  }
+  [data-tools-expense-page] [data-et-sync-label][data-sync-on="true"] {
+    border-style: solid;
+    border-color: rgb(52 211 153 / 0.65);
+    background: rgb(236 253 245 / 0.85);
+  }
+  .dark [data-tools-expense-page] [data-et-sync-label][data-sync-on="true"] {
+    border-color: rgb(16 185 129 / 0.45);
+    background: rgb(6 78 59 / 0.35);
+  }
+  [data-tools-expense-page] .et-field,
+  [data-tools-expense-page] select.et-field {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid rgb(229 231 235);
+    background: rgb(255 255 255);
+    padding: 0.5rem 0.65rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: rgb(17 24 39);
+    box-sizing: border-box;
+  }
+  .dark [data-tools-expense-page] .et-field,
+  .dark [data-tools-expense-page] select.et-field {
+    border-color: rgb(55 65 81);
+    background: rgb(3 7 18);
+    color: rgb(243 244 246);
+  }
+  [data-tools-expense-page] .et-field:focus,
+  [data-tools-expense-page] select.et-field:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px rgb(255 255 255), 0 0 0 4px rgb(99 102 241);
+  }
+  .dark [data-tools-expense-page] .et-field:focus,
+  .dark [data-tools-expense-page] select.et-field:focus {
+    box-shadow: 0 0 0 2px rgb(3 7 18), 0 0 0 4px rgb(129 140 248);
+  }
+  [data-tools-expense-page] .et-textarea {
+    resize: vertical;
+    min-height: 3.25rem;
+  }
+  [data-tools-expense-page] .et-btn-primary {
+    border-radius: 0.5rem;
+    background: rgb(79 70 229);
+    color: white;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    border: none;
+    cursor: pointer;
+  }
+  [data-tools-expense-page] .et-btn-primary:hover {
+    background: rgb(99 102 241);
+  }
+  [data-tools-expense-page] .et-btn-secondary {
+    border-radius: 0.5rem;
+    border: 1px solid rgb(229 231 235);
+    background: rgb(255 255 255);
+    color: rgb(55 65 81);
+    font-weight: 600;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+  [data-tools-expense-page] .et-btn-secondary:hover {
+    background: rgb(249 250 251);
+  }
+  .dark [data-tools-expense-page] .et-btn-secondary {
+    border-color: rgb(55 65 81);
+    background: rgb(17 24 39);
+    color: rgb(229 231 235);
+  }
+  .dark [data-tools-expense-page] .et-btn-secondary:hover {
+    background: rgb(31 41 55);
+  }
+  [data-tools-expense-page] .et-btn-accent {
+    border-radius: 0.5rem;
+    border: 1px solid rgb(165 180 252);
+    background: rgb(238 242 255);
+    color: rgb(55 48 163);
+    font-weight: 600;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+  [data-tools-expense-page] .et-btn-accent:hover {
+    background: rgb(224 231 255);
+  }
+  .dark [data-tools-expense-page] .et-btn-accent {
+    border-color: rgb(67 56 202 / 0.5);
+    background: rgb(30 27 75 / 0.35);
+    color: rgb(224 231 255);
+  }
+  [data-tools-expense-page] .et-btn-bizum {
+    border-radius: 0.5rem;
+    border: 1px solid rgb(110 231 183);
+    background: rgb(236 253 245);
+    color: rgb(6 95 70);
+    font-weight: 600;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+  [data-tools-expense-page] .et-btn-bizum:hover {
+    background: rgb(209 250 229);
+  }
+  .dark [data-tools-expense-page] .et-btn-bizum {
+    border-color: rgb(16 185 129 / 0.45);
+    background: rgb(6 78 59 / 0.35);
+    color: rgb(167 243 208);
+  }
+  .dark [data-tools-expense-page] .et-btn-bizum:hover {
+    background: rgb(6 95 70 / 0.45);
+  }
+  [data-tools-expense-page] .et-btn-dashed {
+    border-radius: 0.5rem;
+    border: 1px dashed rgb(209 213 219);
+    background: rgb(255 255 255);
+    color: rgb(75 85 99);
+    font-weight: 600;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+  [data-tools-expense-page] .et-btn-dashed:hover {
+    background: rgb(249 250 251);
+  }
+  .dark [data-tools-expense-page] .et-btn-dashed {
+    border-color: rgb(75 85 99);
+    background: rgb(17 24 39);
+    color: rgb(209 213 219);
+  }
+  [data-tools-expense-page] .et-chart-host canvas {
+    font-family: inherit;
+  }
+  [data-tools-expense-page] input[type="date"].et-field,
+  [data-tools-expense-page] input[type="month"].et-field {
+    min-height: 2.5rem;
+  }
+  [data-tools-expense-page] .et-date {
+    color-scheme: light dark;
+  }
+  [data-tools-expense-page] select.et-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.55rem center;
+    padding-right: 2rem;
+    cursor: pointer;
+  }
+  [data-tools-expense-page] .et-recurring-card {
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+  }
+  [data-tools-expense-page] .et-recurring-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px -12px rgb(0 0 0 / 0.35);
+  }
+  [data-tools-expense-page] .et-sub-bento-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.2s ease, opacity 0.2s ease;
+  }
+  [data-tools-expense-page] .et-sub-bento-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px -14px rgb(0 0 0 / 0.4);
+  }
+  [data-tools-expense-page] .et-sub-bento-card--faded {
+    filter: grayscale(0.85);
+    opacity: 0.72;
+  }
+  [data-tools-expense-page] details > summary {
+    list-style: none;
+  }
+  [data-tools-expense-page] details > summary::-webkit-details-marker {
+    display: none;
+  }
+</style>

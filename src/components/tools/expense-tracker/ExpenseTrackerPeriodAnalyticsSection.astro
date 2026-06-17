@@ -1,0 +1,22 @@
+---
+import ExpenseTrackerPeriodChartsFilter from "./analytics/ExpenseTrackerPeriodChartsFilter.astro";
+import ExpenseTrackerPeriodRow from "./dashboard/ExpenseTrackerPeriodRow.astro";
+import ExpenseTrackerCategoryChartsRow from "./dashboard/ExpenseTrackerCategoryChartsRow.astro";
+import ExpenseTrackerPeriodSecondaryChartsRow from "./analytics/ExpenseTrackerPeriodSecondaryChartsRow.astro";
+---
+
+<div
+  class="rounded-2xl border border-sky-200/70 dark:border-sky-900/45 bg-gradient-to-br from-sky-500/6 via-white/90 to-indigo-500/5 dark:from-sky-950/30 dark:via-gray-950/55 dark:to-indigo-950/25 shadow-md p-4 sm:p-5 space-y-4"
+>
+  <div>
+    <h2 class="m-0 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-50">Análisis del período</h2>
+    <p class="m-0 mt-1 text-xs text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed">
+      Distribución, hábitos y margen según el período seleccionado. Los KPIs de patrimonio y mes actual están arriba en el
+      panel principal.
+    </p>
+  </div>
+  <ExpenseTrackerPeriodChartsFilter />
+  <ExpenseTrackerPeriodRow />
+  <ExpenseTrackerCategoryChartsRow />
+  <ExpenseTrackerPeriodSecondaryChartsRow />
+</div>

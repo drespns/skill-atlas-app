@@ -1,0 +1,19 @@
+---
+import ExpenseTrackerDetailsDisclosure from "./shared/ExpenseTrackerDetailsDisclosure.astro";
+import ExpenseTrackerBackupActions from "./backup/ExpenseTrackerBackupActions.astro";
+---
+
+<ExpenseTrackerDetailsDisclosure
+  summary="Copia de seguridad y archivos"
+  closedLabel="Mostrar ayuda y botones"
+  openLabel="Ocultar"
+>
+  <p class="m-0 text-sm text-gray-600 dark:text-gray-400 max-w-3xl">
+    Aquí sacas o metes una copia de <strong class="text-gray-800 dark:text-gray-200">toda la hoja</strong> (gastos, suscripciones,
+    categorías, recordatorios…).
+    <span class="text-gray-500 dark:text-gray-500">CSV</span> abre en Excel;
+    <span class="text-gray-500">JSON</span> es el formato interno exacto (ideal para respaldo);
+    <span class="text-gray-500">XLSX</span> es una hoja de cálculo con varias pestañas (misma información que JSON).
+  </p>
+  <ExpenseTrackerBackupActions />
+</ExpenseTrackerDetailsDisclosure>

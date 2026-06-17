@@ -1,0 +1,96 @@
+---
+import ExpenseTrackerMonthDayFilter from "../shared/ExpenseTrackerMonthDayFilter.astro";
+
+interface Props {
+  variant: "expense" | "income";
+  filterDays: number[];
+}
+
+const { variant, filterDays } = Astro.props;
+
+const config = {
+  expense: {
+    id: "et-expenses-table",
+    anchor: "expenses-anchor",
+    borderHeader: "border-gray-100 dark:border-gray-800",
+    wrapperBorder: "border-gray-200/80 dark:border-gray-800",
+    title: "Gastos",
+    addLabel: "Nuevo gasto",
+    addAttr: "add-expense",
+    monthFilter: "exp-filter-month",
+    dayFilter: "exp-filter-day",
+    scrollAttr: "expenses-scroll",
+    bodyAttr: "expenses-body",
+    theadBg: "bg-gray-50/95 dark:bg-gray-900/90",
+    scrollClass: "max-h-[min(55vh,28rem)] overflow-y-auto overflow-x-auto et-expenses-x-scroll rounded-b-2xl",
+    filterHint:
+      "Solo se listan filas del mes (y día si lo eliges). Borradores: borde cian; confirmados: tono rojizo.",
+    addButtonClass:
+      "inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:from-indigo-500 hover:via-violet-500 hover:to-fuchsia-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950 transition",
+  },
+  income: {
+    id: "et-income-table",
+    anchor: "income-anchor",
+    borderHeader: "border-emerald-100/90 dark:border-emerald-900/40",
+    wrapperBorder: "border-emerald-200/80 dark:border-emerald-900/50",
+    title: "Ingresos",
+    addLabel: "Nuevo ingreso",
+    addAttr: "add-income",
+    monthFilter: "inc-filter-month",
+    dayFilter: "inc-filter-day",
+    scrollAttr: "income-scroll",
+    bodyAttr: "income-body",
+    theadBg: "bg-emerald-50/95 dark:bg-gray-900/90",
+    scrollClass: "max-h-[min(55vh,28rem)] overflow-y-auto overflow-x-auto rounded-b-2xl",
+    filterHint:
+      "Misma lógica que gastos: confirma para contar en gráficos y KPIs. Filtro por mes/día para no cargar todo el historial.",
+    addButtonClass:
+      "inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/25 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:via-teal-500 hover:to-cyan-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950 transition",
+  },
+} as const;
+
+const c = config[variant];
+const anchorAttr = { [`data-et-${c.anchor}`]: "" };
+const addAttr = { [`data-et-${c.addAttr}`]: "" };
+const scrollAttr = { [`data-et-${c.scrollAttr}`]: "" };
+const bodyAttr = { [`data-et-${c.bodyAttr}`]: "" };
+---
+
+<div
+  class:list={["rounded-2xl border bg-white/80 dark:bg-gray-950/60 shadow-sm", c.wrapperBorder]}
+  id={c.id}
+  {...anchorAttr}
+>
+  <div class:list={["border-b px-4 py-3 flex flex-col gap-3", c.borderHeader]}>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h2 class="m-0 text-lg font-semibold tracking-tight">{c.title}</h2>
+      <button type="button" {...addAttr} class={c.addButtonClass}>
+        <span class="text-lg leading-none font-light">+</span>
+        {c.addLabel}
+      </button>
+    </div>
+    <ExpenseTrackerMonthDayFilter
+      monthEtSuffix={c.monthFilter}
+      dayEtSuffix={c.dayFilter}
+      hint={c.filterHint}
+      filterDays={filterDays}
+    />
+  </div>
+  <div class={c.scrollClass} {...scrollAttr}>
+    <table class="w-full min-w-[52rem] text-sm border-collapse">
+      <thead class:list={["sticky top-0 z-10 backdrop-blur-sm", c.theadBg]}>
+        <tr class="text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <th class="px-3 py-2.5 w-28">Fecha</th>
+          <th class="px-3 py-2.5 min-w-[11rem]">Concepto</th>
+          <th class="px-3 py-2.5 w-32">Importe (€)</th>
+          <th class="px-3 py-2.5 min-w-[10rem]">Categoría</th>
+          <th class="px-3 py-2.5 min-w-[9rem]">Cuenta</th>
+          <th class="px-3 py-2.5 min-w-[10rem]">Notas</th>
+          <th class="px-3 py-2.5 w-[7.5rem]">Estado</th>
+          <th class="px-3 py-2.5 w-24"></th>
+        </tr>
+      </thead>
+      <tbody {...bodyAttr} class="divide-y divide-gray-100 dark:divide-gray-800"></tbody>
+    </table>
+  </div>
+</div>

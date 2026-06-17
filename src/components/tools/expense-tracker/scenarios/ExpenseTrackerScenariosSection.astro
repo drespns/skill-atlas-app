@@ -1,0 +1,16 @@
+---
+import ExpenseTrackerSectionShell from "../shared/ExpenseTrackerSectionShell.astro";
+import ExpenseTrackerScenarioCompareBar from "./ExpenseTrackerScenarioCompareBar.astro";
+---
+
+<ExpenseTrackerSectionShell
+  title="Simulaciones y deseos"
+  description="Valora compras o viajes antes de comprometerlos. No afectan a KPIs ni gráficos hasta que los promuevas a gasto previsto."
+  wrapperClass="rounded-2xl border border-violet-200/70 dark:border-violet-900/45 bg-gradient-to-br from-violet-500/10 via-white/88 to-fuchsia-500/8 dark:from-violet-950/35 dark:via-gray-950/55 dark:to-fuchsia-950/25 shadow-md p-4 sm:p-5 space-y-4"
+>
+  <button slot="actions" type="button" data-et-open-scenario-modal class="et-btn-accent shrink-0 text-sm py-2">
+    Nueva simulación
+  </button>
+  <ExpenseTrackerScenarioCompareBar />
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3" data-et-scenarios-list></div>
+</ExpenseTrackerSectionShell>

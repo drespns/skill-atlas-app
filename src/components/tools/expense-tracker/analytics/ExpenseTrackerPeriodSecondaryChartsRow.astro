@@ -1,0 +1,18 @@
+---
+import ExpenseTrackerChartSlot from "../shared/ExpenseTrackerChartSlot.astro";
+---
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+  <ExpenseTrackerChartSlot
+    etSuffix="chart-dow"
+    class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-3 shadow-sm min-h-[260px]"
+  />
+  <ExpenseTrackerChartSlot
+    etSuffix="chart-period-margin"
+    class="rounded-2xl border border-emerald-200/70 dark:border-emerald-900/40 bg-gradient-to-br from-emerald-500/8 via-white/90 to-teal-500/6 dark:from-emerald-950/25 dark:via-gray-950/60 dark:to-teal-950/20 p-3 shadow-sm min-h-[260px]"
+  />
+  <ExpenseTrackerChartSlot
+    etSuffix="chart-fixed-split"
+    class="rounded-2xl border border-orange-200/70 dark:border-orange-900/40 bg-gradient-to-br from-orange-500/8 via-white/90 to-amber-500/6 dark:from-orange-950/25 dark:via-gray-950/60 dark:to-amber-950/20 p-3 shadow-sm min-h-[260px]"
+  />
+</div>

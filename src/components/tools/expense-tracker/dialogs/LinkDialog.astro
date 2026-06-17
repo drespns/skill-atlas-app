@@ -1,0 +1,17 @@
+    <dialog data-et-dlg-link class="et-dialog w-[min(100vw-1.5rem,26rem)] p-0">
+      <div class="et-dialog-panel space-y-3">
+        <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-50">Añadir enlace</h3>
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Título</span>
+          <input type="text" class="et-field w-full text-sm py-2" data-et-dlg-link-title placeholder="Factura, portal…" />
+        </label>
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">URL (https)</span>
+          <input type="url" class="et-field w-full text-sm py-2 font-mono" data-et-dlg-link-url placeholder="https://…" />
+        </label>
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" class="et-btn-secondary text-sm py-2" data-et-dlg-link-cancel>Cancelar</button>
+          <button type="button" class="et-btn-primary text-sm py-2" data-et-dlg-link-save>Guardar</button>
+        </div>
+      </div>
+    </dialog>

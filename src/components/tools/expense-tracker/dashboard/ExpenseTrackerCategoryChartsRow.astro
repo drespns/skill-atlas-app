@@ -1,0 +1,15 @@
+---
+import ExpenseTrackerChartSlot from "../shared/ExpenseTrackerChartSlot.astro";
+---
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  <ExpenseTrackerChartSlot
+    etSuffix="chart-pie-eur"
+    class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-3 shadow-sm min-h-[280px]"
+  />
+  <ExpenseTrackerChartSlot
+    etSuffix="chart-bar"
+    class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-3 shadow-sm min-h-[280px]"
+  />
+  <ExpenseTrackerChartSlot etSuffix="chart-pie-usd" class="hidden" />
+</div>

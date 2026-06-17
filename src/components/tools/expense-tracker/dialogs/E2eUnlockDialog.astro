@@ -1,0 +1,16 @@
+    <dialog data-et-dlg-e2e-unlock class="et-dialog w-[min(100vw-1.5rem,26rem)] p-0">
+      <div class="et-dialog-panel space-y-3">
+        <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-50">Desbloquear copia en la nube</h3>
+        <p class="m-0 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+          Escribe la <strong class="font-medium text-gray-700 dark:text-gray-300">misma frase del cuaderno</strong> que usaste cuando protegiste esa copia. Así esta hoja y la de la nube pueden fusionarse.
+        </p>
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Frase del cuaderno</span>
+          <input type="password" class="et-field w-full text-sm py-2" data-et-dlg-e2e-unlock-pass autocomplete="current-password" />
+        </label>
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" class="et-btn-secondary text-sm py-2" data-et-dlg-e2e-unlock-cancel>Cancelar</button>
+          <button type="button" class="et-btn-primary text-sm py-2" data-et-dlg-e2e-unlock-go>Desbloquear</button>
+        </div>
+      </div>
+    </dialog>

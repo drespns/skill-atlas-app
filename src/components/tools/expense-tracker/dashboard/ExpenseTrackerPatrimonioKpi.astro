@@ -1,0 +1,25 @@
+<div
+  class="sm:col-span-2 xl:col-span-2 rounded-2xl border-2 border-amber-400/50 dark:border-amber-600/45 bg-gradient-to-br from-amber-500/18 via-amber-50/90 to-white dark:from-amber-950/40 dark:via-gray-950/60 dark:to-gray-900/80 p-4 sm:p-5 shadow-md space-y-3"
+>
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <p class="m-0 text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-200">Patrimonio</p>
+    <label class="inline-flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-300 cursor-pointer">
+      <span data-et-patrimonio-mode-label>Valor estimado</span>
+      <input type="checkbox" data-et-patrimonio-real class="sr-only peer" />
+      <span
+        class="relative w-9 h-5 rounded-full bg-gray-300 dark:bg-gray-700 peer-checked:bg-emerald-500 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4"
+      ></span>
+      <span class="text-emerald-700 dark:text-emerald-300 font-semibold">Real</span>
+    </label>
+  </div>
+  <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400" data-et-patrimonio-mode-hint>
+    Valor estimado: incluye rendimiento % de inversiones. Real: solo efectivo + capital invertido.
+  </p>
+  <p
+    class="mt-1 mb-0 text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-50 et-amount"
+    data-et-kpi-patrimonio-total
+  >
+    â€”
+  </p>
+  <div class="space-y-1.5 text-sm" data-et-kpi-patrimonio-breakdown></div>
+</div>

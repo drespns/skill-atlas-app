@@ -1,0 +1,32 @@
+---
+import ExpenseTrackerKpiCard from "../shared/ExpenseTrackerKpiCard.astro";
+---
+
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-end">
+  <label class="space-y-1">
+    <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Período</span>
+    <select data-et-period class="et-field et-select min-w-[10rem] font-medium w-full">
+      <option value="30d">Últimos 30 días</option>
+      <option value="90d">Últimos 90 días</option>
+      <option value="6m">Últimos 6 meses</option>
+      <option value="12m">Últimos 12 meses</option>
+      <option value="ytd">Este año (YTD)</option>
+      <option value="all">Todo</option>
+    </select>
+  </label>
+  <ExpenseTrackerKpiCard
+    title="Gastos (período)"
+    hint="Confirmados + suscripciones (prorrateadas) + previstos"
+    etSuffix="kpi-expenses"
+    cardClass="rounded-2xl border border-sky-400/35 dark:border-sky-700/40 bg-gradient-to-br from-sky-500/12 via-gray-50/80 to-white dark:from-sky-950/25 dark:via-gray-950/60 dark:to-gray-900/80 p-4 shadow-sm"
+    titleClass="text-sky-800/90 dark:text-sky-300/90"
+  />
+  <ExpenseTrackerKpiCard
+    title="Ingresos (período)"
+    hint="Cobros puntuales + previstos en el período"
+    etSuffix="kpi-income-period"
+    colClass="sm:col-span-2 xl:col-span-2"
+    cardClass="rounded-2xl border border-indigo-400/35 dark:border-indigo-700/40 bg-gradient-to-br from-indigo-500/12 via-gray-50/80 to-white dark:from-indigo-950/25 dark:via-gray-950/60 dark:to-gray-900/80 p-4 shadow-sm"
+    titleClass="text-indigo-800/90 dark:text-indigo-300/90"
+  />
+</div>

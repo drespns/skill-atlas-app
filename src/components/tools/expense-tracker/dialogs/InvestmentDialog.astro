@@ -1,0 +1,83 @@
+    <dialog data-et-dlg-investment class="et-dialog et-dialog--form w-[min(100vw-1.5rem,36rem)] p-0">
+      <div class="et-dialog-panel et-dialog-panel--fit space-y-3" data-et-inv-form>
+        <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-50" data-et-inv-dialog-title>Posición</h3>
+        <input type="hidden" data-et-inv-id value="" />
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Activo</span>
+          <input type="text" data-et-inv-name class="et-field w-full text-sm py-2" placeholder="XRP, Apple…" />
+        </label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Tipo</span>
+            <select data-et-inv-type class="et-field et-select w-full text-sm py-2">
+              <option value="stocks">Acciones</option>
+              <option value="ipo">OPV</option>
+              <option value="etf">ETF</option>
+              <option value="metals">Metales</option>
+              <option value="crypto">Cripto</option>
+              <option value="bonds">Bonos</option>
+              <option value="other">Otros</option>
+            </select>
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Entidad / broker</span>
+            <input type="text" data-et-inv-platform class="et-field w-full text-sm py-2" placeholder="Trade Republic…" />
+          </label>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Precio medio compra (€)</span>
+            <input type="number" step="0.0001" min="0" data-et-inv-avg class="et-field w-full text-sm py-2 font-mono" />
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Activos (cantidad)</span>
+            <input type="number" step="any" min="0" required data-et-inv-qty class="et-field w-full text-sm py-2 font-mono" />
+          </label>
+        </div>
+        <div class="rounded-lg border border-violet-200/70 dark:border-violet-800/50 bg-violet-50/60 dark:bg-violet-950/25 px-3 py-2">
+          <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-violet-800 dark:text-violet-200">Total invertido (calculado)</p>
+          <p class="m-0 mt-1 text-lg font-bold font-mono text-gray-900 dark:text-gray-50" data-et-inv-total-display>—</p>
+        </div>
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Rendimiento %</span>
+          <input type="number" step="0.01" data-et-inv-pnl class="et-field w-full text-sm py-2 font-mono" placeholder="p. ej. -12.5 o 8" />
+        </label>
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Notas</span>
+          <textarea data-et-inv-notes rows="2" class="et-field et-textarea w-full text-sm py-2"></textarea>
+        </label>
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Color de tarjeta</span>
+          <input type="color" data-et-inv-color class="et-field h-10 w-full cursor-pointer py-1" value="#8b5cf6" />
+        </label>
+        <details class="rounded-xl border border-violet-200/70 dark:border-violet-800/50 bg-violet-50/50 dark:bg-violet-950/20 px-3 py-2.5">
+          <summary class="cursor-pointer text-xs font-semibold text-violet-800 dark:text-violet-200 select-none">
+            Compra / venta (cuenta de inversiones)
+          </summary>
+          <p class="m-0 mt-2 mb-2 text-[11px] text-gray-500 dark:text-gray-400 leading-snug">
+            Ajusta el efectivo de la cuenta marcada como «Cuenta de inversiones» al comprar o vender.
+          </p>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block space-y-1">
+              <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Cantidad</span>
+              <input type="number" step="any" min="0" data-et-inv-trade-qty class="et-field w-full text-sm py-2 et-amount" />
+            </label>
+            <label class="block space-y-1">
+              <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Precio unitario (€)</span>
+              <input type="number" step="0.0001" min="0" data-et-inv-trade-price class="et-field w-full text-sm py-2 et-amount" />
+            </label>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <button type="button" data-et-inv-buy class="et-btn-accent text-sm py-2">Registrar compra</button>
+            <button type="button" data-et-inv-sell class="et-btn-secondary text-sm py-2">Registrar venta</button>
+          </div>
+        </details>
+        <div class="flex justify-between gap-2 pt-1">
+          <button type="button" class="text-sm font-semibold text-red-600 dark:text-red-400 hover:underline" data-et-inv-delete>Eliminar</button>
+          <div class="flex gap-2">
+            <button type="button" class="et-btn-secondary text-sm py-2" data-et-inv-cancel>Cancelar</button>
+            <button type="button" class="et-btn-primary text-sm py-2" data-et-inv-save>Guardar</button>
+          </div>
+        </div>
+      </div>
+    </dialog>

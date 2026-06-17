@@ -1,0 +1,23 @@
+    <dialog data-et-dlg-transfers-history class="et-dialog p-0 w-[min(100vw-1.5rem,34rem)] max-w-[calc(100vw-1.25rem)]">
+      <div class="divide-y divide-gray-100 dark:divide-gray-800 flex flex-col">
+        <div class="px-5 py-4 flex items-start justify-between gap-3 shrink-0 bg-gradient-to-br from-indigo-500/14 via-white to-sky-500/10 dark:from-indigo-950/45 dark:via-gray-950 dark:to-sky-950/25">
+          <div>
+            <h3 class="m-0 text-lg font-semibold">Traspasos entre cuentas</h3>
+            <p class="m-0 mt-1 text-xs text-gray-500 dark:text-gray-400">Movimientos internos de efectivo (no son gastos ni ingresos).</p>
+          </div>
+          <button
+            type="button"
+            data-et-transfers-history-close
+            class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-900 shrink-0"
+            aria-label="Cerrar"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="px-5 py-4 max-h-[min(58vh,26rem)] overflow-y-auto space-y-2.5" data-et-transfers-history-list></div>
+        <div class="px-5 py-4 flex flex-wrap items-center justify-between gap-2 shrink-0 bg-gray-50/80 dark:bg-gray-900/40">
+          <button type="button" data-et-transfers-history-new class="et-btn-accent text-sm">+ Nuevo traspaso</button>
+          <button type="button" data-et-transfers-history-close-footer class="et-btn-secondary text-sm">Cerrar</button>
+        </div>
+      </div>
+    </dialog>

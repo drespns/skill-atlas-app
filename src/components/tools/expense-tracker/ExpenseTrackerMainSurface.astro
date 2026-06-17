@@ -1,0 +1,16 @@
+---
+import ExpenseTrackerActionBar from "./ExpenseTrackerActionBar.astro";
+import ExpenseTrackerBackupPanel from "./ExpenseTrackerBackupPanel.astro";
+import ExpenseTrackerWealthPanel from "./ExpenseTrackerWealthPanel.astro";
+import ExpenseTrackerDashboard from "./ExpenseTrackerDashboard.astro";
+---
+
+<div
+  class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 shadow-sm p-4 sm:p-5 space-y-5 dark:[color-scheme:dark]"
+  data-et-surface
+>
+  <ExpenseTrackerActionBar />
+  <ExpenseTrackerBackupPanel />
+  <ExpenseTrackerWealthPanel />
+  <ExpenseTrackerDashboard />
+</div>

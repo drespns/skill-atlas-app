@@ -1,0 +1,28 @@
+<input type="file" accept=".csv,text/csv" class="hidden" data-et-file-csv />
+<input type="file" accept=".json,.txt,application/json" class="hidden" data-et-file-json />
+<input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="hidden" data-et-file-xlsx />
+
+<div class="flex flex-wrap gap-2">
+  <button type="button" data-et-export-csv class="et-btn-secondary text-sm">Descargar CSV</button>
+  <button type="button" data-et-export-json class="et-btn-secondary text-sm">Descargar JSON</button>
+  <button type="button" data-et-export-xlsx class="et-btn-secondary text-sm">Descargar XLSX</button>
+  <button type="button" data-et-import-csv class="et-btn-dashed text-sm">Importar CSV (aÃ±ade filas)</button>
+  <button type="button" data-et-import-json class="et-btn-dashed text-sm">Importar JSON</button>
+  <button type="button" data-et-import-xlsx class="et-btn-dashed text-sm">Importar XLSX</button>
+</div>
+
+<ul class="m-0 pl-5 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+  <li>
+    <strong class="text-gray-700 dark:text-gray-300">CSV:</strong> columnas tipo (<code class="text-[11px]">gasto</code>,
+    <code class="text-[11px]">ingreso</code>, <code class="text-[11px]">suscripcion</code>), fechas, importe, moneda, categorÃ­a (puedes
+    usar Â«Padre / HijoÂ»), etiquetas, enlaces, notas.
+  </li>
+  <li>
+    <strong class="text-gray-700 dark:text-gray-300">JSON:</strong> al importar, Aceptar fusiona por id; Cancelar sustituye el cuaderno (se
+    mantienen opciones de vista y sync).
+  </li>
+  <li>
+    <strong class="text-gray-700 dark:text-gray-300">XLSX:</strong> mismas reglas que JSON; hojas Gastos, Ingresos, Suscripciones,
+    Recordatorios, Cobros, Meta, TagBank.
+  </li>
+</ul>

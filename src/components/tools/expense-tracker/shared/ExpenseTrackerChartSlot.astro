@@ -1,0 +1,13 @@
+---
+interface Props {
+  /** Suffix after `data-et-`, e.g. `chart-bar` */
+  etSuffix: string;
+  class?: string;
+  hidden?: boolean;
+}
+
+const { etSuffix, class: className = "", hidden = false } = Astro.props;
+const chartAttr = { [`data-et-${etSuffix}`]: "" };
+---
+
+<div class={className} {...chartAttr} hidden={hidden} />

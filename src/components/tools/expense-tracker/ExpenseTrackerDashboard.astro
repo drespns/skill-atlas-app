@@ -1,0 +1,14 @@
+---
+import ExpenseTrackerPatrimonioKpi from "./dashboard/ExpenseTrackerPatrimonioKpi.astro";
+import ExpenseTrackerCashKpi from "./dashboard/ExpenseTrackerCashKpi.astro";
+import ExpenseTrackerMonthKpiRow from "./dashboard/ExpenseTrackerMonthKpiRow.astro";
+import ExpenseTrackerYearBlock from "./dashboard/ExpenseTrackerYearBlock.astro";
+---
+
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+  <ExpenseTrackerPatrimonioKpi />
+  <ExpenseTrackerCashKpi />
+</div>
+
+<ExpenseTrackerMonthKpiRow />
+<ExpenseTrackerYearBlock />

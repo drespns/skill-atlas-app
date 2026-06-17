@@ -1,0 +1,11 @@
+---
+import ExpenseTrackerLedgerTable from "./tables/ExpenseTrackerLedgerTable.astro";
+
+interface Props {
+  filterDays: number[];
+}
+
+const { filterDays } = Astro.props;
+---
+
+<ExpenseTrackerLedgerTable variant="income" filterDays={filterDays} />

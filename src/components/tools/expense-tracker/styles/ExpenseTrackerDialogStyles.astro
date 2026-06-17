@@ -1,0 +1,52 @@
+<style is:global>
+  [data-tools-expense-page] .et-dialog,
+  dialog.et-dialog {
+    margin: auto;
+    max-height: none;
+    overflow: visible;
+    border-radius: 1rem;
+    border: 1px solid rgb(229 231 235);
+    background: rgb(255 255 255);
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    color: rgb(17 24 39);
+  }
+  [data-tools-expense-page] .et-dialog--form {
+    width: min(100vw - 1.5rem, 40rem);
+    max-width: calc(100vw - 1.25rem);
+  }
+  [data-tools-expense-page] dialog.et-sub-dialog {
+    max-height: none;
+    overflow: visible;
+  }
+  [data-tools-expense-page] dialog.et-dialog--transfer,
+  [data-tools-expense-page] dialog[data-et-dlg-transfers-history],
+  [data-tools-expense-page] dialog.et-dialog--bizum,
+  [data-tools-expense-page] dialog[data-et-dlg-bizums-history] {
+    max-height: none;
+    overflow: visible;
+  }
+  [data-tools-expense-page] dialog.et-dialog-narrow {
+    max-height: none;
+    overflow: visible;
+  }
+  .dark dialog.et-dialog,
+  .dark [data-tools-expense-page] .et-dialog {
+    border-color: rgb(31 41 55);
+    background: rgb(3 7 18);
+    color: rgb(243 244 246);
+  }
+  [data-tools-expense-page] .et-dialog::backdrop,
+  dialog.et-dialog::backdrop {
+    background: rgba(15, 23, 42, 0.45);
+  }
+  [data-tools-expense-page] .et-dialog-panel {
+    padding: 1.25rem 1.35rem;
+    max-height: none;
+    overflow: visible;
+    box-sizing: border-box;
+  }
+  [data-tools-expense-page] .et-dialog-panel--fit {
+    max-height: none;
+    overflow: visible;
+  }
+</style>

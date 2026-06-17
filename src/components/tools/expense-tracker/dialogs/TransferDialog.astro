@@ -1,0 +1,34 @@
+    <dialog data-et-dlg-transfer class="et-dialog et-dialog--transfer p-0 w-[min(100vw-1.5rem,26rem)] max-w-[calc(100vw-1.25rem)]">
+      <div class="divide-y divide-gray-100 dark:divide-gray-800 flex flex-col">
+        <div class="px-5 py-4 shrink-0 bg-gradient-to-br from-indigo-500/12 via-white to-violet-500/8 dark:from-indigo-950/40 dark:via-gray-950 dark:to-violet-950/30">
+          <h3 class="m-0 text-lg font-semibold" data-et-transfer-title>Traspaso entre cuentas</h3>
+          <p class="m-0 mt-1 text-xs text-gray-500 dark:text-gray-400">Mueve efectivo entre cuentas (p. ej. nómina → tarjeta). No es un gasto: solo ajusta saldos.</p>
+        </div>
+        <div class="px-5 py-4 space-y-3">
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Desde</span>
+            <select data-et-transfer-from class="et-field w-full text-sm py-2"></select>
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Hacia</span>
+            <select data-et-transfer-to class="et-field w-full text-sm py-2"></select>
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Importe (€)</span>
+            <input type="number" step="0.01" min="0" data-et-transfer-amount class="et-field w-full text-sm py-2 et-amount" />
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Fecha</span>
+            <input type="date" data-et-transfer-date class="et-field et-date w-full text-sm py-2" />
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Nota (opc.)</span>
+            <input type="text" data-et-transfer-note class="et-field w-full text-sm py-2" placeholder="p. ej. Nómina → tarjeta" />
+          </label>
+        </div>
+        <div class="px-5 py-4 flex justify-end gap-2 shrink-0">
+          <button type="button" data-et-transfer-cancel class="et-btn-secondary text-sm">Cancelar</button>
+          <button type="button" data-et-transfer-save class="et-btn-primary text-sm">Registrar traspaso</button>
+        </div>
+      </div>
+    </dialog>

@@ -1,0 +1,27 @@
+---
+import ExpenseTrackerKpiCard from "../shared/ExpenseTrackerKpiCard.astro";
+---
+
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+  <ExpenseTrackerKpiCard
+    title="Total invertido"
+    etSuffix="inv-kpi-invested"
+    cardClass="rounded-xl border border-violet-200/60 dark:border-violet-800/50 bg-white/80 dark:bg-gray-950/60 p-3"
+    titleClass="text-violet-800 dark:text-violet-200"
+    valueClass="mt-1 mb-0 text-xl font-bold font-mono text-gray-900 dark:text-gray-50"
+  />
+  <ExpenseTrackerKpiCard
+    title="Valor actual (est.)"
+    etSuffix="inv-kpi-current"
+    cardClass="rounded-xl border border-emerald-200/60 dark:border-emerald-800/50 bg-white/80 dark:bg-gray-950/60 p-3"
+    titleClass="text-emerald-800 dark:text-emerald-200"
+    valueClass="mt-1 mb-0 text-xl font-bold font-mono text-gray-900 dark:text-gray-50"
+  />
+  <ExpenseTrackerKpiCard
+    title="Rendimiento acumulado"
+    etSuffix="inv-kpi-pnl"
+    cardClass="rounded-xl border border-fuchsia-200/60 dark:border-fuchsia-800/50 bg-white/80 dark:bg-gray-950/60 p-3"
+    titleClass="text-fuchsia-800 dark:text-fuchsia-200"
+    valueClass="mt-1 mb-0 text-xl font-bold font-mono text-gray-900 dark:text-gray-50"
+  />
+</div>

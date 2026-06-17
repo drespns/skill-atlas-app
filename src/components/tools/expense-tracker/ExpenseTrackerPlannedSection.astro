@@ -1,0 +1,15 @@
+---
+import ExpenseTrackerSectionShell from "./shared/ExpenseTrackerSectionShell.astro";
+---
+
+<ExpenseTrackerSectionShell
+  title="Gastos previstos"
+  description="Recurrentes fijos (alquiler, cuotas…). Se suman al mes en gráficos y balance. Los registros terminados siguen visibles."
+  wrapperClass="rounded-2xl border border-rose-200/70 dark:border-rose-900/45 bg-gradient-to-br from-rose-500/8 via-white/85 to-orange-500/5 dark:from-rose-950/30 dark:via-gray-950/55 dark:to-orange-950/20 shadow-md p-4 sm:p-5 space-y-4"
+>
+  <div slot="actions" class="flex flex-wrap gap-2 shrink-0">
+    <button type="button" data-et-planned-sort class="et-btn-secondary text-xs py-1.5">Orden: importe ↓</button>
+    <button type="button" data-et-open-planned-modal class="et-btn-primary text-sm py-2">Añadir</button>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3" data-et-planned-list></div>
+</ExpenseTrackerSectionShell>

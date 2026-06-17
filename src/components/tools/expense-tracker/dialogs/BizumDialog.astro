@@ -1,0 +1,43 @@
+    <dialog data-et-dlg-bizum class="et-dialog et-dialog--bizum p-0 w-[min(100vw-1.5rem,26rem)] max-w-[calc(100vw-1.25rem)]">
+      <div class="divide-y divide-gray-100 dark:divide-gray-800 flex flex-col">
+        <div class="px-5 py-4 shrink-0 bg-gradient-to-br from-cyan-500/14 via-white to-teal-500/8 dark:from-cyan-950/40 dark:via-gray-950 dark:to-teal-950/30">
+          <h3 class="m-0 text-lg font-semibold" data-et-bizum-title>Bizum</h3>
+          <p class="m-0 mt-1 text-xs text-gray-500 dark:text-gray-400">Registra un envío o cobro P2P. Ajusta el saldo de una sola cuenta.</p>
+        </div>
+        <div class="px-5 py-4 space-y-3">
+          <fieldset class="m-0 p-0 border-0 space-y-2">
+            <legend class="text-xs font-semibold text-gray-600 dark:text-gray-300">Tipo</legend>
+            <div class="flex flex-wrap gap-4 text-sm">
+              <label class="inline-flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="et-bizum-direction" value="sent" data-et-bizum-direction checked class="h-4 w-4 text-cyan-600" />
+                Enviado (sale de mi cuenta)
+              </label>
+              <label class="inline-flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="et-bizum-direction" value="received" data-et-bizum-direction class="h-4 w-4 text-cyan-600" />
+                Recibido (entra en mi cuenta)
+              </label>
+            </div>
+          </fieldset>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300" data-et-bizum-account-label>Cuenta (desde la que envías)</span>
+            <select data-et-bizum-account class="et-field w-full text-sm py-2"></select>
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Importe (€)</span>
+            <input type="number" step="0.01" min="0" data-et-bizum-amount class="et-field w-full text-sm py-2 et-amount" />
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Fecha</span>
+            <input type="date" data-et-bizum-date class="et-field et-date w-full text-sm py-2" />
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Persona / concepto (opc.)</span>
+            <input type="text" data-et-bizum-note class="et-field w-full text-sm py-2" placeholder="p. ej. María, cena" />
+          </label>
+        </div>
+        <div class="px-5 py-4 flex justify-end gap-2 shrink-0">
+          <button type="button" data-et-bizum-cancel class="et-btn-secondary text-sm">Cancelar</button>
+          <button type="button" data-et-bizum-save class="et-btn-primary text-sm">Registrar bizum</button>
+        </div>
+      </div>
+    </dialog>
