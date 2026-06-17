@@ -8,7 +8,6 @@ import ExpenseTrackerInvestmentsSection from "../../components/tools/expense-tra
 import ExpenseTrackerPlannedSection from "../../components/tools/expense-tracker/ExpenseTrackerPlannedSection.astro";
 import ExpenseTrackerPaychecksSection from "../../components/tools/expense-tracker/ExpenseTrackerPaychecksSection.astro";
 import ExpenseTrackerScenariosSection from "../../components/tools/expense-tracker/scenarios/ExpenseTrackerScenariosSection.astro";
-import ExpenseTrackerReminderBanner from "../../components/tools/expense-tracker/ExpenseTrackerReminderBanner.astro";
 import ExpenseTrackerExpensesTable from "../../components/tools/expense-tracker/ExpenseTrackerExpensesTable.astro";
 import ExpenseTrackerIncomeTable from "../../components/tools/expense-tracker/ExpenseTrackerIncomeTable.astro";
 import ExpenseTrackerRemindersSection from "../../components/tools/expense-tracker/ExpenseTrackerRemindersSection.astro";
@@ -46,7 +45,6 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
     <ExpenseTrackerPlannedSection />
     <ExpenseTrackerPaychecksSection />
     <ExpenseTrackerScenariosSection />
-    <ExpenseTrackerReminderBanner />
     <ExpenseTrackerExpensesTable filterDays={filterDays} />
     <ExpenseTrackerIncomeTable filterDays={filterDays} />
     <ExpenseTrackerRemindersSection />

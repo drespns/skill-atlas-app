@@ -2,18 +2,35 @@
 import ExpenseTrackerReminderForm from "./reminders/ExpenseTrackerReminderForm.astro";
 ---
 
-<div class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 shadow-sm p-4 sm:p-5 space-y-4">
-  <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-    <div>
-      <h2 class="m-0 text-lg font-semibold tracking-tight">Recordatorios</h2>
-      <p class="m-0 mt-1 text-xs text-gray-500 dark:text-gray-400 max-w-2xl">
-        Fechas a recordar (p. ej. renovaciones). Opción de notificación del navegador el día indicado (requiere permiso).
-      </p>
-    </div>
-    <button type="button" data-et-reminder-notify-perm class="et-btn-secondary shrink-0 text-xs py-2">
-      Activar permiso de notificaciones
-    </button>
+<div
+  class="relative rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 shadow-sm p-4 sm:p-5 space-y-4"
+  data-et-reminders-blocked="1"
+>
+  <div
+    class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-2xl bg-gray-900/45 px-4 text-center backdrop-blur-[2px] dark:bg-gray-950/55"
+    aria-hidden="false"
+  >
+    <span class="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-900 dark:bg-amber-950/80 dark:text-amber-100">
+      Próximamente
+    </span>
+    <p class="m-0 max-w-md text-sm font-medium text-white">
+      Los recordatorios aún no están disponibles. Esta sección está desactivada de momento.
+    </p>
   </div>
-  <ExpenseTrackerReminderForm />
-  <ul class="m-0 p-0 list-none space-y-2" data-et-reminders-list></ul>
+
+  <div class="pointer-events-none select-none opacity-40" aria-hidden="true">
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+      <div>
+        <h2 class="m-0 text-lg font-semibold tracking-tight">Recordatorios</h2>
+        <p class="m-0 mt-1 text-xs text-gray-500 dark:text-gray-400 max-w-2xl">
+          Fechas a recordar (p. ej. renovaciones). Opción de notificación del navegador el día indicado (requiere permiso).
+        </p>
+      </div>
+      <button type="button" data-et-reminder-notify-perm class="et-btn-secondary shrink-0 text-xs py-2" tabindex="-1">
+        Activar permiso de notificaciones
+      </button>
+    </div>
+    <ExpenseTrackerReminderForm />
+    <ul class="m-0 p-0 list-none space-y-2" data-et-reminders-list></ul>
+  </div>
 </div>

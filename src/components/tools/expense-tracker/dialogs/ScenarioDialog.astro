@@ -6,16 +6,17 @@
     <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-50" data-et-scenario-dialog-title>Nueva simulación</h3>
     <input type="hidden" data-et-scenario-id value="" />
     <label class="block space-y-1">
-      <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Tipo</span>
+      <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">¿Cómo pagarías esto?</span>
       <select data-et-scenario-kind class="et-field et-select w-full text-sm py-2">
-        <option value="one_off">Compra única</option>
-        <option value="installments">Cuotas / financiación</option>
-        <option value="bundle">Viaje o varias partidas</option>
+        <option value="one_off">Un solo pago (ej. compra al contado)</option>
+        <option value="installments">Cuotas cada mes (ej. financiación del móvil)</option>
+        <option value="bundle">Varios gastos en una fecha (ej. vuelo + hotel + cenas)</option>
       </select>
     </label>
+    <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed" data-et-scenario-kind-hint></p>
     <label class="block space-y-1">
-      <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Nombre</span>
-      <input type="text" data-et-scenario-title class="et-field w-full text-sm py-2" placeholder="Móvil nuevo, viaje Japón…" />
+      <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Nombre del deseo</span>
+      <input type="text" data-et-scenario-title class="et-field w-full text-sm py-2" placeholder="Móvil nuevo, viaje a Japón…" />
     </label>
     <label class="block space-y-1">
       <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Categoría (opc.)</span>
@@ -27,32 +28,35 @@
         <input type="number" step="0.01" min="0" data-et-scenario-amount class="et-field w-full text-sm py-2 font-mono" />
       </label>
       <label class="block space-y-1">
-        <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Fecha prevista</span>
+        <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Fecha en la que pagarías</span>
         <input type="date" data-et-scenario-target-date class="et-field et-date w-full text-sm py-2" />
       </label>
     </div>
     <div class="space-y-3 hidden" data-et-scenario-panel-installments>
       <div class="grid grid-cols-2 gap-3">
         <label class="block space-y-1">
-          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Cuota mensual (€)</span>
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Cuota cada mes (€)</span>
           <input type="number" step="0.01" min="0" data-et-scenario-installment-amount class="et-field w-full text-sm py-2 font-mono" />
         </label>
         <label class="block space-y-1">
-          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Nº cuotas</span>
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Nº de meses</span>
           <input type="number" min="1" max="120" data-et-scenario-installment-count class="et-field w-full text-sm py-2 font-mono" />
         </label>
       </div>
       <label class="block space-y-1">
-        <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Primer mes (YYYY-MM)</span>
-        <input type="month" data-et-scenario-start-month class="et-field w-full text-sm py-2 font-mono" />
+        <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Primer mes de la cuota</span>
+        <input type="month" data-et-scenario-start-month data-et-month-picker class="et-field et-date w-full text-sm py-2 font-mono" />
       </label>
     </div>
     <div class="space-y-3 hidden" data-et-scenario-panel-bundle>
+      <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400">
+        Añade cada concepto por separado; la app los suma y los cuenta en el mes que elijas abajo.
+      </p>
       <div class="space-y-2" data-et-scenario-bundle-items></div>
-      <button type="button" data-et-scenario-bundle-add class="et-btn-dashed text-xs py-1.5">+ Añadir partida</button>
+      <button type="button" data-et-scenario-bundle-add class="et-btn-dashed text-xs py-1.5">+ Añadir concepto</button>
       <label class="block space-y-1">
-        <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Mes del gasto</span>
-        <input type="month" data-et-scenario-bundle-month class="et-field w-full text-sm py-2 font-mono" />
+        <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Mes en que pagarías todo</span>
+        <input type="month" data-et-scenario-bundle-month data-et-month-picker class="et-field et-date w-full text-sm py-2 font-mono" />
       </label>
     </div>
     <label class="block space-y-1">

@@ -14,7 +14,7 @@ import {
   type ScenarioTrafficLight,
   formatEurEs,
 } from "@lib/tools-expense-tracker";
-import { refreshExpenseDatePicker } from "./expense-tracker-dates";
+import { refreshExpenseDatePicker, initExpenseMonthPickers } from "./expense-tracker-dates";
 
 echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer]);
 
@@ -33,10 +33,22 @@ export type ScenarioUiDeps = {
 let scenarioCompareIds: string[] = [];
 
 function trafficLabel(t: ScenarioTrafficLight): string {
-  if (t === "viable") return "Viable";
-  if (t === "tight") return "Ajustado";
-  return "Arriesgado";
+  if (t === "viable") return "Te encaja";
+  if (t === "tight") return "Justo";
+  return "Complicado";
 }
+
+function trafficHint(t: ScenarioTrafficLight): string {
+  if (t === "viable") return "La cuota o compra deja margen cómodo respecto a lo que ya gastas (incl. previstos).";
+  if (t === "tight") return "Podrías hacerlo, pero te quedaría poco margen mensual o de efectivo.";
+  return "Con tus números actuales (incl. gastos previstos) sería arriesgado.";
+}
+
+const KIND_HINTS: Record<ScenarioKind, string> = {
+  one_off: "Un pago puntual en la fecha que indiques (ej. 800 € el día que compres el portátil).",
+  installments: "La misma cuota cada mes durante varios meses (ej. 50 €/mes × 12 por el móvil).",
+  bundle: "Varios importes que pagarías en el mismo mes: vuelos, hotel, entradas… La app los suma.",
+};
 
 function trafficClass(t: ScenarioTrafficLight): string {
   if (t === "viable") return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200";
@@ -61,19 +73,50 @@ function renderScenarioMiniChart(el: HTMLElement, scenario: ExpenseScenario, sta
   const monthShort = series.months.map((m) => m.slice(5));
   inst.setOption({
     title: {
-      text: "Impacto mensual",
+      text: "Salidas mensuales estimadas",
       left: 0,
       top: 0,
-      textStyle: { fontSize: 11, fontWeight: 600 },
+      textStyle: { fontSize: 10, fontWeight: 600 },
     },
-    tooltip: { trigger: "axis" },
-    legend: { bottom: 0, textStyle: { fontSize: 10 } },
-    grid: { left: 36, right: 8, top: 28, bottom: 28 },
-    xAxis: { type: "category", data: monthShort },
-    yAxis: { type: "value", splitLine: { show: false } },
+    tooltip: {
+      trigger: "axis",
+      valueFormatter: (v) => `${formatEurEs(Number(v))}`,
+    },
+    legend: {
+      bottom: 2,
+      left: "center",
+      itemWidth: 10,
+      itemHeight: 8,
+      itemGap: 12,
+      textStyle: { fontSize: 9 },
+    },
+    grid: { left: 42, right: 10, top: 30, bottom: 44 },
+    xAxis: {
+      type: "category",
+      data: monthShort,
+      axisLabel: { fontSize: 9, margin: 10, interval: 0 },
+    },
+    yAxis: {
+      type: "value",
+      splitLine: { show: false },
+      axisLabel: { fontSize: 9, formatter: (v: number) => (v >= 1000 ? `${Math.round(v / 100) / 10}k` : String(v)) },
+    },
     series: [
-      { name: "Sin deseo", type: "line", smooth: true, data: series.baseline, showSymbol: false, lineStyle: { type: "dashed" } },
-      { name: "Con deseo", type: "line", smooth: true, data: series.withScenario, showSymbol: false },
+      {
+        name: "Sin este deseo",
+        type: "line",
+        smooth: true,
+        data: series.baseline,
+        showSymbol: false,
+        lineStyle: { type: "dashed" },
+      },
+      {
+        name: "Con este deseo",
+        type: "line",
+        smooth: true,
+        data: series.withScenario,
+        showSymbol: false,
+      },
     ],
   });
 }
@@ -83,6 +126,8 @@ function syncScenarioKindPanels(root: HTMLElement) {
   root.querySelector("[data-et-scenario-panel-one-off]")?.classList.toggle("hidden", kind !== "one_off");
   root.querySelector("[data-et-scenario-panel-installments]")?.classList.toggle("hidden", kind !== "installments");
   root.querySelector("[data-et-scenario-panel-bundle]")?.classList.toggle("hidden", kind !== "bundle");
+  const hint = root.querySelector<HTMLElement>("[data-et-scenario-kind-hint]");
+  if (hint) hint.textContent = KIND_HINTS[kind] ?? "";
 }
 
 function readBundleItems(root: HTMLElement, deps: ScenarioUiDeps): ExpenseScenario["items"] {
@@ -157,6 +202,7 @@ export function openScenarioDialog(root: HTMLElement, deps: ScenarioUiDeps, scen
   dlg.showModal();
   const dateEl = root.querySelector<HTMLInputElement>("[data-et-scenario-target-date]");
   if (dateEl) refreshExpenseDatePicker(dateEl, dateEl.value);
+  initExpenseMonthPickers(root);
 }
 
 function saveScenarioFromDialog(root: HTMLElement, deps: ScenarioUiDeps) {
@@ -258,8 +304,8 @@ function renderScenarioCompare(root: HTMLElement, state: ExpenseTrackerState) {
     card.innerHTML = `
       <p class="m-0 font-semibold text-gray-900 dark:text-gray-50 truncate">${sc.title}</p>
       <p class="m-0"><span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${trafficClass(v.trafficLight)}">${trafficLabel(v.trafficLight)}</span></p>
-      <p class="m-0 text-gray-600 dark:text-gray-400">Impacto/mes: <strong>${formatEurEs(v.monthlyImpact)}</strong></p>
-      <p class="m-0 text-gray-600 dark:text-gray-400">Efectivo tras one-off: <strong>${formatEurEs(Math.max(0, v.cashAvailable - v.oneOffTotal))}</strong></p>`;
+      <p class="m-0 text-gray-600 dark:text-gray-400">Coste/mes: <strong>${formatEurEs(v.monthlyImpact)}</strong></p>
+      <p class="m-0 text-gray-600 dark:text-gray-400">Efectivo tras el pago: <strong>${formatEurEs(Math.max(0, v.cashAvailable - v.oneOffTotal))}</strong></p>`;
     grid.appendChild(card);
   }
 }
@@ -276,7 +322,8 @@ export function renderScenarioSection(root: HTMLElement, deps: ScenarioUiDeps) {
   if (!scenarios.length) {
     const empty = document.createElement("p");
     empty.className = "text-sm text-gray-600 dark:text-gray-400 col-span-full py-2";
-    empty.textContent = "Aún no hay simulaciones. Prueba «¿me llega este móvil a plazos?» o un viaje con varias partidas.";
+    empty.textContent =
+      "Aún no hay simulaciones. Prueba «¿me llega el móvil a 50 €/mes?» o un viaje con vuelo + hotel.";
     list.appendChild(empty);
     return;
   }
@@ -294,22 +341,26 @@ export function renderScenarioSection(root: HTMLElement, deps: ScenarioUiDeps) {
     const badge = document.createElement("span");
     badge.className = `shrink-0 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${trafficClass(v.trafficLight)}`;
     badge.textContent = trafficLabel(v.trafficLight);
+    badge.title = trafficHint(v.trafficLight);
     head.append(title, badge);
 
     const sub = document.createElement("p");
     sub.className = "m-0 text-sm et-amount text-violet-800 dark:text-violet-200";
     if (sc.kind === "installments") {
-      sub.textContent = `${formatEurEs(sc.installmentAmount ?? 0)}/mes × ${sc.installmentCount ?? 0} · Total ${formatEurEs(scenarioTotalAmount(sc))}`;
+      sub.textContent = `${formatEurEs(sc.installmentAmount ?? 0)}/mes durante ${sc.installmentCount ?? 0} meses · Total ${formatEurEs(scenarioTotalAmount(sc))}`;
+    } else if (sc.kind === "bundle") {
+      const n = sc.items?.length ?? 0;
+      sub.textContent = `${formatEurEs(scenarioTotalAmount(sc))} en un mes · ${n} concepto${n === 1 ? "" : "s"}`;
     } else {
-      sub.textContent = formatEurEs(scenarioTotalAmount(sc));
+      sub.textContent = `Pago único de ${formatEurEs(scenarioTotalAmount(sc))}`;
     }
 
     const meta = document.createElement("p");
-    meta.className = "m-0 text-[11px] text-gray-500 dark:text-gray-400";
-    meta.textContent = `Superávit mes ref.: ${formatEurEs(v.monthlySurplus)} · Efectivo: ${formatEurEs(v.cashAvailable)}`;
+    meta.className = "m-0 text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed";
+    meta.textContent = `Margen mensual (ingresos − gastos, suscripciones y previstos): ${formatEurEs(v.monthlySurplus)} · Efectivo en cuentas: ${formatEurEs(v.cashAvailable)}`;
 
     const chartEl = document.createElement("div");
-    chartEl.className = "min-h-[140px] w-full";
+    chartEl.className = "min-h-[168px] w-full";
     chartEl.dataset.etScenarioChart = sc.id;
 
     const actions = document.createElement("div");
@@ -333,7 +384,7 @@ export function renderScenarioSection(root: HTMLElement, deps: ScenarioUiDeps) {
     actions.append(
       mkBtn("Editar", "et-btn-secondary text-[11px] py-1", () => openScenarioDialog(root, deps, sc)),
       compareBtn,
-      mkBtn("Promover", "et-btn-accent text-[11px] py-1", () => promoteScenario(root, deps, sc.id)),
+      mkBtn("Promover a previsto", "et-btn-accent text-[11px] py-1", () => promoteScenario(root, deps, sc.id)),
     );
 
     card.append(head, sub, meta, chartEl, actions);

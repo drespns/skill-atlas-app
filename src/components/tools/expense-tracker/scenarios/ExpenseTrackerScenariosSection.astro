@@ -1,11 +1,15 @@
 ---
 import ExpenseTrackerSectionShell from "../shared/ExpenseTrackerSectionShell.astro";
 import ExpenseTrackerScenarioCompareBar from "./ExpenseTrackerScenarioCompareBar.astro";
+
+const helpTooltip =
+  "Aquí pruebas compras hipotéticas sin tocar tu presupuesto real. Los cálculos usan ingresos del mes, gastos confirmados, suscripciones y también tus gastos previstos. El semáforo compara lo que costaría este deseo con el margen que te queda y el efectivo en cuentas. Si decides hacerlo, pulsa Promover: pasará a Gastos previstos y empezará a contar en KPIs y gráficos.";
 ---
 
 <ExpenseTrackerSectionShell
   title="Simulaciones y deseos"
-  description="Valora compras o viajes antes de comprometerlos. No afectan a KPIs ni gráficos hasta que los promuevas a gasto previsto."
+  description="Pregúntate «¿me lo puedo permitir?» antes de comprometerte. Nada de aquí suma a tus totales hasta que lo promuevas."
+  helpTooltip={helpTooltip}
   wrapperClass="rounded-2xl border border-violet-200/70 dark:border-violet-900/45 bg-gradient-to-br from-violet-500/10 via-white/88 to-fuchsia-500/8 dark:from-violet-950/35 dark:via-gray-950/55 dark:to-fuchsia-950/25 shadow-md p-4 sm:p-5 space-y-4"
 >
   <button slot="actions" type="button" data-et-open-scenario-modal class="et-btn-accent shrink-0 text-sm py-2">
