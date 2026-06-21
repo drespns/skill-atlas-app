@@ -48,6 +48,12 @@ import {
   totalExpensesInPeriod,
   periodMarginSnapshot,
   periodFixedDiscretionarySplit,
+  buildMonthlyCashflowProjection,
+  monthCashflowDualSnapshot,
+  aggregateCashflowBySource,
+  CASHFLOW_SOURCE_LABELS,
+  type CashflowEvent,
+  type CashflowSource,
   formatIbanDisplay,
   formatEurEs,
   formatChartNumberEs,
@@ -151,26 +157,91 @@ function fmtNumEs(n: number) {
 }
 
 const CHART_FONT = "inherit, system-ui, -apple-system, sans-serif";
+const CHART_AXIS_FONT = 11;
+const CHART_TITLE_FONT = 13;
+const CHART_TOOLTIP_FONT = 13;
 
-function chartAxisTooltip(params: unknown): string {
+/** Eventos del último render de gráficos (desglose en tooltips). */
+let lastLineChartEvents: CashflowEvent[] = [];
+let lastLineChartMonths: string[] = [];
+let lastYearChartEvents: CashflowEvent[] = [];
+let lastYearChartMonths: string[] = [];
+
+function etKpiRemainingLabel(amount: number): string {
+  const isEn = document.documentElement.lang.startsWith("en");
+  if (amount <= 0.005) return "";
+  const fmt = fmtEurCompact(amount);
+  return isEn ? `+ ${fmt} projected` : `+ ${fmt} previsto`;
+}
+
+function cashflowSourceLines(breakdown: Partial<Record<CashflowSource, number>>, direction: "in" | "out"): string[] {
+  const lines: string[] = [];
+  const order: CashflowSource[] =
+    direction === "out"
+      ? ["expense", "subscription", "planned_down_payment", "planned", "debt_installment"]
+      : ["paycheck", "income_adhoc"];
+  for (const src of order) {
+    const raw = breakdown[src];
+    if (raw == null || Math.abs(raw) < 0.005) continue;
+    const val = Math.abs(raw);
+    lines.push(`${CASHFLOW_SOURCE_LABELS[src]}: ${fmtEur(val)}`);
+  }
+  return lines;
+}
+
+function chartAxisTooltipRich(params: unknown, months: string[], events: CashflowEvent[]): string {
   const rows = Array.isArray(params) ? params : [params];
   if (!rows.length) return "";
-  const ax = (rows[0] as { axisValue?: string }).axisValue ?? "";
-  const lines = [`<span style="font-weight:600;font-family:${CHART_FONT}">${ax}</span>`];
+  const ax = (rows[0] as { axisValue?: string; dataIndex?: number }).axisValue ?? "";
+  const dataIndex = (rows[0] as { dataIndex?: number }).dataIndex;
+  let monthKey = ax;
+  if (dataIndex != null && months[dataIndex]) monthKey = months[dataIndex]!;
+  else {
+    const idx = months.findIndex((m) => m === ax || m.endsWith(ax));
+    if (idx >= 0) monthKey = months[idx]!;
+  }
+  const monthEvents = events.filter((e) => e.monthKey === monthKey);
+  const outEvents = monthEvents.filter((e) => e.direction === "out");
+  const inEvents = monthEvents.filter((e) => e.direction === "in");
+  const outBreak = aggregateCashflowBySource(outEvents, monthKey, state.chartMoneyMode, state.eurPerUsd);
+  const inBreak = aggregateCashflowBySource(inEvents, monthKey, state.chartMoneyMode, state.eurPerUsd);
+  const lines = [
+    `<span style="font-weight:600;font-size:${CHART_TOOLTIP_FONT}px;font-family:${CHART_FONT}">${monthKey}</span>`,
+  ];
   for (const r of rows as { seriesName?: string; value?: number; marker?: string }[]) {
     const v = Number(r.value);
-    lines.push(
-      `${r.marker ?? ""} ${r.seriesName ?? ""}: ${Number.isFinite(v) ? fmtEur(v) : "—"}`,
-    );
+    lines.push(`${r.marker ?? ""} ${r.seriesName ?? ""}: ${Number.isFinite(v) ? fmtEur(v) : "—"}`);
+  }
+  const outLines = cashflowSourceLines(outBreak, "out");
+  const inLines = cashflowSourceLines(inBreak, "in");
+  if (outLines.length) {
+    lines.push(`<span style="opacity:0.75;font-size:${CHART_TOOLTIP_FONT - 1}px">Salidas</span>`);
+    for (const l of outLines) lines.push(`<span style="font-size:${CHART_TOOLTIP_FONT}px;padding-left:6px">${l}</span>`);
+  }
+  if (inLines.length) {
+    lines.push(`<span style="opacity:0.75;font-size:${CHART_TOOLTIP_FONT - 1}px">Ingresos</span>`);
+    for (const l of inLines) lines.push(`<span style="font-size:${CHART_TOOLTIP_FONT}px;padding-left:6px">${l}</span>`);
   }
   return lines.join("<br/>");
+}
+
+function lineChartTooltip(params: unknown): string {
+  return chartAxisTooltipRich(params, lastLineChartMonths, lastLineChartEvents);
+}
+
+function yearChartTooltip(params: unknown): string {
+  return chartAxisTooltipRich(params, lastYearChartMonths, lastYearChartEvents);
+}
+
+function chartAxisTooltip(params: unknown): string {
+  return lineChartTooltip(params);
 }
 
 function chartPieTooltip(params: unknown): string {
   const p = params as { name?: string; value?: number; percent?: number; marker?: string };
   const val = Number(p.value);
   const pct = Number(p.percent);
-  return `${p.marker ?? ""} ${p.name ?? ""}: ${Number.isFinite(val) ? fmtEur(val) : "—"} (${Number.isFinite(pct) ? pct.toFixed(1) : "0"}%)`;
+  return `<span style="font-size:${CHART_TOOLTIP_FONT}px;font-family:${CHART_FONT}">${p.marker ?? ""} ${p.name ?? ""}: ${Number.isFinite(val) ? fmtEur(val) : "—"} (${Number.isFinite(pct) ? pct.toFixed(1) : "0"}%)</span>`;
 }
 
 function amountInEur(amount: number, currency: "EUR" | "USD", fx: number) {
@@ -226,7 +297,7 @@ function pushChart(el: HTMLElement | null, opt: echarts.EChartsCoreOption) {
   if (!el) return;
   const inst = echarts.init(el, undefined, { renderer: "canvas" });
   const merged: echarts.EChartsCoreOption = {
-    textStyle: { fontFamily: CHART_FONT },
+    textStyle: { fontFamily: CHART_FONT, fontSize: CHART_AXIS_FONT },
     ...opt,
   };
   inst.setOption(merged);
@@ -1589,23 +1660,24 @@ function renderKpis(root: HTMLElement) {
   if (elIncPeriod) elIncPeriod.textContent = fmtEurCompact(totalIncomeInPeriod(state, state.period));
 
   const curMonth = today.slice(0, 7);
-  const ts = state.trackingStartDate?.slice(0, 10);
-  const exM = state.expenses.filter((e) => {
-    if (!e.date.startsWith(curMonth) || e.confirmed === false) return false;
-    if (ts && ts.length === 10 && e.date < ts) return false;
-    return true;
-  });
-  let expMEur = 0;
-  for (const e of exM) {
-    expMEur += amountInEur(Math.max(0, e.amount), e.currency, fx);
+  const dual = monthCashflowDualSnapshot(state, curMonth, today);
+  if (elInc) elInc.textContent = fmtEurCompact(dual.actualIn);
+  if (elBal) elBal.textContent = fmtEurCompact(dual.actualNet);
+
+  const elIncRem = root.querySelector<HTMLElement>("[data-et-kpi-income-remaining]");
+  const elBalRem = root.querySelector<HTMLElement>("[data-et-kpi-balance-remaining]");
+  if (elIncRem) {
+    elIncRem.textContent = etKpiRemainingLabel(dual.remainingIn);
+    elIncRem.classList.toggle("hidden", dual.remainingIn <= 0.005);
   }
-  const burn = subscriptionMonthlyBurnByCurrency(state);
-  const planM = monthlyPlannedOutflowSeries(state, [curMonth], "unify_eur", fx);
-  const outMEur = expMEur + amountInEur(burn.eur, "EUR", fx) + amountInEur(burn.usd, "USD", fx) + (planM.seriesUnified[0] ?? 0);
-  const incS = monthlyIncomeSeries(state, [curMonth], "unify_eur", fx);
-  const incEur = incS.seriesUnified[0] ?? 0;
-  if (elInc) elInc.textContent = fmtEurCompact(incEur);
-  if (elBal) elBal.textContent = fmtEurCompact(incEur - outMEur);
+  if (elBalRem) {
+    const isEn = document.documentElement.lang.startsWith("en");
+    const parts: string[] = [];
+    if (dual.remainingIn > 0.005) parts.push(isEn ? `${fmtEurCompact(dual.remainingIn)} in` : `${fmtEurCompact(dual.remainingIn)} ing.`);
+    if (dual.remainingOut > 0.005) parts.push(isEn ? `${fmtEurCompact(dual.remainingOut)} out` : `${fmtEurCompact(dual.remainingOut)} sal.`);
+    elBalRem.textContent = parts.length ? (isEn ? `+ ${parts.join(" · ")} projected` : `+ ${parts.join(" · ")} prev.`) : "";
+    elBalRem.classList.toggle("hidden", !parts.length);
+  }
   renderPatrimonioKpi(root);
 
   const elYi = root.querySelector<HTMLElement>("[data-et-kpi-year-income]");
@@ -3318,7 +3390,7 @@ function naturalYearMonthKeys(year: number): string[] {
   return Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
 }
 
-/** Misma lógica que el gráfico anual: gastos confirmados del año + burn + previstos vs ingresos. */
+/** Misma lógica que el gráfico anual: proyección unificada de caja (gastos + subs + previstos + deudas vs ingresos). */
 function buildNaturalYearOutInSeries(year: number): {
   months: string[];
   outEur: number[];
@@ -3327,47 +3399,25 @@ function buildNaturalYearOutInSeries(year: number): {
   incEur: number[];
   incUsd: number[];
   incUni: number[];
+  events: CashflowEvent[];
 } {
   const months = naturalYearMonthKeys(year);
-  const prefix = String(year);
-  const exYear = state.expenses.filter((e) => e.date.startsWith(prefix) && e.confirmed !== false);
   const mode = state.chartMoneyMode;
   const fx = state.eurPerUsd;
-  const sparse = monthlyExpenseSeries(exYear, fx, mode, undefined);
-  const padded = padExpenseSeriesToMonths(
-    months,
-    sparse.months,
-    sparse.seriesEur,
-    sparse.seriesUsd,
-    sparse.seriesUnified,
-  );
-  const seriesEurPad = [...padded.seriesEur];
-  const seriesUsdPad = [...padded.seriesUsd];
-  let seriesUniPad = [...padded.seriesUnified];
-  const burn = subscriptionMonthlyBurnByCurrency(state);
-  const plannedSer = monthlyPlannedOutflowSeries(state, months, mode, fx);
-  for (let i = 0; i < months.length; i++) {
-    seriesEurPad[i] = (seriesEurPad[i] ?? 0) + burn.eur + (plannedSer.seriesEur[i] ?? 0);
-    seriesUsdPad[i] = (seriesUsdPad[i] ?? 0) + burn.usd + (plannedSer.seriesUsd[i] ?? 0);
-  }
-  if (mode === "unify_eur") {
-    seriesUniPad = months.map((_, i) =>
-      (seriesEurPad[i] ?? 0) + convertAmount(seriesUsdPad[i] ?? 0, "USD", "EUR", fx),
-    );
-  } else if (mode === "unify_usd") {
-    seriesUniPad = months.map((_, i) =>
-      (seriesUsdPad[i] ?? 0) + convertAmount(seriesEurPad[i] ?? 0, "EUR", "USD", fx),
-    );
-  }
-  const inc = monthlyIncomeSeries(state, months, mode, fx);
+  const proj = buildMonthlyCashflowProjection(state, months, {
+    horizon: "projected",
+    mode,
+    eurPerUsd: fx,
+  });
   return {
     months,
-    outEur: seriesEurPad,
-    outUsd: seriesUsdPad,
-    outUni: seriesUniPad,
-    incEur: [...inc.seriesEur],
-    incUsd: [...inc.seriesUsd],
-    incUni: [...inc.seriesUnified],
+    outEur: proj.outEur,
+    outUsd: proj.outUsd,
+    outUni: proj.outUnified,
+    incEur: proj.inEur,
+    incUsd: proj.inUsd,
+    incUni: proj.inUnified,
+    events: proj.events,
   };
 }
 
@@ -3412,6 +3462,14 @@ function chartTimelineMonthKeys(): string[] {
     if (lo > hi) continue;
     for (const k of monthKeysRange(lo, hi)) {
       if (!startIso || k >= startIso.slice(0, 7)) keys.add(k);
+    }
+  }
+  for (const debt of state.debts ?? []) {
+    for (const inst of debt.installments ?? []) {
+      if (inst.status !== "pending") continue;
+      const mk = inst.dueDate.slice(0, 7);
+      if (startIso && inst.dueDate < startIso) continue;
+      keys.add(mk);
     }
   }
   const sorted = [...keys].sort();
@@ -3543,57 +3601,46 @@ function renderCharts(root: HTMLElement) {
 
   const filterLabel = chartFid ? formatCategoryPath(state, chartFid) : "";
   const monthsFull = chartTimelineMonthKeys();
-  const expenseSparse = monthlyExpenseSeries(
-    ex,
-    fx,
+  const lineProj = buildMonthlyCashflowProjection(state, monthsFull, {
+    horizon: "projected",
     mode,
-    chartFid ? { categoryFilterId: chartFid, state } : undefined,
-  );
-  const padded = padExpenseSeriesToMonths(
-    monthsFull,
-    expenseSparse.months,
-    expenseSparse.seriesEur,
-    expenseSparse.seriesUsd,
-    expenseSparse.seriesUnified,
-  );
-  const seriesEurPad = [...padded.seriesEur];
-  const seriesUsdPad = [...padded.seriesUsd];
-  let seriesUnifiedPad = [...padded.seriesUnified];
-  const burn = subscriptionMonthlyBurnByCurrency(state);
-  const plannedSer = monthlyPlannedOutflowSeries(state, monthsFull, mode, fx);
-  for (let i = 0; i < monthsFull.length; i++) {
-    seriesEurPad[i] = (seriesEurPad[i] ?? 0) + burn.eur + (plannedSer.seriesEur[i] ?? 0);
-    seriesUsdPad[i] = (seriesUsdPad[i] ?? 0) + burn.usd + (plannedSer.seriesUsd[i] ?? 0);
-  }
-  if (mode === "unify_eur") {
-    seriesUnifiedPad = monthsFull.map((_, i) =>
-      (seriesEurPad[i] ?? 0) + convertAmount(seriesUsdPad[i] ?? 0, "USD", "EUR", fx),
-    );
-  } else if (mode === "unify_usd") {
-    seriesUnifiedPad = monthsFull.map((_, i) =>
-      (seriesUsdPad[i] ?? 0) + convertAmount(seriesEurPad[i] ?? 0, "EUR", "USD", fx),
-    );
-  }
-  const inc = monthlyIncomeSeries(state, monthsFull, mode, fx);
+    eurPerUsd: fx,
+    categoryFilterId: chartFid || undefined,
+  });
+  lastLineChartMonths = monthsFull;
+  lastLineChartEvents = lineProj.events;
+  const seriesEurPad = lineProj.outEur;
+  const seriesUsdPad = lineProj.outUsd;
+  const seriesUnifiedPad = lineProj.outUnified;
+  const inc = { seriesEur: lineProj.inEur, seriesUsd: lineProj.inUsd, seriesUnified: lineProj.inUnified };
 
   const lineOpt: echarts.EChartsCoreOption = {
     title: {
       text: filterLabel
         ? `Salidas e ingresos por mes · ${filterLabel}`
-        : "Salidas e ingresos por mes (gastos confirmados + suscripciones + previstos)",
+        : "Salidas e ingresos por mes (gastos + suscripciones + previstos + deudas)",
       left: 0,
       top: 4,
-      textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
+      textStyle: { fontSize: CHART_TITLE_FONT, fontWeight: 600, color: textPrimary() },
     },
-    tooltip: { trigger: "axis", formatter: chartAxisTooltip },
-    legend: { bottom: 0, textStyle: { color: textMuted() } },
+    tooltip: {
+      trigger: "axis",
+      formatter: lineChartTooltip,
+      textStyle: { fontSize: CHART_TOOLTIP_FONT, fontFamily: CHART_FONT },
+      padding: [10, 14],
+    },
+    legend: { bottom: 0, textStyle: { color: textMuted(), fontSize: CHART_AXIS_FONT } },
     grid: { left: 48, right: 16, top: 44, bottom: 48 },
     xAxis: {
       type: "category",
       data: monthsFull,
-      axisLabel: { color: textMuted(), rotate: monthsFull.length > 14 ? 32 : 0 },
+      axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT, rotate: monthsFull.length > 14 ? 32 : 0 },
     },
-    yAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), formatter: (v: number) => fmtNumEs(v) } },
+    yAxis: {
+      type: "value",
+      splitLine: { lineStyle: { color: borderSubtle() } },
+      axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT, formatter: (v: number) => fmtNumEs(v) },
+    },
     series:
       mode === "mixed"
         ? [
@@ -3658,15 +3705,24 @@ function renderCharts(root: HTMLElement) {
           top: 4,
           textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
         },
-        tooltip: { trigger: "axis", formatter: chartAxisTooltip },
-        legend: { bottom: 0, textStyle: { color: textMuted() } },
+        tooltip: {
+          trigger: "axis",
+          formatter: lineChartTooltip,
+          textStyle: { fontSize: CHART_TOOLTIP_FONT, fontFamily: CHART_FONT },
+          padding: [10, 14],
+        },
+        legend: { bottom: 0, textStyle: { color: textMuted(), fontSize: CHART_AXIS_FONT } },
         grid: { left: 48, right: 16, top: 44, bottom: 40 },
         xAxis: {
           type: "category",
           data: monthsFull,
-          axisLabel: { color: textMuted(), rotate: monthsFull.length > 14 ? 32 : 0 },
+          axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT, rotate: monthsFull.length > 14 ? 32 : 0 },
         },
-        yAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), formatter: (v: number) => fmtNumEs(v) } },
+        yAxis: {
+          type: "value",
+          splitLine: { lineStyle: { color: borderSubtle() } },
+          axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT, formatter: (v: number) => fmtNumEs(v) },
+        },
         series: [
           {
             name: "Neto EUR",
@@ -3696,35 +3752,36 @@ function renderCharts(root: HTMLElement) {
           text: filterLabel ? `Ingresos vs gastos · ${filterLabel}` : "Ingresos vs gastos y neto",
           left: 0,
           top: 4,
-          textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
+          textStyle: { fontSize: CHART_TITLE_FONT, fontWeight: 600, color: textPrimary() },
         },
         tooltip: {
           trigger: "axis",
           formatter: (params: unknown) => {
+            const base = lineChartTooltip(params);
             const rows = Array.isArray(params) ? params : [params];
-            if (!rows.length) return "";
             const ax = (rows[0] as { axisValue?: string }).axisValue ?? "";
-            const lines = [ax];
-            for (const r of rows as { seriesName?: string; value?: number; marker?: string }[]) {
-              const v = Number(r.value);
-              lines.push(`${r.marker ?? ""} ${r.seriesName ?? ""}: ${Number.isFinite(v) ? fmtEur(v) : ""}`);
-            }
             const i = monthsFull.indexOf(ax);
             if (i >= 0 && inc.seriesUnified[i]! > 0) {
               const rate = ((net[i]! / inc.seriesUnified[i]!) * 100).toFixed(1);
-              lines.push(`Tasa ahorro (neto/ingreso): ${rate}%`);
+              return `${base}<br/><span style="font-size:${CHART_TOOLTIP_FONT - 1}px;opacity:0.85">Tasa ahorro: ${rate}%</span>`;
             }
-            return lines.join("<br/>");
+            return base;
           },
+          textStyle: { fontSize: CHART_TOOLTIP_FONT, fontFamily: CHART_FONT },
+          padding: [10, 14],
         },
-        legend: { bottom: 0, textStyle: { color: textMuted() } },
+        legend: { bottom: 0, textStyle: { color: textMuted(), fontSize: CHART_AXIS_FONT } },
         grid: { left: 48, right: 16, top: 44, bottom: 40 },
         xAxis: {
           type: "category",
           data: monthsFull,
-          axisLabel: { color: textMuted(), rotate: monthsFull.length > 14 ? 32 : 0 },
+          axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT, rotate: monthsFull.length > 14 ? 32 : 0 },
         },
-        yAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), formatter: (v: number) => fmtNumEs(v) } },
+        yAxis: {
+          type: "value",
+          splitLine: { lineStyle: { color: borderSubtle() } },
+          axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT, formatter: (v: number) => fmtNumEs(v) },
+        },
         series: [
           {
             name: labelInc,
@@ -3772,7 +3829,13 @@ function renderCharts(root: HTMLElement) {
         top: 4,
         textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
       },
-      tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, formatter: chartAxisTooltip },
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+        formatter: chartAxisTooltip,
+        textStyle: { fontSize: CHART_TOOLTIP_FONT, fontFamily: CHART_FONT },
+        padding: [10, 14],
+      },
       legend: { bottom: 0, textStyle: { color: textMuted() } },
       grid: { left: 120, right: 24, top: 44, bottom: 40 },
       xAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), formatter: (v: number) => fmtNumEs(v) } },
@@ -3793,7 +3856,13 @@ function renderCharts(root: HTMLElement) {
         top: 4,
         textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
       },
-      tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, formatter: chartAxisTooltip },
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+        formatter: chartAxisTooltip,
+        textStyle: { fontSize: CHART_TOOLTIP_FONT, fontFamily: CHART_FONT },
+        padding: [10, 14],
+      },
       grid: { left: 120, right: 24, top: 44, bottom: 16 },
       xAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), formatter: (v: number) => fmtNumEs(v) } },
       yAxis: { type: "category", data: catNames, axisLabel: { color: textMuted() } },
@@ -3813,7 +3882,12 @@ function renderCharts(root: HTMLElement) {
     const sum = data.reduce((a, b) => a + b.value, 0);
     const opt: echarts.EChartsCoreOption = {
       title: { text: title, left: "center", top: 6, textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() } },
-      tooltip: { trigger: "item", formatter: chartPieTooltip },
+      tooltip: {
+        trigger: "item",
+        formatter: chartPieTooltip,
+        textStyle: { fontSize: CHART_TOOLTIP_FONT, fontFamily: CHART_FONT },
+        padding: [10, 14],
+      },
       series: [
         {
           type: "pie",
@@ -4012,7 +4086,12 @@ function renderCharts(root: HTMLElement) {
         top: 4,
         textStyle: { fontSize: 13, fontWeight: 600, color: textPrimary() },
       },
-      tooltip: { trigger: "item", formatter: chartPieTooltip },
+      tooltip: {
+        trigger: "item",
+        formatter: chartPieTooltip,
+        textStyle: { fontSize: CHART_TOOLTIP_FONT, fontFamily: CHART_FONT },
+        padding: [10, 14],
+      },
       series: [
         {
           type: "pie",
@@ -4033,6 +4112,8 @@ function renderCharts(root: HTMLElement) {
   if (elYearProj) {
     const year = new Date().getFullYear();
     const ys = buildNaturalYearOutInSeries(year);
+    lastYearChartMonths = ys.months;
+    lastYearChartEvents = ys.events;
     const monthsY = ys.months;
     const monthShort = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
     const monthLabels = monthsY.map((m) => {
@@ -4055,13 +4136,18 @@ function renderCharts(root: HTMLElement) {
           text: `Proyección ${year} (salidas e ingresos por mes; sin filtro de categoría)`,
           left: 0,
           top: 4,
-          textStyle: { fontSize: 12, fontWeight: 600, color: textPrimary() },
+          textStyle: { fontSize: CHART_TITLE_FONT, fontWeight: 600, color: textPrimary() },
         },
-        tooltip: { trigger: "axis", formatter: chartAxisTooltip },
-        legend: { bottom: 0, textStyle: { color: textMuted() } },
+        tooltip: {
+          trigger: "axis",
+          formatter: (p: unknown) => chartAxisTooltipRich(p, monthsY, ys.events),
+          textStyle: { fontSize: CHART_TOOLTIP_FONT, fontFamily: CHART_FONT },
+          padding: [10, 14],
+        },
+        legend: { bottom: 0, textStyle: { color: textMuted(), fontSize: CHART_AXIS_FONT } },
         grid: { left: 48, right: 16, top: 48, bottom: 48 },
-        xAxis: { type: "category", data: monthLabels, axisLabel: { color: textMuted() } },
-        yAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), formatter: (v: number) => fmtNumEs(v) } },
+        xAxis: { type: "category", data: monthLabels, axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT } },
+        yAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT, formatter: (v: number) => fmtNumEs(v) } },
         series: [
           { name: "Salidas EUR", type: "line", smooth: true, data: ys.outEur, itemStyle: { color: "#fb7185" } },
           { name: "Salidas USD", type: "line", smooth: true, data: ys.outUsd, itemStyle: { color: "#f97316" } },
@@ -4089,13 +4175,18 @@ function renderCharts(root: HTMLElement) {
           text: `Proyección ${year} (${mode === "unify_eur" ? "todo en €" : "todo en $"})`,
           left: 0,
           top: 4,
-          textStyle: { fontSize: 12, fontWeight: 600, color: textPrimary() },
+          textStyle: { fontSize: CHART_TITLE_FONT, fontWeight: 600, color: textPrimary() },
         },
-        tooltip: { trigger: "axis", formatter: chartAxisTooltip },
-        legend: { bottom: 0, textStyle: { color: textMuted() } },
+        tooltip: {
+          trigger: "axis",
+          formatter: (p: unknown) => chartAxisTooltipRich(p, monthsY, ys.events),
+          textStyle: { fontSize: CHART_TOOLTIP_FONT, fontFamily: CHART_FONT },
+          padding: [10, 14],
+        },
+        legend: { bottom: 0, textStyle: { color: textMuted(), fontSize: CHART_AXIS_FONT } },
         grid: { left: 48, right: 16, top: 48, bottom: 48 },
-        xAxis: { type: "category", data: monthLabels, axisLabel: { color: textMuted() } },
-        yAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), formatter: (v: number) => fmtNumEs(v) } },
+        xAxis: { type: "category", data: monthLabels, axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT } },
+        yAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT, formatter: (v: number) => fmtNumEs(v) } },
         series: [
           {
             name: mode === "unify_eur" ? "Salidas (€)" : "Salidas ($)",
