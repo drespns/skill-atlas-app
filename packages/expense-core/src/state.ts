@@ -1983,6 +1983,10 @@ export function effectivePlannedExpenseAmount(
   const cur: ExpenseCurrency = p.currency === "USD" ? "USD" : "EUR";
   const hit = overrides.find((o) => o.plannedExpenseId === p.id && o.month === monthKey);
   if (hit) return { amount: Math.max(0, hit.amount), currency: hit.currency };
+  const firstMk = p.validFrom?.trim().slice(0, 7);
+  if (p.downPayment != null && p.downPayment > 0 && firstMk && monthKey === firstMk) {
+    return { amount: 0, currency: cur };
+  }
   return { amount: Math.max(0, p.typicalAmount ?? 0), currency: cur };
 }
 
