@@ -1,0 +1,24 @@
+<dialog data-et-dlg-sync-disable class="et-dialog w-[min(100vw-1.5rem,28rem)] p-0">
+  <div class="et-dialog-panel space-y-4">
+    <div class="flex items-start gap-3">
+      <span
+        class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-200"
+        aria-hidden="true"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
+          <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.045-2 5.2 0l7.46 12.928c1.154 2-.29 4.5-2.599 4.5H4.54c-2.31 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 0-.75.75v3.75a.75.75 0 0 0 1.5 0V9a.75.75 0 0 0-.75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
+        </svg>
+      </span>
+      <div class="min-w-0">
+        <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-50">¿Dejar de guardar en Supabase?</h3>
+        <p class="m-0 mt-2 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+          Los datos seguirán en este navegador. La copia en la nube dejará de actualizarse y no se borra automáticamente del servidor.
+        </p>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 pt-1">
+      <button type="button" class="et-btn-secondary text-sm py-2" data-et-sync-disable-cancel>Mantener copia activa</button>
+      <button type="button" class="et-btn-danger text-sm py-2" data-et-sync-disable-ok>Desactivar copia</button>
+    </div>
+  </div>
+</dialog>

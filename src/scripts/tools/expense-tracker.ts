@@ -4778,12 +4778,51 @@ function wire(root: HTMLElement) {
     renderAll(root);
   };
 
+  const syncInputs = () => {
+    const sync = root.querySelector<HTMLInputElement>("[data-et-sync]");
+    const syncStrip = root.querySelector<HTMLInputElement>("[data-et-sync-strip-toggle]");
+    if (sync) sync.checked = state.syncToAccount;
+    if (syncStrip) syncStrip.checked = state.syncToAccount;
+  };
+
+  const requestSyncChange = (on: boolean) => {
+    if (!on && state.syncToAccount) {
+      syncInputs();
+      const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-sync-disable]");
+      if (!dlg) {
+        setSync(false);
+        return;
+      }
+      showExpenseDialog(dlg);
+      const onConfirm = () => {
+        dlg.close();
+        cleanup();
+        setSync(false);
+      };
+      const onCancel = () => {
+        dlg.close();
+        cleanup();
+        syncInputs();
+      };
+      const okBtn = dlg.querySelector("[data-et-sync-disable-ok]");
+      const cancelBtn = dlg.querySelector("[data-et-sync-disable-cancel]");
+      const cleanup = () => {
+        okBtn?.removeEventListener("click", onConfirm);
+        cancelBtn?.removeEventListener("click", onCancel);
+      };
+      okBtn?.addEventListener("click", onConfirm);
+      cancelBtn?.addEventListener("click", onCancel);
+      return;
+    }
+    setSync(on);
+  };
+
   root.querySelector<HTMLInputElement>("[data-et-sync]")?.addEventListener("change", (e) => {
-    setSync((e.target as HTMLInputElement).checked);
+    requestSyncChange((e.target as HTMLInputElement).checked);
   });
 
   root.querySelector<HTMLInputElement>("[data-et-sync-strip-toggle]")?.addEventListener("change", (e) => {
-    setSync((e.target as HTMLInputElement).checked);
+    requestSyncChange((e.target as HTMLInputElement).checked);
   });
 
   bindKpiDetailPopovers(root, { state, fmtEurCompact });
