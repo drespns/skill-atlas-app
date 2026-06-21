@@ -89,12 +89,15 @@ import {
   type WealthBizum,
   type WealthBizumDirection,
   type ExpenseCategory,
+  monthlyInvestmentOutflowSeries,
+  yearsWithFinancialActivity,
 } from "@lib/tools-expense-tracker";
 import { initExpenseDatePickers, initExpenseMonthPickers, readDateFieldValue, readMonthFieldValue, refreshExpenseDatePicker, showExpenseDialog } from "./expense-tracker-dates";
 import { bindExpenseDialogScrollLock } from "./expense-tracker-dialog-scroll-lock";
 import { isExpenseEncryptedEnvelope, openExpenseEnvelope, sealExpenseState } from "@lib/tools-expense-tracker-crypto";
 import type { EncryptedExpenseEnvelope } from "@lib/tools-expense-tracker-crypto";
 import { loadClientState, scheduleSaveClientState } from "@scripts/core/user-client-state";
+import { renderYearHistoryChips } from "./expense-tracker-kpi-popover";
 import {
   renderInvestmentSection,
   renderPaycheckCards,
@@ -1701,6 +1704,15 @@ function renderKpis(root: HTMLElement) {
     elYo.textContent = fmtEurCompact(outUni);
     elYn.textContent = fmtEurCompact(incUni - outUni);
   }
+
+  const yearLabel = root.querySelector<HTMLElement>("[data-et-year-proj-label]");
+  if (yearLabel) {
+    const y = new Date().getFullYear();
+    yearLabel.textContent = document.documentElement.lang.startsWith("en")
+      ? `Projection for ${y}`
+      : `Proyección ${y}`;
+  }
+  renderYearHistoryChips(root, yearsWithFinancialActivity(state));
 }
 
 function fillCategorySelect(sel: HTMLSelectElement) {
@@ -3418,6 +3430,7 @@ function buildNaturalYearOutInSeries(year: number): {
   incEur: number[];
   incUsd: number[];
   incUni: number[];
+  investUni: number[];
   events: CashflowEvent[];
 } {
   const months = naturalYearMonthKeys(year);
@@ -3428,6 +3441,7 @@ function buildNaturalYearOutInSeries(year: number): {
     mode,
     eurPerUsd: fx,
   });
+  const investUni = monthlyInvestmentOutflowSeries(state, months);
   return {
     months,
     outEur: proj.outEur,
@@ -3436,8 +3450,149 @@ function buildNaturalYearOutInSeries(year: number): {
     incEur: proj.inEur,
     incUsd: proj.inUsd,
     incUni: proj.inUnified,
+    investUni,
     events: proj.events,
   };
+}
+
+const MONTH_SHORT_ES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
+function monthLabelsFromKeys(months: string[]): string[] {
+  return months.map((m) => {
+    const mo = Number(m.slice(5, 7));
+    return MONTH_SHORT_ES[mo - 1] ?? m;
+  });
+}
+
+function buildYearProjectionChartOption(
+  year: number,
+  ys: ReturnType<typeof buildNaturalYearOutInSeries>,
+): echarts.EChartsCoreOption {
+  const mode = state.chartMoneyMode;
+  const monthLabels = monthLabelsFromKeys(ys.months);
+  const investSeries = {
+    name: "Inversiones (€)",
+    type: "line" as const,
+    smooth: true,
+    data: ys.investUni,
+    itemStyle: { color: "#f59e0b" },
+    lineStyle: { color: "#fb923c" },
+  };
+  if (mode === "mixed") {
+    return {
+      title: {
+        text: `Proyección ${year} (gastos, ingresos e inversiones)`,
+        left: 0,
+        top: 4,
+        textStyle: { fontSize: CHART_TITLE_FONT, fontWeight: 600, color: textPrimary() },
+      },
+      tooltip: {
+        trigger: "axis",
+        formatter: (p: unknown) => chartAxisTooltipRich(p, ys.months, ys.events),
+        textStyle: { fontSize: CHART_TOOLTIP_FONT, fontFamily: CHART_FONT },
+        padding: [10, 14],
+      },
+      legend: { bottom: 0, textStyle: { color: textMuted(), fontSize: CHART_AXIS_FONT } },
+      grid: { left: 48, right: 16, top: 48, bottom: 48 },
+      xAxis: { type: "category", data: monthLabels, axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT } },
+      yAxis: {
+        type: "value",
+        splitLine: { lineStyle: { color: borderSubtle() } },
+        axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT, formatter: (v: number) => fmtNumEs(v) },
+      },
+      series: [
+        { name: "Gastos EUR", type: "line", smooth: true, data: ys.outEur, itemStyle: { color: "#ef4444" } },
+        { name: "Gastos USD", type: "line", smooth: true, data: ys.outUsd, itemStyle: { color: "#f87171" } },
+        {
+          name: "Ingresos EUR",
+          type: "line",
+          smooth: true,
+          data: ys.incEur,
+          itemStyle: { color: "#a3e635" },
+          lineStyle: { type: "dashed" },
+        },
+        {
+          name: "Ingresos USD",
+          type: "line",
+          smooth: true,
+          data: ys.incUsd,
+          itemStyle: { color: "#fde047" },
+          lineStyle: { type: "dashed" },
+        },
+        investSeries,
+      ],
+    };
+  }
+  const gastosLabel = mode === "unify_eur" ? "Gastos (€)" : "Gastos ($)";
+  const ingresosLabel = mode === "unify_eur" ? "Ingresos (€)" : "Ingresos ($)";
+  return {
+    title: {
+      text: `Proyección ${year} (${mode === "unify_eur" ? "todo en €" : "todo en $"})`,
+      left: 0,
+      top: 4,
+      textStyle: { fontSize: CHART_TITLE_FONT, fontWeight: 600, color: textPrimary() },
+    },
+    tooltip: {
+      trigger: "axis",
+      formatter: (p: unknown) => chartAxisTooltipRich(p, ys.months, ys.events),
+      textStyle: { fontSize: CHART_TOOLTIP_FONT, fontFamily: CHART_FONT },
+      padding: [10, 14],
+    },
+    legend: { bottom: 0, textStyle: { color: textMuted(), fontSize: CHART_AXIS_FONT } },
+    grid: { left: 48, right: 16, top: 48, bottom: 48 },
+    xAxis: { type: "category", data: monthLabels, axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT } },
+    yAxis: {
+      type: "value",
+      splitLine: { lineStyle: { color: borderSubtle() } },
+      axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT, formatter: (v: number) => fmtNumEs(v) },
+    },
+    series: [
+      {
+        name: gastosLabel,
+        type: "line",
+        smooth: true,
+        areaStyle: { opacity: 0.1 },
+        data: ys.outUni,
+        itemStyle: { color: "#ef4444" },
+        lineStyle: { color: "#f87171" },
+      },
+      {
+        name: ingresosLabel,
+        type: "line",
+        smooth: true,
+        data: ys.incUni,
+        itemStyle: { color: "#34d399" },
+        lineStyle: { type: "dashed" },
+      },
+      investSeries,
+    ],
+  };
+}
+
+function renderYearHistoryChart(root: HTMLElement, year: number) {
+  const el = root.querySelector<HTMLElement>("[data-et-chart-year-history]");
+  if (!el) return;
+  disposeChartOnEl(el);
+  const ys = buildNaturalYearOutInSeries(year);
+  const yearHas = ys.months.some(
+    (_, i) =>
+      (ys.outUni[i] ?? 0) > 0 ||
+      (ys.incUni[i] ?? 0) > 0 ||
+      (ys.investUni[i] ?? 0) > 0 ||
+      (ys.outEur[i] ?? 0) > 0 ||
+      (ys.incEur[i] ?? 0) > 0,
+  );
+  const opt = buildYearProjectionChartOption(year, ys);
+  pushChart(el, yearHas ? opt : { ...opt, graphic: emptyGraphic(`Sin datos para ${year}`) });
+}
+
+function openYearHistoryDialog(root: HTMLElement, year: number) {
+  const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-year-history]");
+  const title = root.querySelector<HTMLElement>("[data-et-year-history-title]");
+  if (!dlg) return;
+  if (title) title.textContent = `Proyección ${year}`;
+  showExpenseDialog(dlg);
+  requestAnimationFrame(() => renderYearHistoryChart(root, year));
 }
 
 /** Meses del eje X: período seleccionado + meses con datos (gastos / ingresos / cobros). */
@@ -4133,99 +4288,17 @@ function renderCharts(root: HTMLElement) {
     const ys = buildNaturalYearOutInSeries(year);
     lastYearChartMonths = ys.months;
     lastYearChartEvents = ys.events;
-    const monthsY = ys.months;
-    const monthShort = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-    const monthLabels = monthsY.map((m) => {
-      const mo = Number(m.slice(5, 7));
-      return monthShort[mo - 1] ?? m;
-    });
-    const yearHas = monthsY.some(
+    const yearHas = ys.months.some(
       (_, i) =>
         (ys.outEur[i] ?? 0) > 0 ||
         (ys.outUsd[i] ?? 0) > 0 ||
         (ys.outUni[i] ?? 0) > 0 ||
         (ys.incEur[i] ?? 0) > 0 ||
         (ys.incUsd[i] ?? 0) > 0 ||
-        (ys.incUni[i] ?? 0) > 0,
+        (ys.incUni[i] ?? 0) > 0 ||
+        (ys.investUni[i] ?? 0) > 0,
     );
-    let yearOpt: echarts.EChartsCoreOption;
-    if (mode === "mixed") {
-      yearOpt = {
-        title: {
-          text: `Proyección ${year} (salidas e ingresos por mes; sin filtro de categoría)`,
-          left: 0,
-          top: 4,
-          textStyle: { fontSize: CHART_TITLE_FONT, fontWeight: 600, color: textPrimary() },
-        },
-        tooltip: {
-          trigger: "axis",
-          formatter: (p: unknown) => chartAxisTooltipRich(p, monthsY, ys.events),
-          textStyle: { fontSize: CHART_TOOLTIP_FONT, fontFamily: CHART_FONT },
-          padding: [10, 14],
-        },
-        legend: { bottom: 0, textStyle: { color: textMuted(), fontSize: CHART_AXIS_FONT } },
-        grid: { left: 48, right: 16, top: 48, bottom: 48 },
-        xAxis: { type: "category", data: monthLabels, axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT } },
-        yAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT, formatter: (v: number) => fmtNumEs(v) } },
-        series: [
-          { name: "Salidas EUR", type: "line", smooth: true, data: ys.outEur, itemStyle: { color: "#fb7185" } },
-          { name: "Salidas USD", type: "line", smooth: true, data: ys.outUsd, itemStyle: { color: "#f97316" } },
-          {
-            name: "Ingresos EUR",
-            type: "line",
-            smooth: true,
-            data: ys.incEur,
-            itemStyle: { color: "#a3e635" },
-            lineStyle: { type: "dashed" },
-          },
-          {
-            name: "Ingresos USD",
-            type: "line",
-            smooth: true,
-            data: ys.incUsd,
-            itemStyle: { color: "#fde047" },
-            lineStyle: { type: "dashed" },
-          },
-        ],
-      };
-    } else {
-      yearOpt = {
-        title: {
-          text: `Proyección ${year} (${mode === "unify_eur" ? "todo en €" : "todo en $"})`,
-          left: 0,
-          top: 4,
-          textStyle: { fontSize: CHART_TITLE_FONT, fontWeight: 600, color: textPrimary() },
-        },
-        tooltip: {
-          trigger: "axis",
-          formatter: (p: unknown) => chartAxisTooltipRich(p, monthsY, ys.events),
-          textStyle: { fontSize: CHART_TOOLTIP_FONT, fontFamily: CHART_FONT },
-          padding: [10, 14],
-        },
-        legend: { bottom: 0, textStyle: { color: textMuted(), fontSize: CHART_AXIS_FONT } },
-        grid: { left: 48, right: 16, top: 48, bottom: 48 },
-        xAxis: { type: "category", data: monthLabels, axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT } },
-        yAxis: { type: "value", splitLine: { lineStyle: { color: borderSubtle() } }, axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT, formatter: (v: number) => fmtNumEs(v) } },
-        series: [
-          {
-            name: mode === "unify_eur" ? "Salidas (€)" : "Salidas ($)",
-            type: "line",
-            smooth: true,
-            areaStyle: { opacity: 0.1 },
-            data: ys.outUni,
-            itemStyle: { color: "#818cf8" },
-          },
-          {
-            name: mode === "unify_eur" ? "Ingresos (€)" : "Ingresos ($)",
-            type: "line",
-            smooth: true,
-            data: ys.incUni,
-            itemStyle: { color: "#34d399" },
-            lineStyle: { type: "dashed" },
-          },
-        ],
-      };
-    }
+    const yearOpt = buildYearProjectionChartOption(year, ys);
     pushChart(elYearProj, yearHas ? yearOpt : { ...yearOpt, graphic: emptyGraphic(`Sin datos para ${year}`) });
   }
 
@@ -4570,6 +4643,15 @@ function wire(root: HTMLElement) {
   root.querySelector<HTMLInputElement>("[data-et-sync-strip-toggle]")?.addEventListener("change", (e) => {
     setSync((e.target as HTMLInputElement).checked);
   });
+
+  root.querySelector("[data-et-year-history-chips]")?.addEventListener("click", (ev) => {
+    const btn = (ev.target as HTMLElement).closest<HTMLButtonElement>("[data-et-year-history-btn]");
+    if (!btn?.dataset.etYearHistoryBtn) return;
+    openYearHistoryDialog(root, Number(btn.dataset.etYearHistoryBtn));
+  });
+  root.querySelector("[data-et-year-history-close]")?.addEventListener("click", () =>
+    root.querySelector<HTMLDialogElement>("[data-et-dlg-year-history]")?.close(),
+  );
 
   root.querySelector<HTMLButtonElement>("[data-et-tracking-apply]")?.addEventListener("click", () =>
     applyTrackingBaseline(root),

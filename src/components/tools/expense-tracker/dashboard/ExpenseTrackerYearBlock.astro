@@ -3,35 +3,44 @@ import ExpenseTrackerChartSlot from "../shared/ExpenseTrackerChartSlot.astro";
 import ExpenseTrackerKpiCard from "../shared/ExpenseTrackerKpiCard.astro";
 ---
 
-<div class="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch">
-  <ExpenseTrackerChartSlot
-    etSuffix="chart-year-proj"
-    class="xl:col-span-2 rounded-2xl border border-violet-200/70 dark:border-violet-900/40 bg-gradient-to-br from-violet-500/6 via-white/90 to-indigo-500/6 dark:from-violet-950/25 dark:via-gray-950/55 dark:to-indigo-950/25 p-3 shadow-sm min-h-[280px]"
-  />
-  <div class="space-y-3 min-w-0 flex flex-col">
-    <ExpenseTrackerKpiCard
-      title="Ingresos (año natural)"
-      hint="Suma mensual en el año en curso"
-      etSuffix="kpi-year-income"
-      cardClass="rounded-2xl border border-emerald-400/35 dark:border-emerald-800/40 bg-gradient-to-br from-emerald-500/10 to-white/90 dark:from-emerald-950/30 dark:to-gray-900/80 p-4 shadow-sm flex-1"
-      titleClass="text-emerald-800 dark:text-emerald-200"
-      valueClass="mt-1 mb-0 text-xl font-bold text-gray-900 dark:text-gray-50"
+<div class="space-y-2">
+  <div class="flex flex-wrap items-center justify-between gap-2 px-0.5">
+    <p class="m-0 text-xs font-semibold text-gray-600 dark:text-gray-400" data-et-year-proj-label>Proyección del año en curso</p>
+    <div class="flex flex-wrap gap-1.5" data-et-year-history-chips></div>
+  </div>
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch">
+    <ExpenseTrackerChartSlot
+      etSuffix="chart-year-proj"
+      class="xl:col-span-2 rounded-2xl border border-violet-200/70 dark:border-violet-900/40 bg-gradient-to-br from-violet-500/6 via-white/90 to-indigo-500/6 dark:from-violet-950/25 dark:via-gray-950/55 dark:to-indigo-950/25 p-3 shadow-sm min-h-[280px]"
     />
-    <ExpenseTrackerKpiCard
-      title="Salidas (año natural)"
-      hint="Gastos + suscripciones + previstos + deudas"
-      etSuffix="kpi-year-out"
-      cardClass="rounded-2xl border border-orange-400/35 dark:border-orange-900/40 bg-gradient-to-br from-orange-500/10 to-white/90 dark:from-orange-950/25 dark:to-gray-900/80 p-4 shadow-sm flex-1"
-      titleClass="text-orange-900 dark:text-orange-200"
-      valueClass="mt-1 mb-0 text-xl font-bold text-gray-900 dark:text-gray-50"
-    />
-    <ExpenseTrackerKpiCard
-      title="Balance anual"
-      hint="Ingresos − salidas (mismo criterio que el gráfico)"
-      etSuffix="kpi-year-net"
-      cardClass="rounded-2xl border border-fuchsia-400/40 dark:border-fuchsia-900/45 bg-gradient-to-br from-fuchsia-500/12 to-white/90 dark:from-fuchsia-950/30 dark:to-gray-900/80 p-4 shadow-sm flex-1"
-      titleClass="text-fuchsia-900 dark:text-fuchsia-200"
-      valueClass="mt-1 mb-0 text-xl font-bold text-gray-900 dark:text-gray-50"
-    />
+    <div class="space-y-3 min-w-0 flex flex-col">
+      <ExpenseTrackerKpiCard
+        title="Ingresos (año natural)"
+        hint="Suma de ingresos previstos mes a mes"
+        etSuffix="kpi-year-income"
+        detailKey="year-income"
+        cardClass="rounded-2xl border border-emerald-400/35 dark:border-emerald-800/40 bg-gradient-to-br from-emerald-500/10 to-white/90 dark:from-emerald-950/30 dark:to-gray-900/80 p-4 shadow-sm flex-1"
+        titleClass="text-emerald-800 dark:text-emerald-200"
+        valueClass="mt-1 mb-0 text-xl font-bold text-gray-900 dark:text-gray-50"
+      />
+      <ExpenseTrackerKpiCard
+        title="Gastos (año natural)"
+        hint="Gastos, suscripciones, financiación y deudas"
+        etSuffix="kpi-year-out"
+        detailKey="year-expense"
+        cardClass="rounded-2xl border border-red-400/35 dark:border-red-900/40 bg-gradient-to-br from-red-500/10 to-white/90 dark:from-red-950/25 dark:to-gray-900/80 p-4 shadow-sm flex-1"
+        titleClass="text-red-800 dark:text-red-200"
+        valueClass="mt-1 mb-0 text-xl font-bold text-gray-900 dark:text-gray-50"
+      />
+      <ExpenseTrackerKpiCard
+        title="Balance anual"
+        hint="Ingresos menos gastos (mismo criterio que el gráfico)"
+        etSuffix="kpi-year-net"
+        detailKey="year-net"
+        cardClass="rounded-2xl border border-fuchsia-400/40 dark:border-fuchsia-900/45 bg-gradient-to-br from-fuchsia-500/12 to-white/90 dark:from-fuchsia-950/30 dark:to-gray-900/80 p-4 shadow-sm flex-1"
+        titleClass="text-fuchsia-900 dark:text-fuchsia-200"
+        valueClass="mt-1 mb-0 text-xl font-bold text-gray-900 dark:text-gray-50"
+      />
+    </div>
   </div>
 </div>
