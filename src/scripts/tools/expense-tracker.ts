@@ -99,7 +99,7 @@ import { bindDebtsUi, renderDebtsSection, type DebtUiDeps } from "./expense-trac
 import { linkedDebtBizumIds } from "@lib/tools-expense-debts";
 import { bindSubsUi, renderSubs, type SubUiDeps } from "./expense-tracker-subs-ui";
 import { renderBrandCombobox } from "./expense-tracker-brand-select";
-import { bindSectionFocus } from "./expense-tracker-section-focus";
+import { bindSectionModal } from "./expense-tracker-section-modal";
 
 echarts.use([BarChart, LineChart, PieChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer]);
 
@@ -2489,6 +2489,7 @@ function renderMonthOverrideList(
   dayOfMonth: number,
   typicalAmount?: number,
   downPayment?: number,
+  installmentCount?: number,
 ) {
   const sel =
     kind === "paycheck" ? "[data-et-paycheck-month-list]" : "[data-et-planned-month-list]";
@@ -2502,7 +2503,16 @@ function renderMonthOverrideList(
     list.appendChild(hint);
     return;
   }
-  let months = monthsForRecurringEntry({ dayOfMonth, validFrom, validUntil });
+  let untilForRange = validUntil;
+  if (
+    kind === "planned" &&
+    installmentCount != null &&
+    installmentCount >= 1 &&
+    validFrom.length === 10
+  ) {
+    untilForRange = addMonthsToIso(validFrom, installmentCount - 1);
+  }
+  let months = monthsForRecurringEntry({ dayOfMonth, validFrom, validUntil: untilForRange });
   if (
     kind === "planned" &&
     downPayment != null &&
@@ -2586,6 +2596,19 @@ function collectMonthOverridesFromDialog(
   return out as IncomeMonthOverride[] | PlannedExpenseMonthOverride[];
 }
 
+function plannedOverrideMonthKeys(
+  from: string,
+  until: string,
+  dayOfMonth: number,
+  downPayment?: number,
+): Set<string> {
+  let months = monthsForRecurringEntry({ dayOfMonth, validFrom: from, validUntil: until });
+  if (downPayment != null && downPayment > 0 && from.length >= 7) {
+    months = months.filter((mk) => mk !== from.slice(0, 7));
+  }
+  return new Set(months);
+}
+
 function bindMonthOverrideRefresh(root: HTMLElement, kind: "paycheck" | "planned", entryId: string | null) {
   const form = root.querySelector<HTMLElement>(
     kind === "paycheck" ? "[data-et-paycheck-form]" : "[data-et-planned-form]",
@@ -2610,9 +2633,18 @@ function bindMonthOverrideRefresh(root: HTMLElement, kind: "paycheck" | "planned
     const dayRaw = Number(root.querySelector<HTMLInputElement>(daySel)?.value);
     const dayOfMonth = Number.isFinite(dayRaw) ? Math.min(31, Math.max(1, Math.floor(dayRaw))) : 1;
     let downPayment: number | undefined;
+    let installmentCount: number | undefined;
     if (kind === "planned") {
       const d = Number(root.querySelector<HTMLInputElement>("[data-et-planned-down]")?.value);
       if (Number.isFinite(d) && d > 0) downPayment = d;
+      const installmentsMode =
+        root.querySelector<HTMLInputElement>('[data-et-planned-mode][value="installments"]:checked') != null;
+      if (installmentsMode) {
+        const instRaw = Number(root.querySelector<HTMLInputElement>("[data-et-planned-installments]")?.value);
+        if (Number.isFinite(instRaw) && instRaw >= 1) {
+          installmentCount = Math.min(120, Math.floor(instRaw));
+        }
+      }
     }
     renderMonthOverrideList(
       root,
@@ -2623,13 +2655,17 @@ function bindMonthOverrideRefresh(root: HTMLElement, kind: "paycheck" | "planned
       dayOfMonth,
       Number.isFinite(amt) ? amt : undefined,
       downPayment,
+      installmentCount,
     );
   };
 
   const boundKey = kind === "planned" ? "etPlannedOverrideBound" : "etPaycheckOverrideBound";
   if (form.dataset[boundKey] !== "1") {
     form.dataset[boundKey] = "1";
-    root.querySelector<HTMLInputElement>(fromSel)?.addEventListener("change", refresh);
+    root.querySelector<HTMLInputElement>(fromSel)?.addEventListener("change", () => {
+      if (kind === "planned") syncPlannedUntilFromInstallments(root);
+      refresh();
+    });
     root.querySelector<HTMLInputElement>(untilSel)?.addEventListener("change", refresh);
     root.querySelector<HTMLInputElement>(amtSel)?.addEventListener("input", refresh);
     root.querySelector<HTMLInputElement>(daySel)?.addEventListener("change", refresh);
@@ -2640,7 +2676,10 @@ function bindMonthOverrideRefresh(root: HTMLElement, kind: "paycheck" | "planned
       });
       root.querySelector<HTMLInputElement>("[data-et-planned-down]")?.addEventListener("input", refresh);
       root.querySelectorAll<HTMLInputElement>("[data-et-planned-mode]").forEach((el) =>
-        el.addEventListener("change", refresh),
+        el.addEventListener("change", () => {
+          syncPlannedPaymentModeUi(root);
+          refresh();
+        }),
       );
     }
   }
@@ -2683,8 +2722,12 @@ function openPaycheckDialog(root: HTMLElement, p?: PaycheckEntry | null) {
   (root.querySelector("[data-et-paycheck-until]") as HTMLInputElement).value = (p?.validUntil ?? "").slice(0, 10);
   (root.querySelector("[data-et-paycheck-note]") as HTMLInputElement).value = p?.note ?? "";
   root.querySelector("[data-et-paycheck-delete]")?.classList.toggle("invisible", !p);
+  const fromEl = root.querySelector<HTMLInputElement>("[data-et-paycheck-from]");
+  const untilEl = root.querySelector<HTMLInputElement>("[data-et-paycheck-until]");
   const from = (p?.validFrom ?? "").slice(0, 10);
   const until = (p?.validUntil ?? "").slice(0, 10);
+  refreshExpenseDatePicker(fromEl, from);
+  refreshExpenseDatePicker(untilEl, until);
   const dayOfMonth = p?.dayOfMonth ?? 1;
   renderMonthOverrideList(root, "paycheck", entryId, from, until, dayOfMonth, p?.typicalAmount);
   bindMonthOverrideRefresh(root, "paycheck", entryId);
@@ -2765,6 +2808,22 @@ function renderPlannedFinancingBrandPicker(root: HTMLElement, value?: string) {
   });
 }
 
+function renderInvestmentPlatformPicker(root: HTMLElement, brandKey?: string) {
+  const host = root.querySelector<HTMLElement>("[data-et-inv-platform-host]");
+  const hidden = root.querySelector<HTMLInputElement>("[data-et-inv-platform-brand]");
+  if (!host || !hidden) return;
+  const v = brandKey ?? "";
+  hidden.value = v;
+  renderBrandCombobox(host, WEALTH_ACCOUNT_BRAND_CATALOG, {
+    value: v,
+    autoLabel: "Otro / manual",
+    logoPath: wealthAccountBrandLogoPath,
+    onChange: (key) => {
+      hidden.value = key;
+    },
+  });
+}
+
 function syncPlannedPaymentModeUi(root: HTMLElement) {
   const mode =
     root.querySelector<HTMLInputElement>('[data-et-planned-mode][value="installments"]:checked') != null
@@ -2774,8 +2833,18 @@ function syncPlannedPaymentModeUi(root: HTMLElement) {
         : "installments";
   const panel = root.querySelector<HTMLElement>("[data-et-planned-installments-panel]");
   const label = root.querySelector<HTMLElement>("[data-et-planned-amount-label]");
+  const untilEl = root.querySelector<HTMLInputElement>("[data-et-planned-until]");
+  const untilHint = root.querySelector<HTMLElement>("[data-et-planned-until-hint]");
   panel?.classList.toggle("hidden", mode === "recurring");
   if (label) label.textContent = mode === "recurring" ? "Importe mensual (€)" : "Cuota mensual (€)";
+  if (untilEl) {
+    const locked = mode === "installments";
+    untilEl.disabled = locked;
+    untilEl.classList.toggle("opacity-60", locked);
+    untilEl.classList.toggle("cursor-not-allowed", locked);
+  }
+  untilHint?.classList.toggle("hidden", mode !== "installments");
+  if (mode === "installments") syncPlannedUntilFromInstallments(root);
 }
 
 function syncPlannedUntilFromInstallments(root: HTMLElement) {
@@ -2784,7 +2853,8 @@ function syncPlannedUntilFromInstallments(root: HTMLElement) {
       ? "installments"
       : "recurring";
   if (mode !== "installments") return;
-  const from = root.querySelector<HTMLInputElement>("[data-et-planned-from]")?.value?.slice(0, 10) ?? "";
+  const fromEl = root.querySelector<HTMLInputElement>("[data-et-planned-from]");
+  const from = readDateFieldValue(fromEl);
   const countRaw = Number(root.querySelector<HTMLInputElement>("[data-et-planned-installments]")?.value);
   const untilEl = root.querySelector<HTMLInputElement>("[data-et-planned-until]");
   if (!untilEl || from.length !== 10 || !Number.isFinite(countRaw) || countRaw < 1) return;
@@ -2801,8 +2871,7 @@ function openPlannedDialog(root: HTMLElement, p?: PlannedExpenseEntry | null) {
   if (!dlg || !title || !idEl || !catEl) return;
   editingPlannedId = p?.id ?? null;
   title.textContent = p ? "Editar financiación" : "Nueva financiación";
-  if (!p?.id && !idEl.value) idEl.value = makeId();
-  const entryId = p?.id ?? idEl.value;
+  const entryId = p?.id ?? makeId();
   idEl.value = entryId;
   fillCategorySelect(catEl);
   const mode: PlannedPaymentMode = p?.paymentMode === "recurring" ? "recurring" : "installments";
@@ -2817,8 +2886,13 @@ function openPlannedDialog(root: HTMLElement, p?: PlannedExpenseEntry | null) {
   (root.querySelector("[data-et-planned-day]") as HTMLInputElement).value = String(p?.dayOfMonth ?? 1);
   (root.querySelector("[data-et-planned-window]") as HTMLInputElement).value =
     p?.windowBefore != null ? String(p.windowBefore) : "";
-  (root.querySelector("[data-et-planned-from]") as HTMLInputElement).value = (p?.validFrom ?? "").slice(0, 10);
-  (root.querySelector("[data-et-planned-until]") as HTMLInputElement).value = (p?.validUntil ?? "").slice(0, 10);
+  const fromEl = root.querySelector<HTMLInputElement>("[data-et-planned-from]")!;
+  const untilEl = root.querySelector<HTMLInputElement>("[data-et-planned-until]")!;
+  const defaultFrom = p?.validFrom?.slice(0, 10) || todayIso();
+  fromEl.value = defaultFrom;
+  untilEl.value = (p?.validUntil ?? "").slice(0, 10);
+  refreshExpenseDatePicker(fromEl, defaultFrom);
+  refreshExpenseDatePicker(untilEl, untilEl.value);
   (root.querySelector("[data-et-planned-note]") as HTMLInputElement).value = p?.note ?? "";
   (root.querySelector("[data-et-planned-down]") as HTMLInputElement).value =
     p?.downPayment != null ? String(p.downPayment) : "";
@@ -2845,8 +2919,10 @@ function savePlannedFromDialog(root: HTMLElement) {
   const note = root.querySelector<HTMLInputElement>("[data-et-planned-note]")?.value?.trim() ?? "";
   const amt = Number(root.querySelector<HTMLInputElement>("[data-et-planned-amount]")?.value);
   const catId = root.querySelector<HTMLSelectElement>("[data-et-planned-category]")?.value ?? state.categories[0]!.id;
-  let from = root.querySelector<HTMLInputElement>("[data-et-planned-from]")?.value?.slice(0, 10) ?? "";
-  let until = root.querySelector<HTMLInputElement>("[data-et-planned-until]")?.value?.slice(0, 10) ?? "";
+  const fromEl = root.querySelector<HTMLInputElement>("[data-et-planned-from]");
+  const untilEl = root.querySelector<HTMLInputElement>("[data-et-planned-until]");
+  let from = readDateFieldValue(fromEl);
+  let until = readDateFieldValue(untilEl);
   const paymentMode: PlannedPaymentMode =
     root.querySelector<HTMLInputElement>('[data-et-planned-mode][value="recurring"]:checked') != null
       ? "recurring"
@@ -2896,6 +2972,10 @@ function savePlannedFromDialog(root: HTMLElement) {
   if (idx >= 0) state.plannedExpenses![idx] = row;
   else state.plannedExpenses = [...(state.plannedExpenses ?? []), row].slice(0, 24);
   let newOverrides = collectMonthOverridesFromDialog(root, "planned", row.id) as PlannedExpenseMonthOverride[];
+  if (from.length === 10 && until.length === 10) {
+    const validKeys = plannedOverrideMonthKeys(from, until, dayOfMonth, downPayment);
+    newOverrides = newOverrides.filter((o) => validKeys.has(o.month));
+  }
   state.plannedExpenseMonthOverrides = [
     ...(state.plannedExpenseMonthOverrides ?? []).filter((o) => o.plannedExpenseId !== row.id),
     ...newOverrides,
@@ -2929,8 +3009,9 @@ function openInvestmentDialog(root: HTMLElement, h?: InvestmentHolding | null) {
   idEl.value = h?.id ?? "";
   (root.querySelector("[data-et-inv-name]") as HTMLInputElement).value = h?.name ?? "";
   (root.querySelector("[data-et-inv-type]") as HTMLSelectElement).value = h?.type ?? "stocks";
-  (root.querySelector("[data-et-inv-platform]") as HTMLInputElement).value =
-    h?.platform === "—" ? "" : (h?.platform ?? "");
+  const platformBrandKey =
+    h?.platformBrandKey ?? resolveWealthAccountBrandKey(h?.platform === "—" ? "" : (h?.platform ?? ""));
+  renderInvestmentPlatformPicker(root, platformBrandKey ?? "");
   (root.querySelector("[data-et-inv-avg]") as HTMLInputElement).value =
     h?.avgBuyPrice != null ? String(h.avgBuyPrice) : "";
   (root.querySelector("[data-et-inv-qty]") as HTMLInputElement).value =
@@ -2955,7 +3036,10 @@ function saveInvestmentFromDialog(root: HTMLElement) {
   const idEl = root.querySelector<HTMLInputElement>("[data-et-inv-id]");
   const name = root.querySelector<HTMLInputElement>("[data-et-inv-name]")?.value?.trim() ?? "";
   const typeRaw = root.querySelector<HTMLSelectElement>("[data-et-inv-type]")?.value ?? "other";
-  const platform = root.querySelector<HTMLInputElement>("[data-et-inv-platform]")?.value?.trim() || "—";
+  const brandPick = root.querySelector<HTMLInputElement>("[data-et-inv-platform-brand]")?.value?.trim();
+  const brand = brandPick ? getWealthAccountBrand(brandPick) : undefined;
+  const platform = brand?.label ?? "—";
+  const platformBrandKey = brandPick || undefined;
   const avg = Number(root.querySelector<HTMLInputElement>("[data-et-inv-avg]")?.value);
   const qtyRaw = root.querySelector<HTMLInputElement>("[data-et-inv-qty]")?.value;
   const pnl = Number(root.querySelector<HTMLInputElement>("[data-et-inv-pnl]")?.value);
@@ -2973,6 +3057,7 @@ function saveInvestmentFromDialog(root: HTMLElement) {
       ? (typeRaw as InvestmentHolding["type"])
       : "other",
     platform,
+    platformBrandKey,
     avgBuyPrice,
     quantity,
     totalInvested: computeInvestmentTotalInvested(avgBuyPrice, quantity),
@@ -4354,7 +4439,7 @@ function maybePushFirstSync(remoteNorm: ExpenseTrackerState, local: ExpenseTrack
 
 function wire(root: HTMLElement) {
   bindExpenseDialogScrollLock(root);
-  bindSectionFocus(root);
+  bindSectionModal(root);
   bindWealthPanelPersistence(root);
   if (root.dataset.etDialogsBound !== "1") {
     root.dataset.etDialogsBound = "1";

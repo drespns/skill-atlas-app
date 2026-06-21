@@ -76,9 +76,16 @@ export function subscriptionBillingSnapshot(s: SubscriptionRow, refDate?: string
   };
 }
 
+function formatLocalYmd(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export function addMonthsToIso(iso: string, months: number): string {
   const d = parseYmd(iso);
   if (!d) return iso.slice(0, 10);
   d.setMonth(d.getMonth() + months);
-  return d.toISOString().slice(0, 10);
+  return formatLocalYmd(d);
 }
