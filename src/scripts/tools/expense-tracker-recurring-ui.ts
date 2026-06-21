@@ -187,10 +187,26 @@ export function renderPlannedCards(root: HTMLElement, deps: RecurringUiDeps, sor
     if (brand) metaParts.unshift(brand.label);
     if (p.validFrom) metaParts.push(`desde ${p.validFrom.slice(0, 10)}`);
     if (p.validUntil) metaParts.push(`hasta ${p.validUntil.slice(0, 10)}`);
+
+    let amountLabel: string;
+    if (
+      p.paymentMode === "installments" &&
+      p.downPayment != null &&
+      p.downPayment > 0 &&
+      p.typicalAmount != null &&
+      p.typicalAmount > 0
+    ) {
+      amountLabel = `${deps.fmtEur(p.downPayment)} + ${deps.fmtEur(p.typicalAmount)}/mes`;
+    } else if (p.paymentMode === "installments" && p.typicalAmount != null && p.typicalAmount > 0) {
+      amountLabel = `${deps.fmtEur(p.typicalAmount)}/mes`;
+    } else {
+      amountLabel = fmtEurLabel(deps, amt.amount, amt.currency);
+    }
+
     wrap.appendChild(
       makeRecurringCard({
         title: p.title,
-        amount: fmtEurLabel(deps, amt.amount, amt.currency),
+        amount: amountLabel,
         badge: ended ? "Finalizado · solo referencia" : activeNow ? "Cuenta este mes" : "Fuera de vigencia",
         meta: metaParts.join(" · "),
         ended,

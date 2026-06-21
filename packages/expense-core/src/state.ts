@@ -1,6 +1,7 @@
 /** Modelo y utilidades para la herramienta Gastos + Suscripciones (`/tools/expense-tracker`). */
 
 import { resolveSubscriptionBrandKey } from "./subscription-brands";
+import { resolveWealthAccountBrandKey } from "./wealth-account-brands";
 import { subscriptionBillingSnapshot } from "./subscriptions-billing";
 
 export const EXPENSE_TRACKER_STORAGE_KEY = "skillatlas_tools_expense_tracker_v1";
@@ -136,6 +137,8 @@ export type InvestmentHolding = {
   type: InvestmentAssetType;
   /** Entidad / broker (p. ej. Trade Republic). */
   platform: string;
+  /** Marca del catálogo wealth-account-brands (opc.). */
+  platformBrandKey?: string;
   /** Precio medio de compra por unidad (EUR). */
   avgBuyPrice: number;
   /** Cantidad de unidades (acciones, monedas…). */
@@ -1093,6 +1096,10 @@ function parseInvestmentHoldings(raw: unknown): InvestmentHolding[] {
         name: String(r?.name || "").trim() || "Activo",
         type: parseInvestmentType(r?.type),
         platform: String(r?.platform || "").trim() || "—",
+        platformBrandKey:
+          typeof r?.platformBrandKey === "string" && r.platformBrandKey.trim()
+            ? r.platformBrandKey.trim()
+            : resolveWealthAccountBrandKey(String(r?.platform || "")) ?? undefined,
         avgBuyPrice,
         quantity: quantity > 0 ? quantity : 1,
         totalInvested,
