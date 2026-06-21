@@ -2,17 +2,19 @@
 import ExpenseTrackerSectionShell from "./shared/ExpenseTrackerSectionShell.astro";
 ---
 
-<ExpenseTrackerSectionShell
-  title="Suscripciones"
-  description="Logos automáticos · periodo de prueba · próximo cobro · cancelar deja de contar desde el siguiente cargo"
-  wrapperClass="space-y-3"
->
-  <button slot="actions" type="button" data-et-open-sub-modal class="et-btn-primary shrink-0 text-sm py-2">
-    Nueva suscripción
-  </button>
-  <div
-    class="relative w-full rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900/25 overflow-hidden p-2 sm:p-3"
-    data-et-subs-strip
+<div class="mx-auto w-full max-w-4xl xl:max-w-[56rem]">
+  <ExpenseTrackerSectionShell
+    title="Suscripciones"
+    description="Logos automáticos · periodo de prueba · próximo cobro · cancelar deja de contar desde el siguiente cargo"
+    wrapperClass="space-y-3"
   >
-  </div>
-</ExpenseTrackerSectionShell>
+    <button slot="actions" type="button" data-et-open-sub-modal class="et-btn-primary shrink-0 text-sm py-2">
+      Nueva suscripción
+    </button>
+    <div
+      class="relative w-full rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900/25 overflow-hidden p-1.5 sm:p-2"
+      data-et-subs-strip
+    >
+    </div>
+  </ExpenseTrackerSectionShell>
+</div>

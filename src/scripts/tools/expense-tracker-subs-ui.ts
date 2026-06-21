@@ -1,3 +1,4 @@
+import { layoutTreemap } from "@lib/treemap-layout";
 import {
   SUBSCRIPTION_BRAND_CATALOG,
   addMonthsToIso,
@@ -38,6 +39,9 @@ export type SubUiDeps = {
 };
 
 let editingSubId: string | null = null;
+let subsTreemapObserver: ResizeObserver | null = null;
+
+type SubCardOpts = { compact?: boolean; smallTile?: boolean };
 
 function formatDateLongEs(iso: string): string {
   const s = iso.slice(0, 10);
@@ -53,10 +57,11 @@ function cycleLabelEs(cycle: SubscriptionRow["cycle"]): string {
   return "año";
 }
 
-function appendBrandLogo(container: HTMLElement, brandKey?: string, name?: string) {
+function appendBrandLogo(container: HTMLElement, brandKey?: string, name?: string, compact = false) {
   const wrap = document.createElement("div");
   wrap.className =
-    "et-sub-brand-logo shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-xl overflow-hidden border border-white/20 dark:border-gray-700/60 bg-white/90 dark:bg-gray-900/90 flex items-center justify-center shadow-sm";
+    "et-sub-brand-logo shrink-0 rounded-lg overflow-hidden border border-white/20 dark:border-gray-700/60 bg-white/90 dark:bg-gray-900/90 flex items-center justify-center shadow-sm " +
+    (compact ? "w-8 h-8" : "w-11 h-11 sm:w-12 sm:h-12 rounded-xl");
 
   if (brandKey) {
     const img = document.createElement("img");
@@ -143,7 +148,9 @@ function buildBillingTimeline(s: SubscriptionRow, today: string): HTMLElement {
   return timeline;
 }
 
-function buildSubCard(s: SubscriptionRow, deps: SubUiDeps, today: string): HTMLElement {
+function buildSubCard(s: SubscriptionRow, deps: SubUiDeps, today: string, opts?: SubCardOpts): HTMLElement {
+  const compact = opts?.compact ?? false;
+  const smallTile = opts?.smallTile ?? false;
   const state = deps.getState();
   const fx = state.eurPerUsd;
   const counts = subscriptionCountsInTotals(s, today);
@@ -156,7 +163,7 @@ function buildSubCard(s: SubscriptionRow, deps: SubUiDeps, today: string): HTMLE
 
   const card = document.createElement("article");
   card.className =
-    "et-sub-card group relative rounded-2xl border border-gray-200/90 dark:border-gray-800/80 bg-white/90 dark:bg-gray-950/70 shadow-sm overflow-hidden flex flex-col" +
+    "et-sub-card group relative rounded-xl border border-gray-200/90 dark:border-gray-800/80 bg-white/90 dark:bg-gray-950/70 shadow-sm overflow-hidden flex flex-col h-full min-h-0" +
     (faded ? " opacity-80" : "");
   card.dataset.subId = s.id;
   card.style.setProperty("--et-sub-accent", accent);
@@ -166,12 +173,12 @@ function buildSubCard(s: SubscriptionRow, deps: SubUiDeps, today: string): HTMLE
   accentBar.style.background = accent;
 
   const body = document.createElement("div");
-  body.className = "p-4 flex flex-col flex-1 min-h-0";
+  body.className = (compact ? "p-2.5" : "p-4") + " flex flex-col flex-1 min-h-0";
 
   const head = document.createElement("div");
-  head.className = "flex items-start gap-3";
+  head.className = "flex items-start gap-2";
   const logoCol = document.createElement("div");
-  appendBrandLogo(logoCol, s.brandKey, s.name);
+  appendBrandLogo(logoCol, s.brandKey, s.name, compact);
 
   const metaCol = document.createElement("div");
   metaCol.className = "min-w-0 flex-1";
@@ -195,13 +202,15 @@ function buildSubCard(s: SubscriptionRow, deps: SubUiDeps, today: string): HTMLE
   statusRow.appendChild(badge);
 
   const title = document.createElement("h3");
-  title.className = "m-0 font-semibold text-base text-gray-900 dark:text-gray-50 truncate";
+  title.className =
+    "m-0 font-semibold text-gray-900 dark:text-gray-50 truncate " + (compact ? "text-sm" : "text-base");
   title.textContent = s.name;
 
   const priceRow = document.createElement("div");
-  priceRow.className = "flex items-baseline justify-between gap-2 mt-1";
+  priceRow.className = "flex items-baseline justify-between gap-2 mt-0.5";
   const priceMain = document.createElement("p");
-  priceMain.className = "m-0 text-xl font-bold et-amount text-gray-900 dark:text-gray-50";
+  priceMain.className =
+    "m-0 font-bold et-amount text-gray-900 dark:text-gray-50 " + (compact ? "text-base" : "text-xl");
   if (snap.phase === "trial") {
     priceMain.textContent = formatEurEs(snap.cycleAmount);
     const priceSub = document.createElement("p");
@@ -217,10 +226,16 @@ function buildSubCard(s: SubscriptionRow, deps: SubUiDeps, today: string): HTMLE
   }
 
   metaCol.append(statusRow, title, priceRow);
+  if (smallTile) {
+    const next = document.createElement("p");
+    next.className = "m-0 mt-0.5 text-[10px] text-gray-500 dark:text-gray-400 truncate";
+    next.textContent = `Próx. ${formatDateLongEs(snap.nextChargeIso)}`;
+    metaCol.appendChild(next);
+  }
   head.append(logoCol, metaCol);
 
-  const timeline = buildBillingTimeline(s, today);
-  if (s.reminderDaysBefore != null && s.reminderDaysBefore > 0) {
+  const timeline = smallTile ? null : buildBillingTimeline(s, today);
+  if (timeline && s.reminderDaysBefore != null && s.reminderDaysBefore > 0) {
     const rem = document.createElement("p");
     rem.className = "m-0 mt-2 text-[10px] text-gray-500 dark:text-gray-400";
     rem.textContent = `Recordatorio ${s.reminderDaysBefore} días antes del cobro`;
@@ -228,7 +243,9 @@ function buildSubCard(s: SubscriptionRow, deps: SubUiDeps, today: string): HTMLE
   }
 
   const actions = document.createElement("div");
-  actions.className = "flex items-center justify-between gap-2 mt-auto pt-3 border-t border-gray-100 dark:border-gray-800/80";
+  actions.className =
+    "flex items-center justify-between gap-2 mt-auto border-t border-gray-100 dark:border-gray-800/80 " +
+    (compact ? "pt-2" : "pt-3");
   const cancelBtn = document.createElement("button");
   cancelBtn.type = "button";
   cancelBtn.dataset.subCancel = s.id;
@@ -244,9 +261,52 @@ function buildSubCard(s: SubscriptionRow, deps: SubUiDeps, today: string): HTMLE
   editBtn.textContent = "Editar";
 
   actions.append(cancelBtn, editBtn);
-  body.append(head, timeline, actions);
+  if (timeline) body.append(head, timeline, actions);
+  else body.append(head, actions);
   card.append(accentBar, body);
   return card;
+}
+
+function paintSubsTreemap(
+  strip: HTMLElement,
+  sorted: SubscriptionRow[],
+  deps: SubUiDeps,
+  today: string,
+) {
+  strip.querySelectorAll(".et-sub-treemap-card").forEach((el) => el.remove());
+  const w = strip.clientWidth;
+  const h = strip.clientHeight || 224;
+  if (w < 16 || h < 16) return;
+
+  const fx = deps.getState().eurPerUsd;
+  const items = sorted.map((s) => ({
+    id: s.id,
+    value: deps.amountInEur(subscriptionToMonthlyAmount(s, today), s.currency, fx),
+    sub: s,
+  }));
+
+  const rects = layoutTreemap(
+    items.map((i) => ({ id: i.id, value: i.value })),
+    w,
+    h,
+  );
+  const totalArea = w * h;
+
+  for (const rect of rects) {
+    const item = items.find((i) => i.id === rect.id);
+    if (!item) continue;
+    const areaRatio = (rect.w * rect.h) / totalArea;
+    const wrap = document.createElement("div");
+    wrap.className = "et-sub-treemap-card";
+    wrap.style.left = `${(rect.x / w) * 100}%`;
+    wrap.style.top = `${(rect.y / h) * 100}%`;
+    wrap.style.width = `${(rect.w / w) * 100}%`;
+    wrap.style.height = `${(rect.h / h) * 100}%`;
+    wrap.appendChild(
+      buildSubCard(item.sub, deps, today, { compact: true, smallTile: areaRatio < 0.14 }),
+    );
+    strip.appendChild(wrap);
+  }
 }
 
 export function renderSubs(root: HTMLElement, deps: SubUiDeps) {
@@ -268,7 +328,7 @@ export function renderSubs(root: HTMLElement, deps: SubUiDeps) {
   }
 
   strip.className =
-    "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 w-full rounded-2xl border border-transparent bg-transparent p-0.5";
+    "relative w-full min-h-[14rem] sm:min-h-[16rem] rounded-xl border border-gray-200/80 dark:border-gray-800/70 bg-gray-50/40 dark:bg-gray-900/30 overflow-hidden";
 
   const sorted = [...subs].sort((a, b) => {
     const ma = subscriptionToMonthlyAmount(a, today);
@@ -276,9 +336,10 @@ export function renderSubs(root: HTMLElement, deps: SubUiDeps) {
     return mb - ma;
   });
 
-  for (const s of sorted) {
-    strip.appendChild(buildSubCard(s, deps, today));
-  }
+  paintSubsTreemap(strip, sorted, deps, today);
+  subsTreemapObserver?.disconnect();
+  subsTreemapObserver = new ResizeObserver(() => paintSubsTreemap(strip, sorted, deps, today));
+  subsTreemapObserver.observe(strip);
 }
 
 function renderBrandPicker(root: HTMLElement, selected?: string) {
