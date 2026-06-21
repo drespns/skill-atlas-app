@@ -1,6 +1,7 @@
 // @ts-check
 import vercel from "@astrojs/vercel";
 import { defineConfig } from "astro/config";
+import { fileURLToPath } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
 
@@ -20,6 +21,11 @@ export default defineConfig({
     /** Evita dos copias de i18next (p. ej. chunks de página vs client.ts) con `isInitialized` desincronizado. */
     resolve: {
       dedupe: ["i18next"],
+      alias: {
+        "@skill-atlas/expense-core": fileURLToPath(
+          new URL("./packages/expense-core/src/index.ts", import.meta.url),
+        ),
+      },
     },
   },
 });

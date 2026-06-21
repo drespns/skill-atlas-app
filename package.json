@@ -14,8 +14,14 @@
     "gen:tech-catalog": "node scripts/gen-tech-catalog.mjs",
     "gen:linkedin-banner": "node scripts/gen-linkedin-banner.mjs",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "mobile": "npm run start --workspace=skill-atlas-gastos-mobile",
+    "mobile:android": "npm run android --workspace=skill-atlas-gastos-mobile"
   },
+  "workspaces": [
+    "packages/*",
+    "mobile"
+  ],
   "dependencies": {
     "@astrojs/vercel": "^10.0.4",
     "@codemirror/lang-cpp": "^6.0.3",

@@ -3,10 +3,11 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "packages/**/*.test.ts"],
   },
   resolve: {
     alias: {
+      "@skill-atlas/expense-core": path.resolve(__dirname, "packages/expense-core/src/index.ts"),
       "@lib": path.resolve(__dirname, "src/lib"),
       "@scripts": path.resolve(__dirname, "src/scripts"),
       "@config": path.resolve(__dirname, "src/config"),

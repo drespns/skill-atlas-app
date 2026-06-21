@@ -12,7 +12,8 @@
       "@lib/*": ["./src/lib/*"],
       "@data/*": ["./src/data/*"],
       "@config/*": ["./src/config/*"],
-      "@i18n/*": ["./src/i18n/*"]
+      "@i18n/*": ["./src/i18n/*"],
+      "@skill-atlas/expense-core": ["./packages/expense-core/src/index.ts"]
     }
   },
   "include": [".astro/types.d.ts", "**/*"],
