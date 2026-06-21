@@ -92,7 +92,7 @@ import {
   monthlyInvestmentOutflowSeries,
   yearsWithFinancialActivity,
 } from "@lib/tools-expense-tracker";
-import { initExpenseDatePickers, initExpenseMonthPickers, readDateFieldValue, readMonthFieldValue, refreshExpenseDatePicker, showExpenseDialog } from "./expense-tracker-dates";
+import { initExpenseDatePickers, initExpenseMonthPickers, readDateFieldValue, readMonthFieldValue, refreshExpenseDatePicker, clearExpenseDatePicker, showExpenseDialog } from "./expense-tracker-dates";
 import { bindExpenseDialogScrollLock } from "./expense-tracker-dialog-scroll-lock";
 import { isExpenseEncryptedEnvelope, openExpenseEnvelope, sealExpenseState } from "@lib/tools-expense-tracker-crypto";
 import type { EncryptedExpenseEnvelope } from "@lib/tools-expense-tracker-crypto";
@@ -1043,7 +1043,7 @@ function applyInvestmentBuy(root: HTMLElement) {
     gainLossPct: Number.isFinite(pnl) ? pnl : (prev?.gainLossPct ?? 0),
     notes: notes || prev?.notes,
     cardColor: cardColor ?? prev?.cardColor,
-    acquiredOn: prev?.acquiredOn ?? tradeDate,
+    acquiredOn: prev?.acquiredOn,
     purchases,
   };
   if (idx >= 0) list[idx] = row;
@@ -3129,7 +3129,10 @@ function openInvestmentDialog(root: HTMLElement, h?: InvestmentHolding | null) {
   (root.querySelector("[data-et-inv-qty]") as HTMLInputElement).value =
     h?.quantity != null ? String(h.quantity) : "";
   const acquiredEl = root.querySelector<HTMLInputElement>("[data-et-inv-acquired]");
-  if (acquiredEl) refreshExpenseDatePicker(acquiredEl, h?.acquiredOn ?? state.trackingStartDate ?? todayIso());
+  if (acquiredEl) {
+    if (h?.acquiredOn) refreshExpenseDatePicker(acquiredEl, h.acquiredOn);
+    else clearExpenseDatePicker(acquiredEl);
+  }
   const tradeDateEl = root.querySelector<HTMLInputElement>("[data-et-inv-trade-date]");
   if (tradeDateEl) refreshExpenseDatePicker(tradeDateEl, todayIso());
   (root.querySelector("[data-et-inv-pnl]") as HTMLInputElement).value = h != null ? String(h.gainLossPct) : "";
@@ -3166,10 +3169,8 @@ function saveInvestmentFromDialog(root: HTMLElement) {
     qtyRaw != null && qtyRaw !== "" && Number.isFinite(Number(qtyRaw)) ? Math.max(0, Number(qtyRaw)) : 0;
   if (quantity <= 0) return;
   const avgBuyPrice = Number.isFinite(avg) && avg >= 0 ? avg : 0;
-  const acquiredOn =
-    readDateFieldValue(root.querySelector<HTMLInputElement>("[data-et-inv-acquired]") ?? undefined) ||
-    state.trackingStartDate ||
-    todayIso();
+  const acquiredRaw = readDateFieldValue(root.querySelector<HTMLInputElement>("[data-et-inv-acquired]") ?? undefined);
+  const acquiredOn = /^\d{4}-\d{2}-\d{2}$/.test(acquiredRaw) ? acquiredRaw : undefined;
   const prev = (state.investments ?? []).find((x) => x.id === idEl?.value);
   const row: InvestmentHolding = {
     id: idEl?.value || makeId(),
@@ -3185,7 +3186,7 @@ function saveInvestmentFromDialog(root: HTMLElement) {
     gainLossPct: Number.isFinite(pnl) ? pnl : 0,
     notes: notes || undefined,
     cardColor,
-    acquiredOn: prev?.acquiredOn ?? acquiredOn,
+    acquiredOn,
     purchases: prev?.purchases,
   };
   const list = [...(state.investments ?? [])];
@@ -4825,7 +4826,7 @@ function wire(root: HTMLElement) {
     requestSyncChange((e.target as HTMLInputElement).checked);
   });
 
-  bindKpiDetailPopovers(root, { state, fmtEurCompact });
+  bindKpiDetailPopovers(root, { getState: () => state, fmtEurCompact });
 
   root.querySelector("[data-et-year-history-chips]")?.addEventListener("click", (ev) => {
     const btn = (ev.target as HTMLElement).closest<HTMLButtonElement>("[data-et-year-history-btn]");

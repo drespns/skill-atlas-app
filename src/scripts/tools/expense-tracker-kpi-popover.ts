@@ -21,7 +21,7 @@ export type KpiDetailKey =
   | "year-net";
 
 type KpiPopoverDeps = {
-  state: ExpenseTrackerState;
+  getState: () => ExpenseTrackerState;
   fmtEurCompact: (n: number) => string;
 };
 
@@ -29,7 +29,7 @@ let openKey: KpiDetailKey | null = null;
 let yearArg = new Date().getFullYear();
 
 function buildBreakdown(key: KpiDetailKey, deps: KpiPopoverDeps): KpiBreakdown {
-  const { state } = deps;
+  const state = deps.getState();
   switch (key) {
     case "subs":
       return breakdownActiveSubscriptions(state);
