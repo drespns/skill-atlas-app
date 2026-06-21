@@ -1,6 +1,6 @@
 /**
  * Scans `public/icons/{technologies,frameworks,libraries,packages}` and writes
- * `generated-icons-catalog.ts` (slug, kind, label, icon path). Run via `npm run build`
+ * `generated-icons-catalog.ts` (slug, kind, label, icon path). Run via `pnpm run build`
  * (prebuild) or `node scripts/gen-tech-catalog.mjs`. Extra spellings / DB slugs belong in
  * `src/config/icons.ts` and catalog merge logic in `concept-seeds.ts`, not here.
  */

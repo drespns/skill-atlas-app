@@ -15,6 +15,7 @@ SkillAtlas es un MVP para gestionar conocimiento tecnico y mostrar portfolio:
 
 ## Stack actual
 
+- **pnpm** monorepo (`pnpm-workspace.yaml`: raíz web, `packages/*`, `mobile/`); lockfile `pnpm-lock.yaml`
 - Astro
 - Tailwind CSS v4
 - Supabase (PostgreSQL + RLS; transicion `docs/sql/rls-mvp-authenticated.sql`; SaaS multi-tenant `docs/sql/saas-001` … `saas-014` — ver `docs/db.md`)
@@ -94,7 +95,7 @@ UI/UX:
 
 1. Cambios pequeños y verticales.
 2. Mantener scripts cliente separados por pantalla.
-3. Validar con `npm run build` tras cambios.
+3. Validar con `pnpm build` tras cambios.
 4. Evitar introducir features fuera del flujo MVP sin consenso.
 5. Tras cambios de producto, DB o rutas, actualizar `docs/architecture.md`, `docs/db.md` y/o `docs/backlog.md` cuando proceda.
 

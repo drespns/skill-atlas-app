@@ -2,8 +2,10 @@
   "name": "skill-atlas-app",
   "type": "module",
   "version": "0.150.0",
+  "packageManager": "pnpm@9.3.0",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.12.0",
+    "pnpm": ">=9.0.0"
   },
   "scripts": {
     "dev": "astro dev",
@@ -15,13 +17,10 @@
     "gen:linkedin-banner": "node scripts/gen-linkedin-banner.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "mobile": "npm run start --workspace=skill-atlas-gastos-mobile",
-    "mobile:android": "npm run android --workspace=skill-atlas-gastos-mobile"
+    "mobile": "pnpm --filter skill-atlas-gastos-mobile start",
+    "mobile:android": "pnpm --filter skill-atlas-gastos-mobile android",
+    "mobile:web": "pnpm --filter skill-atlas-gastos-mobile web"
   },
-  "workspaces": [
-    "packages/*",
-    "mobile"
-  ],
   "dependencies": {
     "@astrojs/vercel": "^10.0.4",
     "@codemirror/lang-cpp": "^6.0.3",

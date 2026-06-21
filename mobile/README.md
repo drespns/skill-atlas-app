@@ -14,17 +14,23 @@ cp mobile/.env.example mobile/.env
 # Rellena EXPO_PUBLIC_SUPABASE_URL y EXPO_PUBLIC_SUPABASE_ANON_KEY (mismas que la web)
 ```
 
-Desde la raíz del monorepo:
+Desde la raíz del monorepo (con `mobile/.env` ya configurado):
 
 ```bash
-npm install
-npm run mobile
+pnpm install
+pnpm mobile
 ```
 
 Android emulador/dispositivo:
 
 ```bash
-npm run mobile:android
+pnpm mobile:android
+```
+
+Navegador (preview limitado):
+
+```bash
+pnpm mobile:web
 ```
 
 ## Build Play Store (EAS)

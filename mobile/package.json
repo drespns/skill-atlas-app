@@ -5,7 +5,7 @@
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "^2.2.0",
-    "@skill-atlas/expense-core": "file:../packages/expense-core",
+    "@skill-atlas/expense-core": "workspace:*",
     "@supabase/supabase-js": "^2.100.1",
     "expo": "~56.0.12",
     "expo-constants": "~56.0.18",

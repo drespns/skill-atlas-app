@@ -44,7 +44,7 @@ El sitio se genera como **estático** (`astro build`); con Supabase y RLS, lista
 
 ## Requisitos
 
-- **Node.js** ≥ 22.12 (ver `package.json` → `engines`)
+- **Node.js** ≥ 22.12 y **pnpm** ≥ 9 (ver `package.json` → `engines`; `corepack enable`)
 
 ---
 
@@ -64,16 +64,22 @@ Con `supabase`, aplica los scripts SQL en el orden indicado en [`docs/db.md`](do
 
 ---
 
-## Scripts npm
+## Scripts pnpm
+
+Requiere [pnpm](https://pnpm.io/) 9+ (`corepack enable` en Node 22).
 
 ```bash
-npm install
-npm run dev      # desarrollo
-npm run build    # build de producción
-npm run preview  # sirve la carpeta dist
+pnpm install
+pnpm dev         # desarrollo web
+pnpm build       # build de producción
+pnpm preview     # sirve la carpeta dist
+pnpm test        # Vitest
+pnpm mobile      # Expo dev server (app móvil)
 ```
 
-Tras cambios relevantes, conviene validar con `npm run build`.
+**Monorepo:** workspaces en `pnpm-workspace.yaml` (`packages/*`, `mobile/`). No uses `npm install` en la raíz (ignora `package-lock.json`).
+
+**Windows:** si `pnpm install` falla con `EPERM` en `@tailwindcss/oxide`, cierra servidores de desarrollo y terminales que usen el proyecto, borra `node_modules` y vuelve a instalar. Para `pnpm build` local con `@astrojs/vercel`, activa **Modo de desarrollador** (symlinks) o valida el build en CI/Vercel (Linux).
 
 ---
 
