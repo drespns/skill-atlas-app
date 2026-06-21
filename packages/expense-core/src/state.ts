@@ -1,5 +1,8 @@
 /** Modelo y utilidades para la herramienta Gastos + Suscripciones (`/tools/expense-tracker`). */
 
+import { resolveSubscriptionBrandKey } from "./subscription-brands";
+import { subscriptionBillingSnapshot } from "./subscriptions-billing";
+
 export const EXPENSE_TRACKER_STORAGE_KEY = "skillatlas_tools_expense_tracker_v1";
 
 export type ExpenseCurrency = "EUR" | "USD";
@@ -63,6 +66,14 @@ export type SubscriptionRow = {
   tags: string[];
   /** Color de tarjeta (#RRGGBB). */
   cardColor?: string;
+  /** Clave de marca (`subscription-brands` en public/static). Auto-detectable desde el nombre. */
+  brandKey?: string;
+  /** Importe durante el periodo de prueba (p. ej. 0). Requiere trialEndsOn. */
+  trialAmount?: number;
+  /** YYYY-MM-DD: último día de prueba; a partir de aquí aplica `amount`. */
+  trialEndsOn?: string;
+  /** Recordar N días antes del próximo cobro (p. ej. 7). */
+  reminderDaysBefore?: number;
 };
 
 export type InvestmentAssetType =
@@ -535,6 +546,38 @@ function parseWealthBizums(raw: unknown): WealthBizum[] {
 export function parseCardColor(raw: unknown): string | undefined {
   const s = String(raw ?? "").trim();
   return /^#[0-9a-fA-F]{6}$/.test(s) ? s : undefined;
+}
+
+function parseSubscriptionRow(s: any, fallbackCat: string, categories: ExpenseCategory[]): SubscriptionRow | null {
+  const id = String(s?.id || "").trim();
+  if (!id) return null;
+  const name = String(s?.name || "").trim() || "Suscripción";
+  const cid = String(s?.categoryId || fallbackCat);
+  const billingStart = String(s?.billingStartDate ?? "").slice(0, 10);
+  const trialEnd = String(s?.trialEndsOn ?? "").slice(0, 10);
+  const trialRaw = Number(s?.trialAmount);
+  const reminderRaw = Number(s?.reminderDaysBefore);
+  const explicitBrand = String(s?.brandKey ?? "").trim() || undefined;
+  return {
+    id,
+    name,
+    amount: Number.isFinite(Number(s?.amount)) ? Number(s.amount) : 0,
+    currency: s?.currency === "USD" ? "USD" : "EUR",
+    cycle: (["weekly", "monthly", "quarterly", "yearly"] as const).includes(s?.cycle) ? s.cycle : "monthly",
+    categoryId: categories.some((c) => c.id === cid) ? cid : fallbackCat,
+    nextBilling: String(s?.nextBilling || "").slice(0, 10),
+    billingStartDate: billingStart.length === 10 ? billingStart : undefined,
+    active: Boolean(s?.active),
+    cancelEffectiveDate: String(s?.cancelEffectiveDate ?? "").slice(0, 10) || undefined,
+    notes: String(s?.notes ?? ""),
+    tags: parseTags(s?.tags),
+    cardColor: parseCardColor(s?.cardColor),
+    brandKey: explicitBrand ?? resolveSubscriptionBrandKey(name),
+    trialAmount: trialEnd.length === 10 && Number.isFinite(trialRaw) ? Math.max(0, trialRaw) : undefined,
+    trialEndsOn: trialEnd.length === 10 ? trialEnd : undefined,
+    reminderDaysBefore:
+      Number.isFinite(reminderRaw) && reminderRaw >= 0 ? Math.min(60, Math.floor(reminderRaw)) : undefined,
+  };
 }
 
 export function defaultWealthAccountId(
@@ -1278,26 +1321,8 @@ function upgradeV1ToV2(o: any): ExpenseTrackerState {
 
   const subscriptions: SubscriptionRow[] = Array.isArray(o.subscriptions)
     ? o.subscriptions
-        .map((s: any) => {
-          const cid = String(s?.categoryId || fallbackCat);
-          const billingStart = String(s?.billingStartDate ?? "").slice(0, 10);
-          return {
-            id: String(s?.id || ""),
-            name: String(s?.name || "").trim() || "Suscripción",
-            amount: Number.isFinite(Number(s?.amount)) ? Number(s.amount) : 0,
-            currency: s?.currency === "USD" ? "USD" : "EUR",
-            cycle: (["weekly", "monthly", "quarterly", "yearly"] as const).includes(s?.cycle) ? s.cycle : "monthly",
-            categoryId: categories.some((c) => c.id === cid) ? cid : fallbackCat,
-            nextBilling: String(s?.nextBilling || "").slice(0, 10),
-            billingStartDate: billingStart.length === 10 ? billingStart : undefined,
-            active: Boolean(s?.active),
-            cancelEffectiveDate: String(s?.cancelEffectiveDate ?? "").slice(0, 10) || undefined,
-            notes: String(s?.notes ?? ""),
-            tags: parseTags(s?.tags),
-            cardColor: parseCardColor(s?.cardColor),
-          };
-        })
-        .filter((s: SubscriptionRow) => s.id)
+        .map((s: any) => parseSubscriptionRow(s, fallbackCat, categories))
+        .filter((s): s is SubscriptionRow => Boolean(s))
     : [];
 
   const chartMoneyMode: ChartMoneyMode =
@@ -1381,26 +1406,8 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
 
   const subscriptions: SubscriptionRow[] = Array.isArray(o.subscriptions)
     ? o.subscriptions
-        .map((s: any) => {
-          const cid = String(s?.categoryId || fallbackCat);
-          const billingStart = String(s?.billingStartDate ?? "").slice(0, 10);
-          return {
-            id: String(s?.id || ""),
-            name: String(s?.name || "").trim() || "Suscripción",
-            amount: Number.isFinite(Number(s?.amount)) ? Number(s.amount) : 0,
-            currency: s?.currency === "USD" ? "USD" : "EUR",
-            cycle: (["weekly", "monthly", "quarterly", "yearly"] as const).includes(s?.cycle) ? s.cycle : "monthly",
-            categoryId: categories.some((c) => c.id === cid) ? cid : fallbackCat,
-            nextBilling: String(s?.nextBilling || "").slice(0, 10),
-            billingStartDate: billingStart.length === 10 ? billingStart : undefined,
-            active: Boolean(s?.active),
-            cancelEffectiveDate: String(s?.cancelEffectiveDate ?? "").slice(0, 10) || undefined,
-            notes: String(s?.notes ?? ""),
-            tags: parseTags(s?.tags),
-            cardColor: parseCardColor(s?.cardColor),
-          };
-        })
-        .filter((s: SubscriptionRow) => s.id)
+        .map((s: any) => parseSubscriptionRow(s, fallbackCat, categories))
+        .filter((s): s is SubscriptionRow => Boolean(s))
     : [];
 
   const reminders = parseReminders(o.reminders);
@@ -1739,39 +1746,26 @@ function advanceBillingDate(d: Date, cycle: BillingCycle): Date {
 /**
  * Próximo cobro ISO (YYYY-MM-DD) desde billingStartDate + ciclo, o legacy nextBilling si no hay inicio.
  */
-export function subscriptionNextChargeIso(s: SubscriptionRow): string {
-  const start = s.billingStartDate?.trim();
-  if (start && start.length >= 10) {
-    const anchor = parseYmd(start);
-    if (!anchor) return (s.nextBilling || "").slice(0, 10);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    let cur = new Date(anchor);
-    cur.setHours(12, 0, 0, 0);
-    if (cur >= today) return cur.toISOString().slice(0, 10);
-    let guard = 0;
-    while (cur < today && guard < 5000) {
-      cur = advanceBillingDate(cur, s.cycle);
-      guard++;
-    }
-    return cur.toISOString().slice(0, 10);
-  }
-  return (s.nextBilling || "").slice(0, 10);
+export function subscriptionNextChargeIso(s: SubscriptionRow, refDate?: string): string {
+  return subscriptionBillingSnapshot(s, refDate).nextChargeIso;
 }
 
 export function subscriptionToMonthlyAmount(s: SubscriptionRow, refDate?: string): number {
-  if (!subscriptionCountsInTotals(s, refDate) || s.amount <= 0) return 0;
+  if (!subscriptionCountsInTotals(s, refDate)) return 0;
+  const snap = subscriptionBillingSnapshot(s, refDate);
+  const amt = Math.max(0, snap.cycleAmount);
+  if (amt <= 0) return 0;
   switch (s.cycle) {
     case "weekly":
-      return (s.amount * 52) / 12;
+      return (amt * 52) / 12;
     case "monthly":
-      return s.amount;
+      return amt;
     case "quarterly":
-      return s.amount / 3;
+      return amt / 3;
     case "yearly":
-      return s.amount / 12;
+      return amt / 12;
     default:
-      return s.amount;
+      return amt;
   }
 }
 

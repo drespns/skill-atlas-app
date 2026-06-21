@@ -20,6 +20,8 @@ export type ExpenseDebt = {
   note?: string;
   categoryId?: string;
   currency?: ExpenseCurrency;
+  /** Importe total declarado de la deuda (puede diferir de la suma de cuotas mientras se planifica). */
+  totalAmount?: number;
   installments: DebtInstallment[];
   createdAt?: string;
 };
@@ -46,6 +48,21 @@ export function debtInstallmentTotal(debt: ExpenseDebt): number {
   return round2((debt.installments ?? []).reduce((s, it) => s + Math.max(0, it.amount), 0));
 }
 
+/** Total declarado de la deuda; cae a suma de cuotas si no hay totalAmount. */
+export function debtDeclaredTotal(debt: ExpenseDebt): number {
+  const declared = debt.totalAmount;
+  if (declared != null && Number.isFinite(declared) && declared > 0) return round2(declared);
+  return debtInstallmentTotal(debt);
+}
+
+export function debtInstallmentsAssigned(debt: ExpenseDebt): number {
+  return debtInstallmentTotal(debt);
+}
+
+export function debtUnassignedAmount(debt: ExpenseDebt): number {
+  return round2(Math.max(0, debtDeclaredTotal(debt) - debtInstallmentTotal(debt)));
+}
+
 export function debtPaidAmount(debt: ExpenseDebt): number {
   return round2(
     (debt.installments ?? [])
@@ -59,7 +76,7 @@ export function debtPendingAmount(debt: ExpenseDebt): number {
 }
 
 export function summarizeDebt(debt: ExpenseDebt): DebtSummary {
-  const total = debtInstallmentTotal(debt);
+  const total = debtDeclaredTotal(debt);
   const paid = debtPaidAmount(debt);
   const pending = round2(Math.max(0, total - paid));
   const next = (debt.installments ?? [])
@@ -92,12 +109,16 @@ export function parseExpenseDebts(raw: unknown): ExpenseDebt[] {
             }))
             .filter((it: DebtInstallment) => it.id && it.dueDate.length === 10 && it.amount > 0)
         : [];
+      const parsedTotal = Number(r?.totalAmount);
+      const totalAmount =
+        Number.isFinite(parsedTotal) && parsedTotal > 0 ? round2(parsedTotal) : undefined;
       return {
         id: String(r?.id || "").trim() || cryptoId(),
         title: String(r?.title || "").trim() || "Deuda",
         note: String(r?.note ?? "").trim() || undefined,
         categoryId: r?.categoryId ? String(r.categoryId).trim() : undefined,
         currency: r?.currency === "USD" ? "USD" : "EUR",
+        totalAmount,
         installments,
         createdAt: String(r?.createdAt ?? "").slice(0, 10) || undefined,
       } satisfies ExpenseDebt;
