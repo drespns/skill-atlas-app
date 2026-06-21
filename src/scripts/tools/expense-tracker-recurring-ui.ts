@@ -66,7 +66,7 @@ function makeRecurringCard(
       ? "border-rose-200/70 dark:border-rose-900/50"
       : "border-teal-200/70 dark:border-teal-900/50";
   card.className =
-    `et-recurring-card text-left rounded-2xl border ${border} bg-white/90 dark:bg-gray-950/70 p-4 shadow-sm space-y-2 w-full` +
+    `et-recurring-card et-section-card text-left rounded-2xl border ${border} bg-white/90 dark:bg-gray-950/70 p-4 shadow-sm space-y-2 w-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md` +
     (opts.ended ? " opacity-70 grayscale-[0.4]" : "");
   const head = document.createElement("div");
   head.className = "flex items-start gap-2.5";
@@ -226,9 +226,16 @@ export function renderInvestmentSection(root: HTMLElement, deps: RecurringUiDeps
     elPnl.classList.toggle("dark:text-rose-400", totals.gainLoss < 0);
   }
   if (!holdings.length) {
-    const empty = document.createElement("p");
-    empty.className = "text-sm text-gray-600 dark:text-gray-400 col-span-full py-2";
-    empty.textContent = "Aún no hay posiciones. Añade activos con cantidad y rendimiento % manual.";
+    const empty = document.createElement("div");
+    empty.className =
+      "col-span-full rounded-2xl border border-dashed border-violet-300/60 dark:border-violet-800/50 bg-violet-50/30 dark:bg-violet-950/20 p-6 text-center space-y-2";
+    const t = document.createElement("p");
+    t.className = "m-0 text-sm font-medium text-gray-800 dark:text-gray-100";
+    t.textContent = "Sin posiciones todavía";
+    const sub = document.createElement("p");
+    sub.className = "m-0 text-xs text-gray-500 dark:text-gray-400";
+    sub.textContent = "Registra activos con cantidad y rendimiento % manual.";
+    empty.append(t, sub);
     grid.appendChild(empty);
     return;
   }
@@ -240,25 +247,50 @@ export function renderInvestmentSection(root: HTMLElement, deps: RecurringUiDeps
     card.type = "button";
     const c = parseCardColor(h.cardColor) ?? "#8b5cf6";
     card.className =
-      "et-recurring-card text-left rounded-2xl border shadow-sm p-4 space-y-2 w-full";
-    card.style.borderColor = `${c}99`;
-    card.style.background = `linear-gradient(135deg,${c}66 0%,${c}38 42%,${c}1a 100%)`;
+      "et-inv-card et-section-card et-recurring-card text-left rounded-2xl border shadow-sm p-0 w-full overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg";
+    card.style.borderColor = `${c}55`;
+
+    const inner = document.createElement("div");
+    inner.className = "flex items-stretch min-h-[5.5rem]";
+    const strip = document.createElement("div");
+    strip.className = "w-1.5 shrink-0";
+    strip.style.background = c;
+    const body = document.createElement("div");
+    body.className = "flex-1 p-3.5 flex flex-col sm:flex-row sm:items-center gap-3 min-w-0";
+    body.style.background = `linear-gradient(135deg,${c}22 0%,transparent 55%)`;
+
+    const left = document.createElement("div");
+    left.className = "min-w-0 flex-1 space-y-1";
     const type = document.createElement("p");
     type.className = "m-0 text-[10px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300";
     type.textContent = `${investmentTypeLabel(h.type)} · ${h.platform}`;
     const name = document.createElement("p");
-    name.className = "m-0 text-base font-semibold text-gray-900 dark:text-gray-50";
+    name.className = "m-0 text-base font-semibold text-gray-900 dark:text-gray-50 truncate";
     name.textContent = h.name;
-    const val = document.createElement("p");
-    val.className = "m-0 text-lg font-bold et-amount text-gray-800 dark:text-gray-100";
-    val.textContent = deps.fmtEur(investmentCurrentValue(h));
     const sub = document.createElement("p");
-    sub.className = "m-0 text-[11px] text-gray-500 dark:text-gray-400";
+    sub.className = "m-0 text-[11px] text-gray-500 dark:text-gray-400 truncate";
     const pnl = investmentGainLossAmount(h);
     const sign = pnl >= 0 ? "+" : "";
-    const qty = ` · ${h.quantity} u.`;
-    sub.textContent = `Invertido ${deps.fmtEur(h.totalInvested)}${qty} · Rend. ${sign}${h.gainLossPct.toFixed(1)}% (${sign}${deps.fmtEur(pnl)})`;
-    card.append(type, name, val, sub);
+    sub.textContent = `Invertido ${deps.fmtEur(h.totalInvested)} · ${h.quantity} u. · ${sign}${h.gainLossPct.toFixed(1)}%`;
+    left.append(type, name, sub);
+
+    const right = document.createElement("div");
+    right.className = "shrink-0 text-left sm:text-right space-y-1";
+    const val = document.createElement("p");
+    val.className = "m-0 text-lg font-bold et-amount text-gray-900 dark:text-gray-50";
+    val.textContent = deps.fmtEur(investmentCurrentValue(h));
+    const badge = document.createElement("span");
+    badge.className =
+      "inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold " +
+      (pnl >= 0
+        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+        : "bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-300");
+    badge.textContent = `${sign}${deps.fmtEur(pnl)}`;
+    right.append(val, badge);
+
+    body.append(left, right);
+    inner.append(strip, body);
+    card.appendChild(inner);
     card.addEventListener("click", () => deps.openInvestmentDialog(root, h));
     grid.appendChild(card);
   }
