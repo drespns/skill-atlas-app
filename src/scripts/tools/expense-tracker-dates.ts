@@ -25,14 +25,16 @@ function syncCalendarTheme(inst: flatpickr.Instance) {
 }
 
 function hideNativeMonthSelect(inst: flatpickr.Instance) {
-  const nativeSelect = inst.calendarContainer.querySelector<HTMLSelectElement>(
-    ".flatpickr-monthDropdown-months",
-  );
-  if (!nativeSelect || nativeSelect.dataset.etHidden === "1") return;
-  nativeSelect.dataset.etHidden = "1";
-  nativeSelect.style.display = "none";
-  nativeSelect.setAttribute("aria-hidden", "true");
-  nativeSelect.tabIndex = -1;
+  const cal = inst.calendarContainer;
+  const selectors = [".flatpickr-monthDropdown-months", ".flatpickr-current-month select"];
+  for (const sel of cal.querySelectorAll<HTMLSelectElement>(selectors.join(", "))) {
+    if (sel.dataset.etHidden === "1") continue;
+    sel.dataset.etHidden = "1";
+    sel.style.display = "none";
+    sel.setAttribute("aria-hidden", "true");
+    sel.tabIndex = -1;
+    sel.disabled = true;
+  }
 }
 
 function closeMonthGrid(cal: HTMLElement) {
@@ -52,15 +54,16 @@ function syncMonthTriggerLabel(inst: flatpickr.Instance) {
 
 function enhanceMonthNavigation(inst: flatpickr.Instance) {
   const cal = inst.calendarContainer;
+  hideNativeMonthSelect(inst);
   if (cal.dataset.etMonthGridEnhanced === "1") return;
   cal.dataset.etMonthGridEnhanced = "1";
 
   const currentMonth = cal.querySelector(".flatpickr-current-month");
-  const nativeSelect = cal.querySelector<HTMLSelectElement>(".flatpickr-monthDropdown-months");
+  const nativeSelect = cal.querySelector<HTMLSelectElement>(
+    ".flatpickr-monthDropdown-months, .flatpickr-current-month select",
+  );
   const rContainer = cal.querySelector(".flatpickr-rContainer");
   if (!currentMonth || !rContainer) return;
-
-  hideNativeMonthSelect(inst);
 
   const trigger = document.createElement("button");
   trigger.type = "button";
@@ -137,12 +140,15 @@ function baseOptions(input: HTMLInputElement): Partial<flatpickr.Options.Options
       syncCalendarTheme(inst);
       enhanceMonthNavigation(inst);
       syncMonthTriggerLabel(inst);
+      hideNativeMonthSelect(inst);
     },
     onOpen(_d, _s, inst) {
       syncCalendarTheme(inst);
       hideNativeMonthSelect(inst);
+      enhanceMonthNavigation(inst);
       syncMonthTriggerLabel(inst);
       closeMonthGrid(inst.calendarContainer);
+      requestAnimationFrame(() => hideNativeMonthSelect(inst));
     },
     onMonthChange(_d, _s, inst) {
       hideNativeMonthSelect(inst);
@@ -236,6 +242,14 @@ export function initExpenseMonthPickers(root: HTMLElement) {
     if ((input as FpInput)._flatpickr) continue;
     bindMonthPicker(input);
   }
+}
+
+/** Vacía un campo fecha (p. ej. fecha opcional de inversión). */
+export function clearExpenseDatePicker(input: HTMLInputElement | null | undefined) {
+  if (!input) return;
+  input.value = "";
+  const fp = (input as FpInput)._flatpickr;
+  if (fp) fp.clear();
 }
 
 /** Sincroniza valor y asegura flatpickr en un campo concreto (p. ej. al abrir un modal). */
