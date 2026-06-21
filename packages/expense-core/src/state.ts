@@ -101,6 +101,8 @@ export type WealthAccount = {
   isDefaultInvestment?: boolean;
   /** Saldo en la fecha de inicio del registro (punto de partida). */
   openingBalance?: number;
+  /** Clave de marca (`bank-brands` en public/static). */
+  brandKey?: string;
 };
 
 /** Traspaso interno entre cuentas de patrimonio (no es gasto ni ingreso). */
@@ -194,6 +196,8 @@ export type IncomeAdhocRow = {
 };
 
 /** Gasto recurrente previsto (alquiler, cuota fija…): misma forma que cobro pero con categoría. */
+export type PlannedPaymentMode = "installments" | "recurring";
+
 export type PlannedExpenseEntry = {
   id: string;
   title: string;
@@ -207,6 +211,14 @@ export type PlannedExpenseEntry = {
   amountMax?: number;
   validFrom?: string;
   validUntil?: string;
+  /** A plazos (BNPL, cuotas) vs cuota fija mensual recurrente. */
+  paymentMode?: PlannedPaymentMode;
+  /** Entrada / primer pago (solo modo a plazos). */
+  downPayment?: number;
+  /** Número de cuotas mensuales (modo a plazos). */
+  installmentCount?: number;
+  /** Marca BNPL (`financing-brands`). */
+  financingBrandKey?: string;
 };
 
 /** Ajuste de importe previsto en un mes concreto (YYYY-MM). */
@@ -463,6 +475,7 @@ function parseWealthAccounts(raw: unknown): WealthAccount[] {
           r?.openingBalance != null && Number.isFinite(Number(r.openingBalance))
             ? Math.round(Number(r.openingBalance) * 100) / 100
             : undefined,
+        brandKey: r?.brandKey ? String(r.brandKey).trim() : undefined,
       };
     })
     .filter((a: WealthAccount) => a.id)
@@ -1524,6 +1537,11 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
           const amin = Number(p?.amountMin);
           const amax = Number(p?.amountMax);
           const cid = String(p?.categoryId || fallbackCat);
+          const modeRaw = String(p?.paymentMode ?? "");
+          const paymentMode: PlannedPaymentMode = modeRaw === "recurring" ? "recurring" : "installments";
+          const downRaw = Number(p?.downPayment);
+          const instRaw = Number(p?.installmentCount);
+          const brandKey = String(p?.financingBrandKey ?? "").trim() || undefined;
           return {
             id: String(p?.id || "").trim() || "",
             title: String(p?.title || "").trim() || "Gasto previsto",
@@ -1540,6 +1558,11 @@ export function normalizeExpenseTrackerState(raw: unknown): ExpenseTrackerState 
             amountMax: Number.isFinite(amax) && amax >= 0 ? amax : undefined,
             validFrom: vf.length === 10 ? vf : undefined,
             validUntil: vu.length === 10 ? vu : undefined,
+            paymentMode,
+            downPayment: Number.isFinite(downRaw) && downRaw >= 0 ? downRaw : undefined,
+            installmentCount:
+              Number.isFinite(instRaw) && instRaw >= 1 ? Math.min(120, Math.floor(instRaw)) : undefined,
+            financingBrandKey: brandKey,
           };
         })
         .filter((p: PlannedExpenseEntry) => p.id)

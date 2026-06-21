@@ -6,3 +6,5 @@ export * from "./crypto";
 export * from "./mobile-summary";
 export * from "./subscription-brands";
 export * from "./subscriptions-billing";
+export * from "./financing-brands";
+export * from "./wealth-account-brands";

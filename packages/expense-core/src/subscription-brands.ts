@@ -25,6 +25,7 @@ export const SUBSCRIPTION_BRAND_CATALOG: SubscriptionBrand[] = [
   { key: "dazn", label: "DAZN", aliases: ["dazn"], accent: "#F8F8F5" },
   { key: "dropbox", label: "Dropbox", aliases: ["dropbox"], accent: "#0061FF" },
   { key: "notion", label: "Notion", aliases: ["notion"], accent: "#000000" },
+  { key: "cursor", label: "Cursor", aliases: ["cursor", "cursor pro", "cursor ai"], accent: "#000000" },
 ];
 
 function normalizeBrandText(value: string): string {
