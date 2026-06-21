@@ -2,6 +2,8 @@ export {
   type ExpenseDebt,
   type DebtInstallment,
   type DebtSummary,
+  type DebtScope,
+  type DebtPaymentMethod,
   parseExpenseDebts,
   payDebtInstallment,
   summarizeDebt,
@@ -10,4 +12,6 @@ export {
   debtUnassignedAmount,
   debtPaidAmount,
   debtPendingAmount,
+  linkedDebtBizumIds,
+  isInstallmentPaymentLinked,
 } from "@skill-atlas/expense-core";

@@ -7,7 +7,24 @@
     <input type="hidden" data-et-debt-id value="" />
     <label class="block space-y-1">
       <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Concepto</span>
-      <input type="text" data-et-debt-title class="et-field w-full text-sm py-2" placeholder="Factura dentista, préstamo amigo…" />
+      <input type="text" data-et-debt-title class="et-field w-full text-sm py-2" placeholder="Factura dentista, camisas…" />
+    </label>
+    <fieldset class="m-0 p-0 border-0 space-y-1.5">
+      <legend class="text-xs font-semibold text-gray-600 dark:text-gray-300">Tipo de deuda</legend>
+      <div class="flex flex-wrap gap-3 text-sm">
+        <label class="inline-flex items-center gap-1.5 cursor-pointer">
+          <input type="radio" name="et-debt-scope" value="personal" data-et-debt-scope checked class="h-4 w-4 text-amber-600" />
+          Personal
+        </label>
+        <label class="inline-flex items-center gap-1.5 cursor-pointer">
+          <input type="radio" name="et-debt-scope" value="family" data-et-debt-scope class="h-4 w-4 text-amber-600" />
+          Familiar
+        </label>
+      </div>
+    </fieldset>
+    <label class="block space-y-1 hidden" data-et-debt-counterparty-wrap>
+      <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Contraparte</span>
+      <input type="text" data-et-debt-counterparty class="et-field w-full text-sm py-2" placeholder="Madre, hermano, pareja…" />
     </label>
     <label class="block space-y-1">
       <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Categoría</span>
@@ -27,10 +44,11 @@
         <div class="flex flex-wrap gap-1.5">
           <button type="button" data-et-debt-installment-split class="et-btn-secondary text-xs py-1">Repartir equitativamente</button>
           <button type="button" data-et-debt-installment-add class="et-btn-dashed text-xs py-1">+ Cuota</button>
+          <button type="button" data-et-debt-installment-add-paid class="et-btn-dashed text-xs py-1">+ Cuota ya pagada</button>
         </div>
       </div>
-      <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400 leading-snug">
-        Indica cuándo estimas pagar cada cuota y su importe. Al marcar «Pagado», se crea un gasto confirmado vinculado.
+      <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400 leading-snug" data-et-debt-plan-hint>
+        Indica cuándo estimas pagar cada cuota. Al marcar «Pagado», elige Bizum o gasto según el tipo de deuda.
       </p>
       <div class="space-y-2 max-h-[16rem] overflow-y-auto pr-1" data-et-debt-installments></div>
       <div class="rounded-lg border border-gray-200/80 dark:border-gray-800/80 bg-gray-50/80 dark:bg-gray-900/40 px-3 py-2 space-y-0.5 text-xs">
@@ -49,27 +67,53 @@
   </div>
 </dialog>
 
-<dialog data-et-dlg-debt-pay class="et-dialog et-dialog--form w-[min(100vw-1.5rem,28rem)] p-0">
+<dialog data-et-dlg-debt-pay class="et-dialog et-dialog--form w-[min(100vw-1.5rem,32rem)] p-0">
   <div class="et-dialog-panel et-dialog-panel--fit space-y-3">
     <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-50">Registrar pago</h3>
     <p class="m-0 text-sm text-gray-600 dark:text-gray-400" data-et-debt-pay-summary></p>
     <input type="hidden" data-et-debt-pay-debt-id value="" />
     <input type="hidden" data-et-debt-pay-installment-id value="" />
-    <label class="block space-y-1">
+    <fieldset class="m-0 p-0 border-0 space-y-1.5">
+      <legend class="text-xs font-semibold text-gray-600 dark:text-gray-300">Forma de pago</legend>
+      <div class="flex flex-col gap-2 text-sm" data-et-debt-pay-methods>
+        <label class="inline-flex items-center gap-1.5 cursor-pointer" data-et-debt-pay-method-expense-wrap>
+          <input type="radio" name="et-debt-pay-method" value="expense" data-et-debt-pay-method class="h-4 w-4 text-amber-600" />
+          Gasto confirmado (aparece en Gastos)
+        </label>
+        <label class="inline-flex items-center gap-1.5 cursor-pointer">
+          <input type="radio" name="et-debt-pay-method" value="bizum" data-et-debt-pay-method checked class="h-4 w-4 text-cyan-600" />
+          Bizum nuevo
+        </label>
+        <label class="inline-flex items-center gap-1.5 cursor-pointer">
+          <input type="radio" name="et-debt-pay-method" value="linked" data-et-debt-pay-method class="h-4 w-4 text-cyan-600" />
+          Vincular bizum existente
+        </label>
+      </div>
+    </fieldset>
+    <label class="block space-y-1 hidden" data-et-debt-pay-link-wrap>
+      <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Bizum ya registrado</span>
+      <select data-et-debt-pay-link-bizum class="et-field et-select w-full text-sm py-2"></select>
+      <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400">No dupliques el movimiento: elige el Bizum que ya hiciste.</p>
+    </label>
+    <label class="block space-y-1" data-et-debt-pay-date-wrap>
       <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Fecha del pago</span>
       <input type="date" data-et-debt-pay-date class="et-field et-date w-full text-sm py-2" />
     </label>
-    <label class="block space-y-1">
+    <label class="block space-y-1" data-et-debt-pay-wealth-wrap>
       <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Cuenta</span>
       <select data-et-debt-pay-wealth class="et-field et-select w-full text-sm py-2"></select>
     </label>
-    <label class="block space-y-1">
+    <label class="block space-y-1 hidden" data-et-debt-pay-bizum-note-wrap>
+      <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Nota Bizum (opc.)</span>
+      <input type="text" data-et-debt-pay-bizum-note class="et-field w-full text-sm py-2" placeholder="Madre, camisas…" />
+    </label>
+    <label class="block space-y-1 hidden" data-et-debt-pay-label-wrap>
       <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Etiqueta en gastos (opc.)</span>
       <input type="text" data-et-debt-pay-label class="et-field w-full text-sm py-2" />
     </label>
     <div class="flex justify-end gap-2 pt-1">
       <button type="button" data-et-debt-pay-cancel class="et-btn-secondary text-sm py-2">Cancelar</button>
-      <button type="button" data-et-debt-pay-confirm class="et-btn-accent text-sm py-2">Pagado → Gastos</button>
+      <button type="button" data-et-debt-pay-confirm class="et-btn-accent text-sm py-2">Registrar pago</button>
     </div>
   </div>
 </dialog>
