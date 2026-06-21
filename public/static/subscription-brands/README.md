@@ -24,5 +24,6 @@ Formato preferido: **SVG** (`spotify.svg`). También se intenta `.png` si el SVG
 | `dazn.svg` | DAZN |
 | `dropbox.svg` | Dropbox |
 | `notion.svg` | Notion |
+| `cursor.svg` | Cursor |
 
 Al guardar una suscripción, el nombre se compara con los alias del catálogo y se asigna el logo automáticamente. También puedes elegir la marca manualmente en el modal.
