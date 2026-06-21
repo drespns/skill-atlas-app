@@ -97,7 +97,7 @@ import { bindExpenseDialogScrollLock } from "./expense-tracker-dialog-scroll-loc
 import { isExpenseEncryptedEnvelope, openExpenseEnvelope, sealExpenseState } from "@lib/tools-expense-tracker-crypto";
 import type { EncryptedExpenseEnvelope } from "@lib/tools-expense-tracker-crypto";
 import { loadClientState, scheduleSaveClientState } from "@scripts/core/user-client-state";
-import { renderYearHistoryChips } from "./expense-tracker-kpi-popover";
+import { bindKpiDetailPopovers, renderYearHistoryChips } from "./expense-tracker-kpi-popover";
 import {
   renderInvestmentSection,
   renderPaycheckCards,
@@ -174,7 +174,7 @@ function etKpiRemainingLabel(amount: number): string {
   const isEn = document.documentElement.lang.startsWith("en");
   if (amount <= 0.005) return "";
   const fmt = fmtEurCompact(amount);
-  return isEn ? `+ ${fmt} projected` : `+ ${fmt} previsto`;
+  return isEn ? `About ${fmt} still to receive this month` : `Quedan unos ${fmt} por cobrar este mes`;
 }
 
 function cashflowSourceLines(breakdown: Partial<Record<CashflowSource, number>>, direction: "in" | "out"): string[] {
@@ -1674,7 +1674,9 @@ function renderKpis(root: HTMLElement) {
     subEur += amountInEur(m, s.currency, fx);
   }
 
-  elSubs.textContent = `${fmtEurCompact(subEur)} / mes equiv.`;
+  elSubs.textContent = document.documentElement.lang.startsWith("en")
+    ? `About ${fmtEurCompact(subEur)} per month`
+    : `Unos ${fmtEurCompact(subEur)} al mes`;
   elExp.textContent = fmtEurCompact(totalExpensesInPeriod(state, state.period));
   if (elIncPeriod) elIncPeriod.textContent = fmtEurCompact(totalIncomeInPeriod(state, state.period));
 
@@ -1692,9 +1694,19 @@ function renderKpis(root: HTMLElement) {
   if (elBalRem) {
     const isEn = document.documentElement.lang.startsWith("en");
     const parts: string[] = [];
-    if (dual.remainingIn > 0.005) parts.push(isEn ? `${fmtEurCompact(dual.remainingIn)} in` : `${fmtEurCompact(dual.remainingIn)} ing.`);
-    if (dual.remainingOut > 0.005) parts.push(isEn ? `${fmtEurCompact(dual.remainingOut)} out` : `${fmtEurCompact(dual.remainingOut)} sal.`);
-    elBalRem.textContent = parts.length ? (isEn ? `+ ${parts.join(" · ")} projected` : `+ ${parts.join(" · ")} prev.`) : "";
+    if (dual.remainingIn > 0.005)
+      parts.push(
+        isEn
+          ? `About ${fmtEurCompact(dual.remainingIn)} still incoming`
+          : `Todavía entran unos ${fmtEurCompact(dual.remainingIn)} este mes`,
+      );
+    if (dual.remainingOut > 0.005)
+      parts.push(
+        isEn
+          ? `About ${fmtEurCompact(dual.remainingOut)} still to pay`
+          : `Quedan unos ${fmtEurCompact(dual.remainingOut)} por pagar este mes`,
+      );
+    elBalRem.textContent = parts.join(" · ");
     elBalRem.classList.toggle("hidden", !parts.length);
   }
   renderPatrimonioKpi(root);
@@ -4773,6 +4785,8 @@ function wire(root: HTMLElement) {
   root.querySelector<HTMLInputElement>("[data-et-sync-strip-toggle]")?.addEventListener("change", (e) => {
     setSync((e.target as HTMLInputElement).checked);
   });
+
+  bindKpiDetailPopovers(root, { state, fmtEurCompact });
 
   root.querySelector("[data-et-year-history-chips]")?.addEventListener("click", (ev) => {
     const btn = (ev.target as HTMLElement).closest<HTMLButtonElement>("[data-et-year-history-btn]");

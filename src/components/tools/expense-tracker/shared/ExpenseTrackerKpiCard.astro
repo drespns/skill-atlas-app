@@ -5,6 +5,9 @@ interface Props {
   /** Suffix after `data-et-`, e.g. `kpi-subs` */
   etSuffix: string;
   breakdownEtSuffix?: string;
+  /** Clave para popover de desglose (data-et-kpi-card) */
+  detailKey?: string;
+  detailYear?: number;
   cardClass: string;
   titleClass: string;
   valueClass?: string;
@@ -16,6 +19,8 @@ const {
   hint,
   etSuffix,
   breakdownEtSuffix,
+  detailKey,
+  detailYear,
   cardClass,
   titleClass,
   valueClass = "mt-1 mb-0 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50",
@@ -24,13 +29,26 @@ const {
 
 const valueAttr = { [`data-et-${etSuffix}`]: "" };
 const breakdownAttr = breakdownEtSuffix ? { [`data-et-${breakdownEtSuffix}`]: "" } : undefined;
+const interactive = Boolean(detailKey);
 ---
 
-<div class:list={[cardClass, colClass]}>
+<div
+  class:list={[
+    cardClass,
+    colClass,
+    interactive &&
+      "cursor-pointer transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950",
+  ]}
+  data-et-kpi-card={detailKey}
+  data-et-kpi-year={detailYear}
+  role={interactive ? "button" : undefined}
+  tabindex={interactive ? "0" : undefined}
+  aria-expanded={interactive ? "false" : undefined}
+>
   <p class:list={["m-0 text-xs font-semibold uppercase tracking-wide", titleClass]}>{title}</p>
   {hint && <p class="mt-1 mb-0 text-xs text-gray-500 dark:text-gray-400">{hint}</p>}
   <p class:list={[valueClass, "et-amount"]} {...valueAttr}>—</p>
   {breakdownAttr && (
-    <p class="mt-1 mb-0 text-xs font-medium text-gray-600 dark:text-gray-400" {...breakdownAttr} />
+    <p class="mt-1 mb-0 text-xs font-medium text-gray-600 dark:text-gray-400 leading-snug" {...breakdownAttr} />
   )}
 </div>

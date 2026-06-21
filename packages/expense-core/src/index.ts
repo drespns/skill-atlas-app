@@ -1,6 +1,7 @@
 export * from "./state";
 export * from "./cashflow-projection";
 export * from "./investment-series";
+export * from "./kpi-breakdown";
 export * from "./debts";
 export * from "./scenarios";
 export * from "./scenario-promote";
