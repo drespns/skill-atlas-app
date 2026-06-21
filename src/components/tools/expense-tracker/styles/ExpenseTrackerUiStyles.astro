@@ -5,7 +5,7 @@
   [data-tools-expense-page] .et-sub-treemap-card {
     position: absolute;
     box-sizing: border-box;
-    padding: 0.35rem;
+    padding: 0.2rem;
   }
   [data-tools-expense-page] .et-sub-treemap-card > article {
     height: 100%;
@@ -295,36 +295,8 @@
   [data-tools-expense-page] details > summary::-webkit-details-marker {
     display: none;
   }
-  @media (min-width: 1280px) {
-    [data-tools-expense-page] [data-et-focus-row] .et-section-panel--expanded {
-      grid-column: span 2 / span 2;
-    }
-  }
-  [data-tools-expense-page] .et-section-panel--dimmed {
-    opacity: 0.72;
-    transform: scale(0.985);
-  }
-  [data-tools-expense-page] .et-section-panel--expanded {
-    opacity: 1;
-    transform: scale(1);
-  }
-  [data-tools-expense-page] .et-section-panel--expanded .et-section-cards {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
-  }
-  @media (min-width: 640px) {
-    [data-tools-expense-page] .et-section-panel--expanded .et-section-cards {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-  [data-tools-expense-page] .et-section-expand[aria-pressed="true"] {
-    border-color: rgb(99 102 241 / 0.65);
-    background: rgb(238 242 255 / 0.95);
-    color: rgb(79 70 229);
-  }
-  .dark [data-tools-expense-page] .et-section-expand[aria-pressed="true"] {
-    border-color: rgb(129 140 248 / 0.55);
-    background: rgb(49 46 129 / 0.45);
-    color: rgb(199 210 254);
+  [data-tools-expense-page] .et-section-header {
+    cursor: pointer;
   }
   [data-tools-expense-page] .et-brand-combobox__panel {
     border-radius: 0.65rem;

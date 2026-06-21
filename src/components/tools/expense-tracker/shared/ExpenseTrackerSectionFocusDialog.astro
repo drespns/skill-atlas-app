@@ -1,0 +1,46 @@
+---
+/** Dialog compartido para ampliar secciones recurrentes del expense-tracker. */
+---
+
+<dialog data-et-section-modal class="et-dialog et-section-focus-dialog w-[min(100vw-1.5rem,72rem)] max-h-[min(92vh,880px)] p-0">
+  <div class="et-dialog-panel et-dialog-panel--fit flex flex-col max-h-[inherit] overflow-hidden">
+    <div class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200/80 dark:border-gray-800 px-4 py-3">
+      <div class="flex min-w-0 items-center gap-2.5">
+        <span
+          class="et-section-icon inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200/80 bg-white/80 text-gray-700 dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-200"
+          data-et-section-modal-icon
+        ></span>
+        <h2 class="m-0 truncate text-lg font-semibold text-gray-900 dark:text-gray-50" data-et-section-modal-title></h2>
+      </div>
+      <button
+        type="button"
+        data-et-section-modal-close
+        class="et-btn-secondary shrink-0 text-sm py-2 px-3"
+        aria-label="Cerrar"
+      >
+        Cerrar
+      </button>
+    </div>
+    <div class="flex-1 min-h-0 overflow-y-auto px-4 py-4 et-section-modal-body" data-et-section-modal-body></div>
+  </div>
+</dialog>
+
+<style is:global>
+  [data-tools-expense-page] dialog.et-section-focus-dialog::backdrop {
+    background: rgb(15 23 42 / 0.45);
+    backdrop-filter: blur(4px);
+  }
+  [data-tools-expense-page] .et-section-modal-body .et-section-cards {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  @media (min-width: 640px) {
+    [data-tools-expense-page] .et-section-modal-body .et-section-cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1280px) {
+    [data-tools-expense-page] .et-section-modal-body .et-section-cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

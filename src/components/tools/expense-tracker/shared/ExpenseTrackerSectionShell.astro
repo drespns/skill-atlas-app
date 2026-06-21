@@ -1,60 +1,53 @@
 ---
+import { expenseSectionIconSvg, type ExpenseSectionIconKey } from "@lib/expense-tracker-section-icons";
+
 interface Props {
   title: string;
   description: string;
   wrapperClass: string;
   helpTooltip?: string;
   sectionId?: string;
-  expandable?: boolean;
-  icon?: "investments" | "financing" | "paychecks" | "scenarios" | "debts";
+  focusable?: boolean;
+  icon?: ExpenseSectionIconKey;
 }
 
-const { title, description, wrapperClass, helpTooltip, sectionId, expandable, icon } = Astro.props;
-
-const icons: Record<string, string> = {
-  investments: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M12.516 2.17a.75.75 0 0 0-1.032 0 11.209 11.209 0 0 1-7.877 3.08.75.75 0 0 0-.722.515A12.74 12.74 0 0 0 2.75 9.75c0 5.942 4.064 10.933 9.563 12.348a.749.749 0 0 0 .374 0c5.499-1.415 9.563-6.406 9.563-12.368 0-1.39-.223-2.73-.635-3.985a.75.75 0 0 0-.722-.516 11.209 11.209 0 0 1-7.877-3.08ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm-4.5 0a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd"/></svg>`,
-  financing: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path d="M4.5 3.75a3 3 0 0 0-3 3v.75h15v-.75a3 3 0 0 0-3-3h-9Z"/><path fill-rule="evenodd" d="M1.5 9.75A3 3 0 0 1 4.5 6.75h11a3 3 0 0 1 3 3v4.5a3 3 0 0 1-3 3h-11a3 3 0 0 1-3-3v-4.5Zm6 2.25a.75.75 0 0 0-1.5 0v1.5a.75.75 0 0 0 1.5 0v-1.5Zm3.75-.75a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-1.5 0v-2.25a.75.75 0 0 1 .75-.75Zm3-.75a.75.75 0 0 0-1.5 0v3a.75.75 0 0 0 1.5 0v-3Z" clip-rule="evenodd"/></svg>`,
-  paychecks: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M10 2a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 2ZM5.404 4.842a.75.75 0 0 1 .314-1.015l1.5-.75a.75.75 0 0 1 .67 1.342l-1.5.75a.75.75 0 0 1-1.015-.314ZM14.596 4.842a.75.75 0 0 0-.314-1.015l-1.5-.75a.75.75 0 0 0-.67 1.342l1.5.75a.75.75 0 0 0 1.015-.314ZM10 6.75a3.25 3.25 0 1 0 0 6.5 3.25 3.25 0 0 0 0-6.5ZM4.25 10a5.75 5.75 0 1 1 11.5 0 5.75 5.75 0 0 1-11.5 0Z" clip-rule="evenodd"/></svg>`,
-  scenarios: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M9.664 1.319a.75.75 0 0 1 .672 0 41.059 41.059 0 0 1 8.198 4.424.75.75 0 0 1-.254 1.285 31.372 31.372 0 0 0-7.86 3.83 2.25 2.25 0 0 0-1.995 0 31.372 31.372 0 0 0-7.86-3.83.75.75 0 0 1-.254-1.285 41.059 41.059 0 0 1 8.198-4.424ZM6 10.75a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75v-.008Zm3.75 0a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75v-.008Zm3.75 0a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75v-.008Z" clip-rule="evenodd"/></svg>`,
-  debts: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path d="M7 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM14.5 9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM1.615 16.428a1.224 1.224 0 0 1-.569-1.175 6.002 6.002 0 0 1 11.908 0 1.224 1.224 0 0 1-.569 1.175 6.002 6.002 0 0 1-10.77 0Z"/></svg>`,
-};
+const { title, description, wrapperClass, helpTooltip, sectionId, focusable, icon } = Astro.props;
+const iconHtml = icon ? expenseSectionIconSvg(icon, 16) : "";
 ---
 
 <div
-  class="et-section-panel min-h-0 transition-all duration-300 ease-out"
+  class="et-section-panel min-h-0"
   data-et-section-panel={sectionId}
 >
   <div class={`${wrapperClass} h-full`}>
-    <div class="flex flex-wrap items-start justify-between gap-3">
+    <div
+      class:list={[
+        "flex flex-wrap items-start justify-between gap-3",
+        focusable && "et-section-header group/header rounded-xl -mx-1 px-1 py-0.5 transition hover:bg-gray-100/60 dark:hover:bg-gray-900/40",
+      ]}
+      data-et-section-header={focusable ? sectionId : undefined}
+      title={focusable ? "Click para ampliar" : undefined}
+    >
       <div class="min-w-0 flex-1">
         <div class="flex items-start gap-2">
           {
-            icon && icons[icon] ? (
-              <span class="et-section-icon inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200/80 bg-white/80 text-gray-700 dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-200" set:html={icons[icon]} />
+            iconHtml ? (
+              <span class="et-section-icon inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200/80 bg-white/80 text-gray-700 dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-200" set:html={iconHtml} />
             ) : null
           }
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
               <h2 class="m-0 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-50">{title}</h2>
               {
-                expandable ? (
-                  <button
-                    type="button"
-                    data-et-section-expand
-                    class="et-section-expand inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-gray-200/80 bg-white/70 text-gray-500 transition hover:border-indigo-300 hover:text-indigo-600 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-400 dark:hover:border-indigo-600 dark:hover:text-indigo-300"
-                    aria-label="Ampliar sección"
-                    aria-pressed="false"
-                    title="Ampliar sección"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
-                      <path d="M3.25 4A2.25 2.25 0 0 0 1 6.25v7.5A2.25 2.25 0 0 0 3.25 16h7.5A2.25 2.25 0 0 0 13 13.75v-7.5A2.25 2.25 0 0 0 10.75 4h-7.5ZM14.75 6.25a.75.75 0 0 0-1.5 0v8.5c0 .414-.336.75-.75.75h-8.5a.75.75 0 0 0 0 1.5h8.5A2.25 2.25 0 0 0 14.75 14.75v-8.5Z" />
-                    </svg>
-                  </button>
+                focusable ? (
+                  <span class="text-[10px] font-medium text-gray-400 opacity-0 transition group-hover/header:opacity-100 dark:text-gray-500">
+                    Ampliar
+                  </span>
                 ) : null
               }
               {
                 helpTooltip ? (
-                  <span class="relative inline-flex shrink-0 group/et-help mt-0.5">
+                  <span class="relative inline-flex shrink-0 group/et-help mt-0.5" data-et-no-section-modal>
                     <button
                       type="button"
                       class="flex h-5 w-5 items-center justify-center rounded-full border border-violet-300/80 bg-violet-100/80 text-[11px] font-bold leading-none text-violet-800 dark:border-violet-700 dark:bg-violet-950/60 dark:text-violet-200"
@@ -76,8 +69,12 @@ const icons: Record<string, string> = {
           </div>
         </div>
       </div>
-      <slot name="actions" />
+      <div class="shrink-0" data-et-no-section-modal>
+        <slot name="actions" />
+      </div>
     </div>
-    <slot />
+    <div class="mt-4" data-et-section-body>
+      <slot />
+    </div>
   </div>
 </div>
