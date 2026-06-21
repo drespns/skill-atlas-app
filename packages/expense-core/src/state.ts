@@ -236,6 +236,12 @@ export type PlannedExpenseMonthOverride = {
 import type { ExpenseScenario, ScenarioKind, ScenarioStatus, ScenarioPriority, ScenarioBundleItem } from "./scenarios";
 import type { ExpenseDebt } from "./debts";
 import { parseExpenseDebts } from "./debts";
+import {
+  buildCategoryTotalsFromProjection,
+  monthlyPlannedOutflowSeriesFromProjection,
+  totalInflowInPeriodFromProjection,
+  totalOutflowInPeriodFromProjection,
+} from "./cashflow-projection";
 
 export type ExpenseReminder = {
   id: string;
@@ -895,38 +901,7 @@ export function monthsForRecurringRange(validFrom?: string, validUntil?: string,
 
 export function totalIncomeInPeriod(state: ExpenseTrackerState, filter: PeriodFilter): number {
   const start = effectivePeriodStart(state, filter);
-  const fx = state.eurPerUsd;
-  let total = 0;
-  for (const row of state.incomeAdhoc ?? []) {
-    if (row.confirmed === false) continue;
-    if (start && row.date < start) continue;
-    total += convertAmount(Math.max(0, row.amount), row.currency, "EUR", fx);
-  }
-  const today = new Date().toISOString().slice(0, 10);
-  const endMk = today.slice(0, 7);
-  let startMk = start ? start.slice(0, 7) : "1970-01";
-  let y = Number(startMk.slice(0, 4));
-  let m = Number(startMk.slice(5, 7));
-  const ty = Number(endMk.slice(0, 4));
-  const tm = Number(endMk.slice(5, 7));
-  const overrides = state.incomeMonthOverrides ?? [];
-  while (y < ty || (y === ty && m <= tm)) {
-    const mk = `${y}-${String(m).padStart(2, "0")}`;
-    for (const p of state.paychecks ?? []) {
-      if (!paycheckActiveInMonth(p, mk)) continue;
-      const charge = recurringChargeDate(p.dayOfMonth, mk);
-      if (start && charge < start) continue;
-      if (charge > today) continue;
-      const { amount, currency } = effectivePaycheckAmount(p, mk, overrides);
-      if (amount > 0) total += convertAmount(amount, currency, "EUR", fx);
-    }
-    m += 1;
-    if (m > 12) {
-      m = 1;
-      y += 1;
-    }
-  }
-  return Math.round(total * 100) / 100;
+  return totalInflowInPeriodFromProjection(state, start);
 }
 
 function lastDayIsoOfMonth(monthKey: string): string {
@@ -950,63 +925,10 @@ function monthOverlapFraction(monthKey: string, periodStart: string | null, peri
   return Math.max(0, Math.min(1, days / dim));
 }
 
-/** Gastos del período: confirmados + suscripciones (prorrateadas) + previstos con cobro en rango. */
+/** Gastos del período: confirmados + suscripciones + previstos + deudas pending (horizonte actual ≤ hoy). */
 export function totalExpensesInPeriod(state: ExpenseTrackerState, filter: PeriodFilter): number {
   const start = effectivePeriodStart(state, filter);
-  const fx = state.eurPerUsd;
-  const today = new Date().toISOString().slice(0, 10);
-  let total = 0;
-
-  for (const row of state.expenses) {
-    if (row.confirmed === false) continue;
-    if (start && row.date < start) continue;
-    if (row.date > today) continue;
-    total += convertAmount(Math.max(0, row.amount), row.currency, "EUR", fx);
-  }
-
-  const endMk = today.slice(0, 7);
-  let startMk = start ? start.slice(0, 7) : endMk;
-  if (!/^\d{4}-\d{2}$/.test(startMk)) startMk = endMk;
-  let y = Number(startMk.slice(0, 4));
-  let m = Number(startMk.slice(5, 7));
-  const ty = Number(endMk.slice(0, 4));
-  const tm = Number(endMk.slice(5, 7));
-  const planOverrides = state.plannedExpenseMonthOverrides ?? [];
-
-  while (y < ty || (y === ty && m <= tm)) {
-    const mk = `${y}-${String(m).padStart(2, "0")}`;
-    const frac = monthOverlapFraction(mk, start, today);
-    if (frac > 0) {
-      const refDate = mk === endMk ? today : lastDayIsoOfMonth(mk);
-      let burnEur = 0;
-      let burnUsd = 0;
-      for (const s of state.subscriptions) {
-        if (!subscriptionCountsInTotals(s, refDate)) continue;
-        const monthly = subscriptionToMonthlyAmount(s, refDate);
-        if (monthly <= 0) continue;
-        if (s.currency === "EUR") burnEur += monthly * frac;
-        else burnUsd += monthly * frac;
-      }
-      total += burnEur + convertAmount(burnUsd, "USD", "EUR", fx);
-    }
-
-    for (const p of state.plannedExpenses ?? []) {
-      if (!plannedExpenseActiveInMonth(p, mk)) continue;
-      const charge = recurringChargeDate(p.dayOfMonth, mk);
-      if (start && charge < start) continue;
-      if (charge > today) continue;
-      const { amount, currency } = effectivePlannedExpenseAmount(p, mk, planOverrides);
-      if (amount > 0) total += convertAmount(amount, currency, "EUR", fx);
-    }
-
-    m += 1;
-    if (m > 12) {
-      m = 1;
-      y += 1;
-    }
-  }
-
-  return Math.round(total * 100) / 100;
+  return totalOutflowInPeriodFromProjection(state, start);
 }
 
 /** Solo gastos confirmados (sin suscripciones ni previstos) en el período. */
@@ -1843,37 +1765,28 @@ export type CategoryTotals = Record<
 >;
 
 export function buildCategoryTotals(state: ExpenseTrackerState, expensesFiltered: ExpenseRow[]): CategoryTotals {
-  const out: CategoryTotals = {};
-  for (const c of state.categories) {
-    out[c.id] = { eurNative: 0, usdNative: 0, unified: 0 };
-  }
-  const eurPerUsd = state.eurPerUsd;
-
-  const add = (categoryId: string, amount: number, currency: ExpenseCurrency) => {
-    const rollupId = rollupCategoryId(state, categoryId);
-    const bucket = out[rollupId] ?? (out[rollupId] = { eurNative: 0, usdNative: 0, unified: 0 });
-    if (currency === "EUR") bucket.eurNative += amount;
-    else bucket.usdNative += amount;
-
-    if (state.chartMoneyMode === "unify_eur") {
-      bucket.unified += convertAmount(amount, currency, "EUR", eurPerUsd);
-    } else if (state.chartMoneyMode === "unify_usd") {
-      bucket.unified += convertAmount(amount, currency, "USD", eurPerUsd);
-    } else {
-      bucket.unified = 0;
+  const today = new Date().toISOString().slice(0, 10);
+  const start = effectivePeriodStart(state, state.period);
+  const startMk = start ? start.slice(0, 7) : "1970-01";
+  const endMk = today.slice(0, 7);
+  const months: string[] = [];
+  let y = Number(startMk.slice(0, 4));
+  let m = Number(startMk.slice(5, 7));
+  const ty = Number(endMk.slice(0, 4));
+  const tm = Number(endMk.slice(5, 7));
+  while (y < ty || (y === ty && m <= tm)) {
+    months.push(`${y}-${String(m).padStart(2, "0")}`);
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
     }
-  };
-
-  for (const e of expensesFiltered) {
-    if (e.confirmed === false) continue;
-    add(e.categoryId, Math.max(0, e.amount), e.currency);
   }
-  for (const s of state.subscriptions) {
-    const m = subscriptionToMonthlyAmount(s);
-    if (m <= 0) continue;
-    add(s.categoryId, m, s.currency);
-  }
-  return out;
+  if (!months.length) months.push(endMk);
+  return buildCategoryTotalsFromProjection(state, months, expensesFiltered, {
+    horizon: "projected",
+    asOfDate: today,
+  });
 }
 
 export function monthlyExpenseSeries(
@@ -1997,38 +1910,14 @@ export function effectivePlannedExpenseAmount(
   return { amount: Math.max(0, p.typicalAmount ?? 0), currency: cur };
 }
 
-/** Gastos recurrentes previstos por mes (importe habitual + overrides). */
+/** Gastos recurrentes previstos por mes (importe habitual + overrides + entrada). */
 export function monthlyPlannedOutflowSeries(
   state: ExpenseTrackerState,
   months: string[],
   mode: ChartMoneyMode,
   eurPerUsd: number,
 ): { seriesEur: number[]; seriesUsd: number[]; seriesUnified: number[] } {
-  const overrides = state.plannedExpenseMonthOverrides ?? [];
-  const rows = state.plannedExpenses ?? [];
-  const seriesEur = months.map(() => 0);
-  const seriesUsd = months.map(() => 0);
-
-  for (let i = 0; i < months.length; i++) {
-    const mk = months[i]!;
-    for (const p of rows) {
-      if (!plannedExpenseActiveInMonth(p, mk)) continue;
-      const { amount, currency } = effectivePlannedExpenseAmount(p, mk, overrides);
-      if (amount <= 0) continue;
-      if (currency === "EUR") seriesEur[i]! += amount;
-      else seriesUsd[i]! += amount;
-    }
-  }
-
-  const seriesUnified = months.map((_, i) => {
-    const eur = seriesEur[i]!;
-    const usd = seriesUsd[i]!;
-    if (mode === "unify_eur") return eur + convertAmount(usd, "USD", "EUR", eurPerUsd);
-    if (mode === "unify_usd") return usd + convertAmount(eur, "EUR", "USD", eurPerUsd);
-    return eur + usd;
-  });
-
-  return { seriesEur, seriesUsd, seriesUnified };
+  return monthlyPlannedOutflowSeriesFromProjection(state, months, mode, eurPerUsd, { horizon: "projected" });
 }
 
 function csvEscape(cell: string) {
