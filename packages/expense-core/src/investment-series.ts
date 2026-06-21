@@ -11,21 +11,23 @@ export function investmentInitialAmount(h: InvestmentHolding): number {
   return round2(Math.max(0, h.totalInvested - extra));
 }
 
-/** Serie mensual de desembolsos en inversiones (EUR). */
+/** Serie mensual de desembolsos en inversiones (EUR). Solo compras fechadas. */
 export function monthlyInvestmentOutflowSeries(
   state: ExpenseTrackerState,
   months: string[],
 ): number[] {
   const series = months.map(() => 0);
   const idx = new Map(months.map((m, i) => [m, i] as const));
-  const fallback = state.trackingStartDate?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
 
   for (const h of state.investments ?? []) {
-    const initial = investmentInitialAmount(h);
-    if (initial > 0) {
-      const acquired = (h.acquiredOn?.trim().slice(0, 10) || fallback).slice(0, 7);
-      const i = idx.get(acquired);
-      if (i != null) series[i]! += initial;
+    const acquired = h.acquiredOn?.trim().slice(0, 10);
+    if (acquired && /^\d{4}-\d{2}-\d{2}$/.test(acquired)) {
+      const initial = investmentInitialAmount(h);
+      if (initial > 0) {
+        const mk = acquired.slice(0, 7);
+        const i = idx.get(mk);
+        if (i != null) series[i]! += initial;
+      }
     }
     for (const p of h.purchases ?? []) {
       const mk = p.date.slice(0, 7);

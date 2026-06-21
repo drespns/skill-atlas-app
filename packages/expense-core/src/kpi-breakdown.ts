@@ -6,6 +6,7 @@ import {
   monthCashflowDualSnapshot,
   type CashflowEvent,
   type CashflowSource,
+  type ChartMoneyMode,
 } from "./cashflow-projection";
 
 export type KpiBreakdownLine = {
@@ -25,13 +26,56 @@ function sumEvents(events: CashflowEvent[], direction: "in" | "out"): number {
   return events.filter((e) => e.direction === direction).reduce((s, e) => s + e.amount, 0);
 }
 
-function eventsBySource(events: CashflowEvent[], direction: "in" | "out"): Map<CashflowSource, number> {
-  const m = new Map<CashflowSource, number>();
-  for (const e of events) {
-    if (e.direction !== direction) continue;
-    m.set(e.source, (m.get(e.source) ?? 0) + e.amount);
+function kpiDisplayMode(state: ExpenseTrackerState): ChartMoneyMode {
+  const m = state.chartMoneyMode;
+  return m === "mixed" ? "unify_eur" : m;
+}
+
+function toDisplayEur(amount: number, currency: "EUR" | "USD", state: ExpenseTrackerState): number {
+  const mode = kpiDisplayMode(state);
+  const fx = state.eurPerUsd;
+  if (mode === "unify_eur") return currency === "EUR" ? amount : amount * fx;
+  if (mode === "unify_usd") return currency === "USD" ? amount : amount / fx;
+  return currency === "EUR" ? amount : amount * fx;
+}
+
+function incomeEventLines(state: ExpenseTrackerState, events: CashflowEvent[], asOf: string): KpiBreakdownLine[] {
+  const lines: KpiBreakdownLine[] = [];
+  for (const ev of events) {
+    if (ev.direction !== "in") continue;
+    const amt = toDisplayEur(ev.amount, ev.currency, state);
+    if (amt <= 0.005) continue;
+    const pending = ev.chargeDate > asOf;
+    lines.push({
+      label: ev.label?.trim() || CASHFLOW_SOURCE_LABELS[ev.source],
+      amount: amt,
+      detail: pending ? "previsto" : "cobrado",
+    });
   }
-  return m;
+  lines.sort((a, b) => {
+    const pa = a.detail === "previsto" ? 1 : 0;
+    const pb = b.detail === "previsto" ? 1 : 0;
+    if (pa !== pb) return pa - pb;
+    return b.amount - a.amount;
+  });
+  return lines;
+}
+
+function outflowEventLines(state: ExpenseTrackerState, events: CashflowEvent[], asOf: string): KpiBreakdownLine[] {
+  const lines: KpiBreakdownLine[] = [];
+  for (const ev of events) {
+    if (ev.direction !== "out") continue;
+    const amt = toDisplayEur(ev.amount, ev.currency, state);
+    if (amt <= 0.005) continue;
+    const pending = ev.chargeDate > asOf;
+    lines.push({
+      label: ev.label?.trim() || CASHFLOW_SOURCE_LABELS[ev.source],
+      amount: -amt,
+      detail: pending ? "previsto" : CASHFLOW_SOURCE_LABELS[ev.source],
+    });
+  }
+  lines.sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+  return lines;
 }
 
 export function breakdownActiveSubscriptions(
@@ -67,21 +111,16 @@ export function breakdownMonthIncome(state: ExpenseTrackerState, monthKey?: stri
   const events = expandCashflowEvents(state, {
     months: [mk],
     horizon: "projected",
+    asOfDate: today,
     direction: "in",
   });
-  const bySrc = eventsBySource(events, "in");
-  const lines: KpiBreakdownLine[] = [];
-  for (const [src, amt] of bySrc) {
-    if (amt <= 0) continue;
-    lines.push({ label: CASHFLOW_SOURCE_LABELS[src], amount: amt });
-  }
+  const lines = incomeEventLines(state, events, today);
+  const subtitleParts: string[] = [`Cobrado ${Math.round(dual.actualIn)} €`];
+  if (dual.remainingIn > 0.005) subtitleParts.push(`Quedan unos ${Math.round(dual.remainingIn)} € por cobrar`);
   return {
     title: "Ingresos del mes",
-    subtitle:
-      dual.remainingIn > 0.005
-        ? `Realizados ${dual.actualIn.toFixed(0)} € · Quedan unos ${dual.remainingIn.toFixed(0)} € por cobrar`
-        : `Realizados ${dual.actualIn.toFixed(0)} €`,
-    total: dual.projectedIn,
+    subtitle: subtitleParts.join(" · "),
+    total: dual.actualIn,
     lines,
   };
 }
@@ -90,23 +129,16 @@ export function breakdownMonthBalance(state: ExpenseTrackerState, monthKey?: str
   const today = new Date().toISOString().slice(0, 10);
   const mk = monthKey ?? today.slice(0, 7);
   const dual = monthCashflowDualSnapshot(state, mk, today);
-  const events = expandCashflowEvents(state, { months: [mk], horizon: "projected" });
-  const outBy = eventsBySource(events, "out");
-  const inBy = eventsBySource(events, "in");
-  const lines: KpiBreakdownLine[] = [];
-  for (const [src, amt] of outBy) {
-    if (amt <= 0) continue;
-    lines.push({ label: CASHFLOW_SOURCE_LABELS[src], amount: -amt });
-  }
-  for (const [src, amt] of inBy) {
-    if (amt <= 0) continue;
-    lines.push({ label: CASHFLOW_SOURCE_LABELS[src], amount: amt });
-  }
-  lines.sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+  const events = expandCashflowEvents(state, {
+    months: [mk],
+    horizon: "projected",
+    asOfDate: today,
+  });
+  const lines = [...outflowEventLines(state, events, today), ...incomeEventLines(state, events, today)];
   return {
     title: "Balance del mes",
-    subtitle: `Realizado ${dual.actualNet.toFixed(0)} € · Previsto total ${dual.projectedNet.toFixed(0)} €`,
-    total: dual.projectedNet,
+    subtitle: `Realizado ${Math.round(dual.actualNet)} € · Previsto total ${Math.round(dual.projectedNet)} €`,
+    total: dual.actualNet,
     lines,
   };
 }
@@ -136,13 +168,8 @@ export function breakdownPeriodExpenses(state: ExpenseTrackerState): KpiBreakdow
     periodStart: start,
     direction: "out",
   });
-  const bySrc = eventsBySource(events, "out");
-  const lines: KpiBreakdownLine[] = [];
-  let total = 0;
-  for (const [src, amt] of bySrc) {
-    total += amt;
-    lines.push({ label: CASHFLOW_SOURCE_LABELS[src], amount: amt });
-  }
+  const lines = outflowEventLines(state, events, today).map((l) => ({ ...l, amount: Math.abs(l.amount) }));
+  const total = lines.reduce((s, l) => s + l.amount, 0);
   return { title: "Gastos del período", total, lines };
 }
 
@@ -171,13 +198,8 @@ export function breakdownPeriodIncome(state: ExpenseTrackerState): KpiBreakdown 
     periodStart: start,
     direction: "in",
   });
-  const bySrc = eventsBySource(events, "in");
-  const lines: KpiBreakdownLine[] = [];
-  let total = 0;
-  for (const [src, amt] of bySrc) {
-    total += amt;
-    lines.push({ label: CASHFLOW_SOURCE_LABELS[src], amount: amt });
-  }
+  const lines = incomeEventLines(state, events, today);
+  const total = lines.reduce((s, l) => s + l.amount, 0);
   return { title: "Ingresos del período", total, lines };
 }
 
@@ -189,14 +211,16 @@ export function breakdownNaturalYear(
   const months = Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
   const events = expandCashflowEvents(state, { months, horizon: "projected" });
   const monthShort = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-  const lines: KpiBreakdownLine[] = months.map((mk, i) => {
-    const monthEv = events.filter((e) => e.monthKey === mk);
-    const inc = sumEvents(monthEv, "in");
-    const out = sumEvents(monthEv, "out");
-    const net = inc - out;
-    const amount = kind === "income" ? inc : kind === "expense" ? out : net;
-    return { label: monthShort[i] ?? mk, amount };
-  }).filter((l) => l.amount > 0.005);
+  const lines: KpiBreakdownLine[] = months
+    .map((mk, i) => {
+      const monthEv = events.filter((e) => e.monthKey === mk);
+      const inc = sumEvents(monthEv, "in");
+      const out = sumEvents(monthEv, "out");
+      const net = inc - out;
+      const amount = kind === "income" ? inc : kind === "expense" ? out : net;
+      return { label: monthShort[i] ?? mk, amount };
+    })
+    .filter((l) => l.amount > 0.005);
   const total = lines.reduce((s, l) => s + l.amount, 0);
   const titles = {
     income: `Ingresos ${year}`,
