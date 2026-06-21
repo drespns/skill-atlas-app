@@ -225,6 +225,14 @@ function chartAxisTooltipRich(params: unknown, months: string[], events: Cashflo
     lines.push(`<span style="opacity:0.75;font-size:${CHART_TOOLTIP_FONT - 1}px">Ingresos</span>`);
     for (const l of inLines) lines.push(`<span style="font-size:${CHART_TOOLTIP_FONT}px;padding-left:6px">${l}</span>`);
   }
+  const ts = state.trackingStartDate?.slice(0, 7);
+  if (ts && monthKey < ts) {
+    const isEn = document.documentElement.lang.startsWith("en");
+    const note = isEn
+      ? `Before tracking start (${state.trackingStartDate}) — not counted in KPIs`
+      : `Anterior al punto de partida (${state.trackingStartDate}) — no contabilizado en KPIs`;
+    lines.push(`<span style="opacity:0.7;font-size:${CHART_TOOLTIP_FONT - 1}px;font-style:italic">${note}</span>`);
+  }
   return lines.join("<br/>");
 }
 
@@ -3464,6 +3472,33 @@ function monthLabelsFromKeys(months: string[]): string[] {
   });
 }
 
+function trackingSplitIndex(months: string[]): number {
+  const ts = state.trackingStartDate?.slice(0, 7);
+  if (!ts) return -1;
+  return months.findIndex((m) => m >= ts);
+}
+
+function splitSeriesAtTracking<T>(data: T[], splitIdx: number): { pre: (T | null)[]; post: (T | null)[] } {
+  if (splitIdx <= 0) return { pre: [], post: data as (T | null)[] };
+  const pre = data.map((v, i) => (i < splitIdx ? v : null));
+  const post = data.map((v, i) => (i >= splitIdx ? v : null));
+  return { pre, post };
+}
+
+function preTrackingMarkArea(months: string[], splitIdx: number): echarts.EChartsCoreOption["series"] {
+  if (splitIdx <= 0 || !months.length) return undefined;
+  const endLabel = months[Math.max(0, splitIdx - 1)] ?? months[0];
+  return {
+    type: "line",
+    data: [],
+    markArea: {
+      silent: true,
+      itemStyle: { color: "rgba(148, 163, 184, 0.12)" },
+      data: [[{ xAxis: months[0] }, { xAxis: endLabel }]],
+    },
+  } as echarts.SeriesOption;
+}
+
 function buildYearProjectionChartOption(
   year: number,
   ys: ReturnType<typeof buildNaturalYearOutInSeries>,
@@ -3788,11 +3823,145 @@ function renderCharts(root: HTMLElement) {
   const seriesUnifiedPad = lineProj.outUnified;
   const inc = { seriesEur: lineProj.inEur, seriesUsd: lineProj.inUsd, seriesUnified: lineProj.inUnified };
 
+  const trackSplit = trackingSplitIndex(monthsFull);
+  const faded = { opacity: 0.35 };
+  const dashed = { type: [6, 4] as number[], opacity: 0.35 };
+  const outEurSplit = splitSeriesAtTracking(seriesEurPad, trackSplit);
+  const outUsdSplit = splitSeriesAtTracking(seriesUsdPad, trackSplit);
+  const outUniSplit = splitSeriesAtTracking(seriesUnifiedPad, trackSplit);
+  const incEurSplit = splitSeriesAtTracking(inc.seriesEur, trackSplit);
+  const incUsdSplit = splitSeriesAtTracking(inc.seriesUsd, trackSplit);
+  const incUniSplit = splitSeriesAtTracking(inc.seriesUnified, trackSplit);
+  const markAreaSeries = preTrackingMarkArea(monthsFull, trackSplit);
+
+  const lineSeries: echarts.SeriesOption[] =
+    mode === "mixed"
+      ? [
+          ...(trackSplit > 0
+            ? [
+                {
+                  name: "Gastos EUR (antes)",
+                  type: "line" as const,
+                  smooth: true,
+                  data: outEurSplit.pre,
+                  connectNulls: false,
+                  itemStyle: { color: "#ef4444", ...faded },
+                  lineStyle: dashed,
+                  showSymbol: false,
+                },
+                {
+                  name: "Gastos USD (antes)",
+                  type: "line" as const,
+                  smooth: true,
+                  data: outUsdSplit.pre,
+                  connectNulls: false,
+                  itemStyle: { color: "#f87171", ...faded },
+                  lineStyle: dashed,
+                  showSymbol: false,
+                },
+              ]
+            : []),
+          { name: "Gastos EUR", type: "line", smooth: true, data: outEurSplit.post, itemStyle: { color: "#ef4444" }, connectNulls: false },
+          { name: "Gastos USD", type: "line", smooth: true, data: outUsdSplit.post, itemStyle: { color: "#f87171" }, connectNulls: false },
+          ...(trackSplit > 0
+            ? [
+                {
+                  name: "Ingresos EUR (antes)",
+                  type: "line" as const,
+                  smooth: true,
+                  data: incEurSplit.pre,
+                  connectNulls: false,
+                  itemStyle: { color: "#a3e635", ...faded },
+                  lineStyle: { ...dashed, type: [6, 4] },
+                  showSymbol: false,
+                },
+                {
+                  name: "Ingresos USD (antes)",
+                  type: "line" as const,
+                  smooth: true,
+                  data: incUsdSplit.pre,
+                  connectNulls: false,
+                  itemStyle: { color: "#fde047", ...faded },
+                  lineStyle: { ...dashed, type: [6, 4] },
+                  showSymbol: false,
+                },
+              ]
+            : []),
+          {
+            name: "Ingresos EUR",
+            type: "line",
+            smooth: true,
+            data: incEurSplit.post,
+            itemStyle: { color: "#a3e635" },
+            lineStyle: { type: "dashed" },
+            connectNulls: false,
+          },
+          {
+            name: "Ingresos USD",
+            type: "line",
+            smooth: true,
+            data: incUsdSplit.post,
+            itemStyle: { color: "#fde047" },
+            lineStyle: { type: "dashed" },
+            connectNulls: false,
+          },
+        ]
+      : [
+          ...(trackSplit > 0
+            ? [
+                {
+                  name: mode === "unify_eur" ? "Gastos (€) antes" : "Gastos ($) antes",
+                  type: "line" as const,
+                  smooth: true,
+                  data: outUniSplit.pre,
+                  connectNulls: false,
+                  itemStyle: { color: "#ef4444", ...faded },
+                  lineStyle: dashed,
+                  showSymbol: false,
+                },
+              ]
+            : []),
+          {
+            name: mode === "unify_eur" ? "Gastos (€)" : "Gastos ($)",
+            type: "line",
+            smooth: true,
+            areaStyle: { opacity: 0.1 },
+            data: outUniSplit.post,
+            itemStyle: { color: "#ef4444" },
+            lineStyle: { color: "#f87171" },
+            connectNulls: false,
+          },
+          ...(trackSplit > 0
+            ? [
+                {
+                  name: mode === "unify_eur" ? "Ingresos (€) antes" : "Ingresos ($) antes",
+                  type: "line" as const,
+                  smooth: true,
+                  data: incUniSplit.pre,
+                  connectNulls: false,
+                  itemStyle: { color: "#34d399", ...faded },
+                  lineStyle: { ...dashed, type: [6, 4] },
+                  showSymbol: false,
+                },
+              ]
+            : []),
+          {
+            name: mode === "unify_eur" ? "Ingresos (€)" : "Ingresos ($)",
+            type: "line",
+            smooth: true,
+            data: incUniSplit.post,
+            itemStyle: { color: "#34d399" },
+            lineStyle: { type: "dashed" },
+            connectNulls: false,
+          },
+        ];
+  if (markAreaSeries) lineSeries.push(markAreaSeries);
+
   const lineOpt: echarts.EChartsCoreOption = {
     title: {
       text: filterLabel
-        ? `Salidas e ingresos por mes · ${filterLabel}`
-        : "Salidas e ingresos por mes (gastos + suscripciones + previstos + deudas)",
+        ? `Gastos e ingresos por mes · ${filterLabel}`
+        : "Gastos e ingresos por mes (gastos + suscripciones + previstos + deudas)",
       left: 0,
       top: 4,
       textStyle: { fontSize: CHART_TITLE_FONT, fontWeight: 600, color: textPrimary() },
@@ -3815,46 +3984,7 @@ function renderCharts(root: HTMLElement) {
       splitLine: { lineStyle: { color: borderSubtle() } },
       axisLabel: { color: textMuted(), fontSize: CHART_AXIS_FONT, formatter: (v: number) => fmtNumEs(v) },
     },
-    series:
-      mode === "mixed"
-        ? [
-            { name: "Salidas EUR", type: "line", smooth: true, data: seriesEurPad, itemStyle: { color: "#22c55e" } },
-            { name: "Salidas USD", type: "line", smooth: true, data: seriesUsdPad, itemStyle: { color: "#38bdf8" } },
-            {
-              name: "Ingresos EUR",
-              type: "line",
-              smooth: true,
-              data: inc.seriesEur,
-              itemStyle: { color: "#a3e635" },
-              lineStyle: { type: "dashed" },
-            },
-            {
-              name: "Ingresos USD",
-              type: "line",
-              smooth: true,
-              data: inc.seriesUsd,
-              itemStyle: { color: "#fde047" },
-              lineStyle: { type: "dashed" },
-            },
-          ]
-        : [
-            {
-              name: mode === "unify_eur" ? "Salidas (€)" : "Salidas ($)",
-              type: "line",
-              smooth: true,
-              areaStyle: { opacity: 0.1 },
-              data: seriesUnifiedPad,
-              itemStyle: { color: "#6366f1" },
-            },
-            {
-              name: mode === "unify_eur" ? "Ingresos (€)" : "Ingresos ($)",
-              type: "line",
-              smooth: true,
-              data: inc.seriesUnified,
-              itemStyle: { color: "#34d399" },
-              lineStyle: { type: "dashed" },
-            },
-          ],
+    series: lineSeries,
   };
   const lineHasData = monthsFull.some(
     (_, i) =>
@@ -3967,7 +4097,7 @@ function renderCharts(root: HTMLElement) {
             name: labelExp,
             type: "bar",
             data: seriesUnifiedPad,
-            itemStyle: { color: "#fb923c", borderRadius: [6, 6, 0, 0] },
+            itemStyle: { color: "#ef4444", borderRadius: [6, 6, 0, 0] },
           },
           {
             name: labelNet,
