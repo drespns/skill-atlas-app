@@ -199,16 +199,72 @@
     transform: translateY(-1px);
     box-shadow: 0 8px 24px -12px rgb(0 0 0 / 0.35);
   }
-  [data-tools-expense-page] .et-sub-bento-card {
-    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.2s ease, opacity 0.2s ease;
+  [data-tools-expense-page] .et-sub-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
   }
-  [data-tools-expense-page] .et-sub-bento-card:hover {
+  [data-tools-expense-page] .et-sub-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 28px -14px rgb(0 0 0 / 0.4);
+    box-shadow: 0 12px 28px -14px rgb(0 0 0 / 0.22);
+    border-color: color-mix(in srgb, var(--et-sub-accent, #6366f1) 35%, transparent);
   }
-  [data-tools-expense-page] .et-sub-bento-card--faded {
-    filter: grayscale(0.85);
-    opacity: 0.72;
+  [data-tools-expense-page] .et-sub-timeline-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 9999px;
+    border: 2px solid rgb(209 213 219);
+    background: rgb(255 255 255);
+    display: block;
+  }
+  .dark [data-tools-expense-page] .et-sub-timeline-dot {
+    border-color: rgb(75 85 99);
+    background: rgb(17 24 39);
+  }
+  [data-tools-expense-page] .et-sub-timeline-dot--active {
+    border-color: var(--et-sub-accent, #6366f1);
+    background: var(--et-sub-accent, #6366f1);
+  }
+  [data-tools-expense-page] .et-sub-timeline-line {
+    width: 2px;
+    flex: 1;
+    min-height: 0.75rem;
+    background: rgb(229 231 235);
+    display: block;
+    margin-top: 0.15rem;
+  }
+  .dark [data-tools-expense-page] .et-sub-timeline-line {
+    background: rgb(55 65 81);
+  }
+  [data-tools-expense-page] .et-sub-brand-pick {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.65rem;
+    border: 1px solid rgb(229 231 235);
+    background: rgb(255 255 255);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0.25rem;
+  }
+  .dark [data-tools-expense-page] .et-sub-brand-pick {
+    border-color: rgb(55 65 81);
+    background: rgb(17 24 39);
+  }
+  [data-tools-expense-page] .et-sub-brand-pick--on {
+    border-color: rgb(99 102 241);
+    box-shadow: 0 0 0 2px rgb(99 102 241 / 0.25);
+  }
+  [data-tools-expense-page] .et-sub-brand-pick--auto {
+    width: auto;
+    min-width: 2.25rem;
+    padding-inline: 0.5rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  [data-tools-expense-page] dialog.et-sub-dialog {
+    max-height: min(92vh, 720px);
   }
   [data-tools-expense-page] details > summary {
     list-style: none;

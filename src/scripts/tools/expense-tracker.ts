@@ -30,10 +30,7 @@ import {
   saveExpenseTrackerToStorage,
   expenseMatchesChartCategoryFilter,
   subscriptionMonthlyBurnByCurrency,
-  subscriptionNextChargeIso,
   subscriptionToMonthlyAmount,
-  subscriptionCountsInTotals,
-  scheduleSubscriptionCancel,
   validateCategoryTree,
   countCategoryUsage,
   reassignCategoryReferences,
@@ -71,7 +68,6 @@ import {
   type PaycheckEntry,
   type PlannedExpenseEntry,
   type PlannedExpenseMonthOverride,
-  type SubscriptionRow,
   type InvestmentHolding,
   type WealthAccount,
   type WealthTransfer,
@@ -80,7 +76,6 @@ import {
   type ExpenseCategory,
 } from "@lib/tools-expense-tracker";
 import { initExpenseDatePickers, initExpenseMonthPickers, readDateFieldValue, readMonthFieldValue, refreshExpenseDatePicker } from "./expense-tracker-dates";
-import { layoutTreemap } from "@lib/treemap-layout";
 import { isExpenseEncryptedEnvelope, openExpenseEnvelope, sealExpenseState } from "@lib/tools-expense-tracker-crypto";
 import type { EncryptedExpenseEnvelope } from "@lib/tools-expense-tracker-crypto";
 import { loadClientState, scheduleSaveClientState } from "@scripts/core/user-client-state";
@@ -91,6 +86,7 @@ import {
 } from "./expense-tracker-recurring-ui";
 import { bindScenarioUi, renderScenarioSection, type ScenarioUiDeps } from "./expense-tracker-scenarios-ui";
 import { bindDebtsUi, renderDebtsSection, type DebtUiDeps } from "./expense-tracker-debts-ui";
+import { bindSubsUi, renderSubs, type SubUiDeps } from "./expense-tracker-subs-ui";
 
 echarts.use([BarChart, LineChart, PieChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer]);
 
@@ -179,7 +175,6 @@ let editingBizumId: string | null = null;
 let state: ExpenseTrackerState = defaultExpenseTrackerState();
 const chartInstances: echarts.ECharts[] = [];
 let resizeObserver: ResizeObserver | null = null;
-let editingSubId: string | null = null;
 
 /** Frase solo en memoria de esta pestaña; no va a disco ni servidor. */
 let e2eSessionPassphrase: string | null = null;
@@ -696,16 +691,6 @@ function pushTagBankFrom(tags: string[]) {
     }
   }
   state.tagBank = [...set].slice(0, 80);
-}
-
-let subsTreemapRo: ResizeObserver | null = null;
-
-function cardGradientStyle(color?: string): { className: string; style: string } {
-  const c = parseCardColor(color) ?? "#6366f1";
-  return {
-    className: "border shadow-md",
-    style: `border-color:${c}99;background:linear-gradient(135deg,${c}66 0%,${c}38 42%,${c}1a 100%)`,
-  };
 }
 
 function eurDelta(amount: number, currency: ExpenseCurrency): number {
@@ -1545,142 +1530,6 @@ function renderKpis(root: HTMLElement) {
     elYo.textContent = fmtEurCompact(outUni);
     elYn.textContent = fmtEurCompact(incUni - outUni);
   }
-}
-
-function buildSubTreemapCard(
-  s: SubscriptionRow,
-  fx: number,
-  today: string,
-  w: number,
-): HTMLElement {
-  const counts = subscriptionCountsInTotals(s, today);
-  const scheduled = Boolean(s.cancelEffectiveDate?.trim());
-  const faded = !counts || !s.active || scheduled;
-
-  const wrap = document.createElement("div");
-  wrap.className = "et-sub-treemap-card";
-  wrap.dataset.subTileId = s.id;
-
-  const card = document.createElement("article");
-  card.dataset.subId = s.id;
-  const grad = cardGradientStyle(s.cardColor);
-  card.className =
-    `relative text-left rounded-xl p-2.5 sm:p-3 h-full flex flex-col overflow-hidden ${grad.className}` +
-    (faded ? " et-sub-bento-card--faded opacity-75" : "");
-  card.style.cssText = grad.style;
-
-  const cycleLabel =
-    s.cycle === "weekly"
-      ? "Semanal"
-      : s.cycle === "monthly"
-        ? "Mensual"
-        : s.cycle === "quarterly"
-          ? "Trimestral"
-          : "Anual";
-  const monthly = subscriptionToMonthlyAmount(s);
-  const monthlyEur = amountInEur(monthly, s.currency, fx);
-  const nextIso = subscriptionNextChargeIso(s);
-
-  const head = document.createElement("div");
-  head.className = "flex items-start justify-between gap-1 mb-1 min-h-0";
-  const status = document.createElement("p");
-  status.className = "m-0 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 line-clamp-2";
-  if (!s.active) status.textContent = "Pausada";
-  else if (scheduled && counts) status.textContent = `Cancela ${s.cancelEffectiveDate?.slice(0, 10) ?? ""}`;
-  else if (scheduled) status.textContent = "Cancelada";
-  else status.textContent = cycleLabel;
-
-  const cancelBtn = document.createElement("button");
-  cancelBtn.type = "button";
-  cancelBtn.dataset.subCancel = s.id;
-  cancelBtn.className =
-    "shrink-0 text-[9px] font-semibold rounded-md border border-gray-200 dark:border-gray-700 px-1.5 py-0.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer z-10";
-  if (!s.active) cancelBtn.textContent = "On";
-  else if (scheduled) cancelBtn.textContent = "↩";
-  else cancelBtn.textContent = "×";
-  head.append(status, cancelBtn);
-
-  const name = document.createElement("p");
-  name.className =
-    "m-0 font-semibold tracking-tight text-gray-900 dark:text-gray-50 truncate " +
-    (w > 0.22 ? "text-sm sm:text-base" : "text-xs sm:text-sm");
-  name.textContent = s.name;
-
-  const price = document.createElement("p");
-  price.className =
-    "m-0 mt-auto pt-1 font-bold text-gray-800 dark:text-gray-100 et-amount truncate " +
-    (w > 0.18 ? "text-sm sm:text-base" : "text-xs");
-  price.textContent = `${fmtEur(monthlyEur)}/mes`;
-
-  const meta = document.createElement("p");
-  meta.className = "m-0 text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-400 truncate";
-  const from = s.billingStartDate?.trim();
-  if (scheduled && counts && s.cancelEffectiveDate) {
-    meta.textContent = `Último cobro ${s.cancelEffectiveDate.slice(0, 10)}`;
-  } else if (from && nextIso && counts) meta.textContent = `Próx. ${nextIso}`;
-  else if (from) meta.textContent = `Desde ${from.slice(0, 10)}`;
-  else meta.textContent = "Sin fecha inicio";
-
-  const editHit = document.createElement("button");
-  editHit.type = "button";
-  editHit.dataset.subId = s.id;
-  editHit.className = "absolute inset-0 rounded-xl cursor-pointer";
-  editHit.setAttribute("aria-label", `Editar ${s.name}`);
-
-  card.append(head, name, price, meta, editHit);
-  wrap.appendChild(card);
-  return wrap;
-}
-
-function layoutSubsTreemap(strip: HTMLElement) {
-  const fx = state.eurPerUsd;
-  const subs = [...state.subscriptions];
-  const gap = 6;
-  const width = Math.max(strip.clientWidth, 320);
-  const height = Math.max(280, Math.min(420, width * 0.42));
-
-  strip.style.height = `${height}px`;
-  strip.innerHTML = "";
-
-  if (!subs.length) {
-    strip.style.height = "auto";
-    strip.style.minHeight = "6rem";
-    const empty = document.createElement("p");
-    empty.className = "text-sm text-gray-500 dark:text-gray-400 px-4 py-8 text-center";
-    empty.textContent = "Aún no hay suscripciones. Usa «Nueva suscripción» para empezar.";
-    strip.appendChild(empty);
-    return;
-  }
-
-  const today = todayIso();
-  const weights = subs.map((s) => {
-    const m = subscriptionToMonthlyAmount(s);
-    return amountInEur(m, s.currency, fx) || 0.01;
-  });
-  const items = subs.map((s, i) => ({ id: s.id, value: weights[i]! }));
-  const rects = layoutTreemap(items, width, height);
-
-  for (const rect of rects) {
-    const s = subs.find((x) => x.id === rect.id);
-    if (!s) continue;
-    const el = buildSubTreemapCard(s, fx, today, rect.w / width);
-    el.style.left = `${rect.x + gap / 2}px`;
-    el.style.top = `${rect.y + gap / 2}px`;
-    el.style.width = `${Math.max(0, rect.w - gap)}px`;
-    el.style.height = `${Math.max(0, rect.h - gap)}px`;
-    strip.appendChild(el);
-  }
-}
-
-function renderSubs(root: HTMLElement) {
-  const strip = root.querySelector<HTMLElement>("[data-et-subs-strip]");
-  if (!strip) return;
-
-  if (!subsTreemapRo) {
-    subsTreemapRo = new ResizeObserver(() => layoutSubsTreemap(strip));
-    subsTreemapRo.observe(strip);
-  }
-  layoutSubsTreemap(strip);
 }
 
 function fillCategorySelect(sel: HTMLSelectElement) {
@@ -3993,105 +3842,6 @@ function emptyGraphic(text: string) {
   };
 }
 
-function openSubDialog(root: HTMLElement, sub: SubscriptionRow | null) {
-  const dlg = root.querySelector<HTMLDialogElement>("[data-et-sub-dialog]");
-  const title = root.querySelector<HTMLElement>("[data-et-sub-dialog-title]");
-  const idEl = root.querySelector<HTMLInputElement>("[data-et-sub-id]");
-  const nameEl = root.querySelector<HTMLInputElement>("[data-et-sub-name]");
-  const amountEl = root.querySelector<HTMLInputElement>("[data-et-sub-amount]");
-  const cycleEl = root.querySelector<HTMLSelectElement>("[data-et-sub-cycle]");
-  const catEl = root.querySelector<HTMLSelectElement>("[data-et-sub-category]");
-  const billEl = root.querySelector<HTMLInputElement>("[data-et-sub-billing-start]");
-  const activeEl = root.querySelector<HTMLInputElement>("[data-et-sub-active]");
-  const tagsEl = root.querySelector<HTMLInputElement>("[data-et-sub-tags]");
-  const notesEl = root.querySelector<HTMLTextAreaElement>("[data-et-sub-notes]");
-  const delBtn = root.querySelector<HTMLButtonElement>("[data-et-sub-delete]");
-  if (!dlg || !title || !idEl || !nameEl || !amountEl || !cycleEl || !catEl || !billEl || !activeEl || !tagsEl || !notesEl || !delBtn) return;
-
-  editingSubId = sub?.id ?? null;
-  title.textContent = sub ? "Editar suscripción" : "Nueva suscripción";
-  idEl.value = sub?.id ?? "";
-  nameEl.value = sub?.name ?? "";
-  amountEl.value = String(sub?.amount ?? "");
-  cycleEl.value = sub?.cycle ?? "monthly";
-  fillCategorySelect(catEl);
-  catEl.value = sub?.categoryId ?? state.categories[0]!.id;
-  billEl.value = (sub?.billingStartDate || "").slice(0, 10);
-  activeEl.checked = sub?.active !== false;
-  tagsEl.value = (sub?.tags ?? []).join(", ");
-  notesEl.value = sub?.notes ?? "";
-  const colorEl = root.querySelector<HTMLInputElement>("[data-et-sub-color]");
-  if (colorEl) colorEl.value = parseCardColor(sub?.cardColor) ?? "#6366f1";
-  delBtn.classList.toggle("invisible", !sub);
-  dlg.showModal();
-  refreshExpenseDatePicker(billEl, billEl.value);
-  requestAnimationFrame(() => window.dispatchEvent(new Event("skillatlas:select-popovers-refresh")));
-}
-
-function saveSubFromDialog(root: HTMLElement) {
-  const idEl = root.querySelector<HTMLInputElement>("[data-et-sub-id]");
-  const nameEl = root.querySelector<HTMLInputElement>("[data-et-sub-name]");
-  const amountEl = root.querySelector<HTMLInputElement>("[data-et-sub-amount]");
-  const cycleEl = root.querySelector<HTMLSelectElement>("[data-et-sub-cycle]");
-  const catEl = root.querySelector<HTMLSelectElement>("[data-et-sub-category]");
-  const billEl = root.querySelector<HTMLInputElement>("[data-et-sub-billing-start]");
-  const activeEl = root.querySelector<HTMLInputElement>("[data-et-sub-active]");
-  const tagsEl = root.querySelector<HTMLInputElement>("[data-et-sub-tags]");
-  const notesEl = root.querySelector<HTMLTextAreaElement>("[data-et-sub-notes]");
-  if (!idEl || !nameEl || !amountEl || !cycleEl || !catEl || !billEl || !activeEl || !tagsEl || !notesEl) return;
-  const name = nameEl.value.trim();
-  const amount = Number(amountEl.value);
-  if (!name || !Number.isFinite(amount)) return;
-  const prev = state.subscriptions.find((s) => s.id === idEl.value);
-  const cycRaw = cycleEl.value;
-  const cycle = (["weekly", "monthly", "quarterly", "yearly"] as const).includes(cycRaw as any)
-    ? (cycRaw as SubscriptionRow["cycle"])
-    : "monthly";
-  const tags = parseTags(tagsEl.value);
-  pushTagBankFrom(tags);
-  const cardColor = parseCardColor(root.querySelector<HTMLInputElement>("[data-et-sub-color]")?.value);
-  const billingRaw = readDateFieldValue(billEl);
-  const billingStartDate = billingRaw.length === 10 ? billingRaw : undefined;
-  const row: SubscriptionRow = {
-    id: idEl.value || makeId(),
-    name,
-    amount,
-    currency: "EUR",
-    cycle,
-    categoryId: catEl.value,
-    billingStartDate,
-    nextBilling: "",
-    active: activeEl.checked,
-    cancelEffectiveDate: activeEl.checked ? prev?.cancelEffectiveDate : undefined,
-    notes: notesEl.value.trim(),
-    tags,
-    cardColor,
-  };
-  row.nextBilling = subscriptionNextChargeIso(row);
-  if (!activeEl.checked) {
-    row.cancelEffectiveDate = undefined;
-  } else if (prev?.cancelEffectiveDate) {
-    row.cancelEffectiveDate = row.nextBilling.slice(0, 10);
-  }
-  const idx = state.subscriptions.findIndex((s) => s.id === row.id);
-  if (idx >= 0) state.subscriptions[idx] = row;
-  else state.subscriptions.push(row);
-  root.querySelector<HTMLDialogElement>("[data-et-sub-dialog]")?.close();
-  persist();
-  renderAll(root);
-}
-
-function deleteSubFromDialog(root: HTMLElement) {
-  void (async () => {
-    if (!editingSubId) return;
-    if (!(await showConfirmDialog(root, "¿Seguro que quieres eliminar esta suscripción?", "Eliminar"))) return;
-    state.subscriptions = state.subscriptions.filter((s) => s.id !== editingSubId);
-    root.querySelector<HTMLDialogElement>("[data-et-sub-dialog]")?.close();
-    persist();
-    renderAll(root);
-  })();
-}
-
 function refreshChartsOnly() {
   const r = document.querySelector<HTMLElement>("[data-tools-expense-page]");
   if (r?.dataset.etBound === "1") renderCharts(r);
@@ -4281,6 +4031,24 @@ function scrollToExpenseRow(root: HTMLElement, expenseId: string) {
   });
 }
 
+function subUiDeps(_root: HTMLElement): SubUiDeps {
+  return {
+    getState: () => state,
+    setState: (s) => {
+      state = s;
+    },
+    persist,
+    renderAll,
+    showConfirmDialog,
+    fillCategorySelect,
+    makeId,
+    parseTags,
+    pushTagBankFrom,
+    amountInEur,
+    todayIso,
+  };
+}
+
 function debtUiDeps(root: HTMLElement): DebtUiDeps {
   return {
     getState: () => state,
@@ -4326,13 +4094,13 @@ function renderAll(root: HTMLElement) {
   renderKpis(root);
   renderWealthAccounts(root);
   renderTrackingBaseline(root);
-  renderSubs(root);
+  renderSubs(root, subUiDeps(root));
   renderInvestments(root);
   renderPlannedExpenses(root);
   renderPaychecks(root);
   renderScenarioSection(root, scenarioUiDeps());
-  renderDebtsSection(root, debtUiDeps(root));
   renderExpenseTable(root);
+  renderDebtsSection(root, debtUiDeps(root));
   renderIncomeTable(root);
   renderReminders(root);
   renderReminderBanner(root);
@@ -4341,38 +4109,6 @@ function renderAll(root: HTMLElement) {
   requestAnimationFrame(() => {
     initExpenseDatePickers(root);
     window.dispatchEvent(new Event("skillatlas:select-popovers-refresh"));
-  });
-}
-
-function bindStripClicks(root: HTMLElement) {
-  const strip = root.querySelector<HTMLElement>("[data-et-subs-strip]");
-  if (!strip || strip.dataset.stripBound === "1") return;
-  strip.dataset.stripBound = "1";
-  strip.addEventListener("click", (e) => {
-    const cancelBtn = (e.target as HTMLElement).closest("button[data-sub-cancel]");
-    if (cancelBtn) {
-      e.stopPropagation();
-      e.preventDefault();
-      const id = cancelBtn.getAttribute("data-sub-cancel");
-      const idx = state.subscriptions.findIndex((x) => x.id === id);
-      if (idx < 0) return;
-      const s = state.subscriptions[idx]!;
-      if (!s.active) {
-        state.subscriptions[idx] = { ...s, active: true, cancelEffectiveDate: undefined };
-      } else if (s.cancelEffectiveDate) {
-        state.subscriptions[idx] = { ...s, cancelEffectiveDate: undefined };
-      } else {
-        state.subscriptions[idx] = scheduleSubscriptionCancel(s);
-      }
-      persist();
-      renderAll(root);
-      return;
-    }
-    const btn = (e.target as HTMLElement).closest("button[data-sub-id]");
-    if (!btn) return;
-    const id = btn.getAttribute("data-sub-id");
-    const s = state.subscriptions.find((x) => x.id === id);
-    if (s) openSubDialog(root, s);
   });
 }
 
@@ -4799,36 +4535,25 @@ function wire(root: HTMLElement) {
     applyCategoryDialogResult(root, res);
   });
 
-  root.querySelector<HTMLButtonElement>("[data-et-open-sub-modal]")?.addEventListener("click", () => openSubDialog(root, null));
+  bindScenarioUi(root, scenarioUiDeps());
+  bindDebtsUi(root, debtUiDeps(root));
+  bindSubsUi(root, subUiDeps(root));
 
-  root.querySelector<HTMLButtonElement>("[data-et-sub-close]")?.addEventListener("click", () => {
-    root.querySelector<HTMLDialogElement>("[data-et-sub-dialog]")?.close();
-  });
-  root.querySelector<HTMLButtonElement>("[data-et-sub-cancel]")?.addEventListener("click", () => {
-    root.querySelector<HTMLDialogElement>("[data-et-sub-dialog]")?.close();
-  });
-  root.querySelector<HTMLButtonElement>("[data-et-sub-save]")?.addEventListener("click", () => saveSubFromDialog(root));
-  root.querySelector<HTMLButtonElement>("[data-et-sub-delete]")?.addEventListener("click", () => deleteSubFromDialog(root));
-
-  root.querySelector<HTMLButtonElement>("[data-et-reminder-add]")?.addEventListener("click", () => addReminderFromForm(root));
+  root.dataset.etBound = "1";
+  state = loadExpenseTrackerFromStorage();
+  ensureExpenseChartThemeBridge();
   root.querySelector<HTMLInputElement>("[data-et-transfers-history-month]")?.addEventListener("change", () =>
     renderTransfersHistoryList(root),
   );
   root.querySelector<HTMLInputElement>("[data-et-bizums-history-month]")?.addEventListener("change", () =>
     renderBizumsHistoryList(root),
   );
+  root.querySelector<HTMLButtonElement>("[data-et-reminder-add]")?.addEventListener("click", () => addReminderFromForm(root));
   root.querySelector<HTMLButtonElement>("[data-et-reminder-notify-perm]")?.addEventListener("click", async () => {
     if (typeof Notification === "undefined") return;
     await Notification.requestPermission();
   });
 
-  bindScenarioUi(root, scenarioUiDeps());
-  bindDebtsUi(root, debtUiDeps(root));
-
-  root.dataset.etBound = "1";
-  state = loadExpenseTrackerFromStorage();
-  bindStripClicks(root);
-  ensureExpenseChartThemeBridge();
   renderAll(root);
 
   void (async () => {
