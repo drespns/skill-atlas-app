@@ -68,6 +68,13 @@ import {
   type PaycheckEntry,
   type PlannedExpenseEntry,
   type PlannedExpenseMonthOverride,
+  type PlannedPaymentMode,
+  addMonthsToIso,
+  resolveFinancingBrandKey,
+  WEALTH_ACCOUNT_BRAND_CATALOG,
+  resolveWealthAccountBrandKey,
+  wealthAccountBrandLogoPath,
+  getWealthAccountBrand,
   type InvestmentHolding,
   type WealthAccount,
   type WealthTransfer,
@@ -75,7 +82,8 @@ import {
   type WealthBizumDirection,
   type ExpenseCategory,
 } from "@lib/tools-expense-tracker";
-import { initExpenseDatePickers, initExpenseMonthPickers, readDateFieldValue, readMonthFieldValue, refreshExpenseDatePicker } from "./expense-tracker-dates";
+import { initExpenseDatePickers, initExpenseMonthPickers, readDateFieldValue, readMonthFieldValue, refreshExpenseDatePicker, showExpenseDialog } from "./expense-tracker-dates";
+import { bindExpenseDialogScrollLock } from "./expense-tracker-dialog-scroll-lock";
 import { isExpenseEncryptedEnvelope, openExpenseEnvelope, sealExpenseState } from "@lib/tools-expense-tracker-crypto";
 import type { EncryptedExpenseEnvelope } from "@lib/tools-expense-tracker-crypto";
 import { loadClientState, scheduleSaveClientState } from "@scripts/core/user-client-state";
@@ -86,6 +94,7 @@ import {
 } from "./expense-tracker-recurring-ui";
 import { bindScenarioUi, renderScenarioSection, type ScenarioUiDeps } from "./expense-tracker-scenarios-ui";
 import { bindDebtsUi, renderDebtsSection, type DebtUiDeps } from "./expense-tracker-debts-ui";
+import { linkedDebtBizumIds } from "@lib/tools-expense-debts";
 import { bindSubsUi, renderSubs, type SubUiDeps } from "./expense-tracker-subs-ui";
 
 echarts.use([BarChart, LineChart, PieChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer]);
@@ -417,7 +426,7 @@ function showAlertDialog(root: HTMLElement, msg: string): Promise<void> {
   p.textContent = msg;
   return new Promise((resolve) => {
     alertResolver = resolve;
-    dlg.showModal();
+    showExpenseDialog(dlg);
   });
 }
 
@@ -430,7 +439,7 @@ function showConfirmDialog(root: HTMLElement, msg: string, okLabel = "Continuar"
   okBtn.textContent = okLabel;
   return new Promise((resolve) => {
     confirmResolver = resolve;
-    dlg.showModal();
+    showExpenseDialog(dlg);
   });
 }
 
@@ -441,7 +450,7 @@ function showImportModeDialog(root: HTMLElement, hint: string): Promise<ImportMo
   h.textContent = hint;
   return new Promise((resolve) => {
     importModeResolver = resolve;
-    dlg.showModal();
+    showExpenseDialog(dlg);
   });
 }
 
@@ -454,7 +463,7 @@ function showLinkDialog(root: HTMLElement): Promise<{ title: string; url: string
   uEl.value = "";
   return new Promise((resolve) => {
     linkResolver = resolve;
-    dlg.showModal();
+    showExpenseDialog(dlg);
     tEl.focus();
   });
 }
@@ -522,7 +531,7 @@ function openCategoryDialog(root: HTMLElement, editId?: string): Promise<Categor
   requestAnimationFrame(() => window.dispatchEvent(new Event("skillatlas:select-popovers-refresh")));
   return new Promise((resolve) => {
     catResolver = resolve;
-    dlg.showModal();
+    showExpenseDialog(dlg);
     nameEl.focus();
   });
 }
@@ -597,7 +606,7 @@ function openCategoriesManageDialog(root: HTMLElement) {
   const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-categories-manage]");
   if (!dlg) return;
   renderCategoriesManagerList(root);
-  dlg.showModal();
+  showExpenseDialog(dlg);
 }
 
 async function deleteCategoryFromManager(root: HTMLElement, categoryId: string) {
@@ -645,7 +654,7 @@ function openE2ePassphraseDialog(root: HTMLElement): Promise<boolean> {
   p2.value = "";
   return new Promise((resolve) => {
     e2eSetResolver = resolve;
-    dlg.showModal();
+    showExpenseDialog(dlg);
     p1.focus();
   });
 }
@@ -657,7 +666,7 @@ function openUnlockDialog(root: HTMLElement): Promise<string | null> {
   p.value = "";
   return new Promise((resolve) => {
     e2eUnlockResolver = resolve;
-    dlg.showModal();
+    showExpenseDialog(dlg);
     p.focus();
   });
 }
@@ -844,6 +853,20 @@ function renderTrackingBaseline(root: HTMLElement) {
   if (!el) return;
   const iso = (state.trackingStartDate ?? "").slice(0, 10);
   refreshExpenseDatePicker(el, iso);
+  const badge = root.querySelector<HTMLElement>("[data-et-tracking-pending-badge]");
+  if (badge) badge.classList.toggle("hidden", iso.length === 10);
+}
+
+const WEALTH_PANEL_OPEN_KEY = "skillatlas_et_wealth_open";
+
+function bindWealthPanelPersistence(root: HTMLElement) {
+  const panel = root.querySelector<HTMLDetailsElement>("[data-et-wealth-panel]");
+  if (!panel || panel.dataset.etWealthBound === "1") return;
+  panel.dataset.etWealthBound = "1";
+  panel.open = localStorage.getItem(WEALTH_PANEL_OPEN_KEY) === "1";
+  panel.addEventListener("toggle", () => {
+    localStorage.setItem(WEALTH_PANEL_OPEN_KEY, panel.open ? "1" : "0");
+  });
 }
 
 function applyTrackingBaseline(root: HTMLElement) {
@@ -1005,6 +1028,46 @@ function updatePatrimonioModeLabel(root: HTMLElement) {
   if (lab) lab.textContent = state.patrimonioRealMode ? "Real" : "Valor estimado";
 }
 
+function wealthBrandInitials(name: string, brandKey?: string): string {
+  const brand = getWealthAccountBrand(brandKey);
+  if (brand) return brand.label.replace(/\s+/g, "").slice(0, 2).toUpperCase();
+  const t = name.trim();
+  return (t.length >= 2 ? t.slice(0, 2) : t || "?").toUpperCase();
+}
+
+function makeWealthBrandInitialsEl(name: string, brandKey?: string): HTMLSpanElement {
+  const el = document.createElement("span");
+  el.className = "text-[11px] font-bold text-gray-700 dark:text-gray-200";
+  el.textContent = wealthBrandInitials(name, brandKey);
+  return el;
+}
+
+function appendWealthBrandLogo(host: HTMLElement, account: WealthAccount) {
+  const key = account.brandKey ?? resolveWealthAccountBrandKey(account.name);
+  const wrap = document.createElement("div");
+  wrap.className =
+    "relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200/80 bg-white dark:border-gray-700 dark:bg-gray-900";
+  wrap.dataset.wealthLogo = account.id;
+  if (key) {
+    const img = document.createElement("img");
+    img.src = wealthAccountBrandLogoPath(key, "svg");
+    img.alt = "";
+    img.className = "h-8 w-8 object-contain p-0.5";
+    img.addEventListener("error", () => {
+      if (!img.dataset.fallback) {
+        img.dataset.fallback = "1";
+        img.src = wealthAccountBrandLogoPath(key, "png");
+        return;
+      }
+      img.replaceWith(makeWealthBrandInitialsEl(account.name, key));
+    });
+    wrap.appendChild(img);
+  } else {
+    wrap.appendChild(makeWealthBrandInitialsEl(account.name));
+  }
+  host.appendChild(wrap);
+}
+
 function renderWealthAccounts(root: HTMLElement) {
   const list = root.querySelector<HTMLElement>("[data-et-wealth-list]");
   const empty = root.querySelector<HTMLElement>("[data-et-wealth-empty]");
@@ -1021,6 +1084,8 @@ function renderWealthAccounts(root: HTMLElement) {
 
     const top = document.createElement("div");
     top.className = "flex flex-wrap items-end gap-2 sm:gap-3";
+    appendWealthBrandLogo(top, a);
+
     const nameLab = document.createElement("label");
     nameLab.className = "flex-1 min-w-[8rem] space-y-1";
     nameLab.innerHTML = `<span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Nombre</span>`;
@@ -1030,6 +1095,25 @@ function renderWealthAccounts(root: HTMLElement) {
     nameIn.dataset.wealthName = a.id;
     nameIn.className = "et-field w-full text-sm py-2";
     nameLab.appendChild(nameIn);
+
+    const brandLab = document.createElement("label");
+    brandLab.className = "w-[7.5rem] space-y-1";
+    brandLab.innerHTML = `<span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Marca</span>`;
+    const brandSel = document.createElement("select");
+    brandSel.dataset.wealthBrand = a.id;
+    brandSel.className = "et-field et-select w-full text-xs py-2";
+    const emptyOpt = document.createElement("option");
+    emptyOpt.value = "";
+    emptyOpt.textContent = "Auto";
+    brandSel.appendChild(emptyOpt);
+    for (const brand of WEALTH_ACCOUNT_BRAND_CATALOG) {
+      const opt = document.createElement("option");
+      opt.value = brand.key;
+      opt.textContent = brand.label;
+      brandSel.appendChild(opt);
+    }
+    brandSel.value = a.brandKey ?? resolveWealthAccountBrandKey(a.name) ?? "";
+    brandLab.appendChild(brandSel);
 
     const ibanLab = document.createElement("label");
     ibanLab.className = "w-20 space-y-1";
@@ -1048,7 +1132,7 @@ function renderWealthAccounts(root: HTMLElement) {
     del.dataset.wealthDelete = a.id;
     del.className = "et-btn-secondary text-xs py-2 px-2.5 text-red-600 dark:text-red-400";
     del.textContent = "Quitar";
-    top.append(nameLab, ibanLab, del);
+    top.append(nameLab, brandLab, ibanLab, del);
 
     const mask = document.createElement("p");
     mask.className = "m-0 text-xs tracking-wider text-gray-500 dark:text-gray-400";
@@ -1155,7 +1239,7 @@ function openTransfersHistoryDialog(root: HTMLElement) {
   }
   initExpenseMonthPickers(root);
   renderTransfersHistoryList(root);
-  dlg.showModal();
+  showExpenseDialog(dlg);
 }
 
 function renderTransfersHistoryList(root: HTMLElement) {
@@ -1237,7 +1321,7 @@ function openBizumsHistoryDialog(root: HTMLElement) {
   }
   initExpenseMonthPickers(root);
   renderBizumsHistoryList(root);
-  dlg.showModal();
+  showExpenseDialog(dlg);
 }
 
 function renderBizumsHistoryList(root: HTMLElement) {
@@ -1401,7 +1485,7 @@ function openBizumDialog(root: HTMLElement, bizumId?: string) {
     refreshExpenseDatePicker(dateEl, todayIso());
   }
   syncBizumDialogChrome(root);
-  dlg.showModal();
+  showExpenseDialog(dlg);
 }
 
 function saveBizumFromDialog(root: HTMLElement) {
@@ -2550,7 +2634,7 @@ function openPaycheckDialog(root: HTMLElement, p?: PaycheckEntry | null) {
   const dayOfMonth = p?.dayOfMonth ?? 1;
   renderMonthOverrideList(root, "paycheck", entryId, from, until, dayOfMonth, p?.typicalAmount);
   bindMonthOverrideRefresh(root, "paycheck", entryId);
-  dlg.showModal();
+  showExpenseDialog(dlg);
 }
 
 function savePaycheckFromDialog(root: HTMLElement) {
@@ -2611,6 +2695,34 @@ function deletePaycheckFromDialog(root: HTMLElement) {
   })();
 }
 
+function syncPlannedPaymentModeUi(root: HTMLElement) {
+  const mode =
+    root.querySelector<HTMLInputElement>('[data-et-planned-mode][value="installments"]:checked') != null
+      ? "installments"
+      : root.querySelector<HTMLInputElement>('[data-et-planned-mode][value="recurring"]:checked') != null
+        ? "recurring"
+        : "installments";
+  const panel = root.querySelector<HTMLElement>("[data-et-planned-installments-panel]");
+  const label = root.querySelector<HTMLElement>("[data-et-planned-amount-label]");
+  panel?.classList.toggle("hidden", mode === "recurring");
+  if (label) label.textContent = mode === "recurring" ? "Importe mensual (€)" : "Cuota mensual (€)";
+}
+
+function syncPlannedUntilFromInstallments(root: HTMLElement) {
+  const mode =
+    root.querySelector<HTMLInputElement>('[data-et-planned-mode][value="installments"]:checked') != null
+      ? "installments"
+      : "recurring";
+  if (mode !== "installments") return;
+  const from = root.querySelector<HTMLInputElement>("[data-et-planned-from]")?.value?.slice(0, 10) ?? "";
+  const countRaw = Number(root.querySelector<HTMLInputElement>("[data-et-planned-installments]")?.value);
+  const untilEl = root.querySelector<HTMLInputElement>("[data-et-planned-until]");
+  if (!untilEl || from.length !== 10 || !Number.isFinite(countRaw) || countRaw < 1) return;
+  const count = Math.min(120, Math.floor(countRaw));
+  untilEl.value = addMonthsToIso(from, count - 1);
+  refreshExpenseDatePicker(untilEl, untilEl.value);
+}
+
 function openPlannedDialog(root: HTMLElement, p?: PlannedExpenseEntry | null) {
   const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-planned]");
   const title = root.querySelector<HTMLElement>("[data-et-planned-dialog-title]");
@@ -2618,32 +2730,43 @@ function openPlannedDialog(root: HTMLElement, p?: PlannedExpenseEntry | null) {
   const catEl = root.querySelector<HTMLSelectElement>("[data-et-planned-category]");
   if (!dlg || !title || !idEl || !catEl) return;
   editingPlannedId = p?.id ?? null;
-  title.textContent = p ? "Editar gasto previsto" : "Nuevo gasto previsto";
+  title.textContent = p ? "Editar financiación" : "Nueva financiación";
   if (!p?.id && !idEl.value) idEl.value = makeId();
   const entryId = p?.id ?? idEl.value;
   idEl.value = entryId;
   fillCategorySelect(catEl);
+  const mode: PlannedPaymentMode = p?.paymentMode === "recurring" ? "recurring" : "installments";
+  for (const radio of root.querySelectorAll<HTMLInputElement>("[data-et-planned-mode]")) {
+    radio.checked = radio.value === mode;
+  }
+  syncPlannedPaymentModeUi(root);
   (root.querySelector("[data-et-planned-title]") as HTMLInputElement).value = p?.title ?? "";
   (root.querySelector("[data-et-planned-amount]") as HTMLInputElement).value =
     p?.typicalAmount != null ? String(p.typicalAmount) : "";
   catEl.value = p?.categoryId ?? state.categories[0]!.id;
-  (root.querySelector("[data-et-planned-min]") as HTMLInputElement).value =
-    p?.amountMin != null ? String(p.amountMin) : "";
-  (root.querySelector("[data-et-planned-max]") as HTMLInputElement).value =
-    p?.amountMax != null ? String(p.amountMax) : "";
   (root.querySelector("[data-et-planned-day]") as HTMLInputElement).value = String(p?.dayOfMonth ?? 1);
   (root.querySelector("[data-et-planned-window]") as HTMLInputElement).value =
     p?.windowBefore != null ? String(p.windowBefore) : "";
   (root.querySelector("[data-et-planned-from]") as HTMLInputElement).value = (p?.validFrom ?? "").slice(0, 10);
   (root.querySelector("[data-et-planned-until]") as HTMLInputElement).value = (p?.validUntil ?? "").slice(0, 10);
   (root.querySelector("[data-et-planned-note]") as HTMLInputElement).value = p?.note ?? "";
+  (root.querySelector("[data-et-planned-down]") as HTMLInputElement).value =
+    p?.downPayment != null ? String(p.downPayment) : "";
+  (root.querySelector("[data-et-planned-installments]") as HTMLInputElement).value = String(
+    p?.installmentCount ?? 3,
+  );
+  const brandSel = root.querySelector<HTMLSelectElement>("[data-et-planned-financing-brand]");
+  if (brandSel) {
+    const brandKey = p?.financingBrandKey ?? resolveFinancingBrandKey(p?.title ?? "");
+    brandSel.value = brandKey ?? "";
+  }
   root.querySelector("[data-et-planned-delete]")?.classList.toggle("invisible", !p);
   const from = (p?.validFrom ?? "").slice(0, 10);
   const until = (p?.validUntil ?? "").slice(0, 10);
   const dayOfMonth = p?.dayOfMonth ?? 1;
   renderMonthOverrideList(root, "planned", entryId, from, until, dayOfMonth, p?.typicalAmount);
   bindMonthOverrideRefresh(root, "planned", entryId);
-  dlg.showModal();
+  showExpenseDialog(dlg);
 }
 
 function savePlannedFromDialog(root: HTMLElement) {
@@ -2654,10 +2777,15 @@ function savePlannedFromDialog(root: HTMLElement) {
   const note = root.querySelector<HTMLInputElement>("[data-et-planned-note]")?.value?.trim() ?? "";
   const amt = Number(root.querySelector<HTMLInputElement>("[data-et-planned-amount]")?.value);
   const catId = root.querySelector<HTMLSelectElement>("[data-et-planned-category]")?.value ?? state.categories[0]!.id;
-  const minV = root.querySelector<HTMLInputElement>("[data-et-planned-min]")?.value;
-  const maxV = root.querySelector<HTMLInputElement>("[data-et-planned-max]")?.value;
-  const from = root.querySelector<HTMLInputElement>("[data-et-planned-from]")?.value?.slice(0, 10) ?? "";
-  const until = root.querySelector<HTMLInputElement>("[data-et-planned-until]")?.value?.slice(0, 10) ?? "";
+  let from = root.querySelector<HTMLInputElement>("[data-et-planned-from]")?.value?.slice(0, 10) ?? "";
+  let until = root.querySelector<HTMLInputElement>("[data-et-planned-until]")?.value?.slice(0, 10) ?? "";
+  const paymentMode: PlannedPaymentMode =
+    root.querySelector<HTMLInputElement>('[data-et-planned-mode][value="recurring"]:checked') != null
+      ? "recurring"
+      : "installments";
+  const downRaw = Number(root.querySelector<HTMLInputElement>("[data-et-planned-down]")?.value);
+  const instRaw = Number(root.querySelector<HTMLInputElement>("[data-et-planned-installments]")?.value);
+  const brandPick = root.querySelector<HTMLSelectElement>("[data-et-planned-financing-brand]")?.value?.trim();
   if (!title) return;
   const dayOfMonth = Number.isFinite(dayRaw) ? Math.min(31, Math.max(1, Math.floor(dayRaw))) : 1;
   let windowBefore: number | undefined;
@@ -2665,6 +2793,21 @@ function savePlannedFromDialog(root: HTMLElement) {
     const w = Number(winRaw);
     if (Number.isFinite(w)) windowBefore = Math.min(15, Math.max(0, Math.floor(w)));
   }
+  let downPayment: number | undefined;
+  if (paymentMode === "installments" && Number.isFinite(downRaw) && downRaw > 0) {
+    downPayment = roundMoney(downRaw);
+  }
+  let installmentCount: number | undefined;
+  if (paymentMode === "installments" && Number.isFinite(instRaw) && instRaw >= 1) {
+    installmentCount = Math.min(120, Math.floor(instRaw));
+  }
+  if (paymentMode === "installments" && from.length === 10 && installmentCount) {
+    until = addMonthsToIso(from, installmentCount - 1);
+  }
+  const financingBrandKey =
+    paymentMode === "installments"
+      ? resolveFinancingBrandKey(title, brandPick || undefined)
+      : undefined;
   const row: PlannedExpenseEntry = {
     id: idEl?.value || makeId(),
     title,
@@ -2674,17 +2817,31 @@ function savePlannedFromDialog(root: HTMLElement) {
     typicalAmount: Number.isFinite(amt) && amt > 0 ? amt : undefined,
     currency: "EUR",
     categoryId: catId,
-    amountMin:
-      minV != null && minV !== "" && Number.isFinite(Number(minV)) ? Math.max(0, Number(minV)) : undefined,
-    amountMax:
-      maxV != null && maxV !== "" && Number.isFinite(Number(maxV)) ? Math.max(0, Number(maxV)) : undefined,
     validFrom: from.length === 10 ? from : undefined,
     validUntil: until.length === 10 ? until : undefined,
+    paymentMode,
+    downPayment,
+    installmentCount,
+    financingBrandKey,
   };
   const idx = (state.plannedExpenses ?? []).findIndex((x) => x.id === row.id);
   if (idx >= 0) state.plannedExpenses![idx] = row;
   else state.plannedExpenses = [...(state.plannedExpenses ?? []), row].slice(0, 24);
-  const newOverrides = collectMonthOverridesFromDialog(root, "planned", row.id) as PlannedExpenseMonthOverride[];
+  let newOverrides = collectMonthOverridesFromDialog(root, "planned", row.id) as PlannedExpenseMonthOverride[];
+  if (downPayment && from.length === 10) {
+    const firstMonth = from.slice(0, 7);
+    const firstAmount = roundMoney(downPayment + (row.typicalAmount ?? 0));
+    newOverrides = [
+      ...newOverrides.filter((o) => o.month !== firstMonth),
+      {
+        id: makeId(),
+        plannedExpenseId: row.id,
+        month: firstMonth,
+        amount: firstAmount,
+        currency: "EUR" as const,
+      },
+    ];
+  }
   state.plannedExpenseMonthOverrides = [
     ...(state.plannedExpenseMonthOverrides ?? []).filter((o) => o.plannedExpenseId !== row.id),
     ...newOverrides,
@@ -2697,7 +2854,7 @@ function savePlannedFromDialog(root: HTMLElement) {
 function deletePlannedFromDialog(root: HTMLElement) {
   void (async () => {
     if (!editingPlannedId) return;
-    if (!(await showConfirmDialog(root, "¿Eliminar este gasto previsto?", "Eliminar"))) return;
+    if (!(await showConfirmDialog(root, "¿Eliminar esta financiación?", "Eliminar"))) return;
     state.plannedExpenses = (state.plannedExpenses ?? []).filter((x) => x.id !== editingPlannedId);
     state.plannedExpenseMonthOverrides = (state.plannedExpenseMonthOverrides ?? []).filter(
       (o) => o.plannedExpenseId !== editingPlannedId,
@@ -2737,7 +2894,7 @@ function openInvestmentDialog(root: HTMLElement, h?: InvestmentHolding | null) {
   qtyEl?.removeEventListener("input", onInvCalc);
   avgEl?.addEventListener("input", onInvCalc);
   qtyEl?.addEventListener("input", onInvCalc);
-  dlg.showModal();
+  showExpenseDialog(dlg);
 }
 
 function saveInvestmentFromDialog(root: HTMLElement) {
@@ -2879,7 +3036,7 @@ function openTransferDialog(root: HTMLElement, transferId?: string) {
     refreshExpenseDatePicker(dateEl, todayIso());
   }
   syncTransferDialogChrome(root);
-  dlg.showModal();
+  showExpenseDialog(dlg);
 }
 
 function saveTransferFromDialog(root: HTMLElement) {
@@ -4049,6 +4206,21 @@ function subUiDeps(_root: HTMLElement): SubUiDeps {
   };
 }
 
+function listLinkableBizums(amount: number): WealthBizum[] {
+  const linked = linkedDebtBizumIds(state);
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+  const cutoffIso = cutoff.toISOString().slice(0, 10);
+  return (state.wealthBizums ?? [])
+    .filter((b) => b.direction === "sent" && !linked.has(b.id) && b.date >= cutoffIso)
+    .sort((a, b) => {
+      const diffA = Math.abs(a.amount - amount);
+      const diffB = Math.abs(b.amount - amount);
+      if (diffA !== diffB) return diffA - diffB;
+      return b.date.localeCompare(a.date);
+    });
+}
+
 function debtUiDeps(root: HTMLElement): DebtUiDeps {
   return {
     getState: () => state,
@@ -4062,8 +4234,12 @@ function debtUiDeps(root: HTMLElement): DebtUiDeps {
     fillWealthAccountSelect,
     makeId,
     makeExpenseId: makeId,
+    makeBizumId: makeId,
+    listLinkableBizums,
     scrollToExpense: (id) => scrollToExpenseRow(root, id),
+    openBizumDialog: (bizumId) => openBizumDialog(root, bizumId),
     bookExpense: (exp) => expenseAccountEffect(exp, 1),
+    bookBizum: (b) => applyBizumBalanceEffect(b, 1),
   };
 }
 
@@ -4123,6 +4299,8 @@ function maybePushFirstSync(remoteNorm: ExpenseTrackerState, local: ExpenseTrack
 }
 
 function wire(root: HTMLElement) {
+  bindExpenseDialogScrollLock(root);
+  bindWealthPanelPersistence(root);
   if (root.dataset.etDialogsBound !== "1") {
     root.dataset.etDialogsBound = "1";
     bindExpenseDialogs(root);
@@ -4216,7 +4394,11 @@ function wire(root: HTMLElement) {
     const idx = (state.wealthAccounts ?? []).findIndex((a) => a.id === id);
     if (idx < 0) return;
     const row = { ...state.wealthAccounts![idx]! };
-    if (t instanceof HTMLInputElement && t.dataset.wealthName) row.name = t.value.trim() || "Cuenta";
+    if (t instanceof HTMLInputElement && t.dataset.wealthName) {
+      row.name = t.value.trim() || "Cuenta";
+      const brandSel = root.querySelector<HTMLSelectElement>(`select[data-wealth-brand="${id}"]`);
+      if (!brandSel?.value) row.brandKey = resolveWealthAccountBrandKey(row.name) || undefined;
+    }
     if (t instanceof HTMLInputElement && t.dataset.wealthBalance) {
       const n = Number(t.value);
       row.balance = Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : 0;
@@ -4242,8 +4424,19 @@ function wire(root: HTMLElement) {
   });
 
   root.querySelector<HTMLElement>("[data-et-wealth-list]")?.addEventListener("change", (e) => {
-    const t = e.target as HTMLInputElement;
-    if (t.dataset.wealthDefaultExpense) {
+    const t = e.target as HTMLInputElement | HTMLSelectElement;
+    if (t instanceof HTMLSelectElement && t.dataset.wealthBrand) {
+      const id = t.dataset.wealthBrand;
+      const idx = (state.wealthAccounts ?? []).findIndex((a) => a.id === id);
+      if (idx < 0) return;
+      const row = { ...state.wealthAccounts![idx]! };
+      row.brandKey = t.value.trim() || undefined;
+      state.wealthAccounts![idx] = row;
+      persist();
+      renderWealthAccounts(root);
+      return;
+    }
+    if (t instanceof HTMLInputElement && t.dataset.wealthDefaultExpense) {
       const id = t.dataset.wealthDefaultExpense;
       state.wealthAccounts = (state.wealthAccounts ?? []).map((a) => ({
         ...a,
@@ -4376,6 +4569,26 @@ function wire(root: HTMLElement) {
   root.querySelector<HTMLButtonElement>("[data-et-planned-delete]")?.addEventListener("click", () =>
     deletePlannedFromDialog(root),
   );
+  const plannedForm = root.querySelector<HTMLElement>("[data-et-planned-form]");
+  plannedForm?.addEventListener("change", (e) => {
+    const t = e.target as HTMLElement;
+    if (t.matches("[data-et-planned-mode]")) syncPlannedPaymentModeUi(root);
+    if (
+      t.matches("[data-et-planned-installments], [data-et-planned-from]") ||
+      (t.matches("[data-et-planned-mode]") &&
+        root.querySelector<HTMLInputElement>('[data-et-planned-mode][value="installments"]:checked'))
+    ) {
+      syncPlannedUntilFromInstallments(root);
+    }
+    if (t.matches("[data-et-planned-title]")) {
+      const title = (t as HTMLInputElement).value.trim();
+      const brandSel = root.querySelector<HTMLSelectElement>("[data-et-planned-financing-brand]");
+      if (brandSel && !brandSel.value) {
+        const detected = resolveFinancingBrandKey(title);
+        if (detected) brandSel.value = detected;
+      }
+    }
+  });
   root.querySelector<HTMLButtonElement>("[data-et-inv-save]")?.addEventListener("click", () =>
     saveInvestmentFromDialog(root),
   );

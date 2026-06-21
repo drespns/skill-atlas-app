@@ -234,3 +234,10 @@ export function readMonthFieldValue(input: HTMLInputElement | null | undefined):
   const v = input.value.trim().slice(0, 7);
   return /^\d{4}-\d{2}$/.test(v) ? v : "";
 }
+
+/** Abre un dialog nativo e inicializa flatpickr en sus campos fecha. */
+export function showExpenseDialog(dlg: HTMLDialogElement | null | undefined) {
+  if (!dlg) return;
+  dlg.showModal();
+  queueMicrotask(() => initExpenseDatePickers(dlg));
+}

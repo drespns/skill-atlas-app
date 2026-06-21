@@ -19,6 +19,8 @@ export interface Props {
   noindex?: boolean;
   /** Sin cabecera, pie, FAB ni paleta (p. ej. CV incrustado en /cv/studio). */
   minimalChrome?: boolean;
+  /** `wide`: main más ancho que el header en QHD+ (p. ej. expense-tracker). */
+  mainWidth?: "default" | "wide";
 }
 
 const {
@@ -27,6 +29,7 @@ const {
   ogImage,
   noindex = false,
   minimalChrome = false,
+  mainWidth = "default",
 } = Astro.props;
 
 const documentTitle = title.includes(SITE_NAME) ? title : `${title} · ${SITE_NAME}`;
@@ -73,7 +76,11 @@ const showMobileLandingGate = !minimalChrome && !mobileFullSitePaths.has(pathNor
       <main
         class:list={[
           "flex-1 w-full",
-          minimalChrome ? "app-main-shell app-main-shell--embed max-w-none mx-0" : "app-main-shell max-w-screen-2xl mx-auto",
+          minimalChrome
+            ? "app-main-shell app-main-shell--embed max-w-none mx-0"
+            : mainWidth === "wide"
+              ? "app-main-shell app-main-shell--wide max-w-screen-2xl mx-auto"
+              : "app-main-shell max-w-screen-2xl mx-auto",
         ]}
         data-app-main
       >

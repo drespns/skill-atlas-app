@@ -3,6 +3,8 @@
 import {
   effectivePaycheckAmount,
   effectivePlannedExpenseAmount,
+  financingBrandLogoPath,
+  getFinancingBrand,
   formatCategoryPath,
   investmentCurrentValue,
   investmentGainLossAmount,
@@ -11,6 +13,7 @@ import {
   parseCardColor,
   paycheckActiveInMonth,
   plannedExpenseActiveInMonth,
+  resolveFinancingBrandKey,
   type ExpenseTrackerState,
   type InvestmentHolding,
   type PaycheckEntry,
@@ -52,6 +55,7 @@ function makeRecurringCard(
     meta: string;
     ended: boolean;
     tone: "rose" | "teal";
+    logoKey?: string;
     onClick: () => void;
   },
 ): HTMLButtonElement {
@@ -64,19 +68,44 @@ function makeRecurringCard(
   card.className =
     `et-recurring-card text-left rounded-2xl border ${border} bg-white/90 dark:bg-gray-950/70 p-4 shadow-sm space-y-2 w-full` +
     (opts.ended ? " opacity-70 grayscale-[0.4]" : "");
+  const head = document.createElement("div");
+  head.className = "flex items-start gap-2.5";
+  if (opts.logoKey) {
+    const logoWrap = document.createElement("span");
+    logoWrap.className =
+      "flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200/80 bg-white dark:border-gray-700 dark:bg-gray-900";
+    const img = document.createElement("img");
+    img.src = financingBrandLogoPath(opts.logoKey, "svg");
+    img.alt = "";
+    img.className = "h-8 w-8 object-contain p-0.5";
+    img.addEventListener("error", () => {
+      if (!img.dataset.fallback) {
+        img.dataset.fallback = "1";
+        img.src = financingBrandLogoPath(opts.logoKey!, "png");
+        return;
+      }
+      img.replaceWith(document.createTextNode(opts.logoKey!.slice(0, 2).toUpperCase()));
+    });
+    logoWrap.appendChild(img);
+    head.appendChild(logoWrap);
+  }
+  const headText = document.createElement("div");
+  headText.className = "min-w-0 flex-1 space-y-2";
   const badge = document.createElement("p");
   badge.className = "m-0 text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400";
   badge.textContent = opts.badge ?? (opts.ended ? "Finalizado (referencia)" : "Activo en calendario");
   const h = document.createElement("p");
   h.className = "m-0 text-base font-semibold text-gray-900 dark:text-gray-50 truncate";
   h.textContent = opts.title;
+  headText.append(badge, h);
+  head.appendChild(headText);
   const amt = document.createElement("p");
   amt.className = "m-0 text-lg font-bold font-mono text-gray-800 dark:text-gray-100";
   amt.textContent = opts.amount;
   const meta = document.createElement("p");
   meta.className = "m-0 text-[11px] text-gray-500 dark:text-gray-400 line-clamp-2";
   meta.textContent = opts.meta;
-  card.append(badge, h, amt, meta);
+  card.append(head, amt, meta);
   card.addEventListener("click", opts.onClick);
   return card;
 }
@@ -137,7 +166,7 @@ export function renderPlannedCards(root: HTMLElement, deps: RecurringUiDeps, sor
   if (!list.length) {
     const empty = document.createElement("p");
     empty.className = "text-sm text-gray-600 dark:text-gray-400 py-2 col-span-full";
-    empty.textContent = "Sin gastos previstos. Pulsa «Añadir» para crear uno.";
+    empty.textContent = "Sin financiación registrada. Pulsa «Añadir» para crear una.";
     wrap.appendChild(empty);
     return;
   }
@@ -146,7 +175,16 @@ export function renderPlannedCards(root: HTMLElement, deps: RecurringUiDeps, sor
     const activeNow = plannedExpenseActiveInMonth(p, curMonth);
     const amt = effectivePlannedExpenseAmount(p, curMonth, deps.state.plannedExpenseMonthOverrides ?? []);
     const cat = formatCategoryPath(deps.state, p.categoryId);
+    const brandKey = p.financingBrandKey ?? resolveFinancingBrandKey(p.title);
+    const brand = getFinancingBrand(brandKey);
     const metaParts = [cat, `Día ${p.dayOfMonth}`];
+    if (p.paymentMode === "installments" && p.installmentCount) {
+      metaParts.unshift(`${p.installmentCount} cuotas`);
+      if (p.downPayment) metaParts.push(`entrada ${deps.fmtEur(p.downPayment)}`);
+    } else if (p.paymentMode === "recurring") {
+      metaParts.unshift("Cuota fija");
+    }
+    if (brand) metaParts.unshift(brand.label);
     if (p.validFrom) metaParts.push(`desde ${p.validFrom.slice(0, 10)}`);
     if (p.validUntil) metaParts.push(`hasta ${p.validUntil.slice(0, 10)}`);
     wrap.appendChild(
@@ -157,6 +195,7 @@ export function renderPlannedCards(root: HTMLElement, deps: RecurringUiDeps, sor
         meta: metaParts.join(" · "),
         ended,
         tone: "rose",
+        logoKey: brandKey,
         onClick: () => deps.openPlannedDialog(root, p),
       }),
     );

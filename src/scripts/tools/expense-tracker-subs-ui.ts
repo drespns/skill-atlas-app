@@ -20,6 +20,7 @@ import {
   initExpenseDatePickers,
   readDateFieldValue,
   refreshExpenseDatePicker,
+  showExpenseDialog,
 } from "./expense-tracker-dates";
 
 export type SubUiDeps = {
@@ -394,11 +395,10 @@ export function openSubDialog(root: HTMLElement, deps: SubUiDeps, sub: Subscript
   delBtn.classList.toggle("invisible", !sub);
   syncTrialFieldsVisibility(root);
   updateSubDialogPreview(root, deps);
-  dlg.showModal();
+  showExpenseDialog(dlg);
   queueMicrotask(() => {
     refreshExpenseDatePicker(billEl, billEl.value);
-    refreshExpenseDatePicker(trialEndsEl, trialEndsEl?.value);
-    initExpenseDatePickers(dlg);
+    if (trialEndsEl) refreshExpenseDatePicker(trialEndsEl, trialEndsEl.value);
   });
   requestAnimationFrame(() => window.dispatchEvent(new Event("skillatlas:select-popovers-refresh")));
 }
@@ -536,8 +536,8 @@ export function bindSubsUi(root: HTMLElement, deps: SubUiDeps) {
   if (root.dataset.etSubsDialogBound === "1") return;
   root.dataset.etSubsDialogBound = "1";
 
-  root.querySelector<HTMLButtonElement>("[data-et-open-sub-modal]")?.addEventListener("click", () =>
-    openSubDialog(root, deps, null),
+  root.querySelectorAll<HTMLButtonElement>("[data-et-open-sub-modal]").forEach((btn) =>
+    btn.addEventListener("click", () => openSubDialog(root, deps, null)),
   );
   root.querySelector<HTMLButtonElement>("[data-et-sub-close]")?.addEventListener("click", () =>
     root.querySelector<HTMLDialogElement>("[data-et-sub-dialog]")?.close(),

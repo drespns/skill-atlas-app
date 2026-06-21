@@ -18,7 +18,7 @@ import {
   defaultPromoteInputFromScenario,
   type ScenarioPromoteInput,
 } from "@lib/tools-expense-scenario-promote";
-import { refreshExpenseDatePicker, initExpenseMonthPickers } from "./expense-tracker-dates";
+import { initExpenseMonthPickers, refreshExpenseDatePicker, showExpenseDialog } from "./expense-tracker-dates";
 
 echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer]);
 
@@ -226,7 +226,7 @@ export function openScenarioDialog(root: HTMLElement, deps: ScenarioUiDeps, scen
   }
 
   syncScenarioKindPanels(root);
-  dlg.showModal();
+  showExpenseDialog(dlg);
   const dateEl = root.querySelector<HTMLInputElement>("[data-et-scenario-target-date]");
   if (dateEl) refreshExpenseDatePicker(dateEl, dateEl.value);
   initExpenseMonthPickers(root);
@@ -361,7 +361,7 @@ export function openScenarioPromoteDialog(root: HTMLElement, deps: ScenarioUiDep
 
   syncScenarioPromotePanels(root);
   updateScenarioPromotePreview(root);
-  dlg.showModal();
+  showExpenseDialog(dlg);
   refreshExpenseDatePicker(initialDateEl, initialDateEl.value);
   const oneOffDate = root.querySelector<HTMLInputElement>("[data-et-scenario-promote-oneoff-date]");
   if (oneOffDate) refreshExpenseDatePicker(oneOffDate, oneOffDate.value);
