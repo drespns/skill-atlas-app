@@ -6,7 +6,6 @@ import {
   compareScenarios,
   evaluateScenarioViability,
   scenarioMonthlyImpactSeries,
-  scenarioToPlannedExpense,
   scenarioTotalAmount,
   type ExpenseScenario,
   type ExpenseTrackerState,
@@ -14,6 +13,11 @@ import {
   type ScenarioTrafficLight,
   formatEurEs,
 } from "@lib/tools-expense-tracker";
+import {
+  applyScenarioPromotionToState,
+  defaultPromoteInputFromScenario,
+  type ScenarioPromoteInput,
+} from "@lib/tools-expense-scenario-promote";
 import { refreshExpenseDatePicker, initExpenseMonthPickers } from "./expense-tracker-dates";
 
 echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer]);
@@ -27,7 +31,10 @@ export type ScenarioUiDeps = {
   renderAll: (root: HTMLElement) => void;
   showConfirmDialog: (root: HTMLElement, msg: string, okLabel?: string) => Promise<boolean>;
   fillCategorySelect: (sel: HTMLSelectElement) => void;
+  fillWealthAccountSelect: (sel: HTMLSelectElement, selectedId?: string, role?: "expense" | "income") => void;
   makeId: () => string;
+  makeExpenseId: () => string;
+  bookExpense?: (expense: ExpenseTrackerState["expenses"][number]) => void;
 };
 
 let scenarioCompareIds: string[] = [];
@@ -77,10 +84,27 @@ function renderScenarioMiniChart(el: HTMLElement, scenario: ExpenseScenario, sta
       left: 0,
       top: 0,
       textStyle: { fontSize: 10, fontWeight: 600 },
+      subtext: "Compara lo que ya sales al mes vs. si añades este plan",
+      subtextStyle: { fontSize: 9, lineHeight: 14 },
     },
     tooltip: {
       trigger: "axis",
-      valueFormatter: (v) => `${formatEurEs(Number(v))}`,
+      formatter: (params: unknown) => {
+        const rows = Array.isArray(params) ? params : [params];
+        const first = rows[0] as { axisValue?: string; dataIndex?: number } | undefined;
+        const idx = first?.dataIndex ?? 0;
+        const month = series.months[idx]?.slice(5) ?? first?.axisValue ?? "";
+        const base = series.baseline[idx] ?? 0;
+        const withPlan = series.withScenario[idx] ?? 0;
+        const delta = withPlan - base;
+        const deltaStr = delta >= 0 ? `+${formatEurEs(delta)}` : formatEurEs(delta);
+        let html = `<strong>${month}</strong><br/>`;
+        for (const p of rows as { seriesName?: string; value?: number; marker?: string }[]) {
+          html += `${p.marker ?? ""} ${p.seriesName ?? ""}: <strong>${formatEurEs(Number(p.value))}</strong><br/>`;
+        }
+        html += `<span style="opacity:0.85">Diferencia: ${deltaStr}</span>`;
+        return html;
+      },
     },
     legend: {
       bottom: 2,
@@ -90,7 +114,7 @@ function renderScenarioMiniChart(el: HTMLElement, scenario: ExpenseScenario, sta
       itemGap: 12,
       textStyle: { fontSize: 9 },
     },
-    grid: { left: 42, right: 10, top: 30, bottom: 44 },
+    grid: { left: 48, right: 12, top: 44, bottom: 48 },
     xAxis: {
       type: "category",
       data: monthShort,
@@ -103,19 +127,22 @@ function renderScenarioMiniChart(el: HTMLElement, scenario: ExpenseScenario, sta
     },
     series: [
       {
-        name: "Sin este deseo",
+        name: "Sin este plan",
         type: "line",
         smooth: true,
         data: series.baseline,
         showSymbol: false,
-        lineStyle: { type: "dashed" },
+        lineStyle: { type: "dashed", color: "#94a3b8" },
+        itemStyle: { color: "#94a3b8" },
       },
       {
-        name: "Con este deseo",
+        name: "Con este plan",
         type: "line",
         smooth: true,
         data: series.withScenario,
         showSymbol: false,
+        lineStyle: { color: "#8b5cf6" },
+        itemStyle: { color: "#8b5cf6" },
       },
     ],
   });
@@ -258,21 +285,140 @@ async function deleteScenarioFromDialog(root: HTMLElement, deps: ScenarioUiDeps)
 }
 
 async function promoteScenario(root: HTMLElement, deps: ScenarioUiDeps, scenarioId: string) {
+  openScenarioPromoteDialog(root, deps, scenarioId);
+}
+
+function syncScenarioPromotePanels(root: HTMLElement) {
+  const kind = root.querySelector<HTMLInputElement>("[data-et-scenario-promote-kind]")?.value;
+  const isInstallments = kind === "installments";
+  root.querySelector("[data-et-scenario-promote-panel-installments]")?.classList.toggle("hidden", !isInstallments);
+  root.querySelector("[data-et-scenario-promote-panel-oneoff]")?.classList.toggle("hidden", isInstallments);
+}
+
+function updateScenarioPromotePreview(root: HTMLElement) {
+  const preview = root.querySelector<HTMLElement>("[data-et-scenario-promote-preview]");
+  if (!preview) return;
+  const total = Number(root.querySelector<HTMLInputElement>("[data-et-scenario-promote-total]")?.value);
+  const initial = Number(root.querySelector<HTMLInputElement>("[data-et-scenario-promote-initial]")?.value);
+  const months = Math.max(1, Number(root.querySelector<HTMLInputElement>("[data-et-scenario-promote-months]")?.value) || 1);
+  const monthly = Number(root.querySelector<HTMLInputElement>("[data-et-scenario-promote-monthly]")?.value);
+  if (total > 0 && initial >= 0) {
+    const rest = Math.max(0, total - initial);
+    preview.textContent = `Restante ${formatEurEs(rest)} en ${months} meses ≈ ${formatEurEs(rest / months)}/mes${monthly > 0 ? ` · Cuota indicada: ${formatEurEs(monthly)}` : ""}`;
+  } else if (monthly > 0) {
+    preview.textContent = `Cuota mensual: ${formatEurEs(monthly)} × ${months} meses = ${formatEurEs(monthly * months)}`;
+  } else {
+    preview.textContent = "";
+  }
+}
+
+function recalcScenarioPromoteMonthly(root: HTMLElement) {
+  const total = Number(root.querySelector<HTMLInputElement>("[data-et-scenario-promote-total]")?.value);
+  const initial = Number(root.querySelector<HTMLInputElement>("[data-et-scenario-promote-initial]")?.value);
+  const months = Math.max(1, Number(root.querySelector<HTMLInputElement>("[data-et-scenario-promote-months]")?.value) || 1);
+  if (!(total > 0)) return;
+  const rest = Math.max(0, total - (initial > 0 ? initial : 0));
+  const monthly = Math.round((rest / months) * 100) / 100;
+  const monthlyEl = root.querySelector<HTMLInputElement>("[data-et-scenario-promote-monthly]");
+  if (monthlyEl) monthlyEl.value = String(monthly);
+  updateScenarioPromotePreview(root);
+}
+
+export function openScenarioPromoteDialog(root: HTMLElement, deps: ScenarioUiDeps, scenarioId: string) {
   const state = deps.getState();
   const scenario = (state.scenarios ?? []).find((s) => s.id === scenarioId);
   if (!scenario) return;
-  if (!(await deps.showConfirmDialog(root, "¿Promover a gasto previsto? Empezará a contar en KPIs y gráficos.", "Promover")))
-    return;
-  const planned = scenarioToPlannedExpense(scenario, state.categories[0]!.id);
-  const list = [...(state.plannedExpenses ?? []), planned];
-  deps.setState({
-    ...state,
-    plannedExpenses: list,
-    scenarios: (state.scenarios ?? []).map((s) =>
-      s.id === scenarioId ? { ...s, status: "go" as const } : s,
-    ),
-  });
+  const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-scenario-promote]");
+  if (!dlg) return;
+
+  const defaults = defaultPromoteInputFromScenario(scenario, state.categories[0]!.id);
+  root.querySelector<HTMLInputElement>("[data-et-scenario-promote-id]")!.value = scenarioId;
+  root.querySelector<HTMLInputElement>("[data-et-scenario-promote-kind]")!.value =
+    scenario.kind === "installments" ? "installments" : "one_off";
+  (root.querySelector("[data-et-scenario-promote-title]") as HTMLInputElement).value = defaults.title ?? scenario.title;
+  const catEl = root.querySelector<HTMLSelectElement>("[data-et-scenario-promote-category]")!;
+  deps.fillCategorySelect(catEl);
+  catEl.value = defaults.categoryId;
+  (root.querySelector("[data-et-scenario-promote-note]") as HTMLInputElement).value = defaults.note ?? "";
+  (root.querySelector("[data-et-scenario-promote-monthly]") as HTMLInputElement).value =
+    defaults.monthlyAmount != null ? String(defaults.monthlyAmount) : "";
+  (root.querySelector("[data-et-scenario-promote-months]") as HTMLInputElement).value =
+    String(defaults.installmentCount ?? 12);
+  (root.querySelector("[data-et-scenario-promote-start-month]") as HTMLInputElement).value =
+    defaults.startMonth ?? new Date().toISOString().slice(0, 7);
+  (root.querySelector("[data-et-scenario-promote-day]") as HTMLInputElement).value = String(defaults.dayOfMonth ?? 1);
+  (root.querySelector("[data-et-scenario-promote-total]") as HTMLInputElement).value = String(scenarioTotalAmount(scenario));
+  (root.querySelector("[data-et-scenario-promote-initial]") as HTMLInputElement).value = "0";
+  const initialDateEl = root.querySelector<HTMLInputElement>("[data-et-scenario-promote-initial-date]")!;
+  initialDateEl.value = new Date().toISOString().slice(0, 10);
+  (root.querySelector("[data-et-scenario-promote-oneoff-amount]") as HTMLInputElement).value =
+    defaults.oneOffAmount != null ? String(defaults.oneOffAmount) : "";
+  (root.querySelector("[data-et-scenario-promote-oneoff-date]") as HTMLInputElement).value =
+    defaults.oneOffDate?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
+  const registerInitial = root.querySelector<HTMLInputElement>("[data-et-scenario-promote-register-initial]")!;
+  registerInitial.checked = true;
+  deps.fillWealthAccountSelect(root.querySelector<HTMLSelectElement>("[data-et-scenario-promote-wealth]")!, undefined, "expense");
+
+  syncScenarioPromotePanels(root);
+  updateScenarioPromotePreview(root);
+  dlg.showModal();
+  refreshExpenseDatePicker(initialDateEl, initialDateEl.value);
+  const oneOffDate = root.querySelector<HTMLInputElement>("[data-et-scenario-promote-oneoff-date]");
+  if (oneOffDate) refreshExpenseDatePicker(oneOffDate, oneOffDate.value);
+  initExpenseMonthPickers(root);
+}
+
+function readScenarioPromoteInput(root: HTMLElement, scenario: ExpenseScenario): ScenarioPromoteInput {
+  const title = root.querySelector<HTMLInputElement>("[data-et-scenario-promote-title]")?.value?.trim() ?? scenario.title;
+  const categoryId = root.querySelector<HTMLSelectElement>("[data-et-scenario-promote-category]")?.value ?? "";
+  const note = root.querySelector<HTMLInputElement>("[data-et-scenario-promote-note]")?.value?.trim() || undefined;
+  const kind = root.querySelector<HTMLInputElement>("[data-et-scenario-promote-kind]")?.value;
+
+  if (kind === "installments" || scenario.kind === "installments") {
+    return {
+      title,
+      categoryId,
+      currency: "EUR",
+      note,
+      monthlyAmount: Number(root.querySelector<HTMLInputElement>("[data-et-scenario-promote-monthly]")?.value),
+      installmentCount: Number(root.querySelector<HTMLInputElement>("[data-et-scenario-promote-months]")?.value),
+      startMonth: root.querySelector<HTMLInputElement>("[data-et-scenario-promote-start-month]")?.value?.slice(0, 7),
+      dayOfMonth: Number(root.querySelector<HTMLInputElement>("[data-et-scenario-promote-day]")?.value),
+      initialPayment: Number(root.querySelector<HTMLInputElement>("[data-et-scenario-promote-initial]")?.value),
+      initialPaymentDate: root.querySelector<HTMLInputElement>("[data-et-scenario-promote-initial-date]")?.value?.slice(0, 10),
+      registerInitialAsExpense: root.querySelector<HTMLInputElement>("[data-et-scenario-promote-register-initial]")?.checked ?? false,
+      initialWealthAccountId: root.querySelector<HTMLSelectElement>("[data-et-scenario-promote-wealth]")?.value || undefined,
+    };
+  }
+
+  const mode = root.querySelector<HTMLInputElement>("[data-et-scenario-promote-oneoff-mode]:checked")?.value;
+  return {
+    title,
+    categoryId,
+    currency: "EUR",
+    note,
+    oneOffAmount: Number(root.querySelector<HTMLInputElement>("[data-et-scenario-promote-oneoff-amount]")?.value),
+    oneOffDate: root.querySelector<HTMLInputElement>("[data-et-scenario-promote-oneoff-date]")?.value?.slice(0, 10),
+    registerOneOffAsExpense: mode === "expense",
+    registerOneOffAsPlanned: mode !== "expense",
+  };
+}
+
+function saveScenarioPromote(root: HTMLElement, deps: ScenarioUiDeps) {
+  const scenarioId = root.querySelector<HTMLInputElement>("[data-et-scenario-promote-id]")?.value?.trim();
+  if (!scenarioId) return;
+  const state = deps.getState();
+  const scenario = (state.scenarios ?? []).find((s) => s.id === scenarioId);
+  if (!scenario) return;
+  const input = readScenarioPromoteInput(root, scenario);
+  const prevCount = state.expenses.length;
+  const next = applyScenarioPromotionToState(state, scenarioId, input, deps.makeExpenseId);
+  if (next.expenses.length > prevCount) {
+    for (const exp of next.expenses.slice(prevCount)) deps.bookExpense?.(exp);
+  }
+  deps.setState(next);
   deps.persist();
+  root.querySelector<HTMLDialogElement>("[data-et-dlg-scenario-promote]")?.close();
   deps.renderAll(root);
 }
 
@@ -360,7 +506,7 @@ export function renderScenarioSection(root: HTMLElement, deps: ScenarioUiDeps) {
     meta.textContent = `Margen mensual (ingresos − gastos, suscripciones y previstos): ${formatEurEs(v.monthlySurplus)} · Efectivo en cuentas: ${formatEurEs(v.cashAvailable)}`;
 
     const chartEl = document.createElement("div");
-    chartEl.className = "min-h-[168px] w-full";
+    chartEl.className = "min-h-[188px] w-full";
     chartEl.dataset.etScenarioChart = sc.id;
 
     const actions = document.createElement("div");
@@ -415,4 +561,16 @@ export function bindScenarioUi(root: HTMLElement, deps: ScenarioUiDeps) {
   root.querySelector<HTMLButtonElement>("[data-et-scenario-delete]")?.addEventListener("click", () =>
     deleteScenarioFromDialog(root, deps),
   );
+  root.querySelector<HTMLButtonElement>("[data-et-scenario-promote-cancel]")?.addEventListener("click", () =>
+    root.querySelector<HTMLDialogElement>("[data-et-dlg-scenario-promote]")?.close(),
+  );
+  root.querySelector<HTMLButtonElement>("[data-et-scenario-promote-save]")?.addEventListener("click", () =>
+    saveScenarioPromote(root, deps),
+  );
+  root.querySelector<HTMLButtonElement>("[data-et-scenario-promote-recalc]")?.addEventListener("click", () =>
+    recalcScenarioPromoteMonthly(root),
+  );
+  root.querySelectorAll<HTMLInputElement>(
+    "[data-et-scenario-promote-total], [data-et-scenario-promote-initial], [data-et-scenario-promote-months], [data-et-scenario-promote-monthly]",
+  ).forEach((el) => el.addEventListener("input", () => updateScenarioPromotePreview(root)));
 }

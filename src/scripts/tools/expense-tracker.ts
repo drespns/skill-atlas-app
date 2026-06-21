@@ -90,6 +90,7 @@ import {
   renderPlannedCards,
 } from "./expense-tracker-recurring-ui";
 import { bindScenarioUi, renderScenarioSection, type ScenarioUiDeps } from "./expense-tracker-scenarios-ui";
+import { bindDebtsUi, renderDebtsSection, type DebtUiDeps } from "./expense-tracker-debts-ui";
 
 echarts.use([BarChart, LineChart, PieChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer]);
 
@@ -4251,7 +4252,50 @@ function scenarioUiDeps(): ScenarioUiDeps {
     renderAll,
     showConfirmDialog,
     fillCategorySelect,
+    fillWealthAccountSelect,
     makeId,
+    makeExpenseId: makeId,
+    bookExpense: (exp) => expenseAccountEffect(exp, 1),
+  };
+}
+
+function scrollToExpenseRow(root: HTMLElement, expenseId: string) {
+  const expense = state.expenses.find((e) => e.id === expenseId);
+  if (!expense) return;
+  const monthEl = root.querySelector<HTMLInputElement>("[data-et-exp-filter-month]");
+  const dayEl = root.querySelector<HTMLSelectElement>("[data-et-exp-filter-day]");
+  if (monthEl && expense.date.length >= 7) {
+    monthEl.value = expense.date.slice(0, 7);
+    monthEl.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  if (dayEl) dayEl.value = "";
+  renderExpenseTable(root);
+  root.querySelector<HTMLElement>("[data-et-expenses-anchor]")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  requestAnimationFrame(() => {
+    const tr = root.querySelector<HTMLElement>(`tr[data-expense-id="${expenseId}"]`);
+    tr?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (tr) {
+      tr.classList.add("ring-2", "ring-amber-400", "ring-inset");
+      window.setTimeout(() => tr.classList.remove("ring-2", "ring-amber-400", "ring-inset"), 2400);
+    }
+  });
+}
+
+function debtUiDeps(root: HTMLElement): DebtUiDeps {
+  return {
+    getState: () => state,
+    setState: (s) => {
+      state = s;
+    },
+    persist,
+    renderAll,
+    showConfirmDialog,
+    fillCategorySelect,
+    fillWealthAccountSelect,
+    makeId,
+    makeExpenseId: makeId,
+    scrollToExpense: (id) => scrollToExpenseRow(root, id),
+    bookExpense: (exp) => expenseAccountEffect(exp, 1),
   };
 }
 
@@ -4287,6 +4331,7 @@ function renderAll(root: HTMLElement) {
   renderPlannedExpenses(root);
   renderPaychecks(root);
   renderScenarioSection(root, scenarioUiDeps());
+  renderDebtsSection(root, debtUiDeps(root));
   renderExpenseTable(root);
   renderIncomeTable(root);
   renderReminders(root);
@@ -4778,6 +4823,7 @@ function wire(root: HTMLElement) {
   });
 
   bindScenarioUi(root, scenarioUiDeps());
+  bindDebtsUi(root, debtUiDeps(root));
 
   root.dataset.etBound = "1";
   state = loadExpenseTrackerFromStorage();

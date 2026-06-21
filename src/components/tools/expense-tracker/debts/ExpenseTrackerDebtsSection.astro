@@ -1,0 +1,18 @@
+---
+import ExpenseTrackerSectionShell from "../shared/ExpenseTrackerSectionShell.astro";
+
+const helpTooltip =
+  "Deudas que aún no has pagado. Planifica cuotas con fechas objetivo; cuando pulses «Pagado», la app crea el gasto confirmado y lo vincula aquí.";
+---
+
+<ExpenseTrackerSectionShell
+  title="Deudas pendientes"
+  description="Organiza lo que debes y cuándo te gustaría pagarlo. Cada cuota pagada pasa automáticamente a Gastos confirmados."
+  helpTooltip={helpTooltip}
+  wrapperClass="rounded-2xl border border-amber-200/70 dark:border-amber-900/45 bg-gradient-to-br from-amber-500/10 via-white/88 to-orange-500/8 dark:from-amber-950/35 dark:via-gray-950/55 dark:to-orange-950/25 shadow-md p-4 sm:p-5 space-y-4"
+>
+  <button slot="actions" type="button" data-et-open-debt-modal class="et-btn-accent shrink-0 text-sm py-2">
+    Añadir deuda
+  </button>
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3" data-et-debts-list></div>
+</ExpenseTrackerSectionShell>

@@ -1,0 +1,108 @@
+---
+---
+
+<dialog data-et-dlg-scenario-promote class="et-dialog et-dialog--form w-[min(100vw-1.5rem,42rem)] p-0">
+  <div class="et-dialog-panel et-dialog-panel--fit space-y-3" data-et-scenario-promote-form>
+    <div class="space-y-1">
+      <h3 class="m-0 text-base font-semibold text-gray-900 dark:text-gray-50">Editar y promover a previsto</h3>
+      <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
+        Ajusta los importes reales antes de moverlo a Gastos previstos. Si ya pagaste una entrada, puedes registrarla como gasto confirmado.
+      </p>
+    </div>
+    <input type="hidden" data-et-scenario-promote-id value="" />
+    <input type="hidden" data-et-scenario-promote-kind value="" />
+
+    <label class="block space-y-1">
+      <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Nombre en previstos</span>
+      <input type="text" data-et-scenario-promote-title class="et-field w-full text-sm py-2" />
+    </label>
+    <label class="block space-y-1">
+      <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Categoría</span>
+      <select data-et-scenario-promote-category class="et-field et-select w-full text-sm py-2"></select>
+    </label>
+
+    <div class="space-y-3" data-et-scenario-promote-panel-installments>
+      <div class="rounded-xl border border-violet-200/70 dark:border-violet-800/50 bg-violet-50/50 dark:bg-violet-950/25 px-3 py-2.5 space-y-2">
+        <p class="m-0 text-[11px] font-semibold text-violet-900 dark:text-violet-200">Coste real (opcional, para calcular cuota)</p>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block space-y-1">
+            <span class="text-[10px] font-semibold text-gray-500">Precio total (€)</span>
+            <input type="number" step="0.01" min="0" data-et-scenario-promote-total class="et-field w-full text-sm py-2 font-mono" placeholder="725" />
+          </label>
+          <label class="block space-y-1">
+            <span class="text-[10px] font-semibold text-gray-500">Entrada ya pagada (€)</span>
+            <input type="number" step="0.01" min="0" data-et-scenario-promote-initial class="et-field w-full text-sm py-2 font-mono" placeholder="307" />
+          </label>
+        </div>
+        <label class="block space-y-1">
+          <span class="text-[10px] font-semibold text-gray-500">Fecha de la entrada</span>
+          <input type="date" data-et-scenario-promote-initial-date class="et-field et-date w-full text-sm py-2" />
+        </label>
+        <label class="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+          <input type="checkbox" data-et-scenario-promote-register-initial class="rounded border-gray-300" checked />
+          Registrar la entrada como gasto confirmado
+        </label>
+        <label class="block space-y-1">
+          <span class="text-[10px] font-semibold text-gray-500">Cuenta para la entrada</span>
+          <select data-et-scenario-promote-wealth class="et-field et-select w-full text-sm py-2"></select>
+        </label>
+        <button type="button" data-et-scenario-promote-recalc class="et-btn-secondary text-xs py-1.5 w-full">
+          Calcular cuota mensual (total − entrada ÷ meses)
+        </button>
+        <p class="m-0 text-[10px] text-gray-500 dark:text-gray-400" data-et-scenario-promote-preview></p>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Cuota mensual (€)</span>
+          <input type="number" step="0.01" min="0" data-et-scenario-promote-monthly class="et-field w-full text-sm py-2 font-mono" />
+        </label>
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Meses restantes</span>
+          <input type="number" min="1" max="120" data-et-scenario-promote-months class="et-field w-full text-sm py-2 font-mono" />
+        </label>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Primer mes de cuota</span>
+          <input type="month" data-et-scenario-promote-start-month data-et-month-picker class="et-field et-date w-full text-sm py-2 font-mono" />
+        </label>
+        <label class="block space-y-1">
+          <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Día del mes</span>
+          <input type="number" min="1" max="31" value="1" data-et-scenario-promote-day class="et-field w-full text-sm py-2 font-mono" />
+        </label>
+      </div>
+    </div>
+
+    <div class="space-y-3 hidden" data-et-scenario-promote-panel-oneoff>
+      <label class="block space-y-1">
+        <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Importe (€)</span>
+        <input type="number" step="0.01" min="0" data-et-scenario-promote-oneoff-amount class="et-field w-full text-sm py-2 font-mono" />
+      </label>
+      <label class="block space-y-1">
+        <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Fecha prevista</span>
+        <input type="date" data-et-scenario-promote-oneoff-date class="et-field et-date w-full text-sm py-2" />
+      </label>
+      <fieldset class="space-y-2 text-xs">
+        <legend class="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">¿Cómo registrarlo?</legend>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="radio" name="et-scenario-promote-oneoff-mode" value="planned" checked data-et-scenario-promote-oneoff-mode />
+          Como gasto previsto (recurrente puntual)
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="radio" name="et-scenario-promote-oneoff-mode" value="expense" data-et-scenario-promote-oneoff-mode />
+          Como gasto confirmado (ya pagado)
+        </label>
+      </fieldset>
+    </div>
+
+    <label class="block space-y-1">
+      <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Nota (opc.)</span>
+      <input type="text" data-et-scenario-promote-note class="et-field w-full text-sm py-2" placeholder="Ej. financiación real tras entrada" />
+    </label>
+
+    <div class="flex justify-end gap-2 pt-1">
+      <button type="button" data-et-scenario-promote-cancel class="et-btn-secondary text-sm py-2">Cancelar</button>
+      <button type="button" data-et-scenario-promote-save class="et-btn-accent text-sm py-2">Promover</button>
+    </div>
+  </div>
+</dialog>
