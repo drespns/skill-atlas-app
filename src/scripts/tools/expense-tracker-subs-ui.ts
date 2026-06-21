@@ -1,4 +1,3 @@
-import { layoutTreemap } from "@lib/treemap-layout";
 import {
   SUBSCRIPTION_BRAND_CATALOG,
   addMonthsToIso,
@@ -39,9 +38,6 @@ export type SubUiDeps = {
 };
 
 let editingSubId: string | null = null;
-let subsTreemapObserver: ResizeObserver | null = null;
-
-type SubCardOpts = { compact?: boolean; smallTile?: boolean };
 
 function formatDateLongEs(iso: string): string {
   const s = iso.slice(0, 10);
@@ -148,9 +144,7 @@ function buildBillingTimeline(s: SubscriptionRow, today: string): HTMLElement {
   return timeline;
 }
 
-function buildSubCard(s: SubscriptionRow, deps: SubUiDeps, today: string, opts?: SubCardOpts): HTMLElement {
-  const compact = opts?.compact ?? false;
-  const smallTile = opts?.smallTile ?? false;
+function buildSubCard(s: SubscriptionRow, deps: SubUiDeps, today: string): HTMLElement {
   const state = deps.getState();
   const fx = state.eurPerUsd;
   const counts = subscriptionCountsInTotals(s, today);
@@ -163,7 +157,7 @@ function buildSubCard(s: SubscriptionRow, deps: SubUiDeps, today: string, opts?:
 
   const card = document.createElement("article");
   card.className =
-    "et-sub-card group relative rounded-xl border border-gray-200/90 dark:border-gray-800/80 bg-white/90 dark:bg-gray-950/70 shadow-sm overflow-hidden flex flex-col h-full min-h-0" +
+    "et-sub-card group relative rounded-xl border border-gray-200/90 dark:border-gray-800/80 bg-white/90 dark:bg-gray-950/70 shadow-sm overflow-hidden flex flex-col" +
     (faded ? " opacity-80" : "");
   card.dataset.subId = s.id;
   card.style.setProperty("--et-sub-accent", accent);
@@ -173,12 +167,12 @@ function buildSubCard(s: SubscriptionRow, deps: SubUiDeps, today: string, opts?:
   accentBar.style.background = accent;
 
   const body = document.createElement("div");
-  body.className = (compact ? "p-2.5" : "p-4") + " flex flex-col flex-1 min-h-0";
+  body.className = "p-3 flex flex-col flex-1 min-h-0";
 
   const head = document.createElement("div");
-  head.className = "flex items-start gap-2";
+  head.className = "flex items-start gap-2.5";
   const logoCol = document.createElement("div");
-  appendBrandLogo(logoCol, s.brandKey, s.name, compact);
+  appendBrandLogo(logoCol, s.brandKey, s.name, true);
 
   const metaCol = document.createElement("div");
   metaCol.className = "min-w-0 flex-1";
@@ -202,15 +196,13 @@ function buildSubCard(s: SubscriptionRow, deps: SubUiDeps, today: string, opts?:
   statusRow.appendChild(badge);
 
   const title = document.createElement("h3");
-  title.className =
-    "m-0 font-semibold text-gray-900 dark:text-gray-50 truncate " + (compact ? "text-sm" : "text-base");
+  title.className = "m-0 font-semibold text-sm text-gray-900 dark:text-gray-50 truncate";
   title.textContent = s.name;
 
   const priceRow = document.createElement("div");
   priceRow.className = "flex items-baseline justify-between gap-2 mt-0.5";
   const priceMain = document.createElement("p");
-  priceMain.className =
-    "m-0 font-bold et-amount text-gray-900 dark:text-gray-50 " + (compact ? "text-base" : "text-xl");
+  priceMain.className = "m-0 text-base font-bold et-amount text-gray-900 dark:text-gray-50";
   if (snap.phase === "trial") {
     priceMain.textContent = formatEurEs(snap.cycleAmount);
     const priceSub = document.createElement("p");
@@ -226,15 +218,9 @@ function buildSubCard(s: SubscriptionRow, deps: SubUiDeps, today: string, opts?:
   }
 
   metaCol.append(statusRow, title, priceRow);
-  if (smallTile) {
-    const next = document.createElement("p");
-    next.className = "m-0 mt-0.5 text-[10px] text-gray-500 dark:text-gray-400 truncate";
-    next.textContent = `Próx. ${formatDateLongEs(snap.nextChargeIso)}`;
-    metaCol.appendChild(next);
-  }
   head.append(logoCol, metaCol);
 
-  const timeline = smallTile ? null : buildBillingTimeline(s, today);
+  const timeline = buildBillingTimeline(s, today);
   if (timeline && s.reminderDaysBefore != null && s.reminderDaysBefore > 0) {
     const rem = document.createElement("p");
     rem.className = "m-0 mt-2 text-[10px] text-gray-500 dark:text-gray-400";
@@ -244,8 +230,7 @@ function buildSubCard(s: SubscriptionRow, deps: SubUiDeps, today: string, opts?:
 
   const actions = document.createElement("div");
   actions.className =
-    "flex items-center justify-between gap-2 mt-auto border-t border-gray-100 dark:border-gray-800/80 " +
-    (compact ? "pt-2" : "pt-3");
+    "flex items-center justify-between gap-2 mt-auto pt-2 border-t border-gray-100 dark:border-gray-800/80";
   const cancelBtn = document.createElement("button");
   cancelBtn.type = "button";
   cancelBtn.dataset.subCancel = s.id;
@@ -261,52 +246,9 @@ function buildSubCard(s: SubscriptionRow, deps: SubUiDeps, today: string, opts?:
   editBtn.textContent = "Editar";
 
   actions.append(cancelBtn, editBtn);
-  if (timeline) body.append(head, timeline, actions);
-  else body.append(head, actions);
+  body.append(head, timeline, actions);
   card.append(accentBar, body);
   return card;
-}
-
-function paintSubsTreemap(
-  strip: HTMLElement,
-  sorted: SubscriptionRow[],
-  deps: SubUiDeps,
-  today: string,
-) {
-  strip.querySelectorAll(".et-sub-treemap-card").forEach((el) => el.remove());
-  const w = strip.clientWidth;
-  const h = strip.clientHeight || 224;
-  if (w < 16 || h < 16) return;
-
-  const fx = deps.getState().eurPerUsd;
-  const items = sorted.map((s) => ({
-    id: s.id,
-    value: deps.amountInEur(subscriptionToMonthlyAmount(s, today), s.currency, fx),
-    sub: s,
-  }));
-
-  const rects = layoutTreemap(
-    items.map((i) => ({ id: i.id, value: i.value })),
-    w,
-    h,
-  );
-  const totalArea = w * h;
-
-  for (const rect of rects) {
-    const item = items.find((i) => i.id === rect.id);
-    if (!item) continue;
-    const areaRatio = (rect.w * rect.h) / totalArea;
-    const wrap = document.createElement("div");
-    wrap.className = "et-sub-treemap-card";
-    wrap.style.left = `${(rect.x / w) * 100}%`;
-    wrap.style.top = `${(rect.y / h) * 100}%`;
-    wrap.style.width = `${(rect.w / w) * 100}%`;
-    wrap.style.height = `${(rect.h / h) * 100}%`;
-    wrap.appendChild(
-      buildSubCard(item.sub, deps, today, { compact: true, smallTile: areaRatio < 0.14 }),
-    );
-    strip.appendChild(wrap);
-  }
 }
 
 export function renderSubs(root: HTMLElement, deps: SubUiDeps) {
@@ -317,16 +259,17 @@ export function renderSubs(root: HTMLElement, deps: SubUiDeps) {
   const today = deps.todayIso();
 
   if (!subs.length) {
-    strip.className = "relative w-full min-h-[8rem] flex items-center justify-center";
+    strip.className = "w-full py-8 flex items-center justify-center";
     const empty = document.createElement("p");
-    empty.className = "text-sm text-gray-500 dark:text-gray-400 px-4 py-6 text-center max-w-md";
+    empty.className = "text-sm text-gray-500 dark:text-gray-400 px-4 text-center max-w-md";
     empty.textContent =
       "Aún no hay suscripciones. Añade Spotify, Movistar+ u otras con logo, periodo de prueba y fecha de cobro.";
     strip.appendChild(empty);
     return;
   }
 
-  strip.className = "relative w-full min-h-[14rem] sm:min-h-[16rem] overflow-hidden";
+  strip.className =
+    "grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3";
 
   const sorted = [...subs].sort((a, b) => {
     const ma = subscriptionToMonthlyAmount(a, today);
@@ -334,10 +277,9 @@ export function renderSubs(root: HTMLElement, deps: SubUiDeps) {
     return mb - ma;
   });
 
-  paintSubsTreemap(strip, sorted, deps, today);
-  subsTreemapObserver?.disconnect();
-  subsTreemapObserver = new ResizeObserver(() => paintSubsTreemap(strip, sorted, deps, today));
-  subsTreemapObserver.observe(strip);
+  for (const s of sorted) {
+    strip.appendChild(buildSubCard(s, deps, today));
+  }
 }
 
 function renderBrandPicker(root: HTMLElement, selected?: string) {

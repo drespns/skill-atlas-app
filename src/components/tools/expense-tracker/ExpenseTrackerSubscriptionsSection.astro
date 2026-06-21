@@ -2,7 +2,7 @@
 import ExpenseTrackerSectionShell from "./shared/ExpenseTrackerSectionShell.astro";
 ---
 
-<div class="mx-auto w-full max-w-3xl">
+<div class="mx-auto w-full max-w-6xl">
   <ExpenseTrackerSectionShell
     title="Suscripciones"
     description="Logos automáticos · periodo de prueba · próximo cobro · cancelar deja de contar desde el siguiente cargo"
@@ -11,6 +11,6 @@ import ExpenseTrackerSectionShell from "./shared/ExpenseTrackerSectionShell.astr
     <button slot="actions" type="button" data-et-open-sub-modal class="et-btn-primary shrink-0 text-sm py-2">
       Nueva suscripción
     </button>
-    <div class="relative w-full min-h-[14rem] sm:min-h-[16rem] overflow-hidden" data-et-subs-strip></div>
+    <div class="w-full" data-et-subs-strip></div>
   </ExpenseTrackerSectionShell>
 </div>
