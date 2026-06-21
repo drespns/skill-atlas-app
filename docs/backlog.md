@@ -30,6 +30,9 @@ Documento orientado al **historial** de lo implementado y a **ideas** sin orden 
   - **CV — Estudio (beta):** ruta **`/cv/studio`** (`src/pages/cv/studio.astro`), enlace en cabecera del CV (`CvPageHeader.astro`) y entrada en command palette; roadmap Canvas-lite en tabla **`docs/backlog.md`** (sección *CV — Estudio de maquetación*).
   - **i18n (ES/EN):** etiquetas de formulario, toasts de copiado y claves `cv.ats.*` nuevas.
 
+- **Herramientas — expense-tracker (web):** refactor en componentes Astro; simulaciones/deseos, deudas pendientes, promoción con entrada+cuotas, analítica del período; dominio extraído a **`packages/expense-core`**.
+- **App móvil SkillAtlas Gastos (`mobile/`):** Expo Router + Supabase; sync `tools_expense_tracker`; MVP Android (login, home mes, donut, alta gasto/ingreso, ajustes, E2E unlock); EAS Build configurado; roadmap v1.1 deudas/previstos en **`mobile/README.md`**.
+
 #### Plan v0.150.x (en curso / siguiente entrega)
 
 - Boost visual y de contenido **herramienta a herramienta** (excepto expense-tracker salvo ajustes puntuales).
