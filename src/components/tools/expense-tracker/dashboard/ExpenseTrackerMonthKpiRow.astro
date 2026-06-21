@@ -12,15 +12,17 @@ import ExpenseTrackerKpiCard from "../shared/ExpenseTrackerKpiCard.astro";
   />
   <ExpenseTrackerKpiCard
     title="Ingresos (mes actual)"
-    hint="Cobros previstos + extras en el mes"
+    hint="Realizado + previsto restante del mes"
     etSuffix="kpi-income"
+    breakdownEtSuffix="kpi-income-remaining"
     cardClass="rounded-2xl border border-teal-400/40 dark:border-teal-800/45 bg-gradient-to-br from-teal-500/14 via-gray-50/80 to-white dark:from-teal-950/30 dark:via-gray-950/60 dark:to-gray-900/80 p-4 shadow-sm"
     titleClass="text-teal-800/90 dark:text-teal-300/90"
   />
   <ExpenseTrackerKpiCard
     title="Balance (mes actual)"
-    hint="Ingresos − gastos del mes en curso"
+    hint="Realizado; desglose de lo pendiente en el mes"
     etSuffix="kpi-balance"
+    breakdownEtSuffix="kpi-balance-remaining"
     cardClass="rounded-2xl border border-rose-400/40 dark:border-rose-900/45 bg-gradient-to-br from-rose-500/12 via-gray-50/80 to-white dark:from-rose-950/25 dark:via-gray-950/60 dark:to-gray-900/80 p-4 shadow-sm"
     titleClass="text-rose-800/90 dark:text-rose-300/90"
   />

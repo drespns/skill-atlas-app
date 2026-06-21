@@ -30,5 +30,7 @@ const breakdownAttr = breakdownEtSuffix ? { [`data-et-${breakdownEtSuffix}`]: ""
   <p class:list={["m-0 text-xs font-semibold uppercase tracking-wide", titleClass]}>{title}</p>
   {hint && <p class="mt-1 mb-0 text-xs text-gray-500 dark:text-gray-400">{hint}</p>}
   <p class:list={[valueClass, "et-amount"]} {...valueAttr}>—</p>
-  {breakdownAttr && <div class="space-y-1.5 text-sm" {...breakdownAttr} />}
+  {breakdownAttr && (
+    <p class="mt-1 mb-0 text-xs font-medium text-gray-600 dark:text-gray-400" {...breakdownAttr} />
+  )}
 </div>
