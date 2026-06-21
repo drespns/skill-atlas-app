@@ -3,6 +3,9 @@ import ExpenseTrackerSectionShell from "./shared/ExpenseTrackerSectionShell.astr
 ---
 
 <ExpenseTrackerSectionShell
+  sectionId="paychecks"
+  expandable
+  icon="paychecks"
   title="Ingresos previstos"
   description="Cobros recurrentes (nómina, subsidio…). Los que ya terminaron se mantienen en la lista como referencia."
   wrapperClass="rounded-2xl border border-teal-200/70 dark:border-teal-900/50 bg-gradient-to-br from-teal-500/8 via-white/85 to-emerald-500/5 dark:from-teal-950/35 dark:via-gray-950/55 dark:to-emerald-950/20 shadow-md p-4 sm:p-5 space-y-4"
@@ -12,5 +15,5 @@ import ExpenseTrackerSectionShell from "./shared/ExpenseTrackerSectionShell.astr
     <button type="button" data-et-paycheck-sort class="et-btn-secondary text-xs py-1.5">Orden: importe ↓</button>
     <button type="button" data-et-open-paycheck-modal class="et-btn-primary text-sm py-2">Añadir</button>
   </div>
-  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3" data-et-paychecks-list></div>
+  <div class="et-section-cards grid grid-cols-1 sm:grid-cols-2 gap-3" data-et-paychecks-list></div>
 </ExpenseTrackerSectionShell>

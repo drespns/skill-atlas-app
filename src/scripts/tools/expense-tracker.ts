@@ -71,6 +71,8 @@ import {
   type PlannedPaymentMode,
   addMonthsToIso,
   resolveFinancingBrandKey,
+  FINANCING_BRAND_CATALOG,
+  financingBrandLogoPath,
   WEALTH_ACCOUNT_BRAND_CATALOG,
   resolveWealthAccountBrandKey,
   wealthAccountBrandLogoPath,
@@ -96,6 +98,8 @@ import { bindScenarioUi, renderScenarioSection, type ScenarioUiDeps } from "./ex
 import { bindDebtsUi, renderDebtsSection, type DebtUiDeps } from "./expense-tracker-debts-ui";
 import { linkedDebtBizumIds } from "@lib/tools-expense-debts";
 import { bindSubsUi, renderSubs, type SubUiDeps } from "./expense-tracker-subs-ui";
+import { renderBrandCombobox } from "./expense-tracker-brand-select";
+import { bindSectionFocus } from "./expense-tracker-section-focus";
 
 echarts.use([BarChart, LineChart, PieChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer]);
 
@@ -1097,23 +1101,26 @@ function renderWealthAccounts(root: HTMLElement) {
     nameLab.appendChild(nameIn);
 
     const brandLab = document.createElement("label");
-    brandLab.className = "w-[7.5rem] space-y-1";
+    brandLab.className = "w-[9.5rem] space-y-1";
     brandLab.innerHTML = `<span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Marca</span>`;
-    const brandSel = document.createElement("select");
-    brandSel.dataset.wealthBrand = a.id;
-    brandSel.className = "et-field et-select w-full text-xs py-2";
-    const emptyOpt = document.createElement("option");
-    emptyOpt.value = "";
-    emptyOpt.textContent = "Auto";
-    brandSel.appendChild(emptyOpt);
-    for (const brand of WEALTH_ACCOUNT_BRAND_CATALOG) {
-      const opt = document.createElement("option");
-      opt.value = brand.key;
-      opt.textContent = brand.label;
-      brandSel.appendChild(opt);
-    }
-    brandSel.value = a.brandKey ?? resolveWealthAccountBrandKey(a.name) ?? "";
-    brandLab.appendChild(brandSel);
+    const brandHost = document.createElement("div");
+    brandHost.dataset.wealthBrandHost = a.id;
+    const brandKeyVal = a.brandKey ?? resolveWealthAccountBrandKey(a.name) ?? "";
+    renderBrandCombobox(brandHost, WEALTH_ACCOUNT_BRAND_CATALOG, {
+      value: brandKeyVal,
+      autoLabel: "Auto",
+      logoPath: wealthAccountBrandLogoPath,
+      onChange: (key) => {
+        const idx = (state.wealthAccounts ?? []).findIndex((x) => x.id === a.id);
+        if (idx < 0) return;
+        const row = { ...state.wealthAccounts![idx]! };
+        row.brandKey = key.trim() || undefined;
+        state.wealthAccounts![idx] = row;
+        persist();
+        renderWealthAccounts(root);
+      },
+    });
+    brandLab.appendChild(brandHost);
 
     const ibanLab = document.createElement("label");
     ibanLab.className = "w-20 space-y-1";
@@ -2481,6 +2488,7 @@ function renderMonthOverrideList(
   validUntil: string,
   dayOfMonth: number,
   typicalAmount?: number,
+  downPayment?: number,
 ) {
   const sel =
     kind === "paycheck" ? "[data-et-paycheck-month-list]" : "[data-et-planned-month-list]";
@@ -2494,11 +2502,23 @@ function renderMonthOverrideList(
     list.appendChild(hint);
     return;
   }
-  const months = monthsForRecurringEntry({ dayOfMonth, validFrom, validUntil });
+  let months = monthsForRecurringEntry({ dayOfMonth, validFrom, validUntil });
+  if (
+    kind === "planned" &&
+    downPayment != null &&
+    downPayment > 0 &&
+    validFrom.length >= 7
+  ) {
+    const firstMk = validFrom.slice(0, 7);
+    months = months.filter((mk) => mk !== firstMk);
+  }
   if (!months.length) {
     const hint = document.createElement("p");
     hint.className = "m-0 text-[11px] text-gray-500 dark:text-gray-400";
-    hint.textContent = "Ningún mes coincide con el rango y el día del mes.";
+    hint.textContent =
+      kind === "planned" && downPayment != null && downPayment > 0
+        ? "Sin cuotas mensuales (entrada ya pagada en el primer mes)."
+        : "Ningún mes coincide con el rango y el día del mes.";
     list.appendChild(hint);
     return;
   }
@@ -2567,30 +2587,64 @@ function collectMonthOverridesFromDialog(
 }
 
 function bindMonthOverrideRefresh(root: HTMLElement, kind: "paycheck" | "planned", entryId: string | null) {
+  const form = root.querySelector<HTMLElement>(
+    kind === "paycheck" ? "[data-et-paycheck-form]" : "[data-et-planned-form]",
+  );
+  if (!form) return;
+
   const fromSel = kind === "paycheck" ? "[data-et-paycheck-from]" : "[data-et-planned-from]";
   const untilSel = kind === "paycheck" ? "[data-et-paycheck-until]" : "[data-et-planned-until]";
   const amtSel = kind === "paycheck" ? "[data-et-paycheck-amount]" : "[data-et-planned-amount]";
+  const daySel = kind === "paycheck" ? "[data-et-paycheck-day]" : "[data-et-planned-day]";
+
   const refresh = () => {
-    const from = (root.querySelector<HTMLInputElement>(fromSel)?.value ?? "").slice(0, 10);
-    const until = (root.querySelector<HTMLInputElement>(untilSel)?.value ?? "").slice(0, 10);
+    const id =
+      kind === "planned"
+        ? (root.querySelector<HTMLInputElement>("[data-et-planned-id]")?.value?.trim() || entryId)
+        : entryId;
+    const fromEl = root.querySelector<HTMLInputElement>(fromSel);
+    const untilEl = root.querySelector<HTMLInputElement>(untilSel);
+    const from = readDateFieldValue(fromEl);
+    const until = readDateFieldValue(untilEl);
     const amt = Number(root.querySelector<HTMLInputElement>(amtSel)?.value);
     const dayRaw = Number(root.querySelector<HTMLInputElement>(daySel)?.value);
     const dayOfMonth = Number.isFinite(dayRaw) ? Math.min(31, Math.max(1, Math.floor(dayRaw))) : 1;
+    let downPayment: number | undefined;
+    if (kind === "planned") {
+      const d = Number(root.querySelector<HTMLInputElement>("[data-et-planned-down]")?.value);
+      if (Number.isFinite(d) && d > 0) downPayment = d;
+    }
     renderMonthOverrideList(
       root,
       kind,
-      entryId,
+      id,
       from,
       until,
       dayOfMonth,
       Number.isFinite(amt) ? amt : undefined,
+      downPayment,
     );
   };
-  const daySel = kind === "paycheck" ? "[data-et-paycheck-day]" : "[data-et-planned-day]";
-  root.querySelector<HTMLInputElement>(fromSel)?.addEventListener("change", refresh);
-  root.querySelector<HTMLInputElement>(untilSel)?.addEventListener("change", refresh);
-  root.querySelector<HTMLInputElement>(amtSel)?.addEventListener("input", refresh);
-  root.querySelector<HTMLInputElement>(daySel)?.addEventListener("change", refresh);
+
+  const boundKey = kind === "planned" ? "etPlannedOverrideBound" : "etPaycheckOverrideBound";
+  if (form.dataset[boundKey] !== "1") {
+    form.dataset[boundKey] = "1";
+    root.querySelector<HTMLInputElement>(fromSel)?.addEventListener("change", refresh);
+    root.querySelector<HTMLInputElement>(untilSel)?.addEventListener("change", refresh);
+    root.querySelector<HTMLInputElement>(amtSel)?.addEventListener("input", refresh);
+    root.querySelector<HTMLInputElement>(daySel)?.addEventListener("change", refresh);
+    if (kind === "planned") {
+      root.querySelector<HTMLInputElement>("[data-et-planned-installments]")?.addEventListener("input", () => {
+        syncPlannedUntilFromInstallments(root);
+        refresh();
+      });
+      root.querySelector<HTMLInputElement>("[data-et-planned-down]")?.addEventListener("input", refresh);
+      root.querySelectorAll<HTMLInputElement>("[data-et-planned-mode]").forEach((el) =>
+        el.addEventListener("change", refresh),
+      );
+    }
+  }
+  refresh();
 }
 
 function updateInvTotalDisplay(root: HTMLElement) {
@@ -2695,6 +2749,22 @@ function deletePaycheckFromDialog(root: HTMLElement) {
   })();
 }
 
+function renderPlannedFinancingBrandPicker(root: HTMLElement, value?: string) {
+  const host = root.querySelector<HTMLElement>("[data-et-planned-financing-brand-host]");
+  const hidden = root.querySelector<HTMLInputElement>("[data-et-planned-financing-brand]");
+  if (!host || !hidden) return;
+  const v = value ?? "";
+  hidden.value = v;
+  renderBrandCombobox(host, FINANCING_BRAND_CATALOG, {
+    value: v,
+    autoLabel: "Sin marca / otro",
+    logoPath: financingBrandLogoPath,
+    onChange: (key) => {
+      hidden.value = key;
+    },
+  });
+}
+
 function syncPlannedPaymentModeUi(root: HTMLElement) {
   const mode =
     root.querySelector<HTMLInputElement>('[data-et-planned-mode][value="installments"]:checked') != null
@@ -2755,18 +2825,16 @@ function openPlannedDialog(root: HTMLElement, p?: PlannedExpenseEntry | null) {
   (root.querySelector("[data-et-planned-installments]") as HTMLInputElement).value = String(
     p?.installmentCount ?? 3,
   );
-  const brandSel = root.querySelector<HTMLSelectElement>("[data-et-planned-financing-brand]");
-  if (brandSel) {
-    const brandKey = p?.financingBrandKey ?? resolveFinancingBrandKey(p?.title ?? "");
-    brandSel.value = brandKey ?? "";
-  }
+  const brandKey = p?.financingBrandKey ?? resolveFinancingBrandKey(p?.title ?? "");
+  renderPlannedFinancingBrandPicker(root, brandKey ?? "");
   root.querySelector("[data-et-planned-delete]")?.classList.toggle("invisible", !p);
-  const from = (p?.validFrom ?? "").slice(0, 10);
-  const until = (p?.validUntil ?? "").slice(0, 10);
-  const dayOfMonth = p?.dayOfMonth ?? 1;
-  renderMonthOverrideList(root, "planned", entryId, from, until, dayOfMonth, p?.typicalAmount);
+  syncPlannedUntilFromInstallments(root);
   bindMonthOverrideRefresh(root, "planned", entryId);
   showExpenseDialog(dlg);
+  queueMicrotask(() => {
+    syncPlannedUntilFromInstallments(root);
+    bindMonthOverrideRefresh(root, "planned", entryId);
+  });
 }
 
 function savePlannedFromDialog(root: HTMLElement) {
@@ -2785,7 +2853,7 @@ function savePlannedFromDialog(root: HTMLElement) {
       : "installments";
   const downRaw = Number(root.querySelector<HTMLInputElement>("[data-et-planned-down]")?.value);
   const instRaw = Number(root.querySelector<HTMLInputElement>("[data-et-planned-installments]")?.value);
-  const brandPick = root.querySelector<HTMLSelectElement>("[data-et-planned-financing-brand]")?.value?.trim();
+  const brandPick = root.querySelector<HTMLInputElement>("[data-et-planned-financing-brand]")?.value?.trim();
   if (!title) return;
   const dayOfMonth = Number.isFinite(dayRaw) ? Math.min(31, Math.max(1, Math.floor(dayRaw))) : 1;
   let windowBefore: number | undefined;
@@ -2828,20 +2896,6 @@ function savePlannedFromDialog(root: HTMLElement) {
   if (idx >= 0) state.plannedExpenses![idx] = row;
   else state.plannedExpenses = [...(state.plannedExpenses ?? []), row].slice(0, 24);
   let newOverrides = collectMonthOverridesFromDialog(root, "planned", row.id) as PlannedExpenseMonthOverride[];
-  if (downPayment && from.length === 10) {
-    const firstMonth = from.slice(0, 7);
-    const firstAmount = roundMoney(downPayment + (row.typicalAmount ?? 0));
-    newOverrides = [
-      ...newOverrides.filter((o) => o.month !== firstMonth),
-      {
-        id: makeId(),
-        plannedExpenseId: row.id,
-        month: firstMonth,
-        amount: firstAmount,
-        currency: "EUR" as const,
-      },
-    ];
-  }
   state.plannedExpenseMonthOverrides = [
     ...(state.plannedExpenseMonthOverrides ?? []).filter((o) => o.plannedExpenseId !== row.id),
     ...newOverrides,
@@ -4300,6 +4354,7 @@ function maybePushFirstSync(remoteNorm: ExpenseTrackerState, local: ExpenseTrack
 
 function wire(root: HTMLElement) {
   bindExpenseDialogScrollLock(root);
+  bindSectionFocus(root);
   bindWealthPanelPersistence(root);
   if (root.dataset.etDialogsBound !== "1") {
     root.dataset.etDialogsBound = "1";
@@ -4396,8 +4451,7 @@ function wire(root: HTMLElement) {
     const row = { ...state.wealthAccounts![idx]! };
     if (t instanceof HTMLInputElement && t.dataset.wealthName) {
       row.name = t.value.trim() || "Cuenta";
-      const brandSel = root.querySelector<HTMLSelectElement>(`select[data-wealth-brand="${id}"]`);
-      if (!brandSel?.value) row.brandKey = resolveWealthAccountBrandKey(row.name) || undefined;
+      if (!row.brandKey) row.brandKey = resolveWealthAccountBrandKey(row.name) || undefined;
     }
     if (t instanceof HTMLInputElement && t.dataset.wealthBalance) {
       const n = Number(t.value);
@@ -4424,18 +4478,7 @@ function wire(root: HTMLElement) {
   });
 
   root.querySelector<HTMLElement>("[data-et-wealth-list]")?.addEventListener("change", (e) => {
-    const t = e.target as HTMLInputElement | HTMLSelectElement;
-    if (t instanceof HTMLSelectElement && t.dataset.wealthBrand) {
-      const id = t.dataset.wealthBrand;
-      const idx = (state.wealthAccounts ?? []).findIndex((a) => a.id === id);
-      if (idx < 0) return;
-      const row = { ...state.wealthAccounts![idx]! };
-      row.brandKey = t.value.trim() || undefined;
-      state.wealthAccounts![idx] = row;
-      persist();
-      renderWealthAccounts(root);
-      return;
-    }
+    const t = e.target as HTMLInputElement;
     if (t instanceof HTMLInputElement && t.dataset.wealthDefaultExpense) {
       const id = t.dataset.wealthDefaultExpense;
       state.wealthAccounts = (state.wealthAccounts ?? []).map((a) => ({
@@ -4582,10 +4625,10 @@ function wire(root: HTMLElement) {
     }
     if (t.matches("[data-et-planned-title]")) {
       const title = (t as HTMLInputElement).value.trim();
-      const brandSel = root.querySelector<HTMLSelectElement>("[data-et-planned-financing-brand]");
-      if (brandSel && !brandSel.value) {
+      const hidden = root.querySelector<HTMLInputElement>("[data-et-planned-financing-brand]");
+      if (hidden && !hidden.value) {
         const detected = resolveFinancingBrandKey(title);
-        if (detected) brandSel.value = detected;
+        if (detected) renderPlannedFinancingBrandPicker(root, detected);
       }
     }
   });

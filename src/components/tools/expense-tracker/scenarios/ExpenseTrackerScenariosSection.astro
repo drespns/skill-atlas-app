@@ -7,6 +7,9 @@ const helpTooltip =
 ---
 
 <ExpenseTrackerSectionShell
+  sectionId="scenarios"
+  expandable
+  icon="scenarios"
   title="Simulaciones y deseos"
   description="Pregúntate «¿me lo puedo permitir?» antes de comprometerte. Nada de aquí suma a tus totales hasta que lo promuevas."
   helpTooltip={helpTooltip}
@@ -16,5 +19,5 @@ const helpTooltip =
     Nueva simulación
   </button>
   <ExpenseTrackerScenarioCompareBar />
-  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3" data-et-scenarios-list></div>
+  <div class="et-section-cards grid grid-cols-1 sm:grid-cols-2 gap-3" data-et-scenarios-list></div>
 </ExpenseTrackerSectionShell>

@@ -4,6 +4,7 @@ import ToolsPageHeader from "../../components/tools/ToolsPageHeader.astro";
 import ExpenseTrackerSyncActions from "../../components/tools/expense-tracker/ExpenseTrackerSyncActions.astro";
 import ExpenseTrackerMainSurface from "../../components/tools/expense-tracker/ExpenseTrackerMainSurface.astro";
 import ExpenseTrackerSubscriptionsSection from "../../components/tools/expense-tracker/ExpenseTrackerSubscriptionsSection.astro";
+import ExpenseTrackerFocusRow from "../../components/tools/expense-tracker/shared/ExpenseTrackerFocusRow.astro";
 import ExpenseTrackerInvestmentsSection from "../../components/tools/expense-tracker/ExpenseTrackerInvestmentsSection.astro";
 import ExpenseTrackerPlannedSection from "../../components/tools/expense-tracker/ExpenseTrackerPlannedSection.astro";
 import ExpenseTrackerPaychecksSection from "../../components/tools/expense-tracker/ExpenseTrackerPaychecksSection.astro";
@@ -41,12 +42,16 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
 
     <ExpenseTrackerMainSurface />
     <ExpenseTrackerSubscriptionsSection />
-    <ExpenseTrackerInvestmentsSection />
-    <ExpenseTrackerPlannedSection />
-    <ExpenseTrackerPaychecksSection />
-    <ExpenseTrackerScenariosSection />
+    <ExpenseTrackerFocusRow rowId="recurring" cols="3">
+      <ExpenseTrackerInvestmentsSection />
+      <ExpenseTrackerPlannedSection />
+      <ExpenseTrackerPaychecksSection />
+    </ExpenseTrackerFocusRow>
+    <ExpenseTrackerFocusRow rowId="planning" cols="2">
+      <ExpenseTrackerScenariosSection />
+      <ExpenseTrackerDebtsSection />
+    </ExpenseTrackerFocusRow>
     <ExpenseTrackerExpensesTable filterDays={filterDays} />
-    <ExpenseTrackerDebtsSection />
     <ExpenseTrackerIncomeTable filterDays={filterDays} />
     <ExpenseTrackerRemindersSection />
     <ExpenseTrackerChartsGrid />

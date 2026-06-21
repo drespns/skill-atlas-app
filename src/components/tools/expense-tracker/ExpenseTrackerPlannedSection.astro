@@ -3,6 +3,9 @@ import ExpenseTrackerSectionShell from "./shared/ExpenseTrackerSectionShell.astr
 ---
 
 <ExpenseTrackerSectionShell
+  sectionId="financing"
+  expandable
+  icon="financing"
   title="Financiación y cuotas"
   description="BNPL (Klarna, Sequra…), alquiler o préstamos a plazos. Se suman al mes en gráficos y balance."
   wrapperClass="rounded-2xl border border-rose-200/70 dark:border-rose-900/45 bg-gradient-to-br from-rose-500/8 via-white/85 to-orange-500/5 dark:from-rose-950/30 dark:via-gray-950/55 dark:to-orange-950/20 shadow-md p-4 sm:p-5 space-y-4"
@@ -11,5 +14,5 @@ import ExpenseTrackerSectionShell from "./shared/ExpenseTrackerSectionShell.astr
     <button type="button" data-et-planned-sort class="et-btn-secondary text-xs py-1.5">Orden: importe ↓</button>
     <button type="button" data-et-open-planned-modal class="et-btn-primary text-sm py-2">Añadir</button>
   </div>
-  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3" data-et-planned-list></div>
+  <div class="et-section-cards grid grid-cols-1 sm:grid-cols-2 gap-3" data-et-planned-list></div>
 </ExpenseTrackerSectionShell>
