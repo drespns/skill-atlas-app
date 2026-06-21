@@ -941,7 +941,9 @@ function bindWealthPanelPersistence(root: HTMLElement) {
   panel.open = localStorage.getItem(WEALTH_PANEL_OPEN_KEY) === "1";
   panel.addEventListener("toggle", () => {
     localStorage.setItem(WEALTH_PANEL_OPEN_KEY, panel.open ? "1" : "0");
+    if (panel.open) initExpenseDatePickers(panel);
   });
+  if (panel.open) initExpenseDatePickers(panel);
 }
 
 function applyTrackingBaseline(root: HTMLElement) {

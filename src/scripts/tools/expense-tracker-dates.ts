@@ -175,6 +175,37 @@ function bindFlatpickr(input: HTMLInputElement, extra?: Partial<flatpickr.Option
   });
 }
 
+function polishFlatpickrInstance(inst: flatpickr.Instance) {
+  syncCalendarTheme(inst);
+  hideNativeMonthSelect(inst);
+  enhanceMonthNavigation(inst);
+  syncMonthTriggerLabel(inst);
+}
+
+/** Idempotente: crea o repone flatpickr en un campo fecha. */
+export function ensureExpenseDatePicker(input: HTMLInputElement | null | undefined, iso?: string) {
+  if (!input) return;
+  const val = (iso ?? input.value).slice(0, 10);
+  if (val.length === 10) input.value = val;
+  const wantAppend = flatpickrAppendTarget(input);
+  const fp = (input as FpInput)._flatpickr;
+  if (fp && fp.calendarContainer.parentElement !== wantAppend) {
+    fp.destroy();
+  }
+  const fpLive = (input as FpInput)._flatpickr;
+  if (fpLive) {
+    if (val.length === 10) fpLive.setDate(val, false);
+    polishFlatpickrInstance(fpLive);
+    return;
+  }
+  bindFlatpickr(input);
+  const fpNew = (input as FpInput)._flatpickr;
+  if (fpNew) {
+    if (val.length === 10) fpNew.setDate(val, false);
+    polishFlatpickrInstance(fpNew);
+  }
+}
+
 function bindMonthPicker(input: HTMLInputElement) {
   if (input.type === "month") {
     const v = input.value;
@@ -195,8 +226,7 @@ function bindMonthPicker(input: HTMLInputElement) {
 
 export function initExpenseDatePickers(root: HTMLElement) {
   for (const input of root.querySelectorAll<HTMLInputElement>('input[type="date"]')) {
-    if ((input as FpInput)._flatpickr) continue;
-    bindFlatpickr(input);
+    ensureExpenseDatePicker(input);
   }
   initExpenseMonthPickers(root);
 }
@@ -210,25 +240,7 @@ export function initExpenseMonthPickers(root: HTMLElement) {
 
 /** Sincroniza valor y asegura flatpickr en un campo concreto (p. ej. al abrir un modal). */
 export function refreshExpenseDatePicker(input: HTMLInputElement | null | undefined, iso?: string) {
-  if (!input) return;
-  const val = (iso ?? input.value).slice(0, 10);
-  if (val.length === 10) input.value = val;
-  const wantAppend = flatpickrAppendTarget(input);
-  const fp = (input as FpInput)._flatpickr;
-  if (fp && fp.calendarContainer.parentElement !== wantAppend) {
-    fp.destroy();
-  }
-  const fpLive = (input as FpInput)._flatpickr;
-  if (fpLive) {
-    if (val.length === 10) fpLive.setDate(val, false);
-    syncCalendarTheme(fpLive);
-    hideNativeMonthSelect(fpLive);
-    syncMonthTriggerLabel(fpLive);
-    return;
-  }
-  bindFlatpickr(input);
-  const fpNew = (input as FpInput)._flatpickr;
-  if (fpNew && val.length === 10) fpNew.setDate(val, false);
+  ensureExpenseDatePicker(input, iso);
 }
 
 export function readDateFieldValue(input: HTMLInputElement | null | undefined): string {
