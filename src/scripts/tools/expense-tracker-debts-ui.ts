@@ -5,10 +5,15 @@ import {
 import {
   payDebtInstallment,
   summarizeDebt,
+  debtDeclaredTotal,
   type ExpenseDebt,
   type DebtInstallment,
 } from "@lib/tools-expense-debts";
-import { refreshExpenseDatePicker } from "./expense-tracker-dates";
+import {
+  initExpenseDatePickers,
+  readDateFieldValue,
+  refreshExpenseDatePicker,
+} from "./expense-tracker-dates";
 
 export type DebtUiDeps = {
   getState: () => ExpenseTrackerState;
@@ -31,15 +36,65 @@ function formatDateEs(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
-function updateDebtTotalPreview(root: HTMLElement) {
+function readDebtTotalInput(root: HTMLElement): number {
+  const v = Number(root.querySelector<HTMLInputElement>("[data-et-debt-total]")?.value);
+  return Number.isFinite(v) && v > 0 ? v : 0;
+}
+
+
+function sumAllInstallmentAmounts(root: HTMLElement): number {
   const host = root.querySelector<HTMLElement>("[data-et-debt-installments]");
-  const preview = root.querySelector<HTMLElement>("[data-et-debt-total-preview]");
-  if (!host || !preview) return;
+  if (!host) return 0;
   let total = 0;
   host.querySelectorAll<HTMLElement>("[data-et-debt-installment-row]").forEach((row) => {
     total += Math.max(0, Number(row.querySelector<HTMLInputElement>("[data-et-debt-inst-amount]")?.value));
   });
-  preview.textContent = `Total: ${formatEurEs(total)}`;
+  return total;
+}
+
+function updateDebtTotalPreview(root: HTMLElement) {
+  const declared = readDebtTotalInput(root);
+  const assigned = sumAllInstallmentAmounts(root);
+  const unassigned = Math.max(0, declared - assigned);
+
+  const totalEl = root.querySelector<HTMLElement>("[data-et-debt-total-preview]");
+  const assignedEl = root.querySelector<HTMLElement>("[data-et-debt-assigned-preview]");
+  const unassignedEl = root.querySelector<HTMLElement>("[data-et-debt-unassigned-preview]");
+  if (totalEl) totalEl.textContent = `Total deuda: ${formatEurEs(declared)}`;
+  if (assignedEl) assignedEl.textContent = `Repartido en cuotas: ${formatEurEs(assigned)}`;
+  if (unassignedEl) {
+    unassignedEl.textContent = `Pendiente por asignar: ${formatEurEs(unassigned)}`;
+    unassignedEl.classList.toggle("text-amber-700", unassigned > 0.009);
+    unassignedEl.classList.toggle("dark:text-amber-300", unassigned > 0.009);
+    unassignedEl.classList.toggle("font-semibold", unassigned > 0.009);
+    unassignedEl.classList.toggle("text-gray-600", unassigned <= 0.009);
+    unassignedEl.classList.toggle("dark:text-gray-400", unassigned <= 0.009);
+  }
+}
+
+function refreshDebtDialogDatePickers(root: HTMLElement) {
+  const dlg = root.querySelector<HTMLDialogElement>("[data-et-dlg-debt]");
+  if (dlg) queueMicrotask(() => initExpenseDatePickers(dlg));
+}
+
+function splitDebtInstallmentsEqually(root: HTMLElement) {
+  const total = readDebtTotalInput(root);
+  if (!(total > 0)) return;
+  const host = root.querySelector<HTMLElement>("[data-et-debt-installments]");
+  if (!host) return;
+  const pendingRows = [...host.querySelectorAll<HTMLElement>("[data-et-debt-installment-row]")].filter(
+    (row) => row.dataset.paid !== "1",
+  );
+  if (!pendingRows.length) return;
+  const per = Math.round((total / pendingRows.length) * 100) / 100;
+  let remainder = Math.round((total - per * pendingRows.length) * 100) / 100;
+  pendingRows.forEach((row, idx) => {
+    const amountEl = row.querySelector<HTMLInputElement>("[data-et-debt-inst-amount]");
+    if (!amountEl) return;
+    const extra = idx === pendingRows.length - 1 ? remainder : 0;
+    amountEl.value = String(Math.round((per + extra) * 100) / 100);
+  });
+  updateDebtTotalPreview(root);
 }
 
 function addDebtInstallmentRow(
@@ -51,22 +106,22 @@ function addDebtInstallmentRow(
   if (!host) return;
   const row = document.createElement("div");
   row.className =
-    "grid grid-cols-[1fr_6.5rem_7.5rem_auto] gap-2 items-end rounded-lg border border-gray-200/80 dark:border-gray-800/80 p-2";
+    "grid grid-cols-[7.5rem_6.5rem_1fr_auto] gap-2 items-end rounded-lg border border-gray-200/80 dark:border-gray-800/80 p-2";
   row.dataset.etDebtInstallmentRow = "";
   row.dataset.installmentRowId = inst?.id ?? deps.makeId();
   if (inst?.status === "paid") row.dataset.paid = "1";
   row.innerHTML = `
+    <label class="space-y-0.5">
+      <span class="text-[10px] font-semibold text-gray-500">Fecha estimada</span>
+      <input type="date" data-et-debt-inst-date class="et-field et-date w-full text-sm py-1.5" value="${inst?.dueDate?.slice(0, 10) ?? ""}" ${inst?.status === "paid" ? "disabled" : ""} />
+    </label>
+    <label class="space-y-0.5">
+      <span class="text-[10px] font-semibold text-gray-500">Importe €</span>
+      <input type="number" step="0.01" min="0" data-et-debt-inst-amount class="et-field w-full text-sm py-1.5 font-mono" value="${inst?.amount ?? ""}" ${inst?.status === "paid" ? "disabled" : ""} />
+    </label>
     <label class="space-y-0.5 min-w-0">
       <span class="text-[10px] font-semibold text-gray-500">Etiqueta (opc.)</span>
       <input type="text" data-et-debt-inst-label class="et-field w-full text-sm py-1.5" value="${(inst?.label ?? "").replace(/"/g, "&quot;")}" ${inst?.status === "paid" ? "disabled" : ""} />
-    </label>
-    <label class="space-y-0.5">
-      <span class="text-[10px] font-semibold text-gray-500">€</span>
-      <input type="number" step="0.01" min="0" data-et-debt-inst-amount class="et-field w-full text-sm py-1.5 font-mono" value="${inst?.amount ?? ""}" ${inst?.status === "paid" ? "disabled" : ""} />
-    </label>
-    <label class="space-y-0.5">
-      <span class="text-[10px] font-semibold text-gray-500">Fecha</span>
-      <input type="date" data-et-debt-inst-date class="et-field et-date w-full text-sm py-1.5" value="${inst?.dueDate?.slice(0, 10) ?? ""}" ${inst?.status === "paid" ? "disabled" : ""} />
     </label>
     ${inst?.status === "paid" ? `<span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 pb-2">Pagada</span>` : `<button type="button" data-et-debt-inst-remove class="et-btn-secondary text-xs py-1.5 mb-0.5">×</button>`}`;
   row.querySelector("[data-et-debt-inst-remove]")?.addEventListener("click", () => {
@@ -96,7 +151,7 @@ function readDebtInstallmentsFromDialog(root: HTMLElement, deps: DebtUiDeps, exi
     }
     const label = row.querySelector<HTMLInputElement>("[data-et-debt-inst-label]")?.value?.trim();
     const amount = Number(row.querySelector<HTMLInputElement>("[data-et-debt-inst-amount]")?.value);
-    const dueDate = row.querySelector<HTMLInputElement>("[data-et-debt-inst-date]")?.value?.slice(0, 10) ?? "";
+    const dueDate = readDateFieldValue(row.querySelector<HTMLInputElement>("[data-et-debt-inst-date]"));
     if (!dueDate || !(amount > 0)) return;
     rows.push({
       id,
@@ -115,7 +170,8 @@ export function openDebtDialog(root: HTMLElement, deps: DebtUiDeps, debt: Expens
   const idEl = root.querySelector<HTMLInputElement>("[data-et-debt-id]");
   const catEl = root.querySelector<HTMLSelectElement>("[data-et-debt-category]");
   const delBtn = root.querySelector<HTMLButtonElement>("[data-et-debt-delete]");
-  if (!dlg || !title || !idEl || !catEl || !delBtn) return;
+  const totalEl = root.querySelector<HTMLInputElement>("[data-et-debt-total]");
+  if (!dlg || !title || !idEl || !catEl || !delBtn || !totalEl) return;
 
   title.textContent = debt ? "Editar deuda" : "Nueva deuda";
   idEl.value = debt?.id ?? "";
@@ -125,6 +181,9 @@ export function openDebtDialog(root: HTMLElement, deps: DebtUiDeps, debt: Expens
   (root.querySelector("[data-et-debt-note]") as HTMLInputElement).value = debt?.note ?? "";
   delBtn.classList.toggle("invisible", !debt);
 
+  const declared = debt ? debtDeclaredTotal(debt) : 0;
+  totalEl.value = declared > 0 ? String(declared) : "";
+
   const host = root.querySelector<HTMLElement>("[data-et-debt-installments]");
   if (host) {
     host.innerHTML = "";
@@ -133,7 +192,9 @@ export function openDebtDialog(root: HTMLElement, deps: DebtUiDeps, debt: Expens
     else addDebtInstallmentRow(root, deps);
   }
 
+  updateDebtTotalPreview(root);
   dlg.showModal();
+  refreshDebtDialogDatePickers(root);
 }
 
 function saveDebtFromDialog(root: HTMLElement, deps: DebtUiDeps) {
@@ -141,6 +202,8 @@ function saveDebtFromDialog(root: HTMLElement, deps: DebtUiDeps) {
   const id = root.querySelector<HTMLInputElement>("[data-et-debt-id]")?.value?.trim();
   const title = root.querySelector<HTMLInputElement>("[data-et-debt-title]")?.value?.trim() ?? "";
   if (!title) return;
+  const totalAmount = readDebtTotalInput(root);
+  if (!(totalAmount > 0)) return;
   const existing = (state.debts ?? []).find((d) => d.id === id);
   const installments = readDebtInstallmentsFromDialog(root, deps, existing);
   if (!installments.length) return;
@@ -151,6 +214,7 @@ function saveDebtFromDialog(root: HTMLElement, deps: DebtUiDeps) {
     categoryId: root.querySelector<HTMLSelectElement>("[data-et-debt-category]")?.value,
     note: root.querySelector<HTMLInputElement>("[data-et-debt-note]")?.value?.trim() || undefined,
     currency: "EUR",
+    totalAmount,
     installments,
     createdAt: existing?.createdAt ?? new Date().toISOString().slice(0, 10),
   };
@@ -196,19 +260,22 @@ export function openDebtPayDialog(
   summary.textContent = `${debt.title}${inst.label ? ` · ${inst.label}` : ""} — ${formatEurEs(inst.amount)}`;
   const dateEl = root.querySelector<HTMLInputElement>("[data-et-debt-pay-date]")!;
   dateEl.value = new Date().toISOString().slice(0, 10);
-  refreshExpenseDatePicker(dateEl, dateEl.value);
   const labelEl = root.querySelector<HTMLInputElement>("[data-et-debt-pay-label]")!;
   labelEl.value = inst.label ? `${debt.title} — ${inst.label}` : debt.title;
   const wealthSel = root.querySelector<HTMLSelectElement>("[data-et-debt-pay-wealth]")!;
   deps.fillWealthAccountSelect(wealthSel, undefined, "expense");
   dlg.showModal();
+  queueMicrotask(() => {
+    refreshExpenseDatePicker(dateEl, dateEl.value);
+    initExpenseDatePickers(dlg);
+  });
 }
 
 function confirmDebtPay(root: HTMLElement, deps: DebtUiDeps) {
   const debtId = root.querySelector<HTMLInputElement>("[data-et-debt-pay-debt-id]")?.value?.trim();
   const installmentId = root.querySelector<HTMLInputElement>("[data-et-debt-pay-installment-id]")?.value?.trim();
   if (!debtId || !installmentId) return;
-  const paidDate = root.querySelector<HTMLInputElement>("[data-et-debt-pay-date]")?.value?.slice(0, 10);
+  const paidDate = readDateFieldValue(root.querySelector<HTMLInputElement>("[data-et-debt-pay-date]"));
   const wealthAccountId = root.querySelector<HTMLSelectElement>("[data-et-debt-pay-wealth]")?.value || undefined;
   const labelOverride = root.querySelector<HTMLInputElement>("[data-et-debt-pay-label]")?.value?.trim();
 
@@ -239,7 +306,7 @@ export function renderDebtsSection(root: HTMLElement, deps: DebtUiDeps) {
   if (!debts.length) {
     const empty = document.createElement("p");
     empty.className = "text-sm text-gray-600 dark:text-gray-400 col-span-full py-2";
-    empty.textContent = "No hay deudas pendientes. Añade una con cuotas y fechas objetivo.";
+    empty.textContent = "No hay deudas pendientes. Añade el importe total y planifica las cuotas con fechas.";
     list.appendChild(empty);
     return;
   }
@@ -325,6 +392,12 @@ export function bindDebtsUi(root: HTMLElement, deps: DebtUiDeps) {
   );
   root.querySelector<HTMLButtonElement>("[data-et-debt-installment-add]")?.addEventListener("click", () =>
     addDebtInstallmentRow(root, deps),
+  );
+  root.querySelector<HTMLButtonElement>("[data-et-debt-installment-split]")?.addEventListener("click", () =>
+    splitDebtInstallmentsEqually(root),
+  );
+  root.querySelector<HTMLInputElement>("[data-et-debt-total]")?.addEventListener("input", () =>
+    updateDebtTotalPreview(root),
   );
   root.querySelector<HTMLButtonElement>("[data-et-debt-save]")?.addEventListener("click", () =>
     saveDebtFromDialog(root, deps),

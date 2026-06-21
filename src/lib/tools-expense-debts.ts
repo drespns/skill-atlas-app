@@ -6,6 +6,8 @@ export {
   payDebtInstallment,
   summarizeDebt,
   debtInstallmentTotal,
+  debtDeclaredTotal,
+  debtUnassignedAmount,
   debtPaidAmount,
   debtPendingAmount,
 } from "@skill-atlas/expense-core";

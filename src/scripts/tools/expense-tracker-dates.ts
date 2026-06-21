@@ -4,6 +4,7 @@ import { Spanish } from "flatpickr/dist/l10n/es.js";
 type FpInput = HTMLInputElement & { _flatpickr?: flatpickr.Instance };
 
 const FP_Z_INDEX = 100_001;
+const MONTHS_ES = Spanish.months.longhand;
 
 function isDarkTheme() {
   return document.documentElement.classList.contains("dark");
@@ -23,6 +24,101 @@ function syncCalendarTheme(inst: flatpickr.Instance) {
   cal.style.zIndex = String(FP_Z_INDEX);
 }
 
+function closeMonthGrid(cal: HTMLElement) {
+  const panel = cal.querySelector<HTMLElement>(".et-fp-month-grid");
+  const trigger = cal.querySelector<HTMLButtonElement>(".et-fp-month-trigger");
+  if (panel) panel.hidden = true;
+  if (trigger) trigger.setAttribute("aria-expanded", "false");
+  cal.classList.remove("et-fp-month-grid-open");
+}
+
+function syncMonthTriggerLabel(inst: flatpickr.Instance) {
+  const cal = inst.calendarContainer;
+  const btn = cal.querySelector<HTMLButtonElement>(".et-fp-month-trigger");
+  if (!btn) return;
+  btn.textContent = MONTHS_ES[inst.currentMonth] ?? "";
+}
+
+function enhanceMonthNavigation(inst: flatpickr.Instance) {
+  const cal = inst.calendarContainer;
+  if (cal.dataset.etMonthGridEnhanced === "1") return;
+  cal.dataset.etMonthGridEnhanced = "1";
+
+  const currentMonth = cal.querySelector(".flatpickr-current-month");
+  const nativeSelect = cal.querySelector<HTMLSelectElement>(".flatpickr-monthDropdown-months");
+  const rContainer = cal.querySelector(".flatpickr-rContainer");
+  if (!currentMonth || !rContainer) return;
+
+  if (nativeSelect) {
+    nativeSelect.style.display = "none";
+    nativeSelect.setAttribute("aria-hidden", "true");
+    nativeSelect.tabIndex = -1;
+  }
+
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "et-fp-month-trigger";
+  trigger.setAttribute("aria-expanded", "false");
+  trigger.setAttribute("aria-haspopup", "listbox");
+  trigger.textContent = MONTHS_ES[inst.currentMonth] ?? "";
+
+  const panel = document.createElement("div");
+  panel.className = "et-fp-month-grid";
+  panel.hidden = true;
+  panel.setAttribute("role", "listbox");
+  panel.setAttribute("aria-label", "Seleccionar mes");
+
+  MONTHS_ES.forEach((label, monthIdx) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "et-fp-month-grid-item";
+    btn.textContent = label;
+    btn.dataset.monthIndex = String(monthIdx);
+    btn.setAttribute("role", "option");
+    btn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      inst.changeMonth(monthIdx, false);
+      syncMonthTriggerLabel(inst);
+      closeMonthGrid(cal);
+      panel.querySelectorAll(".et-fp-month-grid-item").forEach((el) => {
+        el.classList.toggle("et-fp-month-grid-item--active", el === btn);
+      });
+    });
+    panel.appendChild(btn);
+  });
+
+  trigger.addEventListener("click", (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const open = panel.hidden;
+    panel.hidden = !open;
+    trigger.setAttribute("aria-expanded", open ? "true" : "false");
+    cal.classList.toggle("et-fp-month-grid-open", open);
+    if (open) {
+      panel.querySelectorAll(".et-fp-month-grid-item").forEach((el) => {
+        el.classList.toggle(
+          "et-fp-month-grid-item--active",
+          Number((el as HTMLElement).dataset.monthIndex) === inst.currentMonth,
+        );
+      });
+    }
+  });
+
+  if (nativeSelect?.parentElement) {
+    nativeSelect.parentElement.insertBefore(trigger, nativeSelect);
+  } else {
+    currentMonth.insertBefore(trigger, currentMonth.firstChild);
+  }
+  rContainer.appendChild(panel);
+
+  cal.addEventListener("click", (ev) => {
+    const t = ev.target as HTMLElement;
+    if (t.closest(".et-fp-month-trigger") || t.closest(".et-fp-month-grid")) return;
+    closeMonthGrid(cal);
+  });
+}
+
 function baseOptions(input: HTMLInputElement): Partial<flatpickr.Options.Options> {
   const appendTo = flatpickrAppendTarget(input);
   return {
@@ -32,9 +128,22 @@ function baseOptions(input: HTMLInputElement): Partial<flatpickr.Options.Options
     appendTo,
     onReady(_d, _s, inst) {
       syncCalendarTheme(inst);
+      enhanceMonthNavigation(inst);
+      syncMonthTriggerLabel(inst);
     },
     onOpen(_d, _s, inst) {
       syncCalendarTheme(inst);
+      syncMonthTriggerLabel(inst);
+      closeMonthGrid(inst.calendarContainer);
+    },
+    onMonthChange(_d, _s, inst) {
+      syncMonthTriggerLabel(inst);
+    },
+    onYearChange(_d, _s, inst) {
+      syncMonthTriggerLabel(inst);
+    },
+    onClose(_d, _s, inst) {
+      closeMonthGrid(inst.calendarContainer);
     },
   };
 }
@@ -103,6 +212,7 @@ export function refreshExpenseDatePicker(input: HTMLInputElement | null | undefi
   if (fpLive) {
     if (val.length === 10) fpLive.setDate(val, false);
     syncCalendarTheme(fpLive);
+    syncMonthTriggerLabel(fpLive);
     return;
   }
   bindFlatpickr(input);

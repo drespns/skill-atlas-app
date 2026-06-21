@@ -14,19 +14,30 @@
       <select data-et-debt-category class="et-field et-select w-full text-sm py-2"></select>
     </label>
     <label class="block space-y-1">
+      <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Importe total de la deuda</span>
+      <input type="number" step="0.01" min="0" data-et-debt-total class="et-field w-full text-sm py-2 font-mono" placeholder="0,00" />
+    </label>
+    <label class="block space-y-1">
       <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Nota (opc.)</span>
       <input type="text" data-et-debt-note class="et-field w-full text-sm py-2" />
     </label>
     <div class="space-y-2">
-      <div class="flex items-center justify-between gap-2">
-        <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Cuotas / fechas de pago</span>
-        <button type="button" data-et-debt-installment-add class="et-btn-dashed text-xs py-1">+ Cuota</button>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">Plan de pagos</span>
+        <div class="flex flex-wrap gap-1.5">
+          <button type="button" data-et-debt-installment-split class="et-btn-secondary text-xs py-1">Repartir equitativamente</button>
+          <button type="button" data-et-debt-installment-add class="et-btn-dashed text-xs py-1">+ Cuota</button>
+        </div>
       </div>
       <p class="m-0 text-[11px] text-gray-500 dark:text-gray-400 leading-snug">
-        Reparte el importe en las fechas en las que quieres pagarlo. Al marcar «Pagado», se crea un gasto confirmado vinculado.
+        Indica cuándo estimas pagar cada cuota y su importe. Al marcar «Pagado», se crea un gasto confirmado vinculado.
       </p>
       <div class="space-y-2 max-h-[16rem] overflow-y-auto pr-1" data-et-debt-installments></div>
-      <p class="m-0 text-xs font-semibold text-gray-700 dark:text-gray-300" data-et-debt-total-preview>Total: 0,00 €</p>
+      <div class="rounded-lg border border-gray-200/80 dark:border-gray-800/80 bg-gray-50/80 dark:bg-gray-900/40 px-3 py-2 space-y-0.5 text-xs">
+        <p class="m-0 font-semibold text-gray-800 dark:text-gray-200" data-et-debt-total-preview>Total deuda: 0,00 €</p>
+        <p class="m-0 text-gray-600 dark:text-gray-400" data-et-debt-assigned-preview>Repartido en cuotas: 0,00 €</p>
+        <p class="m-0 text-gray-600 dark:text-gray-400" data-et-debt-unassigned-preview>Pendiente por asignar: 0,00 €</p>
+      </div>
     </div>
     <div class="flex justify-between gap-2 pt-1">
       <button type="button" data-et-debt-delete class="text-sm font-semibold text-red-600 dark:text-red-400 hover:underline invisible">Eliminar</button>
