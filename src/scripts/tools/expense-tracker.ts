@@ -1015,6 +1015,10 @@ function applyInvestmentBuy(root: HTMLElement) {
     avgBuyPrice = roundMoney((prev.avgBuyPrice * prev.quantity + price * qty) / newQty);
   }
   const newQuantity = (prev?.quantity ?? 0) + qty;
+  const tradeDate =
+    readDateFieldValue(root.querySelector<HTMLInputElement>("[data-et-inv-trade-date]") ?? undefined) || todayIso();
+  const purchase = { id: makeId(), date: tradeDate, amount: total };
+  const purchases = [...(prev?.purchases ?? []), purchase];
   const row: InvestmentHolding = {
     id,
     name,
@@ -1028,6 +1032,8 @@ function applyInvestmentBuy(root: HTMLElement) {
     gainLossPct: Number.isFinite(pnl) ? pnl : (prev?.gainLossPct ?? 0),
     notes: notes || prev?.notes,
     cardColor: cardColor ?? prev?.cardColor,
+    acquiredOn: prev?.acquiredOn ?? tradeDate,
+    purchases,
   };
   if (idx >= 0) list[idx] = row;
   else list.push(row);
@@ -3090,6 +3096,10 @@ function openInvestmentDialog(root: HTMLElement, h?: InvestmentHolding | null) {
     h?.avgBuyPrice != null ? String(h.avgBuyPrice) : "";
   (root.querySelector("[data-et-inv-qty]") as HTMLInputElement).value =
     h?.quantity != null ? String(h.quantity) : "";
+  const acquiredEl = root.querySelector<HTMLInputElement>("[data-et-inv-acquired]");
+  if (acquiredEl) refreshExpenseDatePicker(acquiredEl, h?.acquiredOn ?? state.trackingStartDate ?? todayIso());
+  const tradeDateEl = root.querySelector<HTMLInputElement>("[data-et-inv-trade-date]");
+  if (tradeDateEl) refreshExpenseDatePicker(tradeDateEl, todayIso());
   (root.querySelector("[data-et-inv-pnl]") as HTMLInputElement).value = h != null ? String(h.gainLossPct) : "";
   (root.querySelector("[data-et-inv-notes]") as HTMLTextAreaElement).value = h?.notes ?? "";
   const colorEl = root.querySelector<HTMLInputElement>("[data-et-inv-color]");
@@ -3124,6 +3134,11 @@ function saveInvestmentFromDialog(root: HTMLElement) {
     qtyRaw != null && qtyRaw !== "" && Number.isFinite(Number(qtyRaw)) ? Math.max(0, Number(qtyRaw)) : 0;
   if (quantity <= 0) return;
   const avgBuyPrice = Number.isFinite(avg) && avg >= 0 ? avg : 0;
+  const acquiredOn =
+    readDateFieldValue(root.querySelector<HTMLInputElement>("[data-et-inv-acquired]") ?? undefined) ||
+    state.trackingStartDate ||
+    todayIso();
+  const prev = (state.investments ?? []).find((x) => x.id === idEl?.value);
   const row: InvestmentHolding = {
     id: idEl?.value || makeId(),
     name,
@@ -3138,6 +3153,8 @@ function saveInvestmentFromDialog(root: HTMLElement) {
     gainLossPct: Number.isFinite(pnl) ? pnl : 0,
     notes: notes || undefined,
     cardColor,
+    acquiredOn: prev?.acquiredOn ?? acquiredOn,
+    purchases: prev?.purchases,
   };
   const list = [...(state.investments ?? [])];
   const idx = list.findIndex((x) => x.id === row.id);

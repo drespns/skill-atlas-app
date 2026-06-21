@@ -129,6 +129,14 @@ export type WealthBizum = {
   note?: string;
 };
 
+/** Compra parcial registrada en una posición. */
+export type InvestmentPurchase = {
+  id: string;
+  /** YYYY-MM-DD */
+  date: string;
+  amount: number;
+};
+
 /** Posición manual (sin precio en tiempo real; rendimiento % actualizado a mano). */
 export type InvestmentHolding = {
   id: string;
@@ -150,6 +158,10 @@ export type InvestmentHolding = {
   notes?: string;
   /** Color de tarjeta (#RRGGBB). */
   cardColor?: string;
+  /** YYYY-MM-DD: fecha de la compra inicial. */
+  acquiredOn?: string;
+  /** Compras adicionales (importe desembolsado en esa fecha). */
+  purchases?: InvestmentPurchase[];
 };
 
 /** Cobro recurrente esperado (p. ej. nómina): día del mes y nota opcional. */
@@ -1013,6 +1025,17 @@ function parseInvestmentHoldings(raw: unknown): InvestmentHolding[] {
           : Number.isFinite(inv) && inv >= 0
             ? inv
             : 0;
+      const acquiredRaw = String(r?.acquiredOn ?? "").slice(0, 10);
+      const acquiredOn = /^\d{4}-\d{2}-\d{2}$/.test(acquiredRaw) ? acquiredRaw : undefined;
+      const purchases = Array.isArray(r?.purchases)
+        ? r.purchases
+            .map((p: any) => ({
+              id: String(p?.id || "").trim() || `ip_${Math.random().toString(36).slice(2, 9)}`,
+              date: String(p?.date ?? "").slice(0, 10),
+              amount: Number.isFinite(Number(p?.amount)) ? Math.max(0, Number(p.amount)) : 0,
+            }))
+            .filter((p: { id: string; date: string; amount: number }) => p.id && p.date.length === 10 && p.amount > 0)
+        : undefined;
       return {
         id: String(r?.id || "").trim(),
         name: String(r?.name || "").trim() || "Activo",
@@ -1028,6 +1051,8 @@ function parseInvestmentHoldings(raw: unknown): InvestmentHolding[] {
         gainLossPct: Number.isFinite(pct) ? pct : 0,
         notes: String(r?.notes ?? "").trim() || undefined,
         cardColor: parseCardColor(r?.cardColor),
+        acquiredOn,
+        purchases: purchases?.length ? purchases : undefined,
       };
     })
     .filter((h: InvestmentHolding) => h.id)
