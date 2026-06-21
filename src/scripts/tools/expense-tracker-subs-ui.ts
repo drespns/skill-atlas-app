@@ -317,18 +317,16 @@ export function renderSubs(root: HTMLElement, deps: SubUiDeps) {
   const today = deps.todayIso();
 
   if (!subs.length) {
-    strip.className =
-      "relative w-full min-h-[10rem] rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40 overflow-hidden flex items-center justify-center";
+    strip.className = "relative w-full min-h-[8rem] flex items-center justify-center";
     const empty = document.createElement("p");
-    empty.className = "text-sm text-gray-500 dark:text-gray-400 px-4 py-8 text-center max-w-md";
+    empty.className = "text-sm text-gray-500 dark:text-gray-400 px-4 py-6 text-center max-w-md";
     empty.textContent =
       "Aún no hay suscripciones. Añade Spotify, Movistar+ u otras con logo, periodo de prueba y fecha de cobro.";
     strip.appendChild(empty);
     return;
   }
 
-  strip.className =
-    "relative w-full min-h-[14rem] sm:min-h-[16rem] rounded-xl border border-gray-200/80 dark:border-gray-800/70 bg-gray-50/40 dark:bg-gray-900/30 overflow-hidden";
+  strip.className = "relative w-full min-h-[14rem] sm:min-h-[16rem] overflow-hidden";
 
   const sorted = [...subs].sort((a, b) => {
     const ma = subscriptionToMonthlyAmount(a, today);
