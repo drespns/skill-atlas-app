@@ -1,40 +1,40 @@
 ---
 import AppShell from "../layouts/AppShell.astro";
-import LandingBackground from "../components/landing/LandingBackground.astro";
-import LandingHeroGrid from "../components/landing/LandingHeroGrid.astro";
-import LandingDevStripAndFlow from "../components/landing/LandingDevStripAndFlow.astro";
-import LandingTodayAvailable from "../components/landing/LandingTodayAvailable.astro";
-import LandingFacetsCarousel from "../components/landing/LandingFacetsCarousel.astro";
-import LandingHowFaq from "../components/landing/LandingHowFaq.astro";
-import LandingWorkflowCta from "../components/landing/LandingWorkflowCta.astro";
-import LandingChartsPreview from "../components/landing/LandingChartsPreview.astro";
-import LandingToolsShowcase from "../components/landing/LandingToolsShowcase.astro";
-import LandingPageStyles from "../components/landing/LandingPageStyles.astro";
+import FinanzasEntryShowcase from "../components/entry/FinanzasEntryShowcase.astro";
+import FinanzasLoginCard from "../components/entry/FinanzasLoginCard.astro";
+
+const title = "Finanzas";
 ---
 
-<AppShell title="SkillAtlas">
-  <section
-    data-landing-root
-    class="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 overflow-x-clip text-gray-900 dark:text-gray-100"
-  >
-    <LandingBackground />
-    <div
-      class="relative z-10 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 md:py-14 space-y-18"
-    >
-      <LandingHeroGrid />
-      <LandingDevStripAndFlow />
-      <LandingTodayAvailable />
-      <LandingFacetsCarousel />
-      <LandingChartsPreview />
-      <LandingToolsShowcase />
-      <LandingHowFaq />
-      <LandingWorkflowCta />
+<AppShell title={title} minimalChrome>
+  <style is:global>
+    :root {
+      --app-main-px: 0px;
+      --app-main-py: 0px;
+    }
+  </style>
+
+  <section class="w-full min-h-svh overflow-hidden" data-finanzas-entry>
+    <div class="grid md:grid-cols-2 min-h-svh md:h-svh min-h-0">
+      {/* En móvil: login primero; en desktop: demo izq / login der */}
+      <div class="order-2 md:order-1 min-h-0 md:h-full border-t md:border-t-0 md:border-r border-gray-200/80 dark:border-gray-800">
+        <FinanzasEntryShowcase />
+      </div>
+      <div
+        class="order-1 md:order-2 flex items-center justify-center px-5 py-8 md:px-10 md:py-6 min-h-0 overflow-y-auto bg-white dark:bg-gray-950 relative"
+      >
+        <div
+          class="pointer-events-none absolute inset-0 opacity-40 dark:opacity-30 bg-linear-to-bl from-indigo-100/80 via-transparent to-transparent dark:from-indigo-950/50"
+          aria-hidden="true"
+        >
+        </div>
+        <div class="relative z-10 w-full flex justify-center">
+          <FinanzasLoginCard />
+        </div>
+      </div>
     </div>
   </section>
 
-  <LandingPageStyles />
-  <script src="../scripts/landing/landing-page.ts"></script>
-  <script src="../scripts/landing/landing-facets-carousel.ts"></script>
-  <script src="../scripts/landing/landing-charts-preview.ts"></script>
+  <script src="../scripts/login/login-auth.ts"></script>
   <script src="../scripts/landing/landing-tools-showcase.ts"></script>
 </AppShell>

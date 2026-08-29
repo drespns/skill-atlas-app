@@ -46,7 +46,7 @@ async function initLoginAuth() {
     return;
   }
 
-  const redirectTo = `${window.location.origin}/login`;
+  const redirectTo = `${window.location.origin}/`;
 
   const getNextUrl = () => {
     const url = new URL(window.location.href);
@@ -76,7 +76,7 @@ async function initLoginAuth() {
   const redirectAfterAuth = () => {
     const next = getNextUrl();
     // Avoid redirect loop
-    if (next.startsWith("/login")) return "/tools/expense-tracker";
+    if (next.startsWith("/login") || next === "/") return "/tools/expense-tracker";
     return next;
   };
 

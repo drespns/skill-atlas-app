@@ -6,11 +6,10 @@ Guia operativa para cualquier nuevo agente que entre al proyecto.
 
 **Producto activo = finanzas personales** (cuaderno de gastos, suscripciones, patrimonio, inversiones).
 
-- Ruta principal: **`/tools/expense-tracker`** (también `/app` redirige ahí).
+- Ruta principal autenticada: **`/tools/expense-tracker`** (también `/app` redirige ahí).
+- Entrada pública: **`/`** (landing demo + login). Sin sesión no hay landing SkillAtlas.
 - Login post-auth → `/tools/expense-tracker`.
-- CV, tecnologías, proyectos, portfolio, study y el resto de `/tools` quedan **aparcados** (código y rutas vivas; fuera de la barra de navegación).
-- Dominio/rebrand completo puede llegar después; el nombre visible en cabecera es **Finanzas**.
-- El monorepo hermano `finanzas-app` fue un ensayo de extracción; **no** es el camino activo.
+- `/login` reenvía a `/` (compat OAuth/bookmarks).
 
 ## Objetivo del proyecto
 

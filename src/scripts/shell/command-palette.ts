@@ -181,7 +181,7 @@ function initCommandPalette() {
     { id: "go-pricing", label: "Precios", href: "/pricing", hint: "/pricing", section: "nav" },
     { id: "go-backlog", label: "Historial del producto", href: "/backlog", hint: "/backlog", section: "nav" },
     { id: "go-contact", label: "Contacto", href: "/contact", hint: "/contact", section: "nav" },
-    { id: "go-login", label: "Entrar (acceso privado)", href: "/login", hint: "/login", section: "nav" },
+          { id: "go-login", label: "Entrar", href: "/", hint: "/", section: "nav" },
     { id: "go-landing-tools", label: "Herramientas (landing)", href: "/#landing-tools", hint: "/#landing-tools", section: "nav" },
     {
       id: "request-access",

@@ -12,9 +12,9 @@ Documento orientado al **historial** de lo implementado y a **ideas** sin orden 
 
 ### v0.150.0 (actual) — pivote a finanzas (in-place)
 
-**Producto activo:** cuaderno de gastos (`/tools/expense-tracker`). `/app` y post-login redirigen ahí. Cabecera «Finanzas»; CV/tech/proyectos/study/tools fuera de la barra (rutas legacy vivas). Se abandona la extracción a `finanzas-app` como camino principal.
+**Producto activo:** cuaderno de gastos (`/tools/expense-tracker`). Entrada `/` = landing demo + login; sesión → cuaderno. Cabecera «Finanzas»; legacy fuera de barra.
 
-- **Móvil (`mobile/`):** rebrand Finanzas; home con navegación de mes, empty state CTA, sync copy humano; ajustes y login alineados con la web.
+- **Home de entrada:** split landing (demo KPIs/charts) + tarjeta de login; `/login` reenvía a `/` conservando hash OAuth.
 
 **Numeración:** nueva minor centrada en **`/tools` v2** y en refinamientos de **CV** (“corto plazo”): favoritos persistidos en **prefs** (y sync `user_prefs` con merge que respeta el local), **hub** con estética refinada, **cinta de favoritas** y **command palette** (sección «Favoritas» antes de admin), **menú Herramientas** de cabecera con bloque de favoritas; en paralelo, campos de mercado laboral en el CV, **copiar como texto plano** para ATS y chequeo ATS ampliado. Base para cron/playground, boost herramienta a herramienta y **diferenciación CV a medio plazo** (ver subsección más abajo).
 

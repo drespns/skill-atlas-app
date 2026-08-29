@@ -1,0 +1,222 @@
+---
+/**
+ * Panel izquierdo de la home de entrada: promesa de producto + demo del cuaderno
+ * (reusa el carrusel/charts de landing-tools-showcase.ts).
+ */
+---
+
+<aside
+  data-landing-tools-showcase
+  class="h-full min-h-0 overflow-y-auto overscroll-contain bg-linear-to-br from-indigo-50/90 via-white to-slate-50 dark:from-gray-950 dark:via-gray-950 dark:to-indigo-950/40"
+>
+  <div class="px-5 sm:px-8 py-8 md:py-10 space-y-8 max-w-3xl mx-auto">
+    <header class="space-y-3">
+      <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">
+        Finanzas personales
+      </p>
+      <h1 class="m-0 text-3xl md:text-4xl font-semibold tracking-tight text-gray-900 dark:text-gray-50 leading-tight">
+        Tu cuaderno de gastos, patrimonio e inversiones
+      </h1>
+      <p class="m-0 text-sm md:text-base text-gray-600 dark:text-gray-400 leading-relaxed max-w-xl">
+        Suscripciones, deudas, escenarios y gráficos en un solo sitio. Los datos viven en tu navegador;
+        la copia en cuenta es opcional y puedes cifrarla con una frase solo tuya.
+      </p>
+      <ul class="m-0 pl-5 space-y-1.5 text-sm text-gray-600 dark:text-gray-400 list-disc marker:text-indigo-400">
+        <li>KPIs del mes, categorías y export CSV / JSON / XLSX</li>
+        <li>Sync opcional con la misma cuenta (web + móvil)</li>
+        <li>Frase del cuaderno: cifrado end-to-end en la nube</li>
+      </ul>
+    </header>
+
+    <article class="space-y-4" data-landing-tools-et-root>
+      <div class="flex flex-wrap items-center gap-2">
+        <p class="m-0 text-xs font-semibold tracking-wide text-indigo-700 dark:text-indigo-300 uppercase">
+          Vista previa
+        </p>
+        <span
+          class="text-[10px] font-bold uppercase tracking-wider rounded-full border border-violet-300/80 dark:border-violet-700/60 px-2 py-0.5 text-violet-800 dark:text-violet-200 bg-violet-50/90 dark:bg-violet-950/40"
+        >
+          Demo
+        </span>
+      </div>
+      <p class="m-0 text-sm text-gray-600 dark:text-gray-400">
+        KPIs, suscripciones y gráficos como en la app — datos de ejemplo, sin iniciar sesión.
+      </p>
+
+      <div
+        class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 shadow-sm p-4 sm:p-5 space-y-5 dark:[color-scheme:dark]"
+        data-landing-tools-et-demo-surface
+      >
+        <div class="flex flex-wrap items-end gap-3 min-w-0 pointer-events-none opacity-90" aria-hidden="true">
+          <label class="space-y-1">
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+              >Período gastos</span
+            >
+            <span
+              class="lt-et-field min-w-[10rem] font-medium inline-flex items-center px-2 py-1.5 text-sm text-gray-700 dark:text-gray-200"
+              >Últimos 30 días</span
+            >
+          </label>
+          <label class="space-y-1">
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+              >Gráficos / totales</span
+            >
+            <span
+              class="lt-et-field min-w-[11rem] font-medium inline-flex items-center px-2 py-1.5 text-sm text-gray-700 dark:text-gray-200"
+              >Unificar en euros</span
+            >
+          </label>
+        </div>
+
+        <div
+          class="relative rounded-2xl border border-violet-200/50 dark:border-violet-900/35 bg-gray-950/[0.03] dark:bg-gray-900/40 overflow-hidden"
+          data-landing-tools-et-slider-wrap
+        >
+          <div
+            class="flex overflow-x-auto scroll-smooth snap-x snap-mandatory gap-0 lt-et-slider-track"
+            data-landing-tools-et-track
+            tabindex="0"
+            role="region"
+            aria-roledescription="carousel"
+            aria-label="Carrusel demo del cuaderno"
+          >
+            <div
+              class="min-w-full shrink-0 snap-center snap-always p-4 space-y-5"
+              data-landing-tools-et-slide
+              aria-hidden="false"
+            >
+              <div class="grid grid-cols-2 gap-3">
+                <div
+                  class="rounded-2xl border border-emerald-400/35 dark:border-emerald-700/40 bg-gradient-to-br from-emerald-500/12 via-gray-50/80 to-white dark:from-emerald-950/25 dark:via-gray-950/60 dark:to-gray-900/80 p-3 shadow-sm"
+                >
+                  <p class="m-0 text-[10px] font-semibold uppercase tracking-wide text-emerald-800/90 dark:text-emerald-300/90">
+                    Suscripciones
+                  </p>
+                  <p class="mt-1 mb-0 text-xl font-bold tracking-tight text-gray-900 dark:text-gray-50">63&nbsp;€</p>
+                </div>
+                <div
+                  class="rounded-2xl border border-sky-400/35 dark:border-sky-700/40 bg-gradient-to-br from-sky-500/12 via-gray-50/80 to-white dark:from-sky-950/25 dark:via-gray-950/60 dark:to-gray-900/80 p-3 shadow-sm"
+                >
+                  <p class="m-0 text-[10px] font-semibold uppercase tracking-wide text-sky-800/90 dark:text-sky-300/90">
+                    Gastos período
+                  </p>
+                  <p class="mt-1 mb-0 text-xl font-bold tracking-tight text-gray-900 dark:text-gray-50">189&nbsp;€</p>
+                </div>
+                <div
+                  class="rounded-2xl border border-teal-400/40 dark:border-teal-800/45 bg-gradient-to-br from-teal-500/14 via-gray-50/80 to-white dark:from-teal-950/30 dark:via-gray-950/60 dark:to-gray-900/80 p-3 shadow-sm"
+                >
+                  <p class="m-0 text-[10px] font-semibold uppercase tracking-wide text-teal-800/90 dark:text-teal-300/90">
+                    Ingresos mes
+                  </p>
+                  <p class="mt-1 mb-0 text-xl font-bold tracking-tight text-gray-900 dark:text-gray-50">498&nbsp;€</p>
+                </div>
+                <div
+                  class="rounded-2xl border border-rose-400/40 dark:border-rose-900/45 bg-gradient-to-br from-rose-500/12 via-gray-50/80 to-white dark:from-rose-950/25 dark:via-gray-950/60 dark:to-gray-900/80 p-3 shadow-sm"
+                >
+                  <p class="m-0 text-[10px] font-semibold uppercase tracking-wide text-rose-800/90 dark:text-rose-300/90">
+                    Balance mes
+                  </p>
+                  <p class="mt-1 mb-0 text-xl font-bold tracking-tight text-gray-900 dark:text-gray-50">309&nbsp;€</p>
+                </div>
+              </div>
+              <div class="space-y-2">
+                <h4 class="m-0 text-sm font-semibold text-gray-900 dark:text-gray-50">Suscripciones</h4>
+                <div class="flex gap-3 overflow-x-auto pb-1 snap-x">
+                  <div
+                    class="snap-start shrink-0 w-44 rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-950 dark:to-gray-900/60 p-3 shadow-sm"
+                  >
+                    <p class="m-0 text-[10px] font-semibold uppercase text-gray-500">Activa · Mensual</p>
+                    <p class="m-0 mt-1 text-sm font-semibold text-gray-900 dark:text-gray-50 truncate">Gimnasio Arco</p>
+                    <p class="m-0 mt-1 text-base font-bold text-indigo-700 dark:text-indigo-300 font-mono">38,50 €</p>
+                  </div>
+                  <div
+                    class="snap-start shrink-0 w-44 rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-950 dark:to-gray-900/60 p-3 shadow-sm"
+                  >
+                    <p class="m-0 text-[10px] font-semibold uppercase text-gray-500">Activa · Mensual</p>
+                    <p class="m-0 mt-1 text-sm font-semibold text-gray-900 dark:text-gray-50 truncate">Suite de diseño</p>
+                    <p class="m-0 mt-1 text-base font-bold text-indigo-700 dark:text-indigo-300 font-mono">12,99 €</p>
+                  </div>
+                  <div
+                    class="snap-start shrink-0 w-44 rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-950 dark:to-gray-900/60 p-3 shadow-sm"
+                  >
+                    <p class="m-0 text-[10px] font-semibold uppercase text-gray-500">Activa · Mensual</p>
+                    <p class="m-0 mt-1 text-sm font-semibold text-gray-900 dark:text-gray-50 truncate">Nube</p>
+                    <p class="m-0 mt-1 text-base font-bold text-indigo-700 dark:text-indigo-300 font-mono">4,99 €</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="min-w-full shrink-0 snap-center snap-always p-4 space-y-4" data-landing-tools-et-slide>
+              <div class="grid grid-cols-1 gap-4">
+                <div
+                  class="rounded-2xl border border-fuchsia-200/70 dark:border-fuchsia-900/40 bg-gradient-to-r from-fuchsia-500/8 via-white/90 to-indigo-500/8 dark:from-fuchsia-950/25 dark:via-gray-950/60 dark:to-indigo-950/25 p-3 shadow-sm min-h-[220px]"
+                  data-landing-tools-et-chart-balance
+                >
+                </div>
+                <div
+                  class="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-950/60 p-3 shadow-sm min-h-[220px]"
+                  data-landing-tools-et-chart-pie
+                >
+                </div>
+              </div>
+            </div>
+
+            <div class="min-w-full shrink-0 snap-center snap-always p-4" data-landing-tools-et-slide>
+              <div
+                class="rounded-2xl border border-violet-200/70 dark:border-violet-900/40 bg-gradient-to-br from-violet-500/6 via-white/90 to-indigo-500/6 dark:from-violet-950/25 dark:via-gray-950/55 dark:to-indigo-950/25 p-3 shadow-sm min-h-[240px]"
+                data-landing-tools-et-chart-year
+              >
+              </div>
+              <div class="mt-3 grid grid-cols-3 gap-2">
+                <div class="rounded-xl border border-emerald-400/35 dark:border-emerald-800/40 p-2.5 bg-emerald-500/10">
+                  <p class="m-0 text-[10px] font-semibold uppercase text-emerald-800 dark:text-emerald-200">Ingresos año</p>
+                  <p class="m-0 mt-1 text-sm font-bold text-gray-900 dark:text-gray-50">3&nbsp;120&nbsp;€</p>
+                </div>
+                <div class="rounded-xl border border-orange-400/35 dark:border-orange-900/40 p-2.5 bg-orange-500/10">
+                  <p class="m-0 text-[10px] font-semibold uppercase text-orange-900 dark:text-orange-200">Salidas año</p>
+                  <p class="m-0 mt-1 text-sm font-bold text-gray-900 dark:text-gray-50">1&nbsp;895&nbsp;€</p>
+                </div>
+                <div class="rounded-xl border border-fuchsia-400/40 dark:border-fuchsia-900/45 p-2.5 bg-fuchsia-500/10">
+                  <p class="m-0 text-[10px] font-semibold uppercase text-fuchsia-900 dark:text-fuchsia-200">Balance</p>
+                  <p class="m-0 mt-1 text-sm font-bold text-gray-900 dark:text-gray-50">1&nbsp;225&nbsp;€</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-center gap-2 pb-4 pt-1" data-landing-tools-et-dots>
+            <button type="button" class="group p-1" data-landing-tools-et-dot data-index="0" aria-label="Slide 1">
+              <span class="block h-2 w-8 rounded-full bg-indigo-500 dark:bg-indigo-400 transition-all"></span>
+            </button>
+            <button type="button" class="group p-1" data-landing-tools-et-dot data-index="1" aria-label="Slide 2">
+              <span class="block h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600 transition-all"></span>
+            </button>
+            <button type="button" class="group p-1" data-landing-tools-et-dot data-index="2" aria-label="Slide 3">
+              <span class="block h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600 transition-all"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</aside>
+
+<style is:global>
+  [data-landing-tools-et-demo-surface] .lt-et-field {
+    border-radius: 0.5rem;
+    border: 1px solid rgb(229 231 235);
+    background: rgb(255 255 255);
+    box-sizing: border-box;
+  }
+  .dark [data-landing-tools-et-demo-surface] .lt-et-field {
+    border-color: rgb(55 65 81);
+    background: rgb(3 7 18);
+  }
+  .lt-et-slider-track {
+    scrollbar-width: none;
+  }
+  .lt-et-slider-track::-webkit-scrollbar {
+    display: none;
+  }
+</style>

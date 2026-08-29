@@ -14,5 +14,5 @@ export async function initAuthGuard() {
   } catch {
     // ignore
   }
-  window.location.href = "/login";
+  window.location.href = "/";
 }
