@@ -17,9 +17,9 @@
     "gen:linkedin-banner": "node scripts/gen-linkedin-banner.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "mobile": "pnpm --filter skill-atlas-gastos-mobile start",
-    "mobile:android": "pnpm --filter skill-atlas-gastos-mobile android",
-    "mobile:web": "pnpm --filter skill-atlas-gastos-mobile web"
+    "mobile": "pnpm --filter finanzas-gastos-mobile start",
+    "mobile:android": "pnpm --filter finanzas-gastos-mobile android",
+    "mobile:web": "pnpm --filter finanzas-gastos-mobile web"
   },
   "dependencies": {
     "@astrojs/vercel": "^10.0.4",
