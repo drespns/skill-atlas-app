@@ -2,37 +2,48 @@
 
 Guia operativa para cualquier nuevo agente que entre al proyecto.
 
+## Estado del proyecto (2026)
+
+**Producto activo = finanzas personales** (cuaderno de gastos, suscripciones, patrimonio, inversiones).
+
+- Ruta principal: **`/tools/expense-tracker`** (también `/app` redirige ahí).
+- Login post-auth → `/tools/expense-tracker`.
+- CV, tecnologías, proyectos, portfolio, study y el resto de `/tools` quedan **aparcados** (código y rutas vivas; fuera de la barra de navegación).
+- Dominio/rebrand completo puede llegar después; el nombre visible en cabecera es **Finanzas**.
+- El monorepo hermano `finanzas-app` fue un ensayo de extracción; **no** es el camino activo.
+
 ## Objetivo del proyecto
 
-SkillAtlas es un MVP para gestionar conocimiento tecnico y mostrar portfolio:
+SkillAtlas se reorienta a una app de finanzas:
 
-- tecnologias
-- conceptos por tecnologia
-- proyectos
-- embeds por proyecto
-- portfolio publico (preview en sesion `/portfolio`; URL legible `/portfolio/<slug>` **saas-011**; enlace revocable `/p/<token>` **saas-003**)
-- CV privado (`/cv`; seleccion/orden de proyectos + perfil del CV en prefs; preview modal; print en claro; enlace publico opcional `/cv/p/<token>` **saas-012**)
+- gastos y suscripciones
+- patrimonio, deudas, escenarios, inversiones
+- sync opcional + E2E (`user_client_state` / `tools_expense_tracker`)
+- app móvil Expo (`mobile/`)
+
+Legacy (no priorizar features nuevas):
+
+- tecnologias / conceptos / proyectos / embeds
+- portfolio publico y CV
 
 ## Stack actual
 
 - **pnpm** monorepo (`pnpm-workspace.yaml`: raíz web, `packages/*`, `mobile/`); lockfile `pnpm-lock.yaml`
 - Astro
 - Tailwind CSS v4
-- Supabase (PostgreSQL + RLS; transicion `docs/sql/rls-mvp-authenticated.sql`; SaaS multi-tenant `docs/sql/saas-001` … `saas-014` — ver `docs/db.md`)
-- Despliegue **Vercel:** `@astrojs/vercel` en `astro.config.mjs` (rutas on-demand); no commitear `.vercel/` ni `dist/`
-- TypeScript para scripts cliente; imports con aliases de `tsconfig.json` (`@scripts/*`, `@lib/*`, `@config/*`, …) dentro de `src/scripts/**`
-- Cliente Supabase en el navegador: `getSupabaseBrowserClient()` en `src/scripts/core/client-supabase.ts` (evitar repetir `createClient` en cada script)
+- Supabase (PostgreSQL + RLS; SaaS multi-tenant histórico en `docs/sql/saas-001` … — ver `docs/db.md`)
+- Dominio compartido: `packages/expense-core` (`@skill-atlas/expense-core`)
+- Despliegue **Vercel:** `@astrojs/vercel` en `astro.config.mjs`
+- TypeScript para scripts cliente; aliases de `tsconfig.json`
+- Cliente Supabase: `getSupabaseBrowserClient()` en `src/scripts/core/client-supabase.ts`
 
 ## Auth (login convencional)
 
 - La pantalla principal es **`/login`** (email+contraseña + OAuth).
-- `Ajustes` (`/settings`) se usa para estado de sesión, logout, preferencias UI (navegación lateral estilo “repo settings”), perfil público y stack de ayuda (`portfolio_profiles` + localStorage). Secciones enlazables con hash (`#prefs`, `#portfolio-links`, `#portfolio-presentation`, …); bookmarks antiguos `#classic-*` se redirigen en cliente al id nuevo. **Enlaces públicos:** visibilidad y slug se guardan con **Aplicar** (toast), no solo con el checkbox; **Guardar perfil** es para el bloque de perfil (nombre, bio, enlaces, stack).
-- En el header:
-  - si NO hay sesión: aparece icono de `/login`
-  - si hay sesión: aparecen **Ajustes + Sign out** y avatar (si el provider lo devuelve); enlaces de app (CV, tecnologías, proyectos, portfolio); **Admin** si allowlist; **no** hay enlace a **Precios** en la barra (Precios: landing/hero + footer con sesión).
-- Providers usados en el cliente:
-  - GitHub: `provider: "github"`
-  - LinkedIn: `provider: "linkedin_oidc"` (OIDC, no `"linkedin"`)
+- Tras login → **`/tools/expense-tracker`**.
+- `Ajustes` (`/settings`) para sesión, logout y preferencias UI.
+- En el header (sesión): **Cuaderno** + Ajustes/avatar; sin CV/tech/proyectos/tools en la barra.
+- Providers: GitHub (`github`), LinkedIn (`linkedin_oidc`).
 
 ## Variables de entorno
 
@@ -42,62 +53,30 @@ Requeridas en `.env`:
 - `PUBLIC_SUPABASE_ANON_KEY`
 - `PUBLIC_DATA_SOURCE` (`mock` o `supabase`)
 
-## Convenciones clave del dominio
+## Convenciones clave del dominio (finanzas)
 
-- Los conceptos siempre pertenecen a una tecnologia.
-- Los conceptos se crean desde el detalle de tecnologia: en **mock** `/technologies/[techId]`; en **Supabase** `/technologies/view?tech=<slug>` (CSR).
-- Un proyecto se relaciona con muchas tecnologias.
-- Un proyecto se relaciona con muchos conceptos.
-- En detalle de proyecto, el picker de conceptos solo muestra conceptos de tecnologias asociadas al proyecto (**mock**: `/projects/[projectId]`; **Supabase**: `/projects/view?project=<slug>`).
+- Estado en `packages/expense-core` + UI en `src/components/tools/expense-tracker/` + scripts `src/scripts/tools/expense-tracker*.ts`.
+- Persistencia local `skillatlas_tools_expense_tracker_v1`; nube scope `tools_expense_tracker`.
 
-## Data layer (importante)
+## Data layer (legacy portfolio)
 
-Usar siempre `src/data/index.ts` como facade.
-
-- No importar `src/data/mock.ts` directamente en paginas/componentes.
-- `src/data/index.ts` selecciona provider por `PUBLIC_DATA_SOURCE`.
-- Providers actuales:
-  - `src/data/providers/mockProvider.ts`
-  - `src/data/providers/supabaseProvider.ts`
-
-## Estado funcional actual
-
-Persistencia Supabase implementada para:
-
-- crear, editar y eliminar tecnologias
-- crear, editar y eliminar conceptos
-- crear, editar y eliminar proyectos
-- asociar/desasociar tecnologias de un proyecto
-- asociar conceptos a proyecto
-- crear/eliminar/reordenar embeds
-- con Supabase, listas y detalles relevantes se hidratan en **cliente** (ver `docs/architecture.md`)
-
-UI/UX:
-
-- dark mode
-- selector ES/EN basico
-- modales in-app y toasts custom
+Usar siempre `src/data/index.ts` como facade si se toca portfolio/tech (no es el foco del producto).
 
 ## Archivos sensibles para no romper
 
-- `src/data/index.ts`
-- `src/data/providers/supabaseProvider.ts`
-- `src/scripts/core/ui-feedback.ts`
-- `src/scripts/client.ts` (orquesta boot global) y `src/scripts/client-shell/*` (banner, nav, prefs, i18n, auth header); mapa en `docs/code-locations.md`
+- `packages/expense-core/**`
+- `src/scripts/tools/expense-tracker.ts` y helpers
+- `src/pages/tools/expense-tracker.astro`
+- `src/scripts/core/user-client-state.ts`
+- `src/scripts/client.ts` y `src/scripts/client-shell/*`
 - `src/pages/login.astro` + `src/scripts/login/login-auth.ts`
-- `src/scripts/login/login-earth.ts` + `src/shaders/*` + assets en `public/static/earth/*`
-- `src/pages/technologies/[techId].astro` y `src/pages/technologies/view.astro`
-- `src/pages/projects/[projectId].astro` y `src/pages/projects/view.astro`
-- `src/scripts/projects/project-view-bootstrap.ts`, `src/scripts/technologies/technology-view-bootstrap.ts`
-- `src/scripts/settings/settings-profile.ts`, `src/scripts/cv/cv-page.ts`, `src/lib/public-portfolio-slug.ts` (perfil, CV, slug publico)
 
 ## Regla de trabajo recomendada
 
-1. Cambios pequeños y verticales.
-2. Mantener scripts cliente separados por pantalla.
-3. Validar con `pnpm build` tras cambios.
-4. Evitar introducir features fuera del flujo MVP sin consenso.
-5. Tras cambios de producto, DB o rutas, actualizar `docs/architecture.md`, `docs/db.md` y/o `docs/backlog.md` cuando proceda.
+1. Cambios pequeños y verticales en el cuaderno de finanzas.
+2. Evitar features nuevas en CV/portfolio/study sin consenso.
+3. Validar con `pnpm build` / `pnpm test` tras cambios de dominio.
+4. Tras cambios de producto o rutas, actualizar `docs/architecture.md` / `docs/backlog.md` cuando proceda.
 
 ## Git: formato de commits y tags (obligatorio)
 
@@ -105,7 +84,7 @@ Formato deseado:
 
 - **Asunto** (1 línea): `tipo: resumen corto`
   - Usar prefijos como `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`.
-- **Cuerpo**: lista de bullets con `- ` (como en el ejemplo del repo), explicando cambios clave por áreas.
+- **Cuerpo**: lista de bullets con `- `.
 
 Ejemplo:
 
@@ -114,20 +93,6 @@ feat: algo resumido
 
 - Punto 1 (área)
 - Punto 2 (área)
-- Punto 3 (área)
 ```
 
-Para releases, crear **tag anotado** (`git tag -a ...`) usando el mismo estilo de bullets en el mensaje del tag.
-
-### Checklist cuando el usuario pide “commits para release/tag”
-
-Cuando el usuario pida preparar commits para una nueva release/tag:
-
-- Actualizar `package.json` a la versión objetivo.
-- Actualizar `src/config/banner.ts` (`id`, `version` y texto) a esa versión.
-- Actualizar `docs/backlog.md`:
-  - Consolidar lo hecho en la versión actual.
-  - Si hay trabajo que se pospone (p. ej. `/study`), crear la sección de la próxima versión y mover ahí esos bullets.
-- Agrupar commits por áreas (evitar “un commit gigante”), respetando el estilo del repo.
-- Devolver al final el **cuerpo sugerido del tag** (mensaje del tag anotado); el tag lo crea el usuario.
-
+Para releases, crear **tag anotado** (`git tag -a ...`) con el mismo estilo de bullets.

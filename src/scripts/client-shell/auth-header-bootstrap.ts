@@ -338,7 +338,7 @@ export async function initAuthHeader() {
       el.classList.toggle("inline-flex", isAuthed);
     });
 
-    if (homeLink) homeLink.href = isAuthed ? "/app" : "/";
+    if (homeLink) homeLink.href = isAuthed ? "/tools/expense-tracker" : "/";
 
     if (homePopover) {
       homePopover.classList.add("hidden");

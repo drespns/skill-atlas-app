@@ -9,11 +9,11 @@ export type GlobalBanner = {
 
 // Banner global (sticky) para versión/noticias.
 export const GLOBAL_BANNER: GlobalBanner = {
-  id: "v0.150.0",
-  version: "0.150.0",
+  id: "finanzas-inplace-2026",
+  version: "finanzas",
   text:
-    "v0.150.0 · Hub /tools con favoritos (prefs, cabecera, Ctrl+K), i18n del hub; base para más utilidades dev y pulido herramienta a herramienta.",
-  href: "https://github.com/drespns/skill-atlas-app",
-  hrefLabel: "Repositorio",
+    "SkillAtlas se centra en finanzas personales: gastos, suscripciones, patrimonio e inversiones. El portfolio/CV queda aparcado (rutas antiguas siguen vivas).",
+  href: "/tools/expense-tracker",
+  hrefLabel: "Abrir cuaderno",
   tone: "info",
 };

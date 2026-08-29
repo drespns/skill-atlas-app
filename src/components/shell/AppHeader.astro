@@ -35,8 +35,8 @@ const APP_LOGO_SRC = "/favicon.svg";
         data-home-link
         class="flex min-w-0 items-center gap-2.5 md:gap-3 no-underline rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
       >
-        <img src={APP_LOGO_SRC} alt="SkillAtlas" class="h-11 w-11 sm:h-12 sm:w-12 shrink-0 rounded-lg" />
-        <span class="font-bold text-xl sm:text-2xl hover:underline truncate tracking-tight">SkillAtlas</span>
+        <img src={APP_LOGO_SRC} alt="Finanzas" class="h-11 w-11 sm:h-12 sm:w-12 shrink-0 rounded-lg" />
+        <span class="font-bold text-xl sm:text-2xl hover:underline truncate tracking-tight">Finanzas</span>
       </a>
 
       <div
@@ -51,12 +51,12 @@ const APP_LOGO_SRC = "/favicon.svg";
           <span data-i18n="home.chooseDestination">Choose destination</span>
         </p>
         <a
-          href="/app"
+          href="/tools/expense-tracker"
           data-home-popover-app
           class="mt-1 flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 no-underline"
         >
-          <span data-i18n="home.openApp">Open app</span>
-          <span class="text-xs text-gray-500 dark:text-gray-400">/app</span>
+          <span>Cuaderno de gastos</span>
+          <span class="text-xs text-gray-500 dark:text-gray-400">/gastos</span>
         </a>
         <a
           href="/"
@@ -89,52 +89,62 @@ const APP_LOGO_SRC = "/favicon.svg";
       >
       </div>
       <a
-        href="/cv"
+        href="/tools/expense-tracker"
         data-auth-nav
+        data-header-nav-link
+        data-nav-active={isActive("/tools/expense-tracker") ? "true" : "false"}
+        class="header-nav-link relative px-2 lg:px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+      >
+        <span>Cuaderno</span>
+      </a>
+      {/* Legacy portfolio/CV/study/tools: rutas vivas, ocultas del nav (producto = finanzas). */}
+      <a
+        href="/cv"
         data-header-nav-link
         data-nav-active={isActive("/cv") ? "true" : "false"}
         class="header-nav-link relative px-2 lg:px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+        hidden
       >
         <span data-i18n="nav.cv">CV</span>
       </a>
       <a
         href="/technologies"
-        data-auth-nav
         data-header-nav-link
         data-nav-active={isActive("/technologies") ? "true" : "false"}
         class="header-nav-link relative px-2 lg:px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+        hidden
       >
         <span data-i18n="nav.technologies">Tecnologías</span>
       </a>
       <a
         href="/projects"
-        data-auth-nav
         data-header-nav-link
         data-nav-active={isActive("/projects") ? "true" : "false"}
         class="header-nav-link relative px-2 lg:px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+        hidden
       >
         <span data-i18n="nav.projects">Proyectos</span>
       </a>
       <a
         href="/portfolio"
-        data-auth-nav
         data-header-nav-link
         data-nav-active={isActive("/portfolio") ? "true" : "false"}
         class="header-nav-link relative px-2 lg:px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+        hidden
       >
         <span data-i18n="nav.portfolio">Portfolio</span>
       </a>
       <a
         href="/study"
-        data-auth-nav
         data-header-nav-link
         data-nav-active={isActive("/study") ? "true" : "false"}
         class="header-nav-link relative px-2 lg:px-3 py-1.5 rounded-lg transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-900/40 text-gray-700 dark:text-gray-200 hidden"
+        hidden
       >
         <span data-i18n="nav.study">Estudio</span>
       </a>
 
-      <div class="relative shrink-0 hidden" data-tools-wrap data-auth-nav>
+      <div class="relative shrink-0 hidden" data-tools-wrap>
         <a
           href="/tools"
           data-tools-link

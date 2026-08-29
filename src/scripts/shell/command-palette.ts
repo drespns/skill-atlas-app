@@ -71,20 +71,23 @@ function hubSlugFromToolHref(href: string): string {
 }
 
 const CORE_AUTHED_NAV: PaletteItem[] = [
+  { id: "go-expenses", label: "Cuaderno · Gastos y suscripciones", href: "/tools/expense-tracker", hint: "/tools/expense-tracker", section: "nav" },
   { id: "go-landing", label: "Inicio · landing pública", href: "/", hint: "/", section: "nav" },
-  { id: "go-pricing", label: "Precios", href: "/pricing", hint: "/pricing", section: "nav" },
-  { id: "go-backlog", label: "Historial del producto", href: "/backlog", hint: "/backlog", section: "nav" },
-  { id: "go-contact", label: "Contacto", href: "/contact", hint: "/contact", section: "nav" },
-  { id: "go-app", label: "Abrir app", href: "/app", hint: "/app", section: "nav" },
-  { id: "go-technologies", label: "Tecnologías", href: "/technologies", hint: "/technologies", section: "nav" },
-  { id: "go-projects", label: "Proyectos", href: "/projects", hint: "/projects", section: "nav" },
-  { id: "go-portfolio", label: "Portfolio", href: "/portfolio", hint: "/portfolio", section: "nav" },
-  { id: "go-study", label: "Estudio", href: "/study", hint: "/study", section: "nav" },
-  { id: "go-tools", label: "Herramientas", href: "/tools", hint: "/tools", section: "nav" },
+  { id: "go-settings", label: "Ajustes", href: "/settings#prefs", hint: "/settings#prefs", section: "nav" },
+];
+
+/** Rutas legacy (portfolio / tools) — siguen en Ctrl+K, no en la barra. */
+const LEGACY_NAV_ITEMS: PaletteItem[] = [
+  { id: "go-app", label: "Abrir app (redirige al cuaderno)", href: "/app", hint: "/app", section: "nav" },
+  { id: "go-technologies", label: "Tecnologías (legacy)", href: "/technologies", hint: "/technologies", section: "nav" },
+  { id: "go-projects", label: "Proyectos (legacy)", href: "/projects", hint: "/projects", section: "nav" },
+  { id: "go-portfolio", label: "Portfolio (legacy)", href: "/portfolio", hint: "/portfolio", section: "nav" },
+  { id: "go-study", label: "Estudio (legacy)", href: "/study", hint: "/study", section: "nav" },
+  { id: "go-cv", label: "CV (legacy)", href: "/cv", hint: "/cv", section: "nav" },
+  { id: "go-tools", label: "Hub herramientas (legacy)", href: "/tools", hint: "/tools", section: "nav" },
 ];
 
 const TOOL_NAV_ITEMS: PaletteItem[] = [
-  { id: "go-tools-expenses", label: "Herramientas · Gastos", href: "/tools/expense-tracker", hint: "/tools/expense-tracker", section: "nav" },
   { id: "go-tools-habits", label: "Herramientas · Hábitos", href: "/tools/habits", hint: "/tools/habits", section: "nav" },
   { id: "go-tools-convert", label: "Herramientas · Convertidor", href: "/tools/convert", hint: "/tools/convert", section: "nav" },
   { id: "go-tools-readme", label: "Herramientas · Vista Markdown / README", href: "/tools/readme-preview", hint: "/tools/readme-preview", section: "nav" },
@@ -104,15 +107,10 @@ const TOOL_NAV_ITEMS: PaletteItem[] = [
 ];
 
 const TAIL_AUTHED_NAV: PaletteItem[] = [
-  { id: "go-cv", label: "CV", href: "/cv", hint: "/cv", section: "nav" },
-  { id: "go-cv-studio", label: "CV · Canvas / estudio (beta)", href: "/cv/studio", hint: "/cv/studio", section: "nav" },
-  { id: "go-settings", label: "Ajustes", href: "/settings#prefs", hint: "/settings#prefs", section: "nav" },
+  { id: "go-contact", label: "Contacto", href: "/contact", hint: "/contact", section: "nav" },
 ];
 
-const AUTHED_ACTION_ITEMS: PaletteItem[] = [
-  { id: "new-technology", label: "Crear tecnología", href: "/technologies?create=1", hint: "Acción", section: "actions" },
-  { id: "new-project", label: "Crear proyecto", href: "/projects?create=1", hint: "Acción", section: "actions" },
-];
+const AUTHED_ACTION_ITEMS: PaletteItem[] = [];
 
 /** Navegación autenticada + acciones, con herramientas favoritas al inicio (sin duplicar href en «nav»). */
 function buildAuthedPaletteItems(): PaletteItem[] {
@@ -141,7 +139,7 @@ function buildAuthedPaletteItems(): PaletteItem[] {
 
   const restTools = TOOL_NAV_ITEMS.filter((it) => !favSet.has(hubSlugFromToolHref(it.href)));
 
-  return [...favItems, ...CORE_AUTHED_NAV, ...restTools, ...TAIL_AUTHED_NAV, ...AUTHED_ACTION_ITEMS];
+  return [...favItems, ...CORE_AUTHED_NAV, ...restTools, ...LEGACY_NAV_ITEMS, ...TAIL_AUTHED_NAV, ...AUTHED_ACTION_ITEMS];
 }
 
 /** Favoritas primero, luego entradas `admin` (si hay), resto de la paleta autenticada. */

@@ -10,15 +10,25 @@ export interface Props {
   href?: string;
   /** Clave i18n del enlace «volver al hub» (por defecto `tools.pageHeaderBackHub`). */
   backI18nKey?: string;
+  /** Si false, no muestra el enlace «← Herramientas» (p. ej. cuaderno de finanzas como producto principal). */
+  showBack?: boolean;
 }
 
-const { titleI18nKey, title, href = "/tools", backI18nKey = "tools.pageHeaderBackHub" } = Astro.props;
+const {
+  titleI18nKey,
+  title,
+  href = "/tools",
+  backI18nKey = "tools.pageHeaderBackHub",
+  showBack = true,
+} = Astro.props;
 ---
 
 <header class="tool-page-header">
-  <div class="tool-page-header__toolbar">
-    <a href={href} class="tool-footer-link" data-i18n={backI18nKey}>← Herramientas</a>
-  </div>
+  {showBack && (
+    <div class="tool-page-header__toolbar">
+      <a href={href} class="tool-footer-link" data-i18n={backI18nKey}>← Herramientas</a>
+    </div>
+  )}
   <div class="tool-page-header__hero">
     <div class="tool-page-header__lead">
       <h1 class="tool-page-header__title m-0 text-3xl md:text-4xl font-semibold tracking-tight text-gray-900 dark:text-gray-100" data-i18n={titleI18nKey}>

@@ -25,7 +25,7 @@ const filterDays = Array.from({ length: 31 }, (_, i) => i + 1);
 <AppShell title={title} mainWidth="wide">
   <div data-requires-auth class="hidden"></div>
   <section class="space-y-6 w-full et-page-wide" data-tools-expense-page>
-    <ToolsPageHeader titleI18nKey="tools.expenseTrackerTitle" title={title}>
+    <ToolsPageHeader titleI18nKey="tools.expenseTrackerTitle" title={title} showBack={false}>
       <div slot="intro">
         <p class="m-0 text-sm md:text-base text-gray-600 dark:text-gray-400 leading-relaxed">
           Tus datos viven en este navegador. Activa la copia en tu cuenta (derecha) para sincronizar; solo tú ves tu hoja.

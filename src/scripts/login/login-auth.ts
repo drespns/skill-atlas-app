@@ -59,11 +59,11 @@ async function initLoginAuth() {
       }
     })();
     const candidate = nextParam ?? fromSession ?? "";
-    if (!candidate) return "/app";
+    if (!candidate) return "/tools/expense-tracker";
     try {
       // Only allow same-origin relative paths.
       if (candidate.startsWith("/")) return candidate;
-      return "/app";
+      return "/tools/expense-tracker";
     } finally {
       try {
         sessionStorage.removeItem("skillatlas_post_login_next");
@@ -76,7 +76,7 @@ async function initLoginAuth() {
   const redirectAfterAuth = () => {
     const next = getNextUrl();
     // Avoid redirect loop
-    if (next.startsWith("/login")) return "/app";
+    if (next.startsWith("/login")) return "/tools/expense-tracker";
     return next;
   };
 

@@ -36,7 +36,7 @@ const documentTitle = title.includes(SITE_NAME) ? title : `${title} · ${SITE_NA
 const pathname = Astro.url.pathname;
 const pathNorm = pathname.replace(/\/$/, "") || "/";
 /** En estas rutas se muestra la app completa también en móvil (formularios). */
-const mobileFullSitePaths = new Set(["/login", "/request-access"]);
+const mobileFullSitePaths = new Set(["/login", "/request-access", "/tools/expense-tracker", "/settings"]);
 const showMobileLandingGate = !minimalChrome && !mobileFullSitePaths.has(pathNorm);
 ---
 
