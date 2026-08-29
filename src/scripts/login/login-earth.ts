@@ -11,6 +11,7 @@ function requestIdle(cb: () => void, timeoutMs: number) {
 
 /**
  * Carga Three.js y texturas solo en viewport md+ y tras idle (menos trabajo en LCP).
+ * Timeout más largo en la home de entrada para no competir con login/charts.
  */
 async function startEarthWhenReady(mount: HTMLElement) {
   if (!window.matchMedia(EARTH_DESKTOP_MQ).matches) return;
@@ -26,8 +27,8 @@ async function startEarthWhenReady(mount: HTMLElement) {
     cleanup = mountLoginEarthScene(canvas, mount);
   } catch (e) {
     canvas.remove();
-    mount.classList.add("flex", "items-center", "justify-center");
-    mount.innerHTML = `<p class="text-xs text-gray-500 dark:text-gray-400 px-3 text-center">No se pudo cargar el modelo 3D en este navegador.</p>`;
+    // Silencioso en entry: el degradado de fondo basta
+    mount.replaceChildren();
     // eslint-disable-next-line no-console
     console.error(e);
     return;
@@ -46,8 +47,11 @@ function initLoginEarth() {
   const mount = document.querySelector<HTMLElement>("[data-login-earth]");
   if (!mount) return;
 
+  const isEntry = Boolean(document.querySelector("[data-finanzas-entry]"));
+  const idleTimeout = isEntry ? 4200 : 2800;
+
   const schedule = () => {
-    requestIdle(() => void startEarthWhenReady(mount), 2800);
+    requestIdle(() => void startEarthWhenReady(mount), idleTimeout);
   };
 
   if (window.matchMedia(EARTH_DESKTOP_MQ).matches) {

@@ -37,7 +37,42 @@ function borderSubtle(): string {
 }
 
 function t(key: string, opts?: Record<string, unknown>): string {
-  return String(i18next.t(key, opts as any));
+  const FALLBACKS: Record<string, string> = {
+    "landing.toolsShowcaseEtChartBalanceTitle2025": "Ingresos vs gastos y neto · {{year}} (demo)",
+    "landing.toolsShowcaseEtChartPieTitle": "Distribución (€)",
+    "landing.toolsShowcaseEtChartProjTitle": "Proyección {{year}} (todo en €)",
+    "landing.toolsShowcaseEtLegendInc": "Ingresos (€)",
+    "landing.toolsShowcaseEtLegendExp": "Gastos (€)",
+    "landing.toolsShowcaseEtLegendNet": "Neto (€)",
+    "landing.toolsShowcaseEtLegendOut": "Salidas (€)",
+    "landing.toolsShowcaseEtLegendIn": "Ingresos (€)",
+    "landing.toolsShowcaseEtCatFood": "Alimentación",
+    "landing.toolsShowcaseEtCatSoftware": "Software y nube",
+    "landing.toolsShowcaseEtCatLeisure": "Ocio",
+    "landing.toolsShowcaseEtCatHealth": "Salud",
+    "landing.toolsShowcaseEtCatServices": "Servicios",
+    "landing.toolsShowcaseEtCatHousing": "Vivienda",
+  };
+
+  let raw: unknown;
+  try {
+    raw = i18next.isInitialized ? i18next.t(key, { ...(opts as object), defaultValue: FALLBACKS[key] ?? key }) : null;
+  } catch {
+    raw = null;
+  }
+
+  let out =
+    typeof raw === "string" && raw.length > 0 && raw !== key ? raw : (FALLBACKS[key] ?? key.split(".").pop() ?? "—");
+
+  if (opts && typeof opts.year !== "undefined") {
+    out = out.replace(/\{\{\s*year\s*\}\}/g, String(opts.year));
+  }
+  // Evita el literal "undefined" si i18n devolvió algo raro
+  if (out === "undefined" || out.includes("undefined")) {
+    const fb = FALLBACKS[key] ?? "—";
+    return opts?.year != null ? fb.replace(/\{\{\s*year\s*\}\}/g, String(opts.year)) : fb;
+  }
+  return out;
 }
 
 function monthLabelsShort(): string[] {
@@ -347,9 +382,21 @@ function boot() {
     return;
   }
 
-  renderExpenseCharts(etRoot);
-  initExpenseSlider(etRoot);
-  ensureThemeBridge(etRoot);
+  const run = () => {
+    renderExpenseCharts(etRoot);
+    initExpenseSlider(etRoot);
+    ensureThemeBridge(etRoot);
+  };
+
+  // En la home de entrada priorizamos el login: charts tras idle / timeout corto
+  const isEntry = Boolean(document.querySelector("[data-finanzas-entry]"));
+  if (isEntry && typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(() => run(), { timeout: 1600 });
+  } else if (isEntry) {
+    window.setTimeout(run, 200);
+  } else {
+    run();
+  }
 }
 
 if (document.readyState === "loading") {

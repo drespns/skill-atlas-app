@@ -7,28 +7,47 @@ const title = "Finanzas";
 ---
 
 <AppShell title={title} minimalChrome>
+  <link slot="head" rel="prefetch" href="/static/earth/day.jpg" />
+  <link slot="head" rel="prefetch" href="/static/earth/night.jpg" />
+  <link slot="head" rel="prefetch" href="/static/earth/specularClouds.jpg" as="image" />
+
   <style is:global>
     :root {
       --app-main-px: 0px;
       --app-main-py: 0px;
+      --app-header-h: 0px;
+    }
+    /* Sin chrome: el main no debe empujar con padding de header */
+    [data-finanzas-entry] {
+      margin: 0;
     }
   </style>
 
   <section class="w-full min-h-svh overflow-hidden" data-finanzas-entry>
     <div class="grid md:grid-cols-2 min-h-svh md:h-svh min-h-0">
-      {/* En móvil: login primero; en desktop: demo izq / login der */}
-      <div class="order-2 md:order-1 min-h-0 md:h-full border-t md:border-t-0 md:border-r border-gray-200/80 dark:border-gray-800">
+      {/* Móvil: login primero. Desktop: demo izq / Earth+login der */}
+      <div class="order-2 md:order-1 min-h-0 md:h-full border-t md:border-t-0 md:border-r border-gray-200/70 dark:border-gray-800/80">
         <FinanzasEntryShowcase />
       </div>
+
       <div
-        class="order-1 md:order-2 flex items-center justify-center px-5 py-8 md:px-10 md:py-6 min-h-0 overflow-y-auto bg-white dark:bg-gray-950 relative"
+        class="order-1 md:order-2 relative flex items-center justify-center min-h-[min(100svh,40rem)] md:min-h-0 md:h-full overflow-hidden bg-slate-50 dark:bg-gray-950"
       >
+        {/* Earth solo desktop (login-earth.ts ya lo condiciona a md+) */}
         <div
-          class="pointer-events-none absolute inset-0 opacity-40 dark:opacity-30 bg-linear-to-bl from-indigo-100/80 via-transparent to-transparent dark:from-indigo-950/50"
+          data-login-earth
+          class="hidden md:block absolute inset-0 z-0"
           aria-hidden="true"
         >
         </div>
-        <div class="relative z-10 w-full flex justify-center">
+        <div
+          class="absolute inset-0 z-10 pointer-events-none bg-linear-to-l from-transparent via-white/40 to-white/95 dark:via-gray-950/50 dark:to-gray-950/95 md:bg-linear-to-l"
+          aria-hidden="true"
+        >
+        </div>
+        <div
+          class="relative z-20 w-full max-w-md mx-auto px-6 sm:px-8 py-10 md:py-12 flex justify-center"
+        >
           <FinanzasLoginCard />
         </div>
       </div>
@@ -37,4 +56,5 @@ const title = "Finanzas";
 
   <script src="../scripts/login/login-auth.ts"></script>
   <script src="../scripts/landing/landing-tools-showcase.ts"></script>
+  <script src="../scripts/login/login-earth.ts"></script>
 </AppShell>

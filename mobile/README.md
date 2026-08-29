@@ -32,10 +32,9 @@ pnpm mobile:android
 
 ## Build Play Store (EAS)
 
-1. `npm i -g eas-cli`
-2. `cd mobile && eas login && eas init` (sustituye `projectId` en `app.json`)
-3. `eas build -p android --profile production` → AAB
-4. Preview APK: `eas build -p android --profile preview`
+Guía paso a paso (cuenta Play, EAS, APK, producción, seguridad): **[`docs/play-store.md`](docs/play-store.md)**.
+
+Resumen corto:
 
 ## Monorepo
 
