@@ -27,7 +27,7 @@ export default function UnlockE2eScreen() {
     <View style={styles.screen}>
       <Text style={styles.title}>Frase del cuaderno</Text>
       <Text style={styles.sub}>
-        Tu copia en la nube está cifrada. Introduce la misma frase que usas en SkillAtlas web. No se
+        Tu copia en la nube está cifrada. Introduce la misma frase que usas en Finanzas web. No se
         guarda en el servidor.
       </Text>
       <TextInput

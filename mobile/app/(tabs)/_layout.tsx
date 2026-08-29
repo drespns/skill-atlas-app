@@ -17,8 +17,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Inicio",
+          title: "Cuaderno",
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={String(color)} />,
+          headerTitle: "Finanzas",
           headerRight: () => (
             <Link href="/add-transaction" asChild>
               <Pressable style={{ marginRight: 16 }}>

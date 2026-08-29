@@ -79,7 +79,7 @@ export default function AddTransactionScreen() {
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.saveText}>Guardar y sincronizar</Text>
+          <Text style={styles.saveText}>Guardar</Text>
         )}
       </Pressable>
     </ScrollView>

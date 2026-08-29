@@ -32,9 +32,9 @@ export default function LoginScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={styles.card}>
-        <Text style={styles.brand}>SkillAtlas Gastos</Text>
+        <Text style={styles.brand}>Finanzas</Text>
         <Text style={styles.sub}>
-          Inicia sesión con tu cuenta SkillAtlas para sincronizar tu cuaderno de gastos con la web.
+          Entra con el mismo correo y contraseña que en la web para sincronizar tu cuaderno de gastos.
         </Text>
 
         {!configured ? (

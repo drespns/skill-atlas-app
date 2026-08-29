@@ -1,5 +1,5 @@
 {
-  "name": "skill-atlas-gastos-mobile",
+  "name": "finanzas-gastos-mobile",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
