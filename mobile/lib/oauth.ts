@@ -22,9 +22,22 @@ export function getOAuthBridgePrefix(): string {
 }
 
 function getPackagerHostPort(): { host: string; port: string } | null {
+  // 1) Lo más fiable en Expo Go: parsear Linking.createURL
+  try {
+    const sample = Linking.createURL("auth/callback");
+    const exp = sample.match(/^exp:\/\/([^/:]+)(?::(\d+))?/i);
+    if (exp?.[1]) {
+      return { host: exp[1], port: exp[2] || "8081" };
+    }
+  } catch {
+    // ignore
+  }
+
   const hostUri =
     Constants.expoConfig?.hostUri ??
     (Constants as { expoGoConfig?: { debuggerHost?: string } }).expoGoConfig?.debuggerHost ??
+    (Constants.manifest2 as { extra?: { expoGo?: { debuggerHost?: string } } } | null)?.extra
+      ?.expoGo?.debuggerHost ??
     (Constants.manifest as { debuggerHost?: string } | null)?.debuggerHost;
   if (!hostUri || typeof hostUri !== "string") return null;
   const hostPort = hostUri.split("/")[0]?.split("?")[0]?.trim();
@@ -41,18 +54,34 @@ export function getAppAuthReturnUrl(): string {
 
 /**
  * Redirect para Supabase.
- * El `return` NO va en query (Supabase lo elimina). Va en el path:
- *   /auth/expo-callback/exp/{host}/{port}
- *   /auth/expo-callback/native
+ * Path (Supabase elimina query custom):
+ *   /auth/expo-callback/exp/{host}/{port}  → Expo Go
+ *   /auth/expo-callback/native             → solo build con scheme propio
  */
 export function getOAuthRedirectTo(): string {
   if (Platform.OS === "web" && typeof window !== "undefined") {
     return `${window.location.origin}/auth/callback`;
   }
+
+  const appReturn = getAppAuthReturnUrl();
+  // Si createURL ya es exp://, NUNCA usar /native (no abre Expo Go).
+  if (appReturn.startsWith("exp://")) {
+    const hp = getPackagerHostPort();
+    if (hp) {
+      return `${getOAuthBridgePrefix()}/exp/${hp.host}/${hp.port}`;
+    }
+    // Último recurso: incrustar host parseando appReturn
+    const m = appReturn.match(/^exp:\/\/([^/:]+)(?::(\d+))?/i);
+    if (m?.[1]) {
+      return `${getOAuthBridgePrefix()}/exp/${m[1]}/${m[2] || "8081"}`;
+    }
+  }
+
   const hp = getPackagerHostPort();
-  if (hp && (Constants.appOwnership === "expo" || __DEV__)) {
+  if (hp) {
     return `${getOAuthBridgePrefix()}/exp/${hp.host}/${hp.port}`;
   }
+
   return `${getOAuthBridgePrefix()}/native`;
 }
 
@@ -136,6 +165,17 @@ export async function signInWithOAuthProvider(
 
   const redirectTo = getOAuthRedirectTo();
   const dismissPrefix = Platform.OS === "web" ? redirectTo : getOAuthBridgePrefix();
+
+  if (
+    Platform.OS !== "web" &&
+    redirectTo.endsWith("/native") &&
+    (Constants.appOwnership === "expo" || __DEV__)
+  ) {
+    return {
+      error:
+        "No se detectó la URL de Metro (exp://). Deja pnpm mobile en marcha, misma Wi‑Fi, reabre el proyecto en Expo Go y reintenta.",
+    };
+  }
 
   if (__DEV__) {
     // eslint-disable-next-line no-console
