@@ -16,21 +16,27 @@ const WEB_ORIGIN = (
   "https://skillatlas.app"
 ).replace(/\/$/, "");
 
-/**
- * Callback HTTPS estable en el dominio de producción.
- * Las IPs LAN (192.168.*) / exp:// las rechaza o ignora Supabase → cae al Site URL (login web).
- * openAuthSessionAsync captura esta URL con los tokens y la sesión queda EN LA APP.
- */
-function getNativeOAuthRedirectTo(): string {
+/** Prefijo HTTPS del puente (para dismiss de Custom Tab + allow list). */
+export function getOAuthBridgePrefix(): string {
   return `${WEB_ORIGIN}/auth/expo-callback`;
 }
 
+/** Deep link de vuelta a Expo (exp://… en Expo Go, scheme en build). */
+export function getAppAuthReturnUrl(): string {
+  return Linking.createURL("auth/callback");
+}
+
+/**
+ * Redirect que se registra en Supabase.
+ * Incluye ?return=exp://… para que la página puente abra Expo Go
+ * (skillatlas-gastos:// no funciona dentro de Expo Go).
+ */
 export function getOAuthRedirectTo(): string {
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    // Expo web en el PC
     return `${window.location.origin}/auth/callback`;
   }
-  return getNativeOAuthRedirectTo();
+  const ret = encodeURIComponent(getAppAuthReturnUrl());
+  return `${getOAuthBridgePrefix()}?return=${ret}`;
 }
 
 export function getOAuthRedirectHint(): string {
@@ -65,15 +71,13 @@ export async function createSessionFromUrl(url: string): Promise<Session | null>
       if (k && v) params[decodeURIComponent(k)] = decodeURIComponent(v);
     }
   }
-  if (!params.code && !params.access_token && url.includes("?")) {
-    try {
-      const q = new URL(url).searchParams;
-      q.forEach((v, k) => {
-        params[k] = v;
-      });
-    } catch {
-      // ignore
-    }
+  if (!params.code && !params.access_token) {
+    const codeMatch = url.match(/[?&]code=([^&#]+)/);
+    if (codeMatch?.[1]) params.code = decodeURIComponent(codeMatch[1]);
+    const atMatch = url.match(/[#&?]access_token=([^&]+)/);
+    if (atMatch?.[1]) params.access_token = decodeURIComponent(atMatch[1]);
+    const rtMatch = url.match(/[#&?]refresh_token=([^&]+)/);
+    if (rtMatch?.[1]) params.refresh_token = decodeURIComponent(rtMatch[1]);
   }
   if (errorCode) throw new Error(errorCode);
 
@@ -98,13 +102,13 @@ export async function createSessionFromUrl(url: string): Promise<Session | null>
   return data.session;
 }
 
-function redirectHelp(redirectTo: string): string {
+function redirectHelp(): string {
   return (
-    `No se pudo cerrar el login en la app.\n\n` +
-    `En Supabase → Authentication → URL Configuration → Redirect URLs añade:\n` +
-    `${redirectTo}\n` +
-    `${WEB_ORIGIN}/**\n` +
-    `http://localhost:8081/**`
+    `No se pudo volver a la app.\n\n` +
+    `En Supabase → Redirect URLs:\n` +
+    `${getOAuthBridgePrefix()}\n` +
+    `${WEB_ORIGIN}/**\n\n` +
+    `Si ves “Acceso listo”, toca Abrir app (debe ser exp://… en Expo Go).`
   );
 }
 
@@ -115,13 +119,22 @@ export async function signInWithOAuthProvider(
   if (!supabase) return { error: "Supabase no configurado" };
 
   const redirectTo = getOAuthRedirectTo();
+  const dismissPrefix = Platform.OS === "web" ? redirectTo : getOAuthBridgePrefix();
 
   if (__DEV__) {
     // eslint-disable-next-line no-console
-    console.log("[oauth]", provider, "redirectTo=", redirectTo, "ownership=", Constants.appOwnership);
+    console.log(
+      "[oauth]",
+      provider,
+      "redirectTo=",
+      redirectTo,
+      "appReturn=",
+      Platform.OS !== "web" ? getAppAuthReturnUrl() : "(web)",
+      "ownership=",
+      Constants.appOwnership,
+    );
   }
 
-  // Expo web (navegador del PC): redirect completo a localhost.
   if (Platform.OS === "web") {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: provider as Provider,
@@ -138,8 +151,6 @@ export async function signInWithOAuthProvider(
     return {};
   }
 
-  // Nativo / Expo Go: Custom Tab. redirectTo = HTTPS en skillatlas.app (permitido).
-  // Al volver a esa URL con ?code= / #access_token=, openAuthSessionAsync nos la entrega.
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: provider as Provider,
     options: {
@@ -151,36 +162,28 @@ export async function signInWithOAuthProvider(
   if (error) return { error: error.message };
   if (!data.url) return { error: "No se pudo abrir el proveedor OAuth" };
 
-  if (__DEV__) {
-    try {
-      const u = new URL(data.url);
-      // eslint-disable-next-line no-console
-      console.log("[oauth] authorize redirect_to=", u.searchParams.get("redirect_to"));
-    } catch {
-      // ignore
-    }
-  }
-
-  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+  // Prefijo sin query: Custom Tab cierra al llegar a /auth/expo-callback?...
+  const result = await WebBrowser.openAuthSessionAsync(data.url, dismissPrefix);
 
   if (result.type === "success" && result.url) {
     if (!hasAuthPayload(result.url)) {
-      return { error: redirectHelp(redirectTo) };
+      return { error: redirectHelp() };
     }
     try {
       const session = await createSessionFromUrl(result.url);
-      if (!session) return { error: redirectHelp(redirectTo) };
+      if (!session) return { error: redirectHelp() };
       return {};
     } catch (e) {
       return { error: e instanceof Error ? e.message : "No se pudo completar OAuth" };
     }
   }
 
+  // dismiss: a menudo la página puente ya hizo deep link a exp://; la sesión llega por Linking
   if (result.type === "cancel" || result.type === "dismiss") {
     return {};
   }
 
-  return { error: redirectHelp(redirectTo) };
+  return { error: redirectHelp() };
 }
 
 export function subscribeOAuthRedirect(onSession: (session: Session | null) => void): () => void {

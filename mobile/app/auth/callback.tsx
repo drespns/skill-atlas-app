@@ -2,39 +2,30 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import * as Linking from "expo-linking";
-import { createSessionFromUrl, getOAuthRedirectHint } from "@/lib/oauth";
+import { createSessionFromUrl } from "@/lib/oauth";
 
 /**
- * Destino OAuth tras GitHub/LinkedIn.
- * Debe coincidir con getOAuthRedirectTo() y estar en Supabase Redirect URLs.
+ * Llegada vía deep link exp://…/auth/callback?code=… (o scheme nativo).
  */
 export default function AuthCallbackScreen() {
   const router = useRouter();
+  const inbound = Linking.useURL();
   const [msg, setMsg] = useState("Completando acceso…");
 
   useEffect(() => {
     let cancelled = false;
 
-    async function run() {
+    async function run(url: string | null) {
+      if (!url) return;
       try {
-        const url = typeof window !== "undefined" ? window.location.href : await Linking.getInitialURL();
-        if (!url) {
-          if (!cancelled) {
-            setMsg("No hay datos OAuth. Vuelve al login.");
-            setTimeout(() => router.replace("/(auth)/login"), 1500);
-          }
-          return;
-        }
         const session = await createSessionFromUrl(url);
         if (cancelled) return;
         if (session) {
           router.replace("/(tabs)");
           return;
         }
-        setMsg(
-          `Sin sesión. Añade en Supabase Redirect URLs:\n${getOAuthRedirectHint()}`,
-        );
-        setTimeout(() => router.replace("/(auth)/login"), 4000);
+        setMsg("No se pudo crear la sesión. Vuelve a intentar el login.");
+        setTimeout(() => router.replace("/(auth)/login"), 2500);
       } catch (e) {
         if (!cancelled) {
           setMsg(e instanceof Error ? e.message : "Error OAuth");
@@ -43,11 +34,25 @@ export default function AuthCallbackScreen() {
       }
     }
 
-    void run();
+    const href =
+      inbound ??
+      (typeof window !== "undefined" ? window.location.href : null);
+
+    if (href) {
+      void run(href);
+    } else {
+      void Linking.getInitialURL().then((u) => {
+        if (u) void run(u);
+        else if (!cancelled) {
+          setMsg("Esperando datos OAuth…");
+        }
+      });
+    }
+
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [inbound, router]);
 
   return (
     <View style={styles.wrap}>
