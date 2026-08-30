@@ -20,6 +20,7 @@
       .box { max-width: 28rem; }
       h1 { font-size: 1.25rem; margin: 0 0 0.75rem; }
       p { margin: 0.5rem 0; line-height: 1.45; color: #94a3b8; font-size: 0.95rem; }
+      code { font-size: 0.75rem; color: #cbd5e1; word-break: break-all; }
       .btn {
         display: inline-block;
         margin-top: 1rem;
@@ -36,34 +37,45 @@
     <div class="box">
       <h1>Acceso listo</h1>
       <p id="status">Abriendo Expo Go…</p>
-      <p>Si no vuelve sola, pulsa el botón (en Expo Go el enlace es <code>exp://</code>, no la app instalada).</p>
+      <p id="hint">Si no vuelve sola, pulsa el botón.</p>
       <p><a class="btn" id="deeplink" href="#">Abrir app</a></p>
+      <p><code id="targetPreview"></code></p>
     </div>
     <script>
       (function () {
         var search = new URLSearchParams(window.location.search);
-        var ret = search.get("return");
         var code = search.get("code");
         var hash = window.location.hash || "";
-
+        var parts = window.location.pathname.split("/").filter(Boolean);
+        // auth / expo-callback / exp / host / port
+        // auth / expo-callback / native
         var target = "skillatlas-gastos://auth/callback";
-        if (ret) {
+        var i = parts.indexOf("expo-callback");
+        if (i >= 0 && parts[i + 1] === "exp" && parts[i + 2]) {
+          var host = parts[i + 2];
+          var port = parts[i + 3] || "8081";
+          target = "exp://" + host + ":" + port + "/--/auth/callback";
+        } else if (i >= 0 && parts[i + 1] === "native") {
+          target = "skillatlas-gastos://auth/callback";
+        } else if (search.get("return")) {
           try {
-            target = decodeURIComponent(ret);
+            target = decodeURIComponent(search.get("return"));
           } catch (e) {
-            target = ret;
+            target = search.get("return");
           }
         }
 
-        // Pasar code / tokens al deep link de Expo
         if (code && target.indexOf("code=") === -1) {
           target += (target.indexOf("?") >= 0 ? "&" : "?") + "code=" + encodeURIComponent(code);
         }
-        // Otros params de Supabase (p. ej. error)
         search.forEach(function (v, k) {
           if (k === "return" || k === "code") return;
           if (target.indexOf(k + "=") >= 0) return;
-          target += (target.indexOf("?") >= 0 ? "&" : "?") + encodeURIComponent(k) + "=" + encodeURIComponent(v);
+          target +=
+            (target.indexOf("?") >= 0 ? "&" : "?") +
+            encodeURIComponent(k) +
+            "=" +
+            encodeURIComponent(v);
         });
         if (hash && hash.length > 1) {
           target = target.split("#")[0] + hash;
@@ -71,23 +83,26 @@
 
         var a = document.getElementById("deeplink");
         if (a) a.setAttribute("href", target);
-
+        var preview = document.getElementById("targetPreview");
+        if (preview) preview.textContent = target;
         var status = document.getElementById("status");
+        var ok = target.indexOf("exp://") === 0 || target.indexOf("skillatlas-gastos://") === 0;
         if (status) {
-          status.textContent = ret
-            ? "Abriendo Expo…"
-            : "Falta el parámetro return. Vuelve a iniciar sesión desde la app.";
+          status.textContent = ok
+            ? "Abriendo la app…"
+            : "No se pudo calcular el enlace. Reinicia sesión desde Expo Go.";
         }
 
-        // Intento automático (Expo Go abre exp://…)
-        try {
-          window.location.replace(target);
-        } catch (e) {}
-        setTimeout(function () {
+        if (ok) {
           try {
-            window.location.href = target;
-          } catch (e2) {}
-        }, 300);
+            window.location.replace(target);
+          } catch (e) {}
+          setTimeout(function () {
+            try {
+              window.location.href = target;
+            } catch (e2) {}
+          }, 350);
+        }
       })();
     </script>
   </body>

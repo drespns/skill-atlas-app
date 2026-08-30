@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/auth/expo-callback/:path*",
+      "destination": "/auth/expo-callback/index.html"
+    }
+  ]
+}

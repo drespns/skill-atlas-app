@@ -21,22 +21,39 @@ export function getOAuthBridgePrefix(): string {
   return `${WEB_ORIGIN}/auth/expo-callback`;
 }
 
+function getPackagerHostPort(): { host: string; port: string } | null {
+  const hostUri =
+    Constants.expoConfig?.hostUri ??
+    (Constants as { expoGoConfig?: { debuggerHost?: string } }).expoGoConfig?.debuggerHost ??
+    (Constants.manifest as { debuggerHost?: string } | null)?.debuggerHost;
+  if (!hostUri || typeof hostUri !== "string") return null;
+  const hostPort = hostUri.split("/")[0]?.split("?")[0]?.trim();
+  if (!hostPort) return null;
+  const [host, port] = hostPort.split(":");
+  if (!host) return null;
+  return { host, port: port || "8081" };
+}
+
 /** Deep link de vuelta a Expo (exp://… en Expo Go, scheme en build). */
 export function getAppAuthReturnUrl(): string {
   return Linking.createURL("auth/callback");
 }
 
 /**
- * Redirect que se registra en Supabase.
- * Incluye ?return=exp://… para que la página puente abra Expo Go
- * (skillatlas-gastos:// no funciona dentro de Expo Go).
+ * Redirect para Supabase.
+ * El `return` NO va en query (Supabase lo elimina). Va en el path:
+ *   /auth/expo-callback/exp/{host}/{port}
+ *   /auth/expo-callback/native
  */
 export function getOAuthRedirectTo(): string {
   if (Platform.OS === "web" && typeof window !== "undefined") {
     return `${window.location.origin}/auth/callback`;
   }
-  const ret = encodeURIComponent(getAppAuthReturnUrl());
-  return `${getOAuthBridgePrefix()}?return=${ret}`;
+  const hp = getPackagerHostPort();
+  if (hp && (Constants.appOwnership === "expo" || __DEV__)) {
+    return `${getOAuthBridgePrefix()}/exp/${hp.host}/${hp.port}`;
+  }
+  return `${getOAuthBridgePrefix()}/native`;
 }
 
 export function getOAuthRedirectHint(): string {
@@ -106,9 +123,8 @@ function redirectHelp(): string {
   return (
     `No se pudo volver a la app.\n\n` +
     `En Supabase → Redirect URLs:\n` +
-    `${getOAuthBridgePrefix()}\n` +
-    `${WEB_ORIGIN}/**\n\n` +
-    `Si ves “Acceso listo”, toca Abrir app (debe ser exp://… en Expo Go).`
+    `${getOAuthBridgePrefix()}/**\n` +
+    `${WEB_ORIGIN}/**`
   );
 }
 
