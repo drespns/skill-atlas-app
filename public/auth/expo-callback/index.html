@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Volviendo a Finanzas…</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: system-ui, sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 24px;
+        text-align: center;
+      }
+      a { color: #a5b4fc; }
+      .box { max-width: 28rem; }
+      h1 { font-size: 1.25rem; margin: 0 0 0.75rem; }
+      p { margin: 0.5rem 0; line-height: 1.45; color: #94a3b8; font-size: 0.95rem; }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h1>Acceso listo</h1>
+      <p id="status">Devolviendo la sesión a la app Finanzas…</p>
+      <p>Si no vuelve sola, cierra esta pestaña y abre Expo Go.</p>
+      <p><a id="deeplink" href="skillatlas-gastos://auth/callback">Abrir app</a></p>
+    </div>
+    <script>
+      (function () {
+        var payload = window.location.hash || window.location.search || "";
+        var deep = "skillatlas-gastos://auth/callback" + payload;
+        var a = document.getElementById("deeplink");
+        if (a) a.href = deep;
+      })();
+    </script>
+  </body>
+</html>

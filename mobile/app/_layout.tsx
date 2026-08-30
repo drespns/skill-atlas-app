@@ -47,9 +47,14 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
         <Stack.Screen
           name="add-transaction"
           options={{ presentation: "modal", title: "Nuevo movimiento" }}
+        />
+        <Stack.Screen
+          name="add-subscription"
+          options={{ presentation: "modal", title: "Nueva suscripción" }}
         />
         <Stack.Screen
           name="unlock-e2e"

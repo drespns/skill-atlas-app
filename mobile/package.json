@@ -8,6 +8,7 @@
     "@skill-atlas/expense-core": "workspace:*",
     "@supabase/supabase-js": "^2.100.1",
     "expo": "~56.0.12",
+    "expo-auth-session": "~56.0.18",
     "expo-constants": "~56.0.18",
     "expo-font": "~56.0.7",
     "expo-linear-gradient": "~56.0.4",

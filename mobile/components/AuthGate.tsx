@@ -10,9 +10,10 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loading) return;
     const inAuth = segments[0] === "(auth)";
-    if (!session && !inAuth) {
+    const inOAuthCallback = segments[0] === "auth";
+    if (!session && !inAuth && !inOAuthCallback) {
       router.replace("/(auth)/login");
-    } else if (session && inAuth) {
+    } else if (session && (inAuth || inOAuthCallback)) {
       router.replace("/(tabs)");
     }
   }, [session, loading, segments, router]);
