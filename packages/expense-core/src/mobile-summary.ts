@@ -11,6 +11,7 @@ export type MobileTransaction = {
   amount: number;
   categoryId: string;
   confirmed: boolean;
+  wealthAccountId?: string;
 };
 
 export type CategorySlice = {
@@ -42,6 +43,7 @@ export function listTransactionsForMonth(state: ExpenseTrackerState, monthKey: s
       amount: eurAmount(e.amount, e.currency, fx),
       categoryId: e.categoryId,
       confirmed: true,
+      wealthAccountId: e.wealthAccountId,
     });
   }
   for (const i of state.incomeAdhoc ?? []) {
@@ -54,6 +56,7 @@ export function listTransactionsForMonth(state: ExpenseTrackerState, monthKey: s
       amount: eurAmount(i.amount, i.currency, fx),
       categoryId: i.categoryId,
       confirmed: true,
+      wealthAccountId: i.wealthAccountId,
     });
   }
   return out.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));

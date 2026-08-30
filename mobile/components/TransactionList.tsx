@@ -6,17 +6,18 @@ import { formatEurEs } from "@skill-atlas/expense-core";
 type Props = {
   sections: { title: string; data: MobileTransaction[] }[];
   categoryName: (id: string) => string;
+  accountName?: (id?: string) => string | undefined;
 };
 
-/** Lista plana (sin SectionList) para poder embeberla en ScrollView del home. */
-export function TransactionList({ sections, categoryName }: Props) {
+/** Lista plana (sin SectionList) para embeberla en ScrollView. */
+export function TransactionList({ sections, categoryName, accountName }: Props) {
   const router = useRouter();
 
   if (!sections.length) {
     return (
       <View style={styles.empty}>
         <Text style={styles.emptyTitle}>Sin movimientos este mes</Text>
-        <Text style={styles.emptyText}>Añade un gasto o ingreso con el botón +</Text>
+        <Text style={styles.emptyText}>Registra un gasto o ingreso en segundos</Text>
         <Pressable style={styles.emptyBtn} onPress={() => router.push("/add-transaction")}>
           <Text style={styles.emptyBtnText}>Añadir movimiento</Text>
         </Pressable>
@@ -29,21 +30,27 @@ export function TransactionList({ sections, categoryName }: Props) {
       {sections.map((section) => (
         <View key={section.title} style={styles.section}>
           <Text style={styles.sectionTitle}>{section.title}</Text>
-          {section.data.map((item, idx) => (
-            <View key={item.id}>
-              {idx > 0 ? <View style={styles.sep} /> : null}
-              <View style={styles.row}>
-                <View style={styles.rowMain}>
-                  <Text style={styles.label}>{item.label}</Text>
-                  <Text style={styles.meta}>{categoryName(item.categoryId)}</Text>
+          {section.data.map((item, idx) => {
+            const account = accountName?.(item.wealthAccountId);
+            return (
+              <View key={item.id}>
+                {idx > 0 ? <View style={styles.sep} /> : null}
+                <View style={styles.row}>
+                  <View style={styles.rowMain}>
+                    <Text style={styles.label}>{item.label}</Text>
+                    <Text style={styles.meta} numberOfLines={1}>
+                      {categoryName(item.categoryId)}
+                      {account ? ` · ${account}` : ""}
+                    </Text>
+                  </View>
+                  <Text style={[styles.amount, item.kind === "income" ? styles.income : styles.expense]}>
+                    {item.kind === "income" ? "+" : "−"}
+                    {formatEurEs(item.amount)}
+                  </Text>
                 </View>
-                <Text style={[styles.amount, item.kind === "income" ? styles.income : styles.expense]}>
-                  {item.kind === "income" ? "+" : "−"}
-                  {formatEurEs(item.amount)}
-                </Text>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       ))}
     </View>

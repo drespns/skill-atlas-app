@@ -2,18 +2,16 @@
 
 Pasos reales para tener la app en tu móvil / Play Console. Bundle actual: `app.skillatlas.gastos`.
 
-## A) Probar YA en tu teléfono (sin Play Store)
+## A) Probar YA (Expo web o móvil)
 
-1. Instala **Expo Go** desde Play Store.
-2. En el PC, en la raíz del monorepo:
+1. En el PC:
    ```bash
-   cp mobile/.env.example mobile/.env
-   # Rellena EXPO_PUBLIC_SUPABASE_URL y EXPO_PUBLIC_SUPABASE_ANON_KEY (igual que la web)
    pnpm install
    pnpm mobile
    ```
-3. Escanea el QR con Expo Go (misma Wi‑Fi que el PC).
-4. Entra con **email + contraseña** (OAuth móvil aún no).
+2. Abre `http://localhost:8081` (o Expo Go con SDK 56 si lo tienes).
+3. Entra con **GitHub / LinkedIn** (o email). Redirects OAuth: `http://localhost:8081/**` en Supabase.
+4. Pestañas: **Inicio** (patrimonio + gráfico) · **Suscripciones** · **Movimientos** (+ FAB) · **Inversiones** · **Ajustes** (cuenta por defecto).
 
 Esto **no** publica en Play Store; solo desarrollo.
 
@@ -92,7 +90,7 @@ Sin esto Google suele rechazar.
 | Keys en el APK | Solo `anon` + URL pública. RLS en Supabase obligatorio. |
 | Secrets | EAS secrets, no `.env` en git. |
 | Firma | EAS gestiona el keystore en la nube (guarda acceso a la cuenta Expo). |
-| Auth | Email/contraseña fuerte; cierra sesión en móviles compartidos. |
+| Auth | Email/contraseña u OAuth (GitHub / LinkedIn); cierra sesión en móviles compartidos. |
 | Sync | Usuario activa “Copia en cuenta”; E2E con frase solo en cliente. |
 | Play | Prueba interna antes de producción; no pidas permisos de SMS/contactos si no los usas. |
 
@@ -103,7 +101,12 @@ Sin esto Google suele rechazar.
 - **Supabase “Coming up…”** tras reanudar: espera 2–5 min; Auth debe estar Healthy antes de login.
 - **Login falla en APK**: faltan secrets EAS o URL de redirect; el móvil no usa el `.env` local del PC.
 - **`projectId` placeholder**: sin `eas init` el build falla o no asocia el proyecto.
-- **OAuth GitHub/LinkedIn**: hoy solo web; en móvil usa contraseña.
+- **OAuth te manda al login de skillatlas.app**: en móvil el redirect debe ser HTTPS del Site URL.
+  Añade en Supabase → Redirect URLs:
+  - `https://skillatlas.app/auth/expo-callback`
+  - `https://skillatlas.app/**`
+  - `http://localhost:8081/**` (solo Expo web en el PC)
+  La app usa `openAuthSessionAsync` y captura los tokens al llegar a `/auth/expo-callback` (no hace falta quedarte en la web).
 
 ---
 
